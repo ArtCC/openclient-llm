@@ -1,14 +1,14 @@
 ---
-description: "Use when planning features, prioritizing work, defining MVP scope, or deciding what to implement next in the project roadmap."
+description: "Use when planning features, prioritizing work, defining scope, or deciding what to implement next in the project roadmap."
 ---
 
-# MVP Features Roadmap
+# Feature Roadmap
 
 ## Development Approach
 
 Build incrementally from less to more. Each phase should result in a functional app.
 
-## Phase 1 — Foundation (MVP Core)
+## Phase 1 — Foundation
 
 Goal: Basic chat with a LiteLLM server.
 
@@ -23,12 +23,14 @@ Goal: Basic chat with a LiteLLM server.
 
 Goal: Daily-usable chat experience.
 
-- [ ] **Conversation persistence**: Save/load conversations locally (SwiftData)
+- [ ] **Conversation persistence**: Save/load conversations locally (Codable + FileManager)
 - [ ] **Conversation list**: Sidebar/list of past conversations
 - [ ] **New conversation**: Create new chats, select model per conversation
 - [ ] **System prompt**: Configurable system prompt per conversation
 - [ ] **Copy/share messages**: Copy individual messages, share conversations
 - [ ] **Markdown rendering**: Render assistant responses with Markdown + code blocks
+- [ ] **Vision (images in chat)**: Attach photos from camera/gallery for the LLM to analyze (same /chat/completions endpoint with image_url content)
+- [ ] **Document understanding (PDFs in chat)**: Upload PDFs and ask questions about their content (same /chat/completions endpoint with file content)
 
 ## Phase 3 — Multi-Platform Polish
 
@@ -50,6 +52,9 @@ Goal: Power user features.
 - [ ] **Search conversations**: Full-text search across conversations
 - [ ] **Export**: Export conversations to JSON/Markdown
 - [ ] **iCloud sync**: Sync conversations across devices
+- [ ] **Image generation**: Generate images from text prompts via POST /v1/images/generations (DALL-E, Stable Diffusion, Gemini, etc.)
+- [ ] **Audio transcription (Speech-to-Text)**: Record or upload audio for transcription via POST /v1/audio/transcriptions (Whisper, Groq, Deepgram, Gemini)
+- [ ] **Text-to-Speech**: Read assistant responses aloud via POST /v1/audio/speech (OpenAI TTS, AWS Polly, ElevenLabs, Gemini TTS)
 
 ## Current Phase: 1 — Foundation
 

@@ -17,7 +17,9 @@ Use conditional compilation for platform-specific UI:
 #endif
 ```
 
-Keep shared logic and models in `Core/` and `Features/*/Models/`. Only views and platform-specific presentation go in `Platform/`.
+Keep shared logic, ViewModels, UseCases, Repositories, and Models in `openclient-llm/Shared/`. Only platform-specific views go in the respective target folders (`openclient-llm/Views/` for iOS, `openclient-llm-macOS/Views/` for macOS).
+
+For shared views that differ slightly by platform, use `#if os()` inside the view. Only create separate view files per target when the UI is fundamentally different.
 
 ## View Structure
 
@@ -62,15 +64,52 @@ private extension ChatView {}
 
 ## Navigation
 
-- Use `NavigationStack` with typed `NavigationPath` on iOS
-- Use `NavigationSplitView` for sidebar-based layouts (macOS, iPadOS)
+### iOS / iPadOS — Tab Bar (Liquid Glass)
+
+The app uses a `TabView` with Liquid Glass style as the root navigation on iOS and iPadOS. The Tab Bar gets Liquid Glass automatically with the iOS 26+ SDK.
+
+| Tab | SF Symbol | Content |
+|---|---|---|
+| **Chats** | `bubble.left.and.bubble.right` | Conversation list + chat view (`NavigationStack`) |
+| **Models** | `cpu` | Available models from the LiteLLM server |
+| **Settings** | `gearshape` | Server configuration, API key, preferences |
+
+```swift
+TabView {
+    Tab(String(localized: "Chats"), systemImage: "bubble.left.and.bubble.right") {
+        ChatsNavigationView()
+    }
+    Tab(String(localized: "Models"), systemImage: "cpu") {
+        ModelsView()
+    }
+    Tab(String(localized: "Settings"), systemImage: "gearshape") {
+        SettingsView()
+    }
+}
+```
+
+- Each tab contains its own `NavigationStack` for internal navigation
+- On iPadOS, the Tab Bar adapts to the larger screen — conversations can use `NavigationSplitView` inside the Chats tab for sidebar layout
+- Tabs are scalable — future features (e.g., "Images" for image generation) can be added as new tabs
+
+### macOS — NavigationSplitView with Sidebar
+
+macOS does **not** use Tab Bar. Instead, use `NavigationSplitView` with a sidebar as the root navigation:
+
+- Sidebar shows conversation list + navigation to Models and Settings
+- Detail view shows the active chat
+- Use toolbar items and keyboard shortcuts for macOS-native interaction
+
+### Navigation Destinations
+
 - Define navigation destinations with enums conforming to `Hashable`
+- Use `NavigationStack` with typed `NavigationPath` for push navigation within each tab/section
 
 ## Layout Guidelines
 
-- **iOS**: Tab-based navigation (`TabView`), full-screen chat
-- **iPadOS**: `NavigationSplitView` with sidebar for conversations
-- **macOS**: `NavigationSplitView` with sidebar, toolbar items, keyboard shortcuts
+- **iOS**: `TabView` (Liquid Glass) as root → `NavigationStack` inside each tab
+- **iPadOS**: `TabView` (Liquid Glass) as root → `NavigationSplitView` inside Chats tab for sidebar + detail
+- **macOS**: `NavigationSplitView` with sidebar, toolbar items, keyboard shortcuts — no Tab Bar
 
 ## Common Patterns
 

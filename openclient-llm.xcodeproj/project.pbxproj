@@ -22,9 +22,23 @@
 		8080774A2F7A67CD009BC8C4 /* openclient-llm-test.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "openclient-llm-test.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		80126ECB2F7A748E00A5557C /* Exceptions for "openclient-llm" folder in "openclient-llm-macOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shared/Resources/Localizable.xcstrings,
+				Shared/Scenes/ContentView.swift,
+			);
+			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		800F26972F7A6352009A58C6 /* openclient-llm */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				80126ECB2F7A748E00A5557C /* Exceptions for "openclient-llm" folder in "openclient-llm-macOS" target */,
+			);
 			path = "openclient-llm";
 			sourceTree = "<group>";
 		};
@@ -186,6 +200,11 @@
 			knownRegions = (
 				en,
 				Base,
+				fr,
+				de,
+				"pt-PT",
+				es,
+				it,
 			);
 			mainGroup = 805E79822F79AC9B0070CBB3;
 			minimizedProjectReferenceProxies = 1;
@@ -362,6 +381,7 @@
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;
 			};
@@ -420,6 +440,7 @@
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
 				VALIDATE_PRODUCT = YES;
 			};

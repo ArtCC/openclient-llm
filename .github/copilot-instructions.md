@@ -13,29 +13,44 @@ OpenClient LLM is a native Apple client for LiteLLM, a self-hosted LLM proxy ser
 
 ## Project Structure
 
+The project has **3 Xcode targets** with File System Synchronized Groups:
+
 ```
-openclient-llm/
-├── App/                    # App entry point, app-level configuration
-├── Features/               # Feature modules (Chat, Settings, Models...)
-│   └── <Feature>/
-│       ├── Views/          # SwiftUI views
-│       ├── ViewModels/     # @Observable view models (Event/State pattern)
-│       ├── UseCases/       # Business logic per use case
-│       ├── Repositories/   # Data access abstraction
-│       └── Models/         # Domain models for this feature
-├── Core/
-│   ├── Networking/         # API client, request/response models
-│   ├── Managers/           # Transversal services (auth, settings, connectivity)
-│   ├── Extensions/         # Swift/SwiftUI extensions
-│   └── Utils/              # Shared utilities
-├── Resources/              # Assets, Localizable strings
-└── Platform/               # Platform-specific code (#if os(...))
-    ├── iOS/
-    ├── iPadOS/
-    └── macOS/
+openclient-llm/                # iOS target (also hosts all shared code)
+├── App/                       # iOS app entry point
+├── Shared/                    # Shared code used by both iOS and macOS targets
+│   ├── Features/              # Feature modules (Chat, Settings, Models...)
+│   │   └── <Feature>/
+│   │       ├── Views/          # SwiftUI views (use #if os() when needed)
+│   │       ├── ViewModels/     # @Observable view models (Event/State pattern)
+│   │       ├── UseCases/       # Business logic per use case
+│   │       ├── Repositories/   # Data access abstraction
+│   │       └── Models/         # Domain models for this feature
+│   └── Core/
+│       ├── Networking/         # API client, request/response models
+│       ├── Managers/           # Transversal services (auth, settings, connectivity)
+│       ├── Extensions/         # Swift/SwiftUI extensions
+│       └── Utils/              # Shared utilities
+├── Views/                     # iOS-only views (strictly iOS-specific UI)
+└── Resources/                 # iOS assets, Localizable strings
+
+openclient-llm-macOS/          # macOS target (macOS-specific code only)
+├── App/                       # macOS app entry point
+├── Views/                     # macOS-only views (sidebar, toolbar, menu bar)
+└── Resources/                 # macOS assets
+
+openclient-llm-test/           # Unit tests target (linked to iOS target)
+└── <Feature>Tests/            # Test files organized by feature
 ```
 
-> **Note**: This is the target structure. The project is in early MVP phase — create directories and groups as features are implemented.
+### Target Rules
+
+- **`openclient-llm/Shared/`**: All business logic, models, networking, ViewModels, UseCases, Repositories, Managers. This code is shared — the macOS target references it.
+- **`openclient-llm/`** (outside Shared): Only iOS/iPadOS-specific views, app entry point, and iOS resources.
+- **`openclient-llm-macOS/`**: Only macOS-specific views, app entry point, and macOS resources. Never duplicate shared logic here.
+- **`openclient-llm-test/`**: Unit tests for shared logic (ViewModels, UseCases, Repositories).
+
+> **Note**: The project is in early MVP phase — create directories as features are implemented.
 
 ## Code Style
 
@@ -178,14 +193,53 @@ The app communicates with a LiteLLM proxy server via its OpenAI-compatible REST 
 - Use SF Symbols for icons
 - Support Dark Mode by default
 - Use semantic colors from asset catalog, not hardcoded
-- Localization-ready: use `String(localized:)` for user-facing strings
+- All user-facing strings must be localized — see Localization section below
+
+## Localization
+
+- **Base language**: English (en)
+- **Supported languages**: Spanish (es), Italian (it), German (de), Portuguese - Portugal (pt-PT)
+- **String catalog**: `Localizable.xcstrings` — the single source of truth for all translations
+- **API**: Always use `String(localized:)` for user-facing strings in Swift code:
+  ```swift
+  // Simple string
+  Text(String(localized: "Send"))
+  
+  // String with interpolation
+  Text(String(localized: "\(count) messages"))
+  
+  // String with comment for translators
+  String(localized: "Delete", comment: "Button to delete a conversation")
+  ```
+- **Mandatory rule**: Every time a user-facing string is added or modified in code, all translations in `Localizable.xcstrings` must be updated simultaneously for every supported language
+- **Translation quality**: Translations must be grammatically and orthographically correct in each language — no machine-translated placeholders or approximations
+- **Language-specific notes**:
+  - **Spanish (es)**: Use neutral/international Spanish, informal "tú" form
+  - **Italian (it)**: Use informal "tu" form
+  - **German (de)**: Use informal "du" form, capitalize nouns
+  - **Portuguese (pt-PT)**: Use European Portuguese (Portugal), not Brazilian Portuguese, informal "tu" form
+- **Review checklist** when adding/editing strings:
+  1. String uses `String(localized:)` — never raw string literals for user-facing text
+  2. English (en) key is clear and descriptive
+  3. All 5 languages have correct translations in `Localizable.xcstrings`
+  4. Pluralization handled with the string catalog's plural rules when needed
+  5. Context comments added for ambiguous strings
+- **Do not** hardcode user-facing text directly in views without localization
+- **Do not** leave any language with missing or empty translations
 
 ## Build and Test
 
 - Build with Xcode 16+
 - Run tests: `⌘U` in Xcode or `xcodebuild test`
-- No external package manager — use Swift Package Manager (SPM) via Xcode
+- **No external dependencies** except SwiftLint — networking, persistence, and all logic is custom
+- Use Swift Package Manager (SPM) via Xcode only for dev tools (SwiftLint)
+- Sensitive data (API keys) stored in **Keychain** via `KeychainManager`
+- Non-sensitive settings stored in **UserDefaults** via `SettingsManager`
 - **SwiftLint** integrated via SPM — all code must pass linting without warnings
 - SwiftLint runs automatically as part of the build process
 - Follow the rules defined in `.swiftlint.yml` at the project root
 - When writing new code, respect SwiftLint conventions (line length, naming, force unwraps, etc.)
+- **Unit tests**: All UseCases, Repositories, and ViewModels must have tests in `openclient-llm-test/`
+- **Integration tests**: API tests guarded by environment variable, skipped by default
+- **No UI tests** — only unit and integration tests
+- Use protocols + mocks for dependency isolation in tests
