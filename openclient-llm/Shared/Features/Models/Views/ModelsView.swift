@@ -59,28 +59,65 @@ private extension ModelsView {
                     }
                 }
             } else {
-                modelsList(loadedState.models)
+                modelsList(loadedState)
             }
         }
     }
 
-    func modelsList(_ models: [LLMModel]) -> some View {
-        List(models) { model in
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(model.id)
-                        .font(.body)
-                    if !model.ownedBy.isEmpty {
-                        Text(model.ownedBy)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+    func modelsList(_ loadedState: ModelsViewModel.LoadedState) -> some View {
+        List(loadedState.models) { model in
+            Button {
+                viewModel.send(.modelTapped(model))
+            } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(model.id)
+                                .font(.body)
+                            if !model.ownedBy.isEmpty {
+                                Text(model.ownedBy)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        Spacer()
+
+                        if model.id == loadedState.selectedModelId {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(Color.accentColor)
+                        } else {
+                            Image(systemName: "cpu")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    if !model.capabilities.isEmpty {
+                        capabilityTags(model.capabilities)
                     }
                 }
+            }
+            .listRowBackground(
+                model.id == loadedState.selectedModelId
+                    ? Color.accentColor.opacity(0.08)
+                    : nil
+            )
+        }
+    }
 
-                Spacer()
-
-                Image(systemName: "cpu")
-                    .foregroundStyle(.secondary)
+    func capabilityTags(_ capabilities: [LLMModel.Capability]) -> some View {
+        FlowLayout(spacing: 6) {
+            ForEach(capabilities, id: \.self) { capability in
+                HStack(spacing: 4) {
+                    Image(systemName: capability.icon)
+                        .font(.caption2)
+                    Text(capability.label)
+                        .font(.caption2)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .foregroundStyle(capability.color)
+                .background(capability.color.opacity(0.12), in: .capsule)
             }
         }
     }

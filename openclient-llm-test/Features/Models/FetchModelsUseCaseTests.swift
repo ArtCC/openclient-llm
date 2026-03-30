@@ -70,4 +70,35 @@ final class FetchModelsUseCaseTests: XCTestCase {
         // Then
         XCTAssertTrue(result.isEmpty)
     }
+
+    func test_execute_mergesCapabilitiesFromModelInfo() async throws {
+        // Given
+        let models = [LLMModel(id: "gpt-4", ownedBy: "openai"), LLMModel(id: "llama3", ownedBy: "ollama")]
+        mockRepository.fetchModelsResult = .success(models)
+
+        let modelInfoList = [LLMModel(id: "gpt-4", capabilities: [.vision, .functionCalling])]
+        mockRepository.fetchModelInfoResult = .success(modelInfoList)
+
+        // When
+        let result = try await sut.execute()
+
+        // Then
+        XCTAssertEqual(result.count, 2)
+        XCTAssertEqual(result.first(where: { $0.id == "gpt-4" })?.capabilities, [.vision, .functionCalling])
+        XCTAssertTrue(result.first(where: { $0.id == "llama3" })?.capabilities.isEmpty == true)
+    }
+
+    func test_execute_modelInfoFailure_stillReturnsModels() async throws {
+        // Given
+        let models = [LLMModel(id: "gpt-4")]
+        mockRepository.fetchModelsResult = .success(models)
+        mockRepository.fetchModelInfoResult = .failure(APIError.serverUnreachable)
+
+        // When
+        let result = try await sut.execute()
+
+        // Then
+        XCTAssertEqual(result.count, 1)
+        XCTAssertTrue(result.first?.capabilities.isEmpty == true)
+    }
 }

@@ -7,6 +7,9 @@
 //
 
 import SwiftUI
+#if os(iOS)
+import StoreKit
+#endif
 
 struct SettingsView: View {
     // MARK: - Properties
@@ -60,6 +63,7 @@ private extension SettingsView {
             serverSection(loadedState)
             connectionSection(loadedState)
             saveSection(loadedState)
+            feedbackSection()
             legalSection()
         }
 #if os(iOS)
@@ -189,6 +193,25 @@ private extension SettingsView {
         }
     }
 
+    func feedbackSection() -> some View {
+        Section {
+            Button {
+                requestAppReview()
+            } label: {
+                Label(String(localized: "Rate the App"), systemImage: "star")
+            }
+
+            Button {
+                // Placeholder: will integrate Votice SDK in the future
+                print("Suggest Features tapped")
+            } label: {
+                Label(String(localized: "Suggest Features"), systemImage: "lightbulb")
+            }
+        } header: {
+            Text(String(localized: "Feedback"))
+        }
+    }
+
     func legalSection() -> some View {
         Section {
             Button {
@@ -202,9 +225,32 @@ private extension SettingsView {
             } label: {
                 Label(String(localized: "Terms of Use"), systemImage: "doc.text")
             }
+
+            Button {
+                presentedWebURL = .authorGitHub
+            } label: {
+                HStack {
+                    Label(String(localized: "Author"), systemImage: "person.circle")
+                    Spacer()
+                    Image(systemName: "arrow.up.right.square")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
         } header: {
             Text(String(localized: "About"))
         }
+    }
+
+    func requestAppReview() {
+        #if os(iOS)
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
+        AppStore.requestReview(in: windowScene)
+        #else
+        if let url = URL(string: "macappstore://apps.apple.com/app/id\(Constants.App.appStoreId)?action=write-review") {
+            NSWorkspace.shared.open(url)
+        }
+        #endif
     }
 }
 
@@ -214,6 +260,7 @@ extension SettingsView {
     enum WebDestination: Identifiable {
         case privacyPolicy
         case termsOfUse
+        case authorGitHub
 
         // MARK: - Properties
 
@@ -221,6 +268,7 @@ extension SettingsView {
             switch self {
             case .privacyPolicy: "privacy"
             case .termsOfUse: "terms"
+            case .authorGitHub: "author"
             }
         }
 
@@ -228,6 +276,7 @@ extension SettingsView {
             switch self {
             case .privacyPolicy: String(localized: "Privacy Policy")
             case .termsOfUse: String(localized: "Terms of Use")
+            case .authorGitHub: "Arturo Carretero Calvo"
             }
         }
 
@@ -237,6 +286,8 @@ extension SettingsView {
                 Constants.URLs.privacyPolicy
             case .termsOfUse:
                 Constants.URLs.termsOfUse
+            case .authorGitHub:
+                Constants.URLs.authorGitHub
             }
         }
     }
