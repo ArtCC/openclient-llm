@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-ios:
+    name: Build & Test (iOS)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Resolve simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c "
+          import json, sys
+          data = json.load(sys.stdin)
+          for runtime in sorted(data['devices'], reverse=True):
+              if 'iOS' in runtime:
+                  for d in data['devices'][runtime]:
+                      if 'iPhone' in d['name']:
+                          print(d['udid']); sys.exit(0)
+          sys.exit(1)")
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Build & Test
+        run: |
+          xcodebuild test \
+            -project openclient-llm.xcodeproj \
+            -scheme openclient-llm \
+            -destination 'id=${{ steps.sim.outputs.udid }}' \
+            -resultBundlePath TestResults.xcresult \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty && exit ${PIPESTATUS[0]}
+
+  build-macos:
+    name: Build (macOS)
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Build
+        run: |
+          xcodebuild build \
+            -project openclient-llm.xcodeproj \
+            -scheme openclient-llm-macOS \
+            -destination 'platform=macOS' \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            | xcpretty && exit ${PIPESTATUS[0]}
