@@ -15,6 +15,7 @@ struct SettingsView: View {
     @State private var serverURL: String = ""
     @State private var apiKey: String = ""
     @State private var isAPIKeyVisible = false
+    @State private var presentedWebURL: WebDestination?
 
     // MARK: - View
 
@@ -29,6 +30,9 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle(String(localized: "Settings"))
+            .sheet(item: $presentedWebURL) { destination in
+                WebContentView(title: destination.title, url: destination.url)
+            }
         }
         .task {
             viewModel.send(.viewAppeared)
@@ -48,6 +52,7 @@ private extension SettingsView {
             serverSection(loadedState)
             connectionSection(loadedState)
             saveSection(loadedState)
+            legalSection()
         }
     }
 
@@ -158,6 +163,56 @@ private extension SettingsView {
         case .failure(let message):
             Label(message, systemImage: "xmark.circle.fill")
                 .foregroundStyle(.red)
+        }
+    }
+
+    func legalSection() -> some View {
+        Section {
+            Button {
+                presentedWebURL = .privacyPolicy
+            } label: {
+                Label(String(localized: "Privacy Policy"), systemImage: "hand.raised")
+            }
+
+            Button {
+                presentedWebURL = .termsOfUse
+            } label: {
+                Label(String(localized: "Terms of Use"), systemImage: "doc.text")
+            }
+        } header: {
+            Text(String(localized: "Legal"))
+        }
+    }
+}
+
+// MARK: - WebDestination
+
+extension SettingsView {
+    enum WebDestination: Identifiable {
+        case privacyPolicy
+        case termsOfUse
+
+        var id: String {
+            switch self {
+            case .privacyPolicy: "privacy"
+            case .termsOfUse: "terms"
+            }
+        }
+
+        var title: String {
+            switch self {
+            case .privacyPolicy: String(localized: "Privacy Policy")
+            case .termsOfUse: String(localized: "Terms of Use")
+            }
+        }
+
+        var url: URL {
+            switch self {
+            case .privacyPolicy:
+                URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/privacy")!
+            case .termsOfUse:
+                URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/terms")!
+            }
         }
     }
 }
