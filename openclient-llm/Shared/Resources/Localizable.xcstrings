@@ -1,7 +1,174 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
 
+    },
+    "|" : {
+
+    },
+    "About" : {
+
+    },
+    "All Set!" : {
+
+    },
+    "Answer a tricky question" : {
+
+    },
+    "API Key (Optional)" : {
+
+    },
+    "Back" : {
+
+    },
+    "Brainstorm ideas for a project" : {
+
+    },
+    "Chat" : {
+
+    },
+    "Close" : {
+
+    },
+    "Connection" : {
+
+    },
+    "Connection successful" : {
+
+    },
+    "Could not read the server response." : {
+
+    },
+    "Enter your LiteLLM server details to connect." : {
+
+    },
+    "Explain a complex topic simply" : {
+
+    },
+    "Get Started" : {
+
+    },
+    "Help me with my code" : {
+
+    },
+    "Hide API Key" : {
+
+    },
+    "How can I help you?" : {
+
+    },
+    "Invalid API key. Please check your credentials." : {
+
+    },
+    "Message..." : {
+
+    },
+    "Models" : {
+
+    },
+    "Next" : {
+
+    },
+    "No Model" : {
+
+    },
+    "OpenClient" : {
+
+    },
+    "Privacy Policy" : {
+
+    },
+    "Refresh" : {
+
+    },
+    "Retry" : {
+
+    },
+    "Review and improve my writing" : {
+
+    },
+    "Save" : {
+
+    },
+    "Select a model to start chatting" : {
+
+    },
+    "Send" : {
+
+    },
+    "Server" : {
+
+    },
+    "Server Configuration" : {
+
+    },
+    "Server error (code %lld)." : {
+
+    },
+    "Server URL" : {
+
+    },
+    "Settings" : {
+
+    },
+    "Show API Key" : {
+
+    },
+    "Skip" : {
+
+    },
+    "Start Chatting" : {
+
+    },
+    "Stop" : {
+
+    },
+    "Summarize a long text" : {
+
+    },
+    "Terms of Use" : {
+
+    },
+    "Test Connection" : {
+
+    },
+    "Testing..." : {
+
+    },
+    "The server is not reachable." : {
+
+    },
+    "The server returned an invalid response." : {
+
+    },
+    "The server URL is not valid." : {
+
+    },
+    "Thinking..." : {
+
+    },
+    "Too many requests. Please try again later." : {
+
+    },
+    "Translate text to another language" : {
+
+    },
+    "Unable to Load Models" : {
+
+    },
+    "Welcome to OpenClient" : {
+
+    },
+    "Write a creative story" : {
+
+    },
+    "Your gateway to any LLM through a unified interface. Connect to your LiteLLM server and start chatting." : {
+
+    },
+    "Your server is configured and ready to go. Start chatting with your AI models." : {
+
+    }
   },
   "version" : "1.2"
 }

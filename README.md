@@ -1,10 +1,17 @@
-# OpenClient LLM
+<p align="center">
+  <img src="assets/icon_radius.png" alt="OpenClient LLM" width="128" />
+</p>
 
-![Platform](https://img.shields.io/badge/Platform-iOS%20|%20iPadOS%20|%20macOS-blue?style=flat-square)
-![Swift](https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift)
-![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift)
-![License](https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square)
-![Xcode](https://img.shields.io/badge/Xcode-16+-blue?style=flat-square&logo=xcode)
+<h1 align="center">OpenClient LLM</h1>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Version-1.1.0-brightgreen?style=flat-square" alt="Version" />
+  <img src="https://img.shields.io/badge/Platform-iOS%2026+%20|%20iPadOS%2026+%20|%20macOS%2026+-blue?style=flat-square" alt="Platform" />
+  <img src="https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift" alt="Swift" />
+  <img src="https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift" alt="SwiftUI" />
+  <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/Xcode-26+-blue?style=flat-square&logo=xcode" alt="Xcode" />
+</p>
 
 ## Description
 
@@ -31,19 +38,42 @@ openclient-llm/                    # iOS target
 │   └── OpenClientApp.swift
 ├── Shared/                        # Shared code (iOS + macOS)
 │   ├── Features/                  # Feature modules
-│   │   └── <Feature>/
-│   │       ├── Views/             # SwiftUI views
-│   │       ├── ViewModels/        # @Observable + Event/State
-│   │       ├── UseCases/          # Business logic
-│   │       ├── Repositories/      # Data access
-│   │       └── Models/            # Domain models
+│   │   ├── Chat/                  # Chat with SSE streaming
+│   │   │   ├── Views/             # ChatView, MessageBubbleView
+│   │   │   ├── ViewModels/        # ChatViewModel (Event/State)
+│   │   │   ├── UseCases/          # SendMessage, StreamMessage
+│   │   │   ├── Repositories/      # ChatRepository
+│   │   │   └── Models/            # ChatMessage
+│   │   ├── Home/                  # TabView (iOS) / SplitView (macOS)
+│   │   │   └── Views/             # HomeView
+│   │   ├── Launch/                # Initial routing
+│   │   │   ├── Views/             # LaunchView
+│   │   │   ├── ViewModels/        # LaunchViewModel
+│   │   │   └── UseCases/          # CheckOnboarding, ResetAppData
+│   │   ├── Models/                # LLM model listing
+│   │   │   ├── Views/             # ModelsView
+│   │   │   ├── ViewModels/        # ModelsViewModel
+│   │   │   ├── UseCases/          # FetchModelsUseCase
+│   │   │   ├── Repositories/      # ModelsRepository
+│   │   │   └── Models/            # LLMModel
+│   │   ├── Onboarding/            # Server setup wizard
+│   │   │   ├── Views/             # OnboardingView
+│   │   │   ├── ViewModels/        # OnboardingViewModel
+│   │   │   ├── UseCases/          # TestConnection, SaveConfig, Complete
+│   │   │   ├── Repositories/      # OnboardingRepository
+│   │   │   └── Models/            # OnboardingStep
+│   │   └── Settings/              # Server configuration
+│   │       ├── Views/             # SettingsView
+│   │       └── ViewModels/        # SettingsViewModel
 │   ├── Core/
 │   │   ├── Networking/            # API client, SSE streaming
-│   │   ├── Managers/              # Auth, settings, connectivity
+│   │   │   └── Models/            # Request/response DTOs
+│   │   ├── Managers/              # Settings, Keychain, conversation starters
+│   │   ├── Views/                 # Reusable views
 │   │   ├── Extensions/            # Swift/SwiftUI extensions
-│   │   └── Utils/                 # Shared utilities
+│   │   └── Utils/                 # Constants, shared utilities
 │   └── Resources/
-│       └── Localizable.xcstrings  # Localization (en, es, it, de, pt-PT)
+│       └── Localizable.xcstrings  # Localization
 └── Resources/
     └── Assets.xcassets/           # iOS assets, accent color, app icon
 
@@ -54,7 +84,15 @@ openclient-llm-macOS/              # macOS target
     └── Assets.xcassets/           # macOS assets, accent color, app icon
 
 openclient-llm-test/               # Unit tests
-└── <Feature>Tests/                # Tests by feature
+├── Core/
+│   └── Managers/                  # KeychainManager tests
+├── Features/
+│   ├── Chat/                      # ChatViewModel, UseCase tests
+│   ├── Launch/                    # LaunchViewModel, UseCase tests
+│   ├── Models/                    # ModelsViewModel, UseCase tests
+│   ├── Onboarding/                # OnboardingViewModel, UseCase tests
+│   └── Settings/                  # SettingsViewModel tests
+└── Mocks/                         # Mock implementations
 ```
 
 ## Usage
@@ -73,8 +111,8 @@ openclient-llm-test/               # Unit tests
 
 ### Requirements
 
-- Xcode 16+
-- iOS 18+ / macOS 15+
+- Xcode 26+
+- iOS 26+ / macOS 26+
 - A running [LiteLLM](https://docs.litellm.ai/) server (local or remote)
 
 ## License

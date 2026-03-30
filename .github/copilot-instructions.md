@@ -1,5 +1,9 @@
 # OpenClient LLM — Project Guidelines
 
+## Important
+
+Any modification to project instructions, guidelines, or definition files (`.github/copilot-instructions.md`, `.github/instructions/*.md`, `.github/prompts/*.md`, `.swiftlint.yml`) must be **explicitly confirmed by the user before applying changes**. Always explain the proposed change first and wait for approval.
+
 ## Overview
 
 OpenClient LLM is a native Apple client for LiteLLM, a self-hosted LLM proxy server. The app allows users to interact with any LLM provider (Ollama, OpenAI, Anthropic, etc.) through a single unified LiteLLM endpoint.
@@ -7,7 +11,7 @@ OpenClient LLM is a native Apple client for LiteLLM, a self-hosted LLM proxy ser
 - **Language**: Swift 6+
 - **UI Framework**: SwiftUI
 - **Platforms**: iOS, iPadOS, macOS (shared codebase, platform-specific UI)
-- **Minimum deployment**: iOS 18, macOS 15
+- **Minimum deployment**: iOS 26, macOS 26
 - **Architecture**: MVVM + UseCase + Repository + Manager with async/await concurrency
 - **Backend**: LiteLLM self-hosted server (OpenAI-compatible API)
 
@@ -53,6 +57,93 @@ openclient-llm-test/           # Unit tests target (linked to iOS target)
 > **Note**: The project is in early MVP phase — create directories as features are implemented.
 
 ## Code Style
+
+### File Header
+
+Every Swift file must include this header at the top:
+
+```swift
+//
+//  FileName.swift
+//  openclient-llm
+//
+//  Created by Arturo Carretero Calvo on DD/MM/YYYY.
+//  Copyright © YYYY Arturo Carretero Calvo. All rights reserved.
+//
+
+import Foundation
+```
+
+- Replace `FileName.swift` with the actual file name
+- Replace `DD/MM/YYYY` with the creation date
+- Replace `YYYY` with the creation year
+- `import` goes after the header, separated by one blank line
+
+### MARK Conventions
+
+Use `// MARK: -` to separate logical sections in every file. Standard order:
+
+**For classes/structs:**
+
+```swift
+// MARK: - Properties
+// MARK: - Init
+// MARK: - Deinit      (only if needed)
+// MARK: - Public       (or named section like "Input functions")
+// MARK: - Private      (as extension at bottom of file)
+```
+
+**For Views:**
+
+```swift
+// MARK: - Properties
+// MARK: - View
+// MARK: - Private      (as extension at bottom of file)
+```
+
+### Extensions for Code Organization
+
+Use `private extension` at the bottom of the file to group all private methods. Use named extensions for protocol conformances and logical groupings:
+
+```swift
+// Full class example:
+@Observable
+@MainActor
+final class FeatureViewModel {
+    // MARK: - Properties
+
+    private(set) var state: State
+
+    // MARK: - Init
+
+    init(state: State = .loading) {
+        self.state = state
+    }
+
+    // MARK: - Input functions
+
+    func send(_ event: Event) { ... }
+}
+
+// MARK: - Private
+
+private extension FeatureViewModel {
+    func loadData() { ... }
+    func handleError(_ error: Error) { ... }
+}
+```
+
+For types with protocol conformances, use separate extensions:
+
+```swift
+// MARK: - CustomStringConvertible
+
+extension ChatMessage: CustomStringConvertible {
+    var description: String { ... }
+}
+```
+
+### General Rules
 
 - Use Swift strict concurrency (`Sendable`, `@MainActor` where needed)
 - Prefer `async/await` over Combine for async operations
@@ -198,7 +289,7 @@ The app communicates with a LiteLLM proxy server via its OpenAI-compatible REST 
 ## Localization
 
 - **Base language**: English (en)
-- **Supported languages**: Spanish (es), Italian (it), German (de), Portuguese - Portugal (pt-PT)
+- **Supported languages**: Defined in `knownRegions` inside `openclient-llm.xcodeproj/project.pbxproj`
 - **String catalog**: `Localizable.xcstrings` — the single source of truth for all translations
 - **API**: Always use `String(localized:)` for user-facing strings in Swift code:
   ```swift
@@ -211,21 +302,13 @@ The app communicates with a LiteLLM proxy server via its OpenAI-compatible REST 
   // String with comment for translators
   String(localized: "Delete", comment: "Button to delete a conversation")
   ```
-- **Mandatory rule**: Every time a user-facing string is added or modified in code, all translations in `Localizable.xcstrings` must be updated simultaneously for every supported language
-- **Translation quality**: Translations must be grammatically and orthographically correct in each language — no machine-translated placeholders or approximations
-- **Language-specific notes**:
-  - **Spanish (es)**: Use neutral/international Spanish, informal "tú" form
-  - **Italian (it)**: Use informal "tu" form
-  - **German (de)**: Use informal "du" form, capitalize nouns
-  - **Portuguese (pt-PT)**: Use European Portuguese (Portugal), not Brazilian Portuguese, informal "tu" form
+- **Translations**: Only add strings in English. Do **not** add translations to other languages in `Localizable.xcstrings` — the author handles translations manually
 - **Review checklist** when adding/editing strings:
   1. String uses `String(localized:)` — never raw string literals for user-facing text
   2. English (en) key is clear and descriptive
-  3. All 5 languages have correct translations in `Localizable.xcstrings`
-  4. Pluralization handled with the string catalog's plural rules when needed
-  5. Context comments added for ambiguous strings
+  3. Pluralization handled with the string catalog's plural rules when needed
+  4. Context comments added for ambiguous strings
 - **Do not** hardcode user-facing text directly in views without localization
-- **Do not** leave any language with missing or empty translations
 
 ## Build and Test
 
