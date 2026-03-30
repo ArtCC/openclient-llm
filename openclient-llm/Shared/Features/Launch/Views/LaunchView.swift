@@ -21,8 +21,11 @@ struct LaunchView: View {
             case .loading:
                 ProgressView()
             case .onboarding:
-                // TODO: Replace with OnboardingView when implemented
-                Text(String(localized: "Onboarding"))
+                OnboardingView {
+                    withAnimation(.smooth) {
+                        viewModel.send(.onboardingCompleted)
+                    }
+                }
             case .home:
                 // TODO: Replace with HomeView when implemented
                 Text(String(localized: "Home"))

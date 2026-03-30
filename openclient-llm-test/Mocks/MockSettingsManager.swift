@@ -15,6 +15,7 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
     var isOnboardingCompleted: Bool = false
     var serverBaseURL: String = ""
+    var apiKey: String = ""
 
     // MARK: - Public
 
@@ -32,5 +33,13 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
     func setServerBaseURL(_ value: String) {
         serverBaseURL = value
+    }
+
+    func getAPIKey() -> String {
+        apiKey
+    }
+
+    func setAPIKey(_ value: String) {
+        apiKey = value
     }
 }

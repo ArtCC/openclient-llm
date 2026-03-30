@@ -13,6 +13,8 @@ protocol SettingsManagerProtocol: Sendable {
     func setIsOnboardingCompleted(_ value: Bool)
     func getServerBaseURL() -> String
     func setServerBaseURL(_ value: String)
+    func getAPIKey() -> String
+    func setAPIKey(_ value: String)
 }
 
 // Safety: UserDefaults is thread-safe per Apple documentation.
@@ -23,6 +25,8 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     private enum Keys {
         static let isOnboardingCompleted = "isOnboardingCompleted"
         static let serverBaseURL = "serverBaseURL"
+        // TODO: Migrate API key storage to KeychainManager for production security
+        static let apiKey = "apiKey"
     }
 
     private let defaults: UserDefaults
@@ -49,5 +53,13 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
     func setServerBaseURL(_ value: String) {
         defaults.set(value, forKey: Keys.serverBaseURL)
+    }
+
+    func getAPIKey() -> String {
+        defaults.string(forKey: Keys.apiKey) ?? ""
+    }
+
+    func setAPIKey(_ value: String) {
+        defaults.set(value, forKey: Keys.apiKey)
     }
 }

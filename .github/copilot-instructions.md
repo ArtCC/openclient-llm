@@ -289,7 +289,7 @@ The app communicates with a LiteLLM proxy server via its OpenAI-compatible REST 
 ## Localization
 
 - **Base language**: English (en)
-- **Supported languages**: Spanish (es), Italian (it), German (de), Portuguese - Portugal (pt-PT)
+- **Supported languages**: The authoritative list of supported languages is defined in `knownRegions` inside `openclient-llm.xcodeproj/project.pbxproj`. Always check that file to discover the current set of languages. As of writing: Spanish (es), French (fr), Italian (it), German (de), Portuguese - Portugal (pt-PT), Japanese (ja), Dutch (nl), Greek (el), Swedish (sv)
 - **String catalog**: `Localizable.xcstrings` — the single source of truth for all translations
 - **API**: Always use `String(localized:)` for user-facing strings in Swift code:
   ```swift
@@ -302,17 +302,22 @@ The app communicates with a LiteLLM proxy server via its OpenAI-compatible REST 
   // String with comment for translators
   String(localized: "Delete", comment: "Button to delete a conversation")
   ```
-- **Mandatory rule**: Every time a user-facing string is added or modified in code, all translations in `Localizable.xcstrings` must be updated simultaneously for every supported language
+- **Mandatory rule**: Every time a user-facing string is added or modified in code, all translations in `Localizable.xcstrings` must be updated simultaneously for **every** supported language listed in `knownRegions`
 - **Translation quality**: Translations must be grammatically and orthographically correct in each language — no machine-translated placeholders or approximations
 - **Language-specific notes**:
   - **Spanish (es)**: Use neutral/international Spanish, informal "tú" form
+  - **French (fr)**: Use informal "tu" form
   - **Italian (it)**: Use informal "tu" form
   - **German (de)**: Use informal "du" form, capitalize nouns
   - **Portuguese (pt-PT)**: Use European Portuguese (Portugal), not Brazilian Portuguese, informal "tu" form
+  - **Japanese (ja)**: Use polite form (です/ます), no gendered assumptions
+  - **Dutch (nl)**: Use informal "je" form
+  - **Greek (el)**: Use informal "εσύ" form
+  - **Swedish (sv)**: Use informal "du" form
 - **Review checklist** when adding/editing strings:
   1. String uses `String(localized:)` — never raw string literals for user-facing text
   2. English (en) key is clear and descriptive
-  3. All 5 languages have correct translations in `Localizable.xcstrings`
+  3. All supported languages (check `knownRegions`) have correct translations in `Localizable.xcstrings`
   4. Pluralization handled with the string catalog's plural rules when needed
   5. Context comments added for ambiguous strings
 - **Do not** hardcode user-facing text directly in views without localization
