@@ -13,7 +13,7 @@ jobs:
     name: Build & Test (iOS)
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Resolve simulator
         id: sim
@@ -44,7 +44,7 @@ jobs:
     name: Build (macOS)
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build
         run: |
