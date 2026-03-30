@@ -12,6 +12,9 @@ struct SettingsView: View {
     // MARK: - Properties
 
     @State private var viewModel = SettingsViewModel()
+    @State private var serverURL: String = ""
+    @State private var apiKey: String = ""
+    @State private var isAPIKeyVisible = false
 
     // MARK: - View
 
@@ -29,6 +32,10 @@ struct SettingsView: View {
         }
         .task {
             viewModel.send(.viewAppeared)
+            if case .loaded(let initialState) = viewModel.state {
+                serverURL = initialState.serverURL
+                apiKey = initialState.apiKey
+            }
         }
     }
 }
@@ -48,25 +55,51 @@ private extension SettingsView {
         Section {
             TextField(
                 String(localized: "Server URL"),
-                text: Binding(
-                    get: { loadedState.serverURL },
-                    set: { viewModel.send(.serverURLChanged($0)) }
-                )
+                text: $serverURL
             )
+            .textSelection(.enabled)
             .textContentType(.URL)
             .autocorrectionDisabled()
             #if os(iOS)
             .textInputAutocapitalization(.never)
             .keyboardType(.URL)
             #endif
+            .onChange(of: serverURL) { _, newValue in
+                viewModel.send(.serverURLChanged(newValue))
+            }
 
-            SecureField(
-                String(localized: "API Key (Optional)"),
-                text: Binding(
-                    get: { loadedState.apiKey },
-                    set: { viewModel.send(.apiKeyChanged($0)) }
+            HStack {
+                Group {
+                    if isAPIKeyVisible {
+                        TextField(
+                            String(localized: "API Key (Optional)"),
+                            text: $apiKey
+                        )
+                    } else {
+                        SecureField(
+                            String(localized: "API Key (Optional)"),
+                            text: $apiKey
+                        )
+                    }
+                }
+                .textSelection(.enabled)
+
+                Button {
+                    isAPIKeyVisible.toggle()
+                } label: {
+                    Image(systemName: isAPIKeyVisible ? "eye.slash" : "eye")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(
+                    isAPIKeyVisible
+                        ? String(localized: "Hide API Key")
+                        : String(localized: "Show API Key")
                 )
-            )
+            }
+            .onChange(of: apiKey) { _, newValue in
+                viewModel.send(.apiKeyChanged(newValue))
+            }
         } header: {
             Text(String(localized: "Server"))
         }

@@ -12,6 +12,9 @@ struct OnboardingView: View {
     // MARK: - Properties
 
     @State private var viewModel = OnboardingViewModel()
+    @State private var serverURL: String = ""
+    @State private var apiKey: String = ""
+    @State private var isAPIKeyVisible = false
 
     let onComplete: () -> Void
 
@@ -29,6 +32,10 @@ struct OnboardingView: View {
         .task {
             viewModel.onComplete = onComplete
             viewModel.send(.viewAppeared)
+            if case .loaded(let initialState) = viewModel.state {
+                serverURL = initialState.serverURL
+                apiKey = initialState.apiKey
+            }
         }
     }
 }
@@ -138,27 +145,53 @@ private extension OnboardingView {
             VStack(spacing: 12) {
                 TextField(
                     String(localized: "Server URL"),
-                    text: Binding(
-                        get: { loadedState.serverURL },
-                        set: { viewModel.send(.serverURLChanged($0)) }
-                    )
+                    text: $serverURL
                 )
                 .textFieldStyle(.roundedBorder)
+                .textSelection(.enabled)
                 .textContentType(.URL)
                 .autocorrectionDisabled()
                 #if os(iOS)
                 .textInputAutocapitalization(.never)
                 .keyboardType(.URL)
                 #endif
+                .onChange(of: serverURL) { _, newValue in
+                    viewModel.send(.serverURLChanged(newValue))
+                }
 
-                SecureField(
-                    String(localized: "API Key (Optional)"),
-                    text: Binding(
-                        get: { loadedState.apiKey },
-                        set: { viewModel.send(.apiKeyChanged($0)) }
+                HStack {
+                    Group {
+                        if isAPIKeyVisible {
+                            TextField(
+                                String(localized: "API Key (Optional)"),
+                                text: $apiKey
+                            )
+                        } else {
+                            SecureField(
+                                String(localized: "API Key (Optional)"),
+                                text: $apiKey
+                            )
+                        }
+                    }
+                    .textFieldStyle(.roundedBorder)
+                    .textSelection(.enabled)
+
+                    Button {
+                        isAPIKeyVisible.toggle()
+                    } label: {
+                        Image(systemName: isAPIKeyVisible ? "eye.slash" : "eye")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(
+                        isAPIKeyVisible
+                            ? String(localized: "Hide API Key")
+                            : String(localized: "Show API Key")
                     )
-                )
-                .textFieldStyle(.roundedBorder)
+                }
+                .onChange(of: apiKey) { _, newValue in
+                    viewModel.send(.apiKeyChanged(newValue))
+                }
             }
 
             connectionSection(loadedState)

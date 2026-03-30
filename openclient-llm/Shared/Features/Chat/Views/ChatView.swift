@@ -12,6 +12,7 @@ struct ChatView: View {
     // MARK: - Properties
 
     @State private var viewModel = ChatViewModel()
+    @State private var inputText: String = ""
 
     // MARK: - View
 
@@ -107,19 +108,25 @@ private extension ChatView {
         HStack(spacing: 12) {
             TextField(
                 String(localized: "Type a message..."),
-                text: Binding(
-                    get: { loadedState.inputText },
-                    set: { viewModel.send(.inputChanged($0)) }
-                ),
+                text: $inputText,
                 axis: .vertical
             )
             .textFieldStyle(.roundedBorder)
+            .textSelection(.enabled)
             .lineLimit(1...5)
             #if os(iOS)
             .submitLabel(.send)
             #endif
             .onSubmit {
                 viewModel.send(.sendTapped)
+            }
+            .onChange(of: inputText) { _, newValue in
+                viewModel.send(.inputChanged(newValue))
+            }
+            .onChange(of: loadedState.inputText) { _, newValue in
+                if newValue != inputText {
+                    inputText = newValue
+                }
             }
 
             Button {

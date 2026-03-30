@@ -111,6 +111,42 @@ macOS does **not** use Tab Bar. Instead, use `NavigationSplitView` with a sideba
 - **iPadOS**: `TabView` (Liquid Glass) as root → `NavigationSplitView` inside Chats tab for sidebar + detail
 - **macOS**: `NavigationSplitView` with sidebar, toolbar items, keyboard shortcuts — no Tab Bar
 
+## Reusable Components & Custom Modifiers
+
+### Custom Views
+
+- When a piece of UI is used in more than one place, extract it into a **custom reusable View** (e.g., `LoadingButton`, `ErrorBanner`, `APIKeyField`)
+- Place shared custom views in `Shared/Core/Views/` — feature-specific reusable views stay in their feature's `Views/` folder
+- Custom views must be self-contained: receive data through initializer parameters, not by reaching into parent state
+- Always include a `#Preview` block in every custom view file
+
+### Custom ViewModifiers
+
+- When the same combination of modifiers is applied in multiple places, create a **custom `ViewModifier`** (e.g., `.urlFieldStyle()`, `.cardStyle()`)
+- Place shared modifiers in `Shared/Core/Modifiers/`
+- Provide a convenience `View` extension for each modifier:
+  ```swift
+  struct URLFieldModifier: ViewModifier {
+      func body(content: Content) -> some View {
+          content
+              .textContentType(.URL)
+              .autocorrectionDisabled()
+              #if os(iOS)
+              .textInputAutocapitalization(.never)
+              .keyboardType(.URL)
+              #endif
+      }
+  }
+
+  extension View {
+      func urlFieldStyle() -> some View {
+          modifier(URLFieldModifier())
+      }
+  }
+  ```
+- Prefer a custom modifier over repeating 3+ identical modifiers across views
+- Keep modifiers focused on a single responsibility — don't create "god modifiers" that do too much
+
 ## Common Patterns
 
 - Use `.task {}` modifier for async data loading on view appear

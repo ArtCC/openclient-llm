@@ -11,7 +11,7 @@ OpenClient LLM is a native Apple client for LiteLLM, a self-hosted LLM proxy ser
 - **Language**: Swift 6+
 - **UI Framework**: SwiftUI
 - **Platforms**: iOS, iPadOS, macOS (shared codebase, platform-specific UI)
-- **Minimum deployment**: iOS 18, macOS 15
+- **Minimum deployment**: iOS 26, macOS 26
 - **Architecture**: MVVM + UseCase + Repository + Manager with async/await concurrency
 - **Backend**: LiteLLM self-hosted server (OpenAI-compatible API)
 
