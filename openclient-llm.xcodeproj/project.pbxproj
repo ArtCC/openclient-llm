@@ -26,8 +26,8 @@
 		80126ECB2F7A748E00A5557C /* Exceptions for "openclient-llm" folder in "openclient-llm-macOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Shared/Features/ContentView.swift,
-				Shared/Resources/Localizable.xcstrings,
+				App/OpenClientApp.swift,
+				Resources/Assets.xcassets,
 			);
 			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
 		};
@@ -139,6 +139,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				800F26972F7A6352009A58C6 /* openclient-llm */,
 				8080773B2F7A66EF009BC8C4 /* openclient-llm-macOS */,
 			);
 			name = "openclient-llm-macOS";
@@ -457,7 +458,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "OpenClient LLM";
+				INFOPLIST_KEY_CFBundleDisplayName = OpenClient;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -473,6 +474,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -493,7 +497,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "OpenClient LLM";
+				INFOPLIST_KEY_CFBundleDisplayName = OpenClient;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -509,6 +513,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -534,7 +541,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "OpenClient LLM";
+				INFOPLIST_KEY_CFBundleDisplayName = OpenClient;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -571,7 +578,7 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "OpenClient LLM";
+				INFOPLIST_KEY_CFBundleDisplayName = OpenClient;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
 				LD_RUNPATH_SEARCH_PATHS = (

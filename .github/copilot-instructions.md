@@ -54,6 +54,91 @@ openclient-llm-test/           # Unit tests target (linked to iOS target)
 
 ## Code Style
 
+### File Header
+
+Every Swift file must include this header at the top:
+
+```swift
+//
+//  FileName.swift
+//  openclient-llm
+//
+//  Created by Arturo Carretero Calvo on DD/MM/YYYY.
+//
+
+import Foundation
+```
+
+- Replace `FileName.swift` with the actual file name
+- Replace `DD/MM/YYYY` with the creation date
+- `import` goes after the header, separated by one blank line
+
+### MARK Conventions
+
+Use `// MARK: -` to separate logical sections in every file. Standard order:
+
+**For classes/structs:**
+
+```swift
+// MARK: - Properties
+// MARK: - Init
+// MARK: - Deinit      (only if needed)
+// MARK: - Public       (or named section like "Input functions")
+// MARK: - Private      (as extension at bottom of file)
+```
+
+**For Views:**
+
+```swift
+// MARK: - Properties
+// MARK: - View
+// MARK: - Private      (as extension at bottom of file)
+```
+
+### Extensions for Code Organization
+
+Use `private extension` at the bottom of the file to group all private methods. Use named extensions for protocol conformances and logical groupings:
+
+```swift
+// Full class example:
+@Observable
+@MainActor
+final class FeatureViewModel {
+    // MARK: - Properties
+
+    private(set) var state: State
+
+    // MARK: - Init
+
+    init(state: State = .loading) {
+        self.state = state
+    }
+
+    // MARK: - Input functions
+
+    func send(_ event: Event) { ... }
+}
+
+// MARK: - Private
+
+private extension FeatureViewModel {
+    func loadData() { ... }
+    func handleError(_ error: Error) { ... }
+}
+```
+
+For types with protocol conformances, use separate extensions:
+
+```swift
+// MARK: - CustomStringConvertible
+
+extension ChatMessage: CustomStringConvertible {
+    var description: String { ... }
+}
+```
+
+### General Rules
+
 - Use Swift strict concurrency (`Sendable`, `@MainActor` where needed)
 - Prefer `async/await` over Combine for async operations
 - Use `@Observable` macro (Observation framework) — never use `ObservableObject` or `@Published`

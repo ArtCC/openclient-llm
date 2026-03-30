@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct OpenClientApp: App {
+    // MARK: - View
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            LaunchView()
         }
     }
 }

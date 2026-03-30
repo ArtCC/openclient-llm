@@ -10,9 +10,12 @@ import SwiftUI
 
 @main
 struct OpenClientApp: App {
+    // MARK: - View
+
     var body: some Scene {
-        WindowGroup {
-            ContentView()
+        WindowGroup(id: "main") {
+            LaunchView()
         }
+        .defaultSize(width: 1000, height: 700)
     }
 }
