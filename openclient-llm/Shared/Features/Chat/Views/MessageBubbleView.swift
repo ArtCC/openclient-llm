@@ -54,8 +54,14 @@ private extension MessageBubbleView {
                 .glassEffect(.regular, in: .circle)
 
             VStack(alignment: .leading, spacing: 4) {
-                markdownText
-                    .textSelection(.enabled)
+                HStack(spacing: 0) {
+                    markdownText
+                        .textSelection(.enabled)
+
+                    if isStreaming {
+                        blinkingCursor
+                    }
+                }
 
                 if isStreaming && message.content.isEmpty {
                     thinkingIndicator
@@ -78,9 +84,7 @@ private extension MessageBubbleView {
     }
 
     var markdownText: Text {
-        let content = isStreaming
-            ? message.content + " ▌"
-            : message.content
+        let content = message.content
 
         if let attributed = try? AttributedString(
             markdown: content,
@@ -92,6 +96,16 @@ private extension MessageBubbleView {
         }
 
         return Text(content)
+    }
+
+    var blinkingCursor: some View {
+        Text("|")
+            .fontWeight(.light)
+            .phaseAnimator([1.0, 0.0]) { content, phase in
+                content.opacity(phase)
+            } animation: { _ in
+                .easeInOut(duration: 0.5)
+            }
     }
 }
 
