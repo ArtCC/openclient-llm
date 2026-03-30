@@ -43,7 +43,7 @@ openclient-llm/                    # iOS target
 │   │   ├── Extensions/            # Swift/SwiftUI extensions
 │   │   └── Utils/                 # Shared utilities
 │   └── Resources/
-│       └── Localizable.xcstrings  # Localization (en, es, it, de, pt-PT)
+│       └── Localizable.xcstrings  # Localization
 └── Resources/
     └── Assets.xcassets/           # iOS assets, accent color, app icon
 

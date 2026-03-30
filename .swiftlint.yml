@@ -1,0 +1,27 @@
+file_length:
+  warning: 500
+  error: 650
+
+line_length:
+  warning: 120
+  error: 150
+
+force_unwrapping:
+  severity: error
+
+force_cast:
+  severity: error
+
+function_body_length:
+  warning: 50
+  error: 80
+
+type_body_length:
+  warning: 300
+  error: 400
+
+vertical_whitespace:
+  max_empty_lines: 1
+
+trailing_comma:
+  mandatory_comma: true
