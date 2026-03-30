@@ -7,7 +7,9 @@
 //
 
 import Foundation
+@testable import openclient_llm
 
+// Safety: Only used within serialized @MainActor test methods.
 final class MockCheckOnboardingUseCase: CheckOnboardingUseCaseProtocol, @unchecked Sendable {
     // MARK: - Properties
 

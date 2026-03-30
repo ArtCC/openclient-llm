@@ -9,6 +9,7 @@
 import XCTest
 @testable import openclient_llm
 
+@MainActor
 final class CheckOnboardingUseCaseTests: XCTestCase {
     // MARK: - Properties
 

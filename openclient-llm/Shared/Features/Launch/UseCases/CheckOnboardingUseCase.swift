@@ -26,6 +26,6 @@ struct CheckOnboardingUseCase: CheckOnboardingUseCaseProtocol {
     // MARK: - Execute
 
     func execute() -> Bool {
-        settingsManager.isOnboardingCompleted
+        settingsManager.getIsOnboardingCompleted()
     }
 }

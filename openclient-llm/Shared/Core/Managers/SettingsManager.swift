@@ -9,10 +9,14 @@
 import Foundation
 
 protocol SettingsManagerProtocol: Sendable {
-    var isOnboardingCompleted: Bool { get set }
-    var serverBaseURL: String { get set }
+    func getIsOnboardingCompleted() -> Bool
+    func setIsOnboardingCompleted(_ value: Bool)
+    func getServerBaseURL() -> String
+    func setServerBaseURL(_ value: String)
 }
 
+// Safety: UserDefaults is thread-safe per Apple documentation.
+// All stored properties are immutable (`let`).
 final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     // MARK: - Properties
 
@@ -23,19 +27,27 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
     private let defaults: UserDefaults
 
-    var isOnboardingCompleted: Bool {
-        get { defaults.bool(forKey: Keys.isOnboardingCompleted) }
-        set { defaults.set(newValue, forKey: Keys.isOnboardingCompleted) }
-    }
-
-    var serverBaseURL: String {
-        get { defaults.string(forKey: Keys.serverBaseURL) ?? "" }
-        set { defaults.set(newValue, forKey: Keys.serverBaseURL) }
-    }
-
     // MARK: - Init
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+    }
+
+    // MARK: - Public
+
+    func getIsOnboardingCompleted() -> Bool {
+        defaults.bool(forKey: Keys.isOnboardingCompleted)
+    }
+
+    func setIsOnboardingCompleted(_ value: Bool) {
+        defaults.set(value, forKey: Keys.isOnboardingCompleted)
+    }
+
+    func getServerBaseURL() -> String {
+        defaults.string(forKey: Keys.serverBaseURL) ?? ""
+    }
+
+    func setServerBaseURL(_ value: String) {
+        defaults.set(value, forKey: Keys.serverBaseURL)
     }
 }
