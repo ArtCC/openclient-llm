@@ -9,7 +9,6 @@
     }
   ],
   "defaultOptions" : {
-    "performanceAntipatternCheckerEnabled" : true,
     "targetForVariableExpansion" : {
       "containerPath" : "container:openclient-llm.xcodeproj",
       "identifier" : "805E798A2F79AC9B0070CBB3",
