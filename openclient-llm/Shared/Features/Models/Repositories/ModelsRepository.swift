@@ -10,6 +10,7 @@ import Foundation
 
 protocol ModelsRepositoryProtocol: Sendable {
     func fetchModels() async throws -> [LLMModel]
+    func fetchModelInfo() async throws -> [LLMModel]
 }
 
 struct ModelsRepository: ModelsRepositoryProtocol {
@@ -35,5 +36,32 @@ struct ModelsRepository: ModelsRepositoryProtocol {
         return response.data
             .map { LLMModel(id: $0.id, ownedBy: $0.ownedBy ?? "") }
             .sorted { $0.id.localizedCaseInsensitiveCompare($1.id) == .orderedAscending }
+    }
+
+    func fetchModelInfo() async throws -> [LLMModel] {
+        let response: ModelInfoResponse = try await apiClient.request(
+            endpoint: "model/info",
+            method: .get,
+            body: nil
+        )
+
+        return response.data.map { info in
+            var capabilities: [LLMModel.Capability] = []
+
+            if info.modelInfo?.supportsVision == true {
+                capabilities.append(.vision)
+            }
+            if info.modelInfo?.supportsFunctionCalling == true {
+                capabilities.append(.functionCalling)
+            }
+            if info.modelInfo?.supportsParallelFunctionCalling == true {
+                capabilities.append(.parallelFunctionCalling)
+            }
+            if info.modelInfo?.supportsResponseSchema == true {
+                capabilities.append(.jsonSchema)
+            }
+
+            return LLMModel(id: info.modelName, capabilities: capabilities)
+        }
     }
 }

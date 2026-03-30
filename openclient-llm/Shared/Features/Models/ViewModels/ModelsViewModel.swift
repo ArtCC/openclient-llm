@@ -16,6 +16,7 @@ final class ModelsViewModel {
     enum Event {
         case viewAppeared
         case refreshTapped
+        case modelTapped(LLMModel)
     }
 
     enum State: Equatable {
@@ -25,6 +26,7 @@ final class ModelsViewModel {
 
     struct LoadedState: Equatable {
         var models: [LLMModel] = []
+        var selectedModelId: String?
         var errorMessage: String?
         var isRefreshing: Bool = false
     }
@@ -32,15 +34,18 @@ final class ModelsViewModel {
     private(set) var state: State
 
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
+    private let settingsManager: SettingsManagerProtocol
 
     // MARK: - Init
 
     init(
         state: State = .loading,
-        fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase()
+        fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
+        settingsManager: SettingsManagerProtocol = SettingsManager()
     ) {
         self.state = state
         self.fetchModelsUseCase = fetchModelsUseCase
+        self.settingsManager = settingsManager
     }
 
     // MARK: - Input functions
@@ -51,6 +56,8 @@ final class ModelsViewModel {
             loadModels()
         case .refreshTapped:
             refreshModels()
+        case .modelTapped(let model):
+            selectModel(model)
         }
     }
 }
@@ -64,7 +71,8 @@ private extension ModelsViewModel {
         Task {
             do {
                 let models = try await fetchModelsUseCase.execute()
-                state = .loaded(LoadedState(models: models))
+                let selectedModelId = settingsManager.getSelectedModelId()
+                state = .loaded(LoadedState(models: models, selectedModelId: selectedModelId))
             } catch {
                 state = .loaded(LoadedState(errorMessage: error.localizedDescription))
             }
@@ -80,7 +88,8 @@ private extension ModelsViewModel {
         Task {
             do {
                 let models = try await fetchModelsUseCase.execute()
-                state = .loaded(LoadedState(models: models))
+                let selectedModelId = settingsManager.getSelectedModelId()
+                state = .loaded(LoadedState(models: models, selectedModelId: selectedModelId))
             } catch {
                 guard case .loaded(var currentState) = state else { return }
                 currentState.isRefreshing = false
@@ -88,5 +97,12 @@ private extension ModelsViewModel {
                 state = .loaded(currentState)
             }
         }
+    }
+
+    func selectModel(_ model: LLMModel) {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.selectedModelId = model.id
+        state = .loaded(loadedState)
+        settingsManager.setSelectedModelId(model.id)
     }
 }

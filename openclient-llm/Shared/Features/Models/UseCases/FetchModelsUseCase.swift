@@ -26,6 +26,23 @@ struct FetchModelsUseCase: FetchModelsUseCaseProtocol {
     // MARK: - Execute
 
     func execute() async throws -> [LLMModel] {
-        try await repository.fetchModels()
+        var models = try await repository.fetchModels()
+
+        if let modelInfoList = try? await repository.fetchModelInfo() {
+            let capabilitiesByName = Dictionary(
+                modelInfoList.map { ($0.id, $0.capabilities) },
+                uniquingKeysWith: { _, last in last }
+            )
+
+            models = models.map { model in
+                var updated = model
+                if let capabilities = capabilitiesByName[model.id] {
+                    updated.capabilities = capabilities
+                }
+                return updated
+            }
+        }
+
+        return models
     }
 }
