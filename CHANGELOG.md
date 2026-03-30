@@ -5,8 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
 ## [1.0.0] - 2026-03-30
 
 ### Added
@@ -27,3 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unit tests for all ViewModels, UseCases, and Repositories (60 tests)
 - SwiftLint integration via SPM
 - Dark Mode support with semantic colors
+- ChatGPT-inspired visual redesign: assistant messages with sparkles avatar, user messages with glass accent bubbles, empty state with centered icon and suggestion chips
+- ConversationStartersManager with 8 suggestion prompts, randomly showing 4 per session
+- "Thinking..." indicator with pulse animation below assistant messages while waiting for first token
+- Streaming cursor (▌) appended to assistant messages during response generation
+- Glass effect input bar with capsule shape and animated send/stop buttons
+- Chat visual style instruction document for agent context
+- Refactored instruction documents with generic/app-specific separation

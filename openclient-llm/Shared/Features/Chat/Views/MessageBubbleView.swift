@@ -57,7 +57,7 @@ private extension MessageBubbleView {
                 markdownText
                     .textSelection(.enabled)
 
-                if isStreaming {
+                if isStreaming && message.content.isEmpty {
                     thinkingIndicator
                 }
             }

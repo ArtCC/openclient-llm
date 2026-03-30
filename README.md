@@ -68,7 +68,7 @@ openclient-llm/                    # iOS target
 │   ├── Core/
 │   │   ├── Networking/            # API client, SSE streaming
 │   │   │   └── Models/            # Request/response DTOs
-│   │   ├── Managers/              # Auth, settings, connectivity
+│   │   ├── Managers/              # Settings, conversation starters
 │   │   ├── Extensions/            # Swift/SwiftUI extensions
 │   │   └── Utils/                 # Shared utilities
 │   └── Resources/
