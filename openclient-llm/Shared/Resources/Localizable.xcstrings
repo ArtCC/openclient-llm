@@ -28,6 +28,9 @@
     "Chat" : {
 
     },
+    "Close" : {
+
+    },
     "Connection" : {
 
     },
@@ -68,6 +71,9 @@
 
     },
     "No Model" : {
+
+    },
+    "OpenClient" : {
 
     },
     "Privacy Policy" : {
