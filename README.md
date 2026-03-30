@@ -5,11 +5,12 @@
 <h1 align="center">OpenClient LLM</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-iOS%20|%20iPadOS%20|%20macOS-blue?style=flat-square" alt="Platform" />
+  <img src="https://img.shields.io/badge/Version-1.0.0-brightgreen?style=flat-square" alt="Version" />
+  <img src="https://img.shields.io/badge/Platform-iOS%2026+%20|%20iPadOS%2026+%20|%20macOS%2026+-blue?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift" alt="Swift" />
   <img src="https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square" alt="License" />
-  <img src="https://img.shields.io/badge/Xcode-16+-blue?style=flat-square&logo=xcode" alt="Xcode" />
+  <img src="https://img.shields.io/badge/Xcode-26+-blue?style=flat-square&logo=xcode" alt="Xcode" />
 </p>
 
 ## Description
@@ -107,8 +108,8 @@ openclient-llm-test/               # Unit tests
 
 ### Requirements
 
-- Xcode 16+
-- iOS 18+ / macOS 15+
+- Xcode 26+
+- iOS 26+ / macOS 26+
 - A running [LiteLLM](https://docs.litellm.ai/) server (local or remote)
 
 ## License

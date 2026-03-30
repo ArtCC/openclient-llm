@@ -22,13 +22,7 @@ struct MessageBubbleView: View {
             }
 
             VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
-                Text(message.content)
-                    .textSelection(.enabled)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(bubbleBackground)
-                    .foregroundStyle(bubbleForeground)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                bubbleContent
 
                 Text(message.timestamp, style: .time)
                     .font(.caption2)
@@ -51,6 +45,25 @@ private extension MessageBubbleView {
             Color("UserBubble")
         case .assistant, .system:
             Color("AssistantBubble")
+        }
+    }
+
+    @ViewBuilder
+    var bubbleContent: some View {
+        let baseText = Text(message.content)
+            .textSelection(.enabled)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .foregroundStyle(bubbleForeground)
+
+        switch message.role {
+        case .user:
+            baseText
+                .background(bubbleBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+        case .assistant, .system:
+            baseText
+                .glassEffect(.regular, in: .rect(cornerRadius: 16))
         }
     }
 

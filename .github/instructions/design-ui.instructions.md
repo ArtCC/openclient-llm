@@ -11,11 +11,107 @@ Native-first design. The app should feel like a first-party Apple app, leveragin
 
 ## Liquid Glass (iOS 26+ / macOS 26+)
 
-- Use Liquid Glass materials for toolbars, tab bars, sidebars, and floating elements
-- Apply `.glassEffect()` modifier for custom Liquid Glass surfaces
-- Let the system handle translucency — don't override with opaque backgrounds
-- Navigation bars and tab bars get Liquid Glass automatically with the latest SDK
+### Core Guidelines
+
+- Prefer native Liquid Glass APIs over custom blurs or materials
+- Use `GlassEffectContainer` when multiple glass elements coexist in the same view
+- Apply `.glassEffect(...)` **after** layout and visual modifiers (padding, frame, font, foregroundStyle)
+- Use `.interactive()` only for elements that respond to touch or pointer (buttons, tappable chips)
+- Keep shapes consistent across related glass elements for a cohesive look
+- Navigation bars, tab bars, and toolbars get Liquid Glass automatically with the iOS 26 SDK — don't add manual glass to them
 - Test with varied wallpapers to ensure readability over different backgrounds
+
+### API Reference
+
+#### Glass surfaces
+
+```swift
+Text("Label")
+    .padding()
+    .glassEffect(.regular, in: .rect(cornerRadius: 16))
+```
+
+#### Interactive glass (tappable elements)
+
+```swift
+Text("Tappable")
+    .padding()
+    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
+```
+
+#### Tinted glass
+
+```swift
+Text("Tinted")
+    .padding()
+    .glassEffect(.regular.tint(.accent).interactive(), in: .rect(cornerRadius: 16))
+```
+
+#### Grouped glass elements
+
+```swift
+GlassEffectContainer(spacing: 24) {
+    HStack(spacing: 24) {
+        Image(systemName: "scribble.variable")
+            .frame(width: 72, height: 72)
+            .font(.system(size: 32))
+            .glassEffect()
+        Image(systemName: "eraser.fill")
+            .frame(width: 72, height: 72)
+            .font(.system(size: 32))
+            .glassEffect()
+    }
+}
+```
+
+#### Glass button styles
+
+```swift
+Button("Action") { }
+    .buttonStyle(.glass)
+
+Button("Primary Action") { }
+    .buttonStyle(.glassProminent)
+```
+
+#### Morphing transitions
+
+```swift
+@Namespace private var glassNamespace
+
+// Use glassEffectID for animated transitions between glass elements
+view.glassEffect(.regular, in: .capsule)
+    .glassEffectID("elementID", in: glassNamespace)
+```
+
+### Availability Gating
+
+Always gate Liquid Glass with `#available` and provide a fallback:
+
+```swift
+if #available(iOS 26, *) {
+    Text("Hello")
+        .padding()
+        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 16))
+} else {
+    Text("Hello")
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+}
+```
+
+> **Note**: Since the project minimum deployment is iOS 26, availability checks are only needed if we ever lower the target. For now, use glass APIs directly without `#available`.
+
+### Review Checklist
+
+When reviewing or adding Liquid Glass to a view, verify:
+
+1. **Composition**: Multiple glass views wrapped in `GlassEffectContainer`
+2. **Modifier order**: `glassEffect` applied after layout/appearance modifiers
+3. **Interactivity**: `.interactive()` only where user interaction exists
+4. **Transitions**: `glassEffectID` used with `@Namespace` for morphing animations
+5. **Consistency**: Shapes, tinting, and spacing align across the feature
+6. **No double glass**: Don't add glass to system components that already have it (NavigationBar, TabBar, Toolbar)
 
 ## Color System
 

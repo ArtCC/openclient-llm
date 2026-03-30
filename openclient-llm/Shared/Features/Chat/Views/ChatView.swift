@@ -136,6 +136,7 @@ private extension ChatView {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.title2)
             }
+            .buttonStyle(.glass)
             .disabled(
                 loadedState.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                     || loadedState.isStreaming
@@ -144,6 +145,7 @@ private extension ChatView {
             .accessibilityLabel(String(localized: "Send"))
         }
         .padding()
+        .glassEffect(.regular, in: .rect(cornerRadius: 20))
     }
 
     var streamingIndicator: some View {

@@ -96,8 +96,9 @@ private extension OnboardingView {
                     .fill(step == currentStep ? Color.accentColor : Color.secondary.opacity(0.3))
                     .frame(width: 8, height: 8)
             }
-        }
-    }
+        }        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .glassEffect(.regular, in: .capsule)    }
 
     @ViewBuilder
     func stepContent(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
@@ -117,6 +118,8 @@ private extension OnboardingView {
                 .font(.system(size: 80))
                 .foregroundStyle(Color.accentColor)
                 .symbolEffect(.pulse)
+                .padding(24)
+                .glassEffect(.regular, in: .circle)
 
             Text(String(localized: "Welcome to OpenClient"))
                 .font(.largeTitle)
@@ -240,6 +243,8 @@ private extension OnboardingView {
                 .font(.system(size: 80))
                 .foregroundStyle(.green)
                 .symbolEffect(.bounce)
+                .padding(24)
+                .glassEffect(.regular, in: .circle)
 
             Text(String(localized: "All Set!"))
                 .font(.largeTitle)
@@ -267,7 +272,7 @@ private extension OnboardingView {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .controlSize(.large)
 
         case .serverConfiguration:
@@ -281,7 +286,7 @@ private extension OnboardingView {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .controlSize(.large)
             .disabled(loadedState.connectionStatus != .success)
 
@@ -296,7 +301,7 @@ private extension OnboardingView {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
             }
-            .buttonStyle(.borderedProminent)
+            .buttonStyle(.glassProminent)
             .controlSize(.large)
         }
     }
