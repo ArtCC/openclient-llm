@@ -37,14 +37,36 @@ openclient-llm/                    # iOS target
 │   └── OpenClientApp.swift
 ├── Shared/                        # Shared code (iOS + macOS)
 │   ├── Features/                  # Feature modules
-│   │   └── <Feature>/
-│   │       ├── Views/             # SwiftUI views
-│   │       ├── ViewModels/        # @Observable + Event/State
-│   │       ├── UseCases/          # Business logic
-│   │       ├── Repositories/      # Data access
-│   │       └── Models/            # Domain models
+│   │   ├── Chat/                  # Chat with SSE streaming
+│   │   │   ├── Views/             # ChatView, MessageBubbleView
+│   │   │   ├── ViewModels/        # ChatViewModel (Event/State)
+│   │   │   ├── UseCases/          # SendMessage, StreamMessage
+│   │   │   ├── Repositories/      # ChatRepository
+│   │   │   └── Models/            # ChatMessage
+│   │   ├── Home/                  # TabView (iOS) / SplitView (macOS)
+│   │   │   └── Views/             # HomeView
+│   │   ├── Launch/                # Initial routing
+│   │   │   ├── Views/             # LaunchView
+│   │   │   ├── ViewModels/        # LaunchViewModel
+│   │   │   └── UseCases/          # CheckOnboardingUseCase
+│   │   ├── Models/                # LLM model listing
+│   │   │   ├── Views/             # ModelsView
+│   │   │   ├── ViewModels/        # ModelsViewModel
+│   │   │   ├── UseCases/          # FetchModelsUseCase
+│   │   │   ├── Repositories/      # ModelsRepository
+│   │   │   └── Models/            # LLMModel
+│   │   ├── Onboarding/            # Server setup wizard
+│   │   │   ├── Views/             # OnboardingView
+│   │   │   ├── ViewModels/        # OnboardingViewModel
+│   │   │   ├── UseCases/          # TestConnection, SaveConfig, Complete
+│   │   │   ├── Repositories/      # OnboardingRepository
+│   │   │   └── Models/            # OnboardingStep
+│   │   └── Settings/              # Server configuration
+│   │       ├── Views/             # SettingsView
+│   │       └── ViewModels/        # SettingsViewModel
 │   ├── Core/
 │   │   ├── Networking/            # API client, SSE streaming
+│   │   │   └── Models/            # Request/response DTOs
 │   │   ├── Managers/              # Auth, settings, connectivity
 │   │   ├── Extensions/            # Swift/SwiftUI extensions
 │   │   └── Utils/                 # Shared utilities
@@ -60,7 +82,13 @@ openclient-llm-macOS/              # macOS target
     └── Assets.xcassets/           # macOS assets, accent color, app icon
 
 openclient-llm-test/               # Unit tests
-└── <Feature>Tests/                # Tests by feature
+├── Features/
+│   ├── Chat/                      # ChatViewModel, UseCase tests
+│   ├── Launch/                    # LaunchViewModel, UseCase tests
+│   ├── Models/                    # ModelsViewModel, UseCase tests
+│   ├── Onboarding/                # OnboardingViewModel, UseCase tests
+│   └── Settings/                  # SettingsViewModel tests
+└── Mocks/                         # Mock implementations
 ```
 
 ## Usage

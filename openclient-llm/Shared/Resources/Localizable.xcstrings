@@ -178,6 +178,12 @@
         }
       }
     },
+    "Chat" : {
+
+    },
+    "Connection" : {
+
+    },
     "Connection successful" : {
       "comment" : "Status message shown when server connection test succeeds.",
       "localizations" : {
@@ -237,6 +243,9 @@
         }
       }
     },
+    "Could not read the server response." : {
+
+    },
     "Enter your LiteLLM server details to connect." : {
       "comment" : "Description text on the server configuration onboarding step.",
       "localizations" : {
@@ -295,6 +304,9 @@
           }
         }
       }
+    },
+    "Generating..." : {
+
     },
     "Get Started" : {
       "comment" : "Button to begin the onboarding flow.",
@@ -357,6 +369,7 @@
     },
     "Home" : {
       "comment" : "A label displayed when the user is on the home screen.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -413,6 +426,12 @@
           }
         }
       }
+    },
+    "Invalid API key. Please check your credentials." : {
+
+    },
+    "Models" : {
+
     },
     "Next" : {
       "comment" : "Button to advance to the next onboarding step.",
@@ -473,6 +492,33 @@
         }
       }
     },
+    "No Messages" : {
+
+    },
+    "No Model" : {
+
+    },
+    "No models available. Check your server configuration." : {
+
+    },
+    "Refresh" : {
+
+    },
+    "Retry" : {
+
+    },
+    "Save" : {
+
+    },
+    "Send" : {
+
+    },
+    "Send a message to start a conversation." : {
+
+    },
+    "Server" : {
+
+    },
     "Server Configuration" : {
       "comment" : "Title for the server configuration onboarding step.",
       "localizations" : {
@@ -532,6 +578,9 @@
         }
       }
     },
+    "Server error (code %lld)." : {
+
+    },
     "Server URL" : {
       "comment" : "Placeholder for the server URL input field in onboarding.",
       "localizations" : {
@@ -590,6 +639,9 @@
           }
         }
       }
+    },
+    "Settings" : {
+
     },
     "Skip" : {
       "comment" : "Button to skip the onboarding flow entirely.",
@@ -886,6 +938,9 @@
         }
       }
     },
+    "The server returned an invalid response." : {
+
+    },
     "The server URL is not valid." : {
       "comment" : "Error message when the entered server URL is malformed.",
       "localizations" : {
@@ -944,6 +999,15 @@
           }
         }
       }
+    },
+    "Too many requests. Please try again later." : {
+
+    },
+    "Type a message..." : {
+
+    },
+    "Unable to Load Models" : {
+
     },
     "Welcome to OpenClient" : {
       "comment" : "Title on the first onboarding welcome step.",
