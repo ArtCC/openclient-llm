@@ -87,7 +87,7 @@ private extension ChatView {
                     )
                 }
             }
-            .scrollDismissesKeyboard(.interactively)
+            .scrollDismissesKeyboard(.immediately)
             .onChange(of: loadedState.messages.last?.content) {
                 scrollToBottom(
                     proxy: proxy,
