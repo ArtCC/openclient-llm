@@ -1,0 +1,30 @@
+{
+  "configurations" : [
+    {
+      "id" : "9F3F8778-E483-45B3-9139-513206D7DC1F",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true,
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:openclient-llm.xcodeproj",
+      "identifier" : "805E798A2F79AC9B0070CBB3",
+      "name" : "openclient-llm"
+    }
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : false,
+      "target" : {
+        "containerPath" : "container:openclient-llm.xcodeproj",
+        "identifier" : "808077492F7A67CD009BC8C4",
+        "name" : "openclient-llm-test"
+      }
+    }
+  ],
+  "version" : 1
+}

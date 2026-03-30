@@ -12,12 +12,13 @@ Build incrementally from less to more. Each phase should result in a functional 
 
 Goal: Basic chat with a LiteLLM server.
 
-- [ ] **Server configuration**: Settings screen to input base URL and optional API key
-- [ ] **Connection test**: Health check to validate server is reachable
-- [ ] **Model listing**: Fetch and display available models from LiteLLM
-- [ ] **Basic chat**: Send a message, receive a response (non-streaming)
-- [ ] **Streaming chat**: SSE streaming for real-time token display
-- [ ] **Conversation view**: Chat bubble UI with user/assistant messages
+- [x] **Server configuration**: Settings screen to input base URL and optional API key
+- [x] **Connection test**: Health check to validate server is reachable
+- [x] **Model listing**: Fetch and display available models from LiteLLM
+- [x] **Basic chat**: Send a message, receive a response (non-streaming)
+- [x] **Streaming chat**: SSE streaming for real-time token display
+- [x] **Conversation view**: Chat bubble UI with user/assistant messages
+- [x] **UI redesign**: ChatGPT-inspired conversational interface (glass messages, pill input bar, suggestion chips, model selector, streaming cursor, markdown rendering)
 
 ## Phase 2 — Usability
 
@@ -28,7 +29,7 @@ Goal: Daily-usable chat experience.
 - [ ] **New conversation**: Create new chats, select model per conversation
 - [ ] **System prompt**: Configurable system prompt per conversation
 - [ ] **Copy/share messages**: Copy individual messages, share conversations
-- [ ] **Markdown rendering**: Render assistant responses with Markdown + code blocks
+- [ ] **Markdown rendering**: Render assistant responses with full Markdown + code blocks (basic inline markdown already implemented)
 - [ ] **Vision (images in chat)**: Attach photos from camera/gallery for the LLM to analyze (same /chat/completions endpoint with image_url content)
 - [ ] **Document understanding (PDFs in chat)**: Upload PDFs and ask questions about their content (same /chat/completions endpoint with file content)
 
@@ -56,6 +57,6 @@ Goal: Power user features.
 - [ ] **Audio transcription (Speech-to-Text)**: Record or upload audio for transcription via POST /v1/audio/transcriptions (Whisper, Groq, Deepgram, Gemini)
 - [ ] **Text-to-Speech**: Read assistant responses aloud via POST /v1/audio/speech (OpenAI TTS, AWS Polly, ElevenLabs, Gemini TTS)
 
-## Current Phase: 1 — Foundation
+## Current Phase: 2 — Usability
 
-Focus exclusively on Phase 1 features. Do not over-engineer for future phases.
+Focus exclusively on Phase 2 features. Do not over-engineer for future phases.

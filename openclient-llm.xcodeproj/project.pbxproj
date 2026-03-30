@@ -26,8 +26,23 @@
 		80126ECB2F7A748E00A5557C /* Exceptions for "openclient-llm" folder in "openclient-llm-macOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Shared/Features/ContentView.swift,
-				Shared/Resources/Localizable.xcstrings,
+				App/OpenClientApp.swift,
+				Info.plist,
+				Resources/Assets.xcassets,
+			);
+			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
+		};
+		80850B982F7ABA9B00021598 /* Exceptions for "openclient-llm" folder in "openclient-llm" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 805E798A2F79AC9B0070CBB3 /* openclient-llm */;
+		};
+		80850B9A2F7ABAA600021598 /* Exceptions for "openclient-llm-macOS" folder in "openclient-llm-macOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
 			);
 			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
 		};
@@ -37,6 +52,7 @@
 		800F26972F7A6352009A58C6 /* openclient-llm */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				80850B982F7ABA9B00021598 /* Exceptions for "openclient-llm" folder in "openclient-llm" target */,
 				80126ECB2F7A748E00A5557C /* Exceptions for "openclient-llm" folder in "openclient-llm-macOS" target */,
 			);
 			path = "openclient-llm";
@@ -44,6 +60,9 @@
 		};
 		8080773B2F7A66EF009BC8C4 /* openclient-llm-macOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				80850B9A2F7ABAA600021598 /* Exceptions for "openclient-llm-macOS" folder in "openclient-llm-macOS" target */,
+			);
 			path = "openclient-llm-macOS";
 			sourceTree = "<group>";
 		};
@@ -139,6 +158,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				800F26972F7A6352009A58C6 /* openclient-llm */,
 				8080773B2F7A66EF009BC8C4 /* openclient-llm-macOS */,
 			);
 			name = "openclient-llm-macOS";
@@ -205,6 +225,10 @@
 				"pt-PT",
 				es,
 				it,
+				ja,
+				nl,
+				el,
+				sv,
 			);
 			mainGroup = 805E79822F79AC9B0070CBB3;
 			minimizedProjectReferenceProxies = 1;
@@ -449,7 +473,7 @@
 		805E79972F79AC9C0070CBB3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -457,14 +481,16 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "OpenClient LLM";
+				INFOPLIST_FILE = "openclient-llm/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = OpenClient;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "OpenClient LLM needs access to your local network to connect to your self-hosted LiteLLM server.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -473,6 +499,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -485,7 +514,7 @@
 		805E79982F79AC9C0070CBB3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -493,14 +522,16 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "OpenClient LLM";
+				INFOPLIST_FILE = "openclient-llm/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = OpenClient;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "OpenClient LLM needs access to your local network to connect to your self-hosted LiteLLM server.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -509,6 +540,9 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -521,7 +555,7 @@
 		808077432F7A66F1009BC8C4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -530,18 +564,30 @@
 				DEVELOPMENT_TEAM = Q4X55987WE;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "OpenClient LLM";
+				INFOPLIST_FILE = "openclient-llm-macOS/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = OpenClient;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "OpenClient LLM needs access to your local network to connect to your self-hosted LiteLLM server.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm-macOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -559,7 +605,7 @@
 		808077442F7A66F1009BC8C4 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -567,18 +613,30 @@
 				DEVELOPMENT_TEAM = Q4X55987WE;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = "OpenClient LLM";
+				INFOPLIST_FILE = "openclient-llm-macOS/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = OpenClient;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "OpenClient LLM needs access to your local network to connect to your self-hosted LiteLLM server.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 15.6;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm-macOS";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -602,7 +660,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = Q4X55987WE;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm-test";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -624,7 +682,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = Q4X55987WE;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm-test";
 				PRODUCT_NAME = "$(TARGET_NAME)";
