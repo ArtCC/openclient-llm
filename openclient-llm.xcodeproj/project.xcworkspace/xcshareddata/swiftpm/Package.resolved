@@ -1,5 +1,5 @@
 {
-  "originHash" : "1fa961aa1dc717cea452f3389668f0f99a254f07e4eb11d190768a53798f744f",
+  "originHash" : "13b48b4f41c876539c3e82f65a052a1e789c982913043fae75d821ccd3e27087",
   "pins" : [
     {
       "identity" : "swiftlintplugins",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "8a4640d14777685ba8f14e832373160498fbab92",
         "version" : "0.63.2"
+      }
+    },
+    {
+      "identity" : "votice-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ArtCC/votice-sdk",
+      "state" : {
+        "revision" : "2f043367c7bf3da4fe4705037f8688df44223794",
+        "version" : "1.0.20"
       }
     }
   ],

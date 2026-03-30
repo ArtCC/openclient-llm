@@ -14,10 +14,15 @@ final class MockModelsRepository: ModelsRepositoryProtocol, @unchecked Sendable 
     // MARK: - Properties
 
     var fetchModelsResult: Result<[LLMModel], Error> = .success([])
+    var fetchModelInfoResult: Result<[LLMModel], Error> = .success([])
 
     // MARK: - Public
 
     func fetchModels() async throws -> [LLMModel] {
         try fetchModelsResult.get()
+    }
+
+    func fetchModelInfo() async throws -> [LLMModel] {
+        try fetchModelInfoResult.get()
     }
 }

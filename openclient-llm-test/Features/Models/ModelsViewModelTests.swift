@@ -15,6 +15,7 @@ final class ModelsViewModelTests: XCTestCase {
 
     private var sut: ModelsViewModel!
     private var mockFetchModels: MockFetchModelsUseCase!
+    private var mockSettingsManager: MockSettingsManager!
 
     // MARK: - Setup
 
@@ -22,12 +23,17 @@ final class ModelsViewModelTests: XCTestCase {
         try await super.setUp()
 
         mockFetchModels = MockFetchModelsUseCase()
-        sut = ModelsViewModel(fetchModelsUseCase: mockFetchModels)
+        mockSettingsManager = MockSettingsManager()
+        sut = ModelsViewModel(
+            fetchModelsUseCase: mockFetchModels,
+            settingsManager: mockSettingsManager
+        )
     }
 
     override func tearDown() async throws {
         sut = nil
         mockFetchModels = nil
+        mockSettingsManager = nil
 
         try await super.tearDown()
     }
@@ -97,5 +103,57 @@ final class ModelsViewModelTests: XCTestCase {
             return
         }
         XCTAssertEqual(loadedState.models.count, 2)
+    }
+
+    // MARK: - Tests — modelTapped
+
+    func test_send_modelTapped_updatesSelectedModelId() async throws {
+        // Given
+        let models = [LLMModel(id: "gpt-4"), LLMModel(id: "llama3")]
+        mockFetchModels.result = .success(models)
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // When
+        sut.send(.modelTapped(models[0]))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.selectedModelId, "gpt-4")
+    }
+
+    func test_send_modelTapped_persistsSelection() async throws {
+        // Given
+        let models = [LLMModel(id: "gpt-4")]
+        mockFetchModels.result = .success(models)
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // When
+        sut.send(.modelTapped(models[0]))
+
+        // Then
+        XCTAssertEqual(mockSettingsManager.selectedModelId, "gpt-4")
+    }
+
+    func test_send_viewAppeared_loadsSelectedModelId() async throws {
+        // Given
+        mockSettingsManager.selectedModelId = "llama3"
+        let models = [LLMModel(id: "gpt-4"), LLMModel(id: "llama3")]
+        mockFetchModels.result = .success(models)
+
+        // When
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.selectedModelId, "llama3")
     }
 }

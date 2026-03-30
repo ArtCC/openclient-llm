@@ -9,10 +9,17 @@
 import Foundation
 
 enum Constants {
+    // MARK: - App
+
+    enum App {
+        static let appStoreId = "6761379499"
+    }
+
     // MARK: - URLs
 
     enum URLs {
         static let privacyPolicy = URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/privacy")
         static let termsOfUse = URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/terms")
+        static let authorGitHub = URL(string: "https://github.com/ArtCC")
     }
 }
