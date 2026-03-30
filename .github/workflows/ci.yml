@@ -31,14 +31,22 @@ jobs:
 
       - name: Build & Test
         run: |
+          set -o pipefail
           xcodebuild test \
             -project openclient-llm.xcodeproj \
             -scheme openclient-llm \
             -destination 'id=${{ steps.sim.outputs.udid }}' \
             -resultBundlePath TestResults.xcresult \
+            -test-timeouts-enabled YES \
+            -maximum-test-execution-time-allowance 120 \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            | xcpretty && exit ${PIPESTATUS[0]}
+            2>&1 | tee xcodebuild.log | xcpretty
+
+      - name: Upload raw log on failure
+        if: failure()
+        run: |
+          tail -100 xcodebuild.log
 
   build-macos:
     name: Build (macOS)
