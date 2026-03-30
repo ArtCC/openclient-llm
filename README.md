@@ -1,10 +1,16 @@
-# OpenClient LLM
+<p align="center">
+  <img src="assets/icon_radius.png" alt="OpenClient LLM" width="128" />
+</p>
 
-![Platform](https://img.shields.io/badge/Platform-iOS%20|%20iPadOS%20|%20macOS-blue?style=flat-square)
-![Swift](https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift)
-![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift)
-![License](https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square)
-![Xcode](https://img.shields.io/badge/Xcode-16+-blue?style=flat-square&logo=xcode)
+<h1 align="center">OpenClient LLM</h1>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-iOS%20|%20iPadOS%20|%20macOS-blue?style=flat-square" alt="Platform" />
+  <img src="https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift" alt="Swift" />
+  <img src="https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift" alt="SwiftUI" />
+  <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/Xcode-16+-blue?style=flat-square&logo=xcode" alt="Xcode" />
+</p>
 
 ## Description
 
