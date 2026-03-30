@@ -12,26 +12,16 @@ struct MessageBubbleView: View {
     // MARK: - Properties
 
     let message: ChatMessage
+    var isStreaming: Bool = false
 
     // MARK: - View
 
     var body: some View {
-        HStack {
-            if message.role == .user {
-                Spacer(minLength: 60)
-            }
-
-            VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
-                bubbleContent
-
-                Text(message.timestamp, style: .time)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
-
-            if message.role == .assistant {
-                Spacer(minLength: 60)
-            }
+        switch message.role {
+        case .user:
+            userMessageLayout
+        case .assistant, .system:
+            assistantMessageLayout
         }
     }
 }
@@ -39,55 +29,81 @@ struct MessageBubbleView: View {
 // MARK: - Private
 
 private extension MessageBubbleView {
-    var bubbleBackground: Color {
-        switch message.role {
-        case .user:
-            Color("UserBubble")
-        case .assistant, .system:
-            Color("AssistantBubble")
+    var userMessageLayout: some View {
+        HStack {
+            Spacer(minLength: 60)
+
+            Text(message.content)
+                .textSelection(.enabled)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .foregroundStyle(Color.primary)
+                .glassEffect(
+                    .regular.tint(.accent),
+                    in: .rect(cornerRadius: 18)
+                )
         }
     }
 
-    @ViewBuilder
-    var bubbleContent: some View {
-        let baseText = Text(message.content)
-            .textSelection(.enabled)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .foregroundStyle(bubbleForeground)
+    var assistantMessageLayout: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 14))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 28, height: 28)
+                .glassEffect(.regular, in: .circle)
 
-        switch message.role {
-        case .user:
-            baseText
-                .background(bubbleBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-        case .assistant, .system:
-            baseText
-                .glassEffect(.regular, in: .rect(cornerRadius: 16))
+            VStack(alignment: .leading, spacing: 4) {
+                markdownText
+                    .textSelection(.enabled)
+            }
+
+            Spacer(minLength: 40)
         }
     }
 
-    var bubbleForeground: Color {
-        switch message.role {
-        case .user:
-            Color("UserBubbleText")
-        case .assistant, .system:
-            Color("AssistantBubbleText")
+    var markdownText: Text {
+        let content = isStreaming
+            ? message.content + " ▌"
+            : message.content
+
+        if let attributed = try? AttributedString(
+            markdown: content,
+            options: .init(
+                interpretedSyntax: .inlineOnlyPreservingWhitespace
+            )
+        ) {
+            return Text(attributed)
         }
+
+        return Text(content)
     }
 }
 
 #Preview("User message") {
-    MessageBubbleView(message: ChatMessage(role: .user, content: "Hello, how are you?"))
-        .padding()
+    MessageBubbleView(
+        message: ChatMessage(role: .user, content: "Hello, how are you?")
+    )
+    .padding()
 }
 
 #Preview("Assistant message") {
     MessageBubbleView(
         message: ChatMessage(
             role: .assistant,
-            content: "I'm doing great! How can I help you today?"
+            content: "I'm doing great! **How can I help you** today?"
         )
+    )
+    .padding()
+}
+
+#Preview("Streaming message") {
+    MessageBubbleView(
+        message: ChatMessage(
+            role: .assistant,
+            content: "Let me think about that..."
+        ),
+        isStreaming: true
     )
     .padding()
 }

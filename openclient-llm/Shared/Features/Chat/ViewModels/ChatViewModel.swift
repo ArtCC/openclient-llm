@@ -17,6 +17,8 @@ final class ChatViewModel {
         case viewAppeared
         case inputChanged(String)
         case sendTapped
+        case stopStreamingTapped
+        case suggestionTapped(String)
         case modelSelected(LLMModel)
     }
 
@@ -65,6 +67,10 @@ final class ChatViewModel {
             updateInput(text)
         case .sendTapped:
             sendMessage()
+        case .stopStreamingTapped:
+            stopStreaming()
+        case .suggestionTapped(let prompt):
+            handleSuggestionTapped(prompt)
         case .modelSelected(let model):
             selectModel(model)
         }
@@ -103,6 +109,19 @@ private extension ChatViewModel {
         loadedState.selectedModel = model
         state = .loaded(loadedState)
         settingsManager.setSelectedModelId(model.id)
+    }
+
+    func stopStreaming() {
+        streamTask?.cancel()
+        streamTask = nil
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.isStreaming = false
+        state = .loaded(loadedState)
+    }
+
+    func handleSuggestionTapped(_ prompt: String) {
+        updateInput(prompt)
+        sendMessage()
     }
 
     func sendMessage() {

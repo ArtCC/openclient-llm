@@ -64,15 +64,21 @@ private extension ChatView {}
 
 ## Navigation
 
+> **Generic vs. App-Specific**: Navigation patterns below are generic. The specific tab names, icons, and sidebar structure are marked as **app-specific** and should be adapted per project.
+
 ### iOS / iPadOS — Tab Bar (Liquid Glass)
 
 The app uses a `TabView` with Liquid Glass style as the root navigation on iOS and iPadOS. The Tab Bar gets Liquid Glass automatically with the iOS 26+ SDK.
+
+> **App-Specific** — Adapt tab names, icons, and content for your project.
 
 | Tab | SF Symbol | Content |
 |---|---|---|
 | **Chats** | `bubble.left.and.bubble.right` | Conversation list + chat view (`NavigationStack`) |
 | **Models** | `cpu` | Available models from the LiteLLM server |
 | **Settings** | `gearshape` | Server configuration, API key, preferences |
+
+> **App-Specific** — Adapt tab structure for your project.
 
 ```swift
 TabView {
@@ -154,3 +160,14 @@ macOS does **not** use Tab Bar. Instead, use `NavigationSplitView` with a sideba
 - Prefer built-in SwiftUI components over custom implementations
 - Use `.searchable()` for search functionality
 - Use `.sheet()`, `.popover()`, `.confirmationDialog()` for modal presentations
+
+---
+
+## App-Specific Sections Summary
+
+The following parts of this document are specific to **OpenClient LLM**:
+
+- **Tab Bar configuration** — Specific tabs (Chats, Models, Settings), icons, and content
+- **macOS sidebar structure** — Specific sidebar sections
+
+All other sections are **generic SwiftUI multi-platform patterns** reusable across projects.

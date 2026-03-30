@@ -15,15 +15,20 @@ final class MockStreamMessageUseCase: StreamMessageUseCaseProtocol, @unchecked S
 
     var tokens: [String] = []
     var error: Error?
+    var tokenDelay: Duration?
 
     // MARK: - Execute
 
     func execute(messages: [ChatMessage], model: String) -> AsyncThrowingStream<String, Error> {
         let tokens = tokens
         let error = error
+        let tokenDelay = tokenDelay
         return AsyncThrowingStream { continuation in
             Task {
                 for token in tokens {
+                    if let delay = tokenDelay {
+                        try? await Task.sleep(for: delay)
+                    }
                     continuation.yield(token)
                 }
                 if let error {

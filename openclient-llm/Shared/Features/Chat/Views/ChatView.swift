@@ -26,10 +26,13 @@ struct ChatView: View {
                     loadedView(loadedState)
                 }
             }
-            .navigationTitle(String(localized: "Chat"))
+            .navigationTitle("")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    modelPicker
+                ToolbarItem(placement: .principal) {
+                    modelSelector
                 }
             }
         }
@@ -42,7 +45,30 @@ struct ChatView: View {
 // MARK: - Private
 
 private extension ChatView {
-    func loadedView(_ loadedState: ChatViewModel.LoadedState) -> some View {
+    var suggestionPrompts: [(icon: String, text: String)] {
+        [
+            (
+                "lightbulb",
+                String(localized: "Explain a complex topic simply")
+            ),
+            (
+                "pencil.and.outline",
+                String(localized: "Write a creative story")
+            ),
+            (
+                "chevron.left.forwardslash.chevron.right",
+                String(localized: "Help me with my code")
+            ),
+            (
+                "globe",
+                String(localized: "Translate text to another language")
+            ),
+        ]
+    }
+
+    func loadedView(
+        _ loadedState: ChatViewModel.LoadedState
+    ) -> some View {
         VStack(spacing: 0) {
             messagesScrollView(loadedState)
             errorBanner(loadedState.errorMessage)
@@ -50,44 +76,130 @@ private extension ChatView {
         }
     }
 
-    func messagesScrollView(_ loadedState: ChatViewModel.LoadedState) -> some View {
+    // MARK: - Messages
+
+    func messagesScrollView(
+        _ loadedState: ChatViewModel.LoadedState
+    ) -> some View {
         ScrollViewReader { proxy in
             ScrollView {
                 if loadedState.messages.isEmpty {
                     emptyState(loadedState)
                 } else {
-                    LazyVStack(spacing: 12) {
+                    LazyVStack(spacing: 16) {
                         ForEach(loadedState.messages) { message in
-                            MessageBubbleView(message: message)
-                                .id(message.id)
-                        }
-
-                        if loadedState.isStreaming {
-                            streamingIndicator
+                            MessageBubbleView(
+                                message: message,
+                                isStreaming: loadedState.isStreaming
+                                    && message.id
+                                        == loadedState.messages.last?.id
+                            )
+                            .id(message.id)
+                            .transition(
+                                .move(edge: .bottom)
+                                    .combined(with: .opacity)
+                            )
                         }
                     }
                     .padding()
+                    .animation(
+                        .spring(duration: 0.3),
+                        value: loadedState.messages.count
+                    )
                 }
             }
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: loadedState.messages.last?.content) {
-                scrollToBottom(proxy: proxy, loadedState: loadedState)
+                scrollToBottom(
+                    proxy: proxy,
+                    loadedState: loadedState
+                )
             }
         }
     }
 
-    func emptyState(_ loadedState: ChatViewModel.LoadedState) -> some View {
-        ContentUnavailableView {
-            Label(String(localized: "No Messages"), systemImage: "bubble.left.and.bubble.right")
-        } description: {
+    // MARK: - Empty State
+
+    func emptyState(
+        _ loadedState: ChatViewModel.LoadedState
+    ) -> some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            Image(systemName: "sparkles")
+                .font(.system(size: 44))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 80, height: 80)
+                .glassEffect(.regular, in: .circle)
+
+            VStack(spacing: 8) {
+                Text(
+                    String(localized: "How can I help you?")
+                )
+                .font(.title2)
+                .fontWeight(.semibold)
+
+                if loadedState.selectedModel == nil {
+                    Text(
+                        String(
+                            localized:
+                                "Select a model to start chatting"
+                        )
+                    )
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                }
+            }
+
             if loadedState.selectedModel != nil {
-                Text(String(localized: "Send a message to start a conversation."))
-            } else {
-                Text(String(localized: "No models available. Check your server configuration."))
+                suggestionChipsGrid
+            }
+
+            Spacer()
+        }
+        .frame(maxWidth: 400)
+        .frame(maxWidth: .infinity)
+        .padding()
+    }
+
+    var suggestionChipsGrid: some View {
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible()),
+            ],
+            spacing: 12
+        ) {
+            ForEach(
+                suggestionPrompts,
+                id: \.text
+            ) { prompt in
+                Button {
+                    viewModel.send(.suggestionTapped(prompt.text))
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: prompt.icon)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(prompt.text)
+                            .font(.subheadline)
+                            .multilineTextAlignment(.leading)
+                            .foregroundStyle(.primary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                }
+                .buttonStyle(.plain)
+                .glassEffect(
+                    .regular.interactive(),
+                    in: .rect(cornerRadius: 14)
+                )
             }
         }
-        .frame(maxHeight: .infinity)
     }
+
+    // MARK: - Error Banner
 
     @ViewBuilder
     func errorBanner(_ errorMessage: String?) -> some View {
@@ -105,14 +217,18 @@ private extension ChatView {
         }
     }
 
-    func inputBar(_ loadedState: ChatViewModel.LoadedState) -> some View {
-        HStack(spacing: 12) {
+    // MARK: - Input Bar
+
+    func inputBar(
+        _ loadedState: ChatViewModel.LoadedState
+    ) -> some View {
+        HStack(spacing: 8) {
             TextField(
-                String(localized: "Type a message..."),
+                String(localized: "Message..."),
                 text: $inputText,
                 axis: .vertical
             )
-            .textFieldStyle(.roundedBorder)
+            .textFieldStyle(.plain)
             .textSelection(.enabled)
             .lineLimit(1...5)
             #if os(iOS)
@@ -130,39 +246,58 @@ private extension ChatView {
                 }
             }
 
-            Button {
-                viewModel.send(.sendTapped)
-            } label: {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.title2)
-            }
-            .buttonStyle(.glass)
-            .disabled(
-                loadedState.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    || loadedState.isStreaming
-                    || loadedState.selectedModel == nil
-            )
-            .accessibilityLabel(String(localized: "Send"))
+            actionButton(loadedState)
         }
-        .padding()
-        .glassEffect(.regular, in: .rect(cornerRadius: 20))
-    }
-
-    var streamingIndicator: some View {
-        HStack {
-            ProgressView()
-                .controlSize(.small)
-            Text(String(localized: "Generating..."))
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Spacer()
-        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .glassEffect(.regular, in: .capsule)
         .padding(.horizontal)
+        .padding(.bottom, 8)
     }
 
     @ViewBuilder
-    var modelPicker: some View {
-        if case .loaded(let loadedState) = viewModel.state, !loadedState.availableModels.isEmpty {
+    func actionButton(
+        _ loadedState: ChatViewModel.LoadedState
+    ) -> some View {
+        if loadedState.isStreaming {
+            Button {
+                viewModel.send(.stopStreamingTapped)
+            } label: {
+                Image(systemName: "stop.circle.fill")
+                    .font(.title2)
+                    .foregroundStyle(.red)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(String(localized: "Stop"))
+            .transition(.scale.combined(with: .opacity))
+        } else {
+            let hasText = !loadedState.inputText
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .isEmpty
+            let hasModel = loadedState.selectedModel != nil
+
+            if hasText && hasModel {
+                Button {
+                    viewModel.send(.sendTapped)
+                } label: {
+                    Image(systemName: "arrow.up.circle.fill")
+                        .font(.title2)
+                        .foregroundStyle(Color.accentColor)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(String(localized: "Send"))
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+    }
+
+    // MARK: - Model Selector
+
+    @ViewBuilder
+    var modelSelector: some View {
+        if case .loaded(let loadedState) = viewModel.state,
+           !loadedState.availableModels.isEmpty
+        {
             Menu {
                 ForEach(loadedState.availableModels) { model in
                     Button {
@@ -178,17 +313,30 @@ private extension ChatView {
                 }
             } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: "cpu")
-                    Text(loadedState.selectedModel?.id ?? String(localized: "No Model"))
-                        .lineLimit(1)
+                    Text(
+                        loadedState.selectedModel?.id
+                            ?? String(localized: "No Model")
+                    )
+                    .font(.headline)
+                    .lineLimit(1)
+
+                    Image(systemName: "chevron.down")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
-                .font(.caption)
             }
         }
     }
 
-    func scrollToBottom(proxy: ScrollViewProxy, loadedState: ChatViewModel.LoadedState) {
-        guard let lastMessage = loadedState.messages.last else { return }
+    // MARK: - Helpers
+
+    func scrollToBottom(
+        proxy: ScrollViewProxy,
+        loadedState: ChatViewModel.LoadedState
+    ) {
+        guard let lastMessage = loadedState.messages.last else {
+            return
+        }
         withAnimation(.smooth) {
             proxy.scrollTo(lastMessage.id, anchor: .bottom)
         }

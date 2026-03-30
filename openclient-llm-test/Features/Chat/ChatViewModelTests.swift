@@ -285,4 +285,56 @@ final class ChatViewModelTests: XCTestCase {
         }
         XCTAssertEqual(loadedState.selectedModel?.id, "gpt-4")
     }
+
+    // MARK: - Tests — stopStreamingTapped
+
+    func test_send_stopStreamingTapped_stopsStreaming() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockStreamMessage.tokens = ["Hello", " ", "world"]
+        mockStreamMessage.tokenDelay = .milliseconds(100)
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        sut.send(.inputChanged("Hi"))
+        sut.send(.sendTapped)
+        try await Task.sleep(for: .milliseconds(150))
+
+        // When
+        sut.send(.stopStreamingTapped)
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertFalse(loadedState.isStreaming)
+    }
+
+    // MARK: - Tests — suggestionTapped
+
+    func test_send_suggestionTapped_sendsPromptAsMessage() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockStreamMessage.tokens = ["Response"]
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // When
+        sut.send(.suggestionTapped("Explain quantum computing"))
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.messages.count, 2)
+        XCTAssertEqual(loadedState.messages[0].role, .user)
+        XCTAssertEqual(
+            loadedState.messages[0].content,
+            "Explain quantum computing"
+        )
+        XCTAssertEqual(loadedState.messages[1].role, .assistant)
+    }
 }

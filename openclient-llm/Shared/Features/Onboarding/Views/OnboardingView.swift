@@ -113,24 +113,26 @@ private extension OnboardingView {
     }
 
     func welcomeStep() -> some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 24) {
             Image(systemName: "bubble.left.and.bubble.right.fill")
                 .font(.system(size: 80))
                 .foregroundStyle(Color.accentColor)
-                .symbolEffect(.pulse)
-                .padding(24)
+                .symbolEffect(.breathe)
+                .padding(28)
                 .glassEffect(.regular, in: .circle)
 
-            Text(String(localized: "Welcome to OpenClient"))
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .multilineTextAlignment(.center)
+            VStack(spacing: 12) {
+                Text(String(localized: "Welcome to OpenClient"))
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .multilineTextAlignment(.center)
 
-            // swiftlint:disable:next line_length
-            Text(String(localized: "Your gateway to any LLM through a unified interface. Connect to your LiteLLM server and start chatting."))
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                // swiftlint:disable:next line_length
+                Text(String(localized: "Your gateway to any LLM through a unified interface. Connect to your LiteLLM server and start chatting."))
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
         }
     }
 
@@ -238,23 +240,26 @@ private extension OnboardingView {
     }
 
     func allSetStep() -> some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 24) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 80))
                 .foregroundStyle(.green)
                 .symbolEffect(.bounce)
-                .padding(24)
+                .padding(28)
                 .glassEffect(.regular, in: .circle)
 
-            Text(String(localized: "All Set!"))
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .multilineTextAlignment(.center)
+            VStack(spacing: 12) {
+                Text(String(localized: "All Set!"))
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .multilineTextAlignment(.center)
 
-            Text(String(localized: "Your server is configured and ready to go. Start chatting with your AI models."))
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+                // swiftlint:disable:next line_length
+                Text(String(localized: "Your server is configured and ready to go. Start chatting with your AI models."))
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
         }
     }
 
@@ -270,7 +275,7 @@ private extension OnboardingView {
                 Text(String(localized: "Get Started"))
                     .font(.headline)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 12)
             }
             .buttonStyle(.glassProminent)
             .controlSize(.large)
@@ -284,7 +289,7 @@ private extension OnboardingView {
                 Text(String(localized: "Next"))
                     .font(.headline)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 12)
             }
             .buttonStyle(.glassProminent)
             .controlSize(.large)
@@ -299,7 +304,7 @@ private extension OnboardingView {
                 Text(String(localized: "Start Chatting"))
                     .font(.headline)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 12)
             }
             .buttonStyle(.glassProminent)
             .controlSize(.large)

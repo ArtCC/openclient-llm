@@ -9,6 +9,8 @@ applyTo: "**/*.swift"
 
 Native-first design. The app should feel like a first-party Apple app, leveraging system components and platform conventions.
 
+> **Generic vs. App-Specific**: This document contains both generic Apple design guidelines (reusable across projects) and app-specific configuration for OpenClient LLM. Sections marked with **"App-Specific"** should be adapted when reusing these guidelines in other projects. See the summary at the bottom for a full list.
+
 ## Liquid Glass (iOS 26+ / macOS 26+)
 
 ### Core Guidelines
@@ -125,6 +127,8 @@ When reviewing or adding Liquid Glass to a view, verify:
 
 ### App Color Palette
 
+> **App-Specific** — Adapt this palette for your project.
+
 All custom colors are defined in the Asset Catalog with Light and Dark variants:
 
 | Color Name | Usage | Light | Dark |
@@ -195,6 +199,8 @@ All custom colors are defined in the Asset Catalog with Light and Dark variants:
 
 ## App Navigation Structure
 
+> **App-Specific** — Adapt tabs, sidebar sections, and navigation hierarchy for your project.
+
 ### iOS / iPadOS
 
 - Root navigation: `TabView` with Liquid Glass (automatic on iOS 26+)
@@ -210,6 +216,8 @@ All custom colors are defined in the Asset Catalog with Light and Dark variants:
 - Liquid Glass applies to sidebar and toolbar automatically
 
 ## App Flow
+
+> **App-Specific** — Adapt the entry point, onboarding, and routing for your project.
 
 The app has a single entry point (`LaunchView`) that routes based on onboarding state:
 
@@ -250,6 +258,8 @@ LaunchView
 
 ## macOS Window
 
+> **App-Specific** — Adapt window sizes for your project.
+
 ### Minimum Size
 
 - Set minimum window size: **800×600 pt** (`minWidth: 800, minHeight: 600`)
@@ -279,6 +289,8 @@ struct OpenClientApp: App {
 - Do **not** allow the window to resize below the minimum size
 
 ## Toolbar Patterns
+
+> **App-Specific** (table below) — Adapt per-screen toolbar actions for your project.
 
 Define standard toolbar actions per screen to keep the UI consistent:
 
@@ -329,6 +341,8 @@ For transient feedback (connection success, copy confirmation, non-critical erro
 - **Stacking**: Only one toast visible at a time — new toasts replace the current one
 
 ### When to Use
+
+> **App-Specific** (table below) — Adapt toast scenarios for your project.
 
 | Scenario | Toast |
 |---|---|
@@ -517,3 +531,22 @@ ContentUnavailableView {
 - **Markdown rendering**: Render assistant messages as Markdown (bold, italic, lists, links, code)
 - **Timestamps**: Show message time subtly (secondary color, caption font) — not on every message, use grouping
 - **Copy message**: Long press or context menu to copy full message text
+
+> For detailed chat UI implementation patterns, see `chat-visual-style.instructions.md`.
+
+---
+
+## App-Specific Sections Summary
+
+The following sections in this document contain project-specific configuration for **OpenClient LLM** and should be adapted when reusing these guidelines in another project:
+
+| Section | What to adapt |
+|---|---|
+| **App Color Palette** | Custom color definitions (bubble colors, code block background) |
+| **App Navigation Structure** | Specific tabs, sidebar sections, navigation hierarchy |
+| **App Flow** | Entry point routing, onboarding steps, screen flow |
+| **macOS Window** | Window sizes and resizability |
+| **Toolbar Patterns** | Per-screen toolbar action table |
+| **Toast Scenarios** | App-specific notification scenarios table |
+
+All other sections are **generic Apple design guidelines** reusable across any SwiftUI project targeting iOS 26+ / macOS 26+.

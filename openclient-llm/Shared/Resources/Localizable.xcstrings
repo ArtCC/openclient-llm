@@ -1,1373 +1,1803 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "All Set!" : {
-      "comment" : "Title shown on the final onboarding step.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alles bereit!"
+  "sourceLanguage": "en",
+  "strings": {
+    "All Set!": {
+      "comment": "Title shown on the final onboarding step.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles bereit!"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Όλα έτοιμα!"
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Όλα έτοιμα!"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¡Todo listo!"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¡Todo listo!"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tout est prêt !"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tout est prêt !"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tutto pronto!"
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutto pronto!"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "準備完了！"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "準備完了！"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alles klaar!"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alles klaar!"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tudo pronto!"
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tudo pronto!"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Allt klart!"
-          }
-        }
-      }
-    },
-    "API Key (Optional)" : {
-      "comment" : "Placeholder for the API key input field in onboarding.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API-Schlüssel (Optional)"
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Κλειδί API (Προαιρετικό)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clave API (Opcional)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clé API (Facultative)"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chiave API (Facoltativa)"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "APIキー（任意）"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API-sleutel (Optioneel)"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chave API (Opcional)"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API-nyckel (Valfri)"
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allt klart!"
           }
         }
       }
     },
-    "Back" : {
-      "comment" : "Accessibility label for the back navigation button.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zurück"
+    "API Key (Optional)": {
+      "comment": "Placeholder for the API key input field in onboarding.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API-Schlüssel (Optional)"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Πίσω"
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Κλειδί API (Προαιρετικό)"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Atrás"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clave API (Opcional)"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retour"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clé API (Facultative)"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Indietro"
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chiave API (Facoltativa)"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "戻る"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APIキー（任意）"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Terug"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API-sleutel (Optioneel)"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voltar"
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chave API (Opcional)"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tillbaka"
-          }
-        }
-      }
-    },
-    "Chat" : {
-
-    },
-    "Connection" : {
-
-    },
-    "Connection successful" : {
-      "comment" : "Status message shown when server connection test succeeds.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verbindung erfolgreich"
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Η σύνδεση ήταν επιτυχής"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Conexión exitosa"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connexion réussie"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Connessione riuscita"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "接続に成功しました"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verbinding geslaagd"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ligação bem-sucedida"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anslutningen lyckades"
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API-nyckel (Valfri)"
           }
         }
       }
     },
-    "Could not read the server response." : {
-
-    },
-    "Enter your LiteLLM server details to connect." : {
-      "comment" : "Description text on the server configuration onboarding step.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gib die Daten deines LiteLLM-Servers ein, um dich zu verbinden."
+    "Back": {
+      "comment": "Accessibility label for the back navigation button.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zurück"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Εισήγαγε τα στοιχεία του διακομιστή LiteLLM για να συνδεθείς."
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Πίσω"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Introduce los datos de tu servidor LiteLLM para conectarte."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atrás"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Entre les informations de ton serveur LiteLLM pour te connecter."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retour"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inserisci i dati del tuo server LiteLLM per connetterti."
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Indietro"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "LiteLLMサーバーの情報を入力して接続してください。"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "戻る"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voer je LiteLLM-servergegevens in om verbinding te maken."
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terug"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Introduz os dados do teu servidor LiteLLM para te ligares."
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voltar"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ange uppgifterna för din LiteLLM-server för att ansluta."
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tillbaka"
           }
         }
       }
     },
-    "Generating..." : {
-
-    },
-    "Get Started" : {
-      "comment" : "Button to begin the onboarding flow.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los geht's"
+    "Chat": {},
+    "Connection": {},
+    "Connection successful": {
+      "comment": "Status message shown when server connection test succeeds.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbindung erfolgreich"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ξεκίνα"
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Η σύνδεση ήταν επιτυχής"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comenzar"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conexión exitosa"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Commencer"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connexion réussie"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inizia"
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Connessione riuscita"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "はじめる"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接続に成功しました"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aan de slag"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinding geslaagd"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Começar"
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ligação bem-sucedida"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kom igång"
-          }
-        }
-      }
-    },
-    "Hide API Key" : {
-      "comment" : "Accessibility label for button to hide the API key field.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API-Schlüssel ausblenden"
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Απόκρυψη κλειδιού API"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar clave API"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Masquer la clé API"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nascondi chiave API"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "APIキーを非表示"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API-sleutel verbergen"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar chave API"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dölj API-nyckel"
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anslutningen lyckades"
           }
         }
       }
     },
-    "Home" : {
-      "comment" : "A label displayed when the user is on the home screen.",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Startseite"
+    "Could not read the server response.": {},
+    "Enter your LiteLLM server details to connect.": {
+      "comment": "Description text on the server configuration onboarding step.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib die Daten deines LiteLLM-Servers ein, um dich zu verbinden."
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Αρχική"
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Εισήγαγε τα στοιχεία του διακομιστή LiteLLM για να συνδεθείς."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inicio"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce los datos de tu servidor LiteLLM para conectarte."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accueil"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Entre les informations de ton serveur LiteLLM pour te connecter."
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Home"
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci i dati del tuo server LiteLLM per connetterti."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ホーム"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LiteLLMサーバーの情報を入力して接続してください。"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Home"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voer je LiteLLM-servergegevens in om verbinding te maken."
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Início"
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduz os dados do teu servidor LiteLLM para te ligares."
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hem"
-          }
-        }
-      }
-    },
-    "Invalid API key. Please check your credentials." : {
-
-    },
-    "Models" : {
-
-    },
-    "Next" : {
-      "comment" : "Button to advance to the next onboarding step.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weiter"
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Επόμενο"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Siguiente"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suivant"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avanti"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "次へ"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Volgende"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seguinte"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nästa"
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ange uppgifterna för din LiteLLM-server för att ansluta."
           }
         }
       }
     },
-    "No Messages" : {
-
-    },
-    "No Model" : {
-
-    },
-    "No models available. Check your server configuration." : {
-
-    },
-    "OpenClient" : {
-      "comment" : "The name of the app.",
-      "isCommentAutoGenerated" : true
-    },
-    "Paste" : {
-      "comment" : "Accessibility label for the paste button in onboarding fields.",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Einfügen"
+    "Generating...": {},
+    "Get Started": {
+      "comment": "Button to begin the onboarding flow.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los geht's"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Επικόλληση"
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ξεκίνα"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pegar"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comenzar"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coller"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commencer"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Incolla"
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inizia"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "貼り付け"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "はじめる"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plakken"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aan de slag"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Colar"
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Começar"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Klistra in"
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kom igång"
           }
         }
       }
     },
-    "Refresh" : {
-
-    },
-    "Retry" : {
-
-    },
-    "Save" : {
-
-    },
-    "Send" : {
-
-    },
-    "Send a message to start a conversation." : {
-
-    },
-    "Server" : {
-
-    },
-    "Server Configuration" : {
-      "comment" : "Title for the server configuration onboarding step.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Serverkonfiguration"
+    "Hide API Key": {
+      "comment": "Accessibility label for button to hide the API key field.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API-Schlüssel ausblenden"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ρύθμιση διακομιστή"
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Απόκρυψη κλειδιού API"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Configuración del servidor"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocultar clave API"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Configuration du serveur"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Masquer la clé API"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Configurazione del server"
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nascondi chiave API"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サーバー設定"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APIキーを非表示"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Serverconfiguratie"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API-sleutel verbergen"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Configuração do servidor"
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocultar chave API"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Serverkonfiguration"
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dölj API-nyckel"
           }
         }
       }
     },
-    "Server error (code %lld)." : {
-
-    },
-    "Server URL" : {
-      "comment" : "Placeholder for the server URL input field in onboarding.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Server-URL"
+    "Home": {
+      "comment": "A label displayed when the user is on the home screen.",
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Startseite"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "URL διακομιστή"
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Αρχική"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "URL del servidor"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicio"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "URL du serveur"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accueil"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "URL del server"
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サーバーURL"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ホーム"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Server-URL"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Home"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "URL do servidor"
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Início"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Server-URL"
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hem"
           }
         }
       }
     },
-    "Settings" : {
-
-    },
-    "Show API Key" : {
-      "comment" : "Accessibility label for button to reveal the API key field.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API-Schlüssel anzeigen"
+    "Invalid API key. Please check your credentials.": {},
+    "Models": {},
+    "Next": {
+      "comment": "Button to advance to the next onboarding step.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiter"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Εμφάνιση κλειδιού API"
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Επόμενο"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar clave API"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Siguiente"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afficher la clé API"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suivant"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostra chiave API"
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avanti"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "APIキーを表示"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "次へ"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "API-sleutel tonen"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volgende"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar chave API"
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seguinte"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Visa API-nyckel"
-          }
-        }
-      }
-    },
-    "Skip" : {
-      "comment" : "Button to skip the onboarding flow entirely.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Überspringen"
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Παράλειψη"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Omitir"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Passer"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salta"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "スキップ"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Overslaan"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saltar"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hoppa över"
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nästa"
           }
         }
       }
     },
-    "Start Chatting" : {
-      "comment" : "Button to complete onboarding and go to the main app.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chat starten"
+    "No Messages": {},
+    "No Model": {},
+    "No models available. Check your server configuration.": {},
+    "OpenClient": {
+      "comment": "The name of the app.",
+      "isCommentAutoGenerated": true
+    },
+    "Paste": {
+      "comment": "Accessibility label for the paste button in onboarding fields.",
+      "extractionState": "stale",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einfügen"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ξεκίνα τη συνομιλία"
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Επικόλληση"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Empezar a chatear"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pegar"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Commencer à discuter"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Coller"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inizia a chattare"
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Incolla"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "チャットを始める"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "貼り付け"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Begin met chatten"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plakken"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Começar a conversar"
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Colar"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Börja chatta"
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klistra in"
           }
         }
       }
     },
-    "Test Connection" : {
-      "comment" : "Button to test the server connection during onboarding.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verbindung testen"
+    "Refresh": {},
+    "Retry": {},
+    "Save": {},
+    "Send": {},
+    "Send a message to start a conversation.": {},
+    "Server": {},
+    "Server Configuration": {
+      "comment": "Title for the server configuration onboarding step.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serverkonfiguration"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Δοκιμή σύνδεσης"
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ρύθμιση διακομιστή"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Probar conexión"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configuración del servidor"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tester la connexion"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configuration du serveur"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Testa connessione"
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configurazione del server"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "接続をテスト"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サーバー設定"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verbinding testen"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serverconfiguratie"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Testar ligação"
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configuração do servidor"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Testa anslutning"
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serverkonfiguration"
           }
         }
       }
     },
-    "Testing..." : {
-      "comment" : "Button label shown while testing the server connection.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Teste..."
+    "Server error (code %lld).": {},
+    "Server URL": {
+      "comment": "Placeholder for the server URL input field in onboarding.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server-URL"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Δοκιμή..."
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL διακομιστή"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Probando..."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL del servidor"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Test en cours..."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL du serveur"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Test in corso..."
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL del server"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "テスト中..."
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サーバーURL"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Testen..."
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server-URL"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A testar..."
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL do servidor"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Testar..."
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server-URL"
           }
         }
       }
     },
-    "The server is not reachable." : {
-      "comment" : "Error message when the server health check fails.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Der Server ist nicht erreichbar."
+    "Settings": {},
+    "Show API Key": {
+      "comment": "Accessibility label for button to reveal the API key field.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API-Schlüssel anzeigen"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ο διακομιστής δεν είναι προσβάσιμος."
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Εμφάνιση κλειδιού API"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El servidor no está disponible."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar clave API"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le serveur n'est pas joignable."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher la clé API"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il server non è raggiungibile."
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostra chiave API"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サーバーに接続できません。"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APIキーを表示"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "De server is niet bereikbaar."
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API-sleutel tonen"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O servidor não está acessível."
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar chave API"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Servern kan inte nås."
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Visa API-nyckel"
           }
         }
       }
     },
-    "The server returned an invalid response." : {
-
-    },
-    "The server URL is not valid." : {
-      "comment" : "Error message when the entered server URL is malformed.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Die Server-URL ist ungültig."
+    "Skip": {
+      "comment": "Button to skip the onboarding flow entirely.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Überspringen"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Το URL του διακομιστή δεν είναι έγκυρο."
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Παράλειψη"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La URL del servidor no es válida."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Omitir"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'URL du serveur n'est pas valide."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Passer"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'URL del server non è valido."
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salta"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サーバーURLが無効です。"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スキップ"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "De server-URL is niet geldig."
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Overslaan"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O URL do servidor não é válido."
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saltar"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Server-URL:en är inte giltig."
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoppa över"
           }
         }
       }
     },
-    "Too many requests. Please try again later." : {
-
-    },
-    "Type a message..." : {
-
-    },
-    "Unable to Load Models" : {
-
-    },
-    "Welcome to OpenClient" : {
-      "comment" : "Title on the first onboarding welcome step.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Willkommen bei OpenClient"
+    "Start Chatting": {
+      "comment": "Button to complete onboarding and go to the main app.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chat starten"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Καλώς ήρθες στο OpenClient"
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ξεκίνα τη συνομιλία"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bienvenido a OpenClient"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar a chatear"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bienvenue sur OpenClient"
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Commencer à discuter"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Benvenuto su OpenClient"
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inizia a chattare"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "OpenClientへようこそ"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "チャットを始める"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Welkom bij OpenClient"
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begin met chatten"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bem-vindo ao OpenClient"
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Começar a conversar"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Välkommen till OpenClient"
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Börja chatta"
           }
         }
       }
     },
-    "Your gateway to any LLM through a unified interface. Connect to your LiteLLM server and start chatting." : {
-      "comment" : "Description text on the first onboarding welcome step.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dein Zugang zu jedem LLM über eine einheitliche Oberfläche. Verbinde dich mit deinem LiteLLM-Server und beginne zu chatten."
+    "Test Connection": {
+      "comment": "Button to test the server connection during onboarding.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbindung testen"
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Η πύλη σου σε οποιοδήποτε LLM μέσα από μια ενιαία διεπαφή. Συνδέσου στον διακομιστή LiteLLM και ξεκίνα τη συνομιλία."
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Δοκιμή σύνδεσης"
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu puerta de entrada a cualquier LLM a través de una interfaz unificada. Conecta con tu servidor LiteLLM y empieza a chatear."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probar conexión"
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ton accès à n'importe quel LLM via une interface unifiée. Connecte-toi à ton serveur LiteLLM et commence à discuter."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tester la connexion"
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il tuo accesso a qualsiasi LLM tramite un'interfaccia unificata. Connettiti al tuo server LiteLLM e inizia a chattare."
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testa connessione"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "統一されたインターフェースであらゆるLLMへアクセスできます。LiteLLMサーバーに接続してチャットを始めましょう。"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "接続をテスト"
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jouw toegang tot elk LLM via één interface. Maak verbinding met je LiteLLM-server en begin met chatten."
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verbinding testen"
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A tua porta de entrada para qualquer LLM através de uma interface unificada. Liga-te ao teu servidor LiteLLM e começa a conversar."
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testar ligação"
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Din ingång till alla LLM:er genom ett enhetligt gränssnitt. Anslut till din LiteLLM-server och börja chatta."
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testa anslutning"
           }
         }
       }
     },
-    "Your server is configured and ready to go. Start chatting with your AI models." : {
-      "comment" : "Description text on the final onboarding step.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dein Server ist konfiguriert und einsatzbereit. Beginne mit deinen KI-Modellen zu chatten."
+    "Testing...": {
+      "comment": "Button label shown while testing the server connection.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teste..."
           }
         },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ο διακομιστής σου είναι ρυθμισμένος και έτοιμος. Ξεκίνα τη συνομιλία με τα μοντέλα AI."
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Δοκιμή..."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu servidor está configurado y listo. Empieza a chatear con tus modelos de IA."
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probando..."
           }
         },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ton serveur est configuré et prêt. Commence à discuter avec tes modèles d'IA."
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test en cours..."
           }
         },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il tuo server è configurato e pronto. Inizia a chattare con i tuoi modelli di IA."
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Test in corso..."
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "サーバーの設定が完了しました。AIモデルとのチャットを始めましょう。"
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "テスト中..."
           }
         },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je server is geconfigureerd en klaar voor gebruik. Begin met chatten met je AI-modellen."
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testen..."
           }
         },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O teu servidor está configurado e pronto. Começa a conversar com os teus modelos de IA."
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A testar..."
           }
         },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Din server är konfigurerad och redo. Börja chatta med dina AI-modeller."
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Testar..."
+          }
+        }
+      }
+    },
+    "The server is not reachable.": {
+      "comment": "Error message when the server health check fails.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Server ist nicht erreichbar."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο διακομιστής δεν είναι προσβάσιμος."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor no está disponible."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le serveur n'est pas joignable."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il server non è raggiungibile."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サーバーに接続できません。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De server is niet bereikbaar."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O servidor não está acessível."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servern kan inte nås."
+          }
+        }
+      }
+    },
+    "The server returned an invalid response.": {},
+    "The server URL is not valid.": {
+      "comment": "Error message when the entered server URL is malformed.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Server-URL ist ungültig."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Το URL του διακομιστή δεν είναι έγκυρο."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La URL del servidor no es válida."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'URL du serveur n'est pas valide."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'URL del server non è valido."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サーバーURLが無効です。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De server-URL is niet geldig."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O URL do servidor não é válido."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server-URL:en är inte giltig."
+          }
+        }
+      }
+    },
+    "Too many requests. Please try again later.": {},
+    "Type a message...": {},
+    "Unable to Load Models": {},
+    "Welcome to OpenClient": {
+      "comment": "Title on the first onboarding welcome step.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Willkommen bei OpenClient"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Καλώς ήρθες στο OpenClient"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bienvenido a OpenClient"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bienvenue sur OpenClient"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Benvenuto su OpenClient"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenClientへようこそ"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Welkom bij OpenClient"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bem-vindo ao OpenClient"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Välkommen till OpenClient"
+          }
+        }
+      }
+    },
+    "Your gateway to any LLM through a unified interface. Connect to your LiteLLM server and start chatting.": {
+      "comment": "Description text on the first onboarding welcome step.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Zugang zu jedem LLM über eine einheitliche Oberfläche. Verbinde dich mit deinem LiteLLM-Server und beginne zu chatten."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Η πύλη σου σε οποιοδήποτε LLM μέσα από μια ενιαία διεπαφή. Συνδέσου στον διακομιστή LiteLLM και ξεκίνα τη συνομιλία."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu puerta de entrada a cualquier LLM a través de una interfaz unificada. Conecta con tu servidor LiteLLM y empieza a chatear."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ton accès à n'importe quel LLM via une interface unifiée. Connecte-toi à ton serveur LiteLLM et commence à discuter."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo accesso a qualsiasi LLM tramite un'interfaccia unificata. Connettiti al tuo server LiteLLM e inizia a chattare."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "統一されたインターフェースであらゆるLLMへアクセスできます。LiteLLMサーバーに接続してチャットを始めましょう。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jouw toegang tot elk LLM via één interface. Maak verbinding met je LiteLLM-server en begin met chatten."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A tua porta de entrada para qualquer LLM através de uma interface unificada. Liga-te ao teu servidor LiteLLM e começa a conversar."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Din ingång till alla LLM:er genom ett enhetligt gränssnitt. Anslut till din LiteLLM-server och börja chatta."
+          }
+        }
+      }
+    },
+    "Your server is configured and ready to go. Start chatting with your AI models.": {
+      "comment": "Description text on the final onboarding step.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Server ist konfiguriert und einsatzbereit. Beginne mit deinen KI-Modellen zu chatten."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ο διακομιστής σου είναι ρυθμισμένος και έτοιμος. Ξεκίνα τη συνομιλία με τα μοντέλα AI."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu servidor está configurado y listo. Empieza a chatear con tus modelos de IA."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ton serveur est configuré et prêt. Commence à discuter avec tes modèles d'IA."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il tuo server è configurato e pronto. Inizia a chattare con i tuoi modelli di IA."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サーバーの設定が完了しました。AIモデルとのチャットを始めましょう。"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je server is geconfigureerd en klaar voor gebruik. Begin met chatten met je AI-modellen."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O teu servidor está configurado e pronto. Começa a conversar com os teus modelos de IA."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Din server är konfigurerad och redo. Börja chatta med dina AI-modeller."
+          }
+        }
+      }
+    },
+    "Message...": {
+      "comment": "Placeholder text for the chat input field.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachricht..."
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μήνυμα..."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mensaje..."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Message..."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messaggio..."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "メッセージ..."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bericht..."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mensagem..."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meddelande..."
+          }
+        }
+      }
+    },
+    "How can I help you?": {
+      "comment": "Welcome greeting shown in the chat empty state.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wie kann ich dir helfen?"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Πώς μπορώ να σε βοηθήσω;"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿En qué puedo ayudarte?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comment puis-je t’aider ?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Come posso aiutarti?"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "何かお手伝いできますか？"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoe kan ik je helpen?"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Como posso ajudar-te?"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hur kan jag hjälpa dig?"
+          }
+        }
+      }
+    },
+    "Stop": {
+      "comment": "Accessibility label for the stop streaming button.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoppen"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Διακοπή"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detener"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrêter"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ferma"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoppen"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parar"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoppa"
+          }
+        }
+      }
+    },
+    "Explain a complex topic simply": {
+      "comment": "Suggestion chip prompt for knowledge/explanation.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erkläre ein komplexes Thema einfach"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Εξήγησε ένα πολύπλοκο θέμα απλά"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explica un tema complejo de forma sencilla"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explique un sujet complexe simplement"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spiega un argomento complesso in modo semplice"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複雑なテーマをわかりやすく説明して"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leg een complex onderwerp eenvoudig uit"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Explica um tema complexo de forma simples"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Förklara ett komplext ämne enkelt"
+          }
+        }
+      }
+    },
+    "Write a creative story": {
+      "comment": "Suggestion chip prompt for creative writing.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schreibe eine kreative Geschichte"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Γράψε μια δημιουργική ιστορία"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escribe una historia creativa"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Écris une histoire créative"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scrivi una storia creativa"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "クリエイティブな物語を書いて"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schrijf een creatief verhaal"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escreve uma história criativa"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skriv en kreativ historia"
+          }
+        }
+      }
+    },
+    "Help me with my code": {
+      "comment": "Suggestion chip prompt for code assistance.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hilf mir mit meinem Code"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Βοήθησέ με με τον κώδικά μου"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayúdame con mi código"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aide-moi avec mon code"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aiutami con il mio codice"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "コードを手伝って"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Help me met mijn code"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajuda-me com o meu código"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hjälp mig med min kod"
+          }
+        }
+      }
+    },
+    "Translate text to another language": {
+      "comment": "Suggestion chip prompt for translation.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Übersetze Text in eine andere Sprache"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Μετάφρασε κείμενο σε άλλη γλώσσα"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traduce texto a otro idioma"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traduis un texte dans une autre langue"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traduci del testo in un’altra lingua"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "テキストを他の言語に翻訳して"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vertaal tekst naar een andere taal"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Traduz texto para outro idioma"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Översätt text till ett annat språk"
+          }
+        }
+      }
+    },
+    "Select a model to start chatting": {
+      "comment": "Subtitle shown in chat empty state when no model is selected.",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle ein Modell aus, um zu chatten"
+          }
+        },
+        "el": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Επίλεξε ένα μοντέλο για να ξεκινήσεις τη συνομιλία"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecciona un modelo para empezar a chatear"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sélectionne un modèle pour commencer à discuter"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seleziona un modello per iniziare a chattare"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "モデルを選択してチャットを開始しましょう"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selecteer een model om te beginnen met chatten"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seleciona um modelo para começar a conversar"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Välj en modell för att börja chatta"
           }
         }
       }
     }
   },
-  "version" : "1.2"
+  "version": "1.2"
 }
