@@ -16,6 +16,7 @@ final class ChatViewModelTests: XCTestCase {
     private var sut: ChatViewModel!
     private var mockFetchModels: MockFetchModelsUseCase!
     private var mockStreamMessage: MockStreamMessageUseCase!
+    private var mockSettingsManager: MockSettingsManager!
 
     // MARK: - Setup
 
@@ -24,9 +25,11 @@ final class ChatViewModelTests: XCTestCase {
 
         mockFetchModels = MockFetchModelsUseCase()
         mockStreamMessage = MockStreamMessageUseCase()
+        mockSettingsManager = MockSettingsManager()
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
-            streamMessageUseCase: mockStreamMessage
+            streamMessageUseCase: mockStreamMessage,
+            settingsManager: mockSettingsManager
         )
     }
 
@@ -34,6 +37,7 @@ final class ChatViewModelTests: XCTestCase {
         sut = nil
         mockFetchModels = nil
         mockStreamMessage = nil
+        mockSettingsManager = nil
 
         super.tearDown()
     }
@@ -228,5 +232,57 @@ final class ChatViewModelTests: XCTestCase {
         }
         XCTAssertNotNil(loadedState.errorMessage)
         XCTAssertFalse(loadedState.isStreaming)
+    }
+
+    // MARK: - Tests — Model persistence
+
+    func test_send_modelSelected_savesModelIdToSettings() async throws {
+        // Given
+        let models = [LLMModel(id: "gpt-4"), LLMModel(id: "llama3")]
+        mockFetchModels.result = .success(models)
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // When
+        sut.send(.modelSelected(models[1]))
+
+        // Then
+        XCTAssertEqual(mockSettingsManager.selectedModelId, "llama3")
+    }
+
+    func test_send_viewAppeared_restoresSavedModel() async throws {
+        // Given
+        let models = [LLMModel(id: "gpt-4"), LLMModel(id: "llama3")]
+        mockFetchModels.result = .success(models)
+        mockSettingsManager.selectedModelId = "llama3"
+
+        // When
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.selectedModel?.id, "llama3")
+    }
+
+    func test_send_viewAppeared_withInvalidSavedModel_fallsBackToFirst() async throws {
+        // Given
+        let models = [LLMModel(id: "gpt-4"), LLMModel(id: "llama3")]
+        mockFetchModels.result = .success(models)
+        mockSettingsManager.selectedModelId = "deleted-model"
+
+        // When
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.selectedModel?.id, "gpt-4")
     }
 }

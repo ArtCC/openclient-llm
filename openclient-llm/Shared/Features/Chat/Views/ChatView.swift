@@ -69,6 +69,7 @@ private extension ChatView {
                     .padding()
                 }
             }
+            .scrollDismissesKeyboard(.interactively)
             .onChange(of: loadedState.messages.last?.content) {
                 scrollToBottom(proxy: proxy, loadedState: loadedState)
             }

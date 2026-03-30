@@ -38,6 +38,7 @@ final class ChatViewModel {
 
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     private let streamMessageUseCase: StreamMessageUseCaseProtocol
+    private let settingsManager: SettingsManagerProtocol
     private var streamTask: Task<Void, Never>?
 
     // MARK: - Init
@@ -45,11 +46,13 @@ final class ChatViewModel {
     init(
         state: State = .loading,
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
-        streamMessageUseCase: StreamMessageUseCaseProtocol = StreamMessageUseCase()
+        streamMessageUseCase: StreamMessageUseCaseProtocol = StreamMessageUseCase(),
+        settingsManager: SettingsManagerProtocol = SettingsManager()
     ) {
         self.state = state
         self.fetchModelsUseCase = fetchModelsUseCase
         self.streamMessageUseCase = streamMessageUseCase
+        self.settingsManager = settingsManager
     }
 
     // MARK: - Input functions
@@ -77,8 +80,10 @@ private extension ChatViewModel {
         Task {
             do {
                 let models = try await fetchModelsUseCase.execute()
+                let savedModelId = settingsManager.getSelectedModelId()
+                let selectedModel = models.first(where: { $0.id == savedModelId }) ?? models.first
                 state = .loaded(LoadedState(
-                    selectedModel: models.first,
+                    selectedModel: selectedModel,
                     availableModels: models
                 ))
             } catch {
@@ -97,6 +102,7 @@ private extension ChatViewModel {
         guard case .loaded(var loadedState) = state else { return }
         loadedState.selectedModel = model
         state = .loaded(loadedState)
+        settingsManager.setSelectedModelId(model.id)
     }
 
     func sendMessage() {

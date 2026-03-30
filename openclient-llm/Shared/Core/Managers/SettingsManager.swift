@@ -15,6 +15,8 @@ protocol SettingsManagerProtocol: Sendable {
     func setServerBaseURL(_ value: String)
     func getAPIKey() -> String
     func setAPIKey(_ value: String)
+    func getSelectedModelId() -> String?
+    func setSelectedModelId(_ value: String?)
 }
 
 // Safety: UserDefaults is thread-safe per Apple documentation.
@@ -27,6 +29,7 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         static let serverBaseURL = "serverBaseURL"
         // TODO: Migrate API key storage to KeychainManager for production security
         static let apiKey = "apiKey"
+        static let selectedModelId = "selectedModelId"
     }
 
     private let defaults: UserDefaults
@@ -61,5 +64,13 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
     func setAPIKey(_ value: String) {
         defaults.set(value, forKey: Keys.apiKey)
+    }
+
+    func getSelectedModelId() -> String? {
+        defaults.string(forKey: Keys.selectedModelId)
+    }
+
+    func setSelectedModelId(_ value: String?) {
+        defaults.set(value, forKey: Keys.selectedModelId)
     }
 }
