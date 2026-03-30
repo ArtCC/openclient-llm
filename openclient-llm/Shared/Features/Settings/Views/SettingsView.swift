@@ -182,7 +182,7 @@ private extension SettingsView {
                 Label(String(localized: "Terms of Use"), systemImage: "doc.text")
             }
         } header: {
-            Text(String(localized: "Legal"))
+            Text(String(localized: "About"))
         }
     }
 }

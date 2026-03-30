@@ -847,61 +847,61 @@
     "Invalid API key. Please check your credentials." : {
 
     },
-    "Legal" : {
-      "comment" : "Section header for legal links in Settings.",
+    "About" : {
+      "comment" : "Section header for privacy and terms links in Settings.",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rechtliches"
+            "value" : "Über"
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Νομικά"
+            "value" : "Σχετικά"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Legal"
+            "value" : "Acerca de"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mentions légales"
+            "value" : "À propos"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Legale"
+            "value" : "Informazioni"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "法的情報"
+            "value" : "このアプリについて"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Juridisch"
+            "value" : "Over"
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Legal"
+            "value" : "Sobre"
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Juridiskt"
+            "value" : "Om"
           }
         }
       }
