@@ -33,6 +33,7 @@ final class ChatViewModel {
         var isStreaming: Bool = false
         var selectedModel: LLMModel?
         var availableModels: [LLMModel] = []
+        var conversationStarters: [ConversationStarter] = []
         var errorMessage: String?
     }
 
@@ -41,6 +42,7 @@ final class ChatViewModel {
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     private let streamMessageUseCase: StreamMessageUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
+    private let conversationStartersManager: ConversationStartersManagerProtocol
     private var streamTask: Task<Void, Never>?
 
     // MARK: - Init
@@ -49,12 +51,14 @@ final class ChatViewModel {
         state: State = .loading,
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
         streamMessageUseCase: StreamMessageUseCaseProtocol = StreamMessageUseCase(),
-        settingsManager: SettingsManagerProtocol = SettingsManager()
+        settingsManager: SettingsManagerProtocol = SettingsManager(),
+        conversationStartersManager: ConversationStartersManagerProtocol = ConversationStartersManager()
     ) {
         self.state = state
         self.fetchModelsUseCase = fetchModelsUseCase
         self.streamMessageUseCase = streamMessageUseCase
         self.settingsManager = settingsManager
+        self.conversationStartersManager = conversationStartersManager
     }
 
     // MARK: - Input functions
@@ -88,9 +92,11 @@ private extension ChatViewModel {
                 let models = try await fetchModelsUseCase.execute()
                 let savedModelId = settingsManager.getSelectedModelId()
                 let selectedModel = models.first(where: { $0.id == savedModelId }) ?? models.first
+                let starters = conversationStartersManager.randomStarters(count: 4)
                 state = .loaded(LoadedState(
                     selectedModel: selectedModel,
-                    availableModels: models
+                    availableModels: models,
+                    conversationStarters: starters
                 ))
             } catch {
                 state = .loaded(LoadedState(errorMessage: error.localizedDescription))

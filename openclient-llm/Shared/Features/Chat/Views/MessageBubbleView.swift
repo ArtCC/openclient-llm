@@ -56,10 +56,25 @@ private extension MessageBubbleView {
             VStack(alignment: .leading, spacing: 4) {
                 markdownText
                     .textSelection(.enabled)
+
+                if isStreaming {
+                    thinkingIndicator
+                }
             }
 
             Spacer(minLength: 40)
         }
+    }
+
+    var thinkingIndicator: some View {
+        Text(String(localized: "Thinking..."))
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .phaseAnimator([0.4, 1.0]) { content, phase in
+                content.opacity(phase)
+            } animation: { _ in
+                .easeInOut(duration: 0.8)
+            }
     }
 
     var markdownText: Text {

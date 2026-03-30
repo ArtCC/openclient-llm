@@ -17,6 +17,7 @@ final class ChatViewModelTests: XCTestCase {
     private var mockFetchModels: MockFetchModelsUseCase!
     private var mockStreamMessage: MockStreamMessageUseCase!
     private var mockSettingsManager: MockSettingsManager!
+    private var mockConversationStarters: MockConversationStartersManager!
 
     // MARK: - Setup
 
@@ -26,10 +27,12 @@ final class ChatViewModelTests: XCTestCase {
         mockFetchModels = MockFetchModelsUseCase()
         mockStreamMessage = MockStreamMessageUseCase()
         mockSettingsManager = MockSettingsManager()
+        mockConversationStarters = MockConversationStartersManager()
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
             streamMessageUseCase: mockStreamMessage,
-            settingsManager: mockSettingsManager
+            settingsManager: mockSettingsManager,
+            conversationStartersManager: mockConversationStarters
         )
     }
 
@@ -38,6 +41,7 @@ final class ChatViewModelTests: XCTestCase {
         mockFetchModels = nil
         mockStreamMessage = nil
         mockSettingsManager = nil
+        mockConversationStarters = nil
 
         try await super.tearDown()
     }
@@ -68,6 +72,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(loadedState.availableModels.count, 2)
         XCTAssertEqual(loadedState.selectedModel?.id, "gpt-4")
         XCTAssertTrue(loadedState.messages.isEmpty)
+        XCTAssertEqual(loadedState.conversationStarters.count, 4)
     }
 
     func test_send_viewAppeared_withError_setsErrorMessage() async throws {

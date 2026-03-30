@@ -45,27 +45,6 @@ struct ChatView: View {
 // MARK: - Private
 
 private extension ChatView {
-    var suggestionPrompts: [(icon: String, text: String)] {
-        [
-            (
-                "lightbulb",
-                String(localized: "Explain a complex topic simply")
-            ),
-            (
-                "pencil.and.outline",
-                String(localized: "Write a creative story")
-            ),
-            (
-                "chevron.left.forwardslash.chevron.right",
-                String(localized: "Help me with my code")
-            ),
-            (
-                "globe",
-                String(localized: "Translate text to another language")
-            ),
-        ]
-    }
-
     func loadedView(
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
@@ -152,7 +131,7 @@ private extension ChatView {
             }
 
             if loadedState.selectedModel != nil {
-                suggestionChipsGrid
+                suggestionChipsGrid(loadedState)
             }
 
             Spacer()
@@ -162,7 +141,9 @@ private extension ChatView {
         .padding()
     }
 
-    var suggestionChipsGrid: some View {
+    func suggestionChipsGrid(
+        _ loadedState: ChatViewModel.LoadedState
+    ) -> some View {
         LazyVGrid(
             columns: [
                 GridItem(.flexible()),
@@ -171,17 +152,16 @@ private extension ChatView {
             spacing: 12
         ) {
             ForEach(
-                suggestionPrompts,
-                id: \.text
-            ) { prompt in
+                loadedState.conversationStarters
+            ) { starter in
                 Button {
-                    viewModel.send(.suggestionTapped(prompt.text))
+                    viewModel.send(.suggestionTapped(starter.text))
                 } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: prompt.icon)
+                        Image(systemName: starter.icon)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        Text(prompt.text)
+                        Text(starter.text)
                             .font(.subheadline)
                             .multilineTextAlignment(.leading)
                             .foregroundStyle(.primary)
