@@ -5,7 +5,7 @@
 <h1 align="center">OpenClient LLM</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.0.0-brightgreen?style=flat-square" alt="Version" />
+  <img src="https://img.shields.io/badge/Version-1.1.0-brightgreen?style=flat-square" alt="Version" />
   <img src="https://img.shields.io/badge/Platform-iOS%2026+%20|%20iPadOS%2026+%20|%20macOS%2026+-blue?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift" alt="Swift" />
   <img src="https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift" alt="SwiftUI" />
@@ -49,7 +49,7 @@ openclient-llm/                    # iOS target
 │   │   ├── Launch/                # Initial routing
 │   │   │   ├── Views/             # LaunchView
 │   │   │   ├── ViewModels/        # LaunchViewModel
-│   │   │   └── UseCases/          # CheckOnboardingUseCase
+│   │   │   └── UseCases/          # CheckOnboarding, ResetAppData
 │   │   ├── Models/                # LLM model listing
 │   │   │   ├── Views/             # ModelsView
 │   │   │   ├── ViewModels/        # ModelsViewModel
@@ -68,7 +68,7 @@ openclient-llm/                    # iOS target
 │   ├── Core/
 │   │   ├── Networking/            # API client, SSE streaming
 │   │   │   └── Models/            # Request/response DTOs
-│   │   ├── Managers/              # Settings, conversation starters
+│   │   ├── Managers/              # Settings, Keychain, conversation starters
 │   │   ├── Views/                 # Reusable views
 │   │   ├── Extensions/            # Swift/SwiftUI extensions
 │   │   └── Utils/                 # Constants, shared utilities
@@ -84,6 +84,8 @@ openclient-llm-macOS/              # macOS target
     └── Assets.xcassets/           # macOS assets, accent color, app icon
 
 openclient-llm-test/               # Unit tests
+├── Core/
+│   └── Managers/                  # KeychainManager tests
 ├── Features/
 │   ├── Chat/                      # ChatViewModel, UseCase tests
 │   ├── Launch/                    # LaunchViewModel, UseCase tests

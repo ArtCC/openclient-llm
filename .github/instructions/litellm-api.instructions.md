@@ -47,6 +47,45 @@ Returns available models in OpenAI format:
 }
 ```
 
+### Model Info — `GET /model/info`
+
+Returns detailed information about each model, including capabilities and cost data pulled from model config and the [LiteLLM model cost map](https://github.com/BerriAI/litellm/blob/main/model_prices_and_context_window.json).
+
+```json
+{
+  "data": [
+    {
+      "model_name": "gpt-4",
+      "litellm_params": { "model": "gpt-4" },
+      "model_info": {
+        "id": "...",
+        "key": "gpt-4",
+        "max_tokens": 4096,
+        "max_input_tokens": 8192,
+        "max_output_tokens": 4096,
+        "input_cost_per_token": 3e-05,
+        "output_cost_per_token": 6e-05,
+        "litellm_provider": "openai",
+        "mode": "chat",
+        "supports_vision": true,
+        "supports_function_calling": true,
+        "supports_parallel_function_calling": true,
+        "supports_response_schema": false
+      }
+    }
+  ]
+}
+```
+
+Key capability fields in `model_info`:
+- `supports_vision` — model can process images
+- `supports_function_calling` — model supports tool/function calls
+- `supports_parallel_function_calling` — model can call multiple tools in parallel
+- `supports_response_schema` — model supports structured JSON output schema
+- `mode` — model type: `chat`, `completion`, `embedding`, etc.
+- `litellm_provider` — provider name (openai, anthropic, ollama, etc.)
+- `max_input_tokens` / `max_output_tokens` — context window limits
+
 ### Health Check — `GET /health`
 
 Simple endpoint to validate server connectivity.

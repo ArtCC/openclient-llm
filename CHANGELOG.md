@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-03-30
+
+### Added
+
+- KeychainManager for secure storage of server URL and API key using iOS/macOS Keychain Services
+- ResetAppDataUseCase to clear all persisted data (Keychain + UserDefaults) on first launch
+- Automatic migration from UserDefaults to Keychain for existing users
+- `deleteAll()` method on SettingsManager for full data cleanup
+- Unit tests for KeychainManager and ResetAppDataUseCase
+- MockKeychainManager and MockResetAppDataUseCase test doubles
+
+### Changed
+
+- SettingsManager now delegates server URL and API key storage to KeychainManager instead of UserDefaults
+- LaunchViewModel resets all app data when onboarding has not been completed (first launch / reinstall)
+
+### Security
+
+- Server URL and API key are no longer stored in plain text in UserDefaults
+- Keychain items use `kSecAttrAccessibleAfterFirstUnlock` protection level
+
 ## [1.0.0] - 2026-03-30
 
 ### Added

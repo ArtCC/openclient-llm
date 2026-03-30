@@ -27,15 +27,18 @@ final class LaunchViewModel {
     private(set) var state: State
 
     private let checkOnboardingUseCase: CheckOnboardingUseCaseProtocol
+    private let resetAppDataUseCase: ResetAppDataUseCaseProtocol
 
     // MARK: - Init
 
     init(
         state: State = .loading,
-        checkOnboardingUseCase: CheckOnboardingUseCaseProtocol = CheckOnboardingUseCase()
+        checkOnboardingUseCase: CheckOnboardingUseCaseProtocol = CheckOnboardingUseCase(),
+        resetAppDataUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase()
     ) {
         self.state = state
         self.checkOnboardingUseCase = checkOnboardingUseCase
+        self.resetAppDataUseCase = resetAppDataUseCase
     }
 
     // MARK: - Input functions
@@ -44,6 +47,9 @@ final class LaunchViewModel {
         switch event {
         case .viewAppeared:
             let isCompleted = checkOnboardingUseCase.execute()
+            if !isCompleted {
+                resetAppDataUseCase.execute()
+            }
             state = isCompleted ? .home : .onboarding
         case .onboardingCompleted:
             state = .home

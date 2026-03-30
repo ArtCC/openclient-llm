@@ -17,6 +17,7 @@ protocol SettingsManagerProtocol: Sendable {
     func setAPIKey(_ value: String)
     func getSelectedModelId() -> String?
     func setSelectedModelId(_ value: String?)
+    func deleteAll()
 }
 
 // Safety: UserDefaults is thread-safe per Apple documentation.
@@ -26,18 +27,27 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
     private enum Keys {
         static let isOnboardingCompleted = "isOnboardingCompleted"
-        static let serverBaseURL = "serverBaseURL"
-        // TODO: Migrate API key storage to KeychainManager for production security
-        static let apiKey = "apiKey"
         static let selectedModelId = "selectedModelId"
     }
 
+    private enum LegacyKeys {
+        static let serverBaseURL = "serverBaseURL"
+        static let apiKey = "apiKey"
+    }
+
     private let defaults: UserDefaults
+    private let keychainManager: KeychainManagerProtocol
 
     // MARK: - Init
 
-    init(defaults: UserDefaults = .standard) {
+    init(
+        defaults: UserDefaults = .standard,
+        keychainManager: KeychainManagerProtocol = KeychainManager()
+    ) {
         self.defaults = defaults
+        self.keychainManager = keychainManager
+
+        migrateToKeychain()
     }
 
     // MARK: - Public
@@ -51,19 +61,19 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     }
 
     func getServerBaseURL() -> String {
-        defaults.string(forKey: Keys.serverBaseURL) ?? ""
+        keychainManager.getServerBaseURL()
     }
 
     func setServerBaseURL(_ value: String) {
-        defaults.set(value, forKey: Keys.serverBaseURL)
+        keychainManager.setServerBaseURL(value)
     }
 
     func getAPIKey() -> String {
-        defaults.string(forKey: Keys.apiKey) ?? ""
+        keychainManager.getAPIKey()
     }
 
     func setAPIKey(_ value: String) {
-        defaults.set(value, forKey: Keys.apiKey)
+        keychainManager.setAPIKey(value)
     }
 
     func getSelectedModelId() -> String? {
@@ -72,5 +82,29 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
     func setSelectedModelId(_ value: String?) {
         defaults.set(value, forKey: Keys.selectedModelId)
+    }
+
+    func deleteAll() {
+        defaults.removeObject(forKey: Keys.isOnboardingCompleted)
+        defaults.removeObject(forKey: Keys.selectedModelId)
+        defaults.removeObject(forKey: LegacyKeys.serverBaseURL)
+        defaults.removeObject(forKey: LegacyKeys.apiKey)
+        keychainManager.deleteAll()
+    }
+}
+
+// MARK: - Private
+
+private extension SettingsManager {
+    func migrateToKeychain() {
+        if let legacyURL = defaults.string(forKey: LegacyKeys.serverBaseURL) {
+            keychainManager.setServerBaseURL(legacyURL)
+            defaults.removeObject(forKey: LegacyKeys.serverBaseURL)
+        }
+
+        if let legacyKey = defaults.string(forKey: LegacyKeys.apiKey) {
+            keychainManager.setAPIKey(legacyKey)
+            defaults.removeObject(forKey: LegacyKeys.apiKey)
+        }
     }
 }

@@ -15,6 +15,7 @@ final class LaunchViewModelTests: XCTestCase {
 
     private var sut: LaunchViewModel!
     private var mockUseCase: MockCheckOnboardingUseCase!
+    private var mockResetAppData: MockResetAppDataUseCase!
 
     // MARK: - Setup
 
@@ -22,12 +23,17 @@ final class LaunchViewModelTests: XCTestCase {
         try await super.setUp()
 
         mockUseCase = MockCheckOnboardingUseCase()
-        sut = LaunchViewModel(checkOnboardingUseCase: mockUseCase)
+        mockResetAppData = MockResetAppDataUseCase()
+        sut = LaunchViewModel(
+            checkOnboardingUseCase: mockUseCase,
+            resetAppDataUseCase: mockResetAppData
+        )
     }
 
     override func tearDown() async throws {
         sut = nil
         mockUseCase = nil
+        mockResetAppData = nil
 
         try await super.tearDown()
     }
@@ -50,6 +56,17 @@ final class LaunchViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state, .onboarding)
     }
 
+    func test_send_viewAppeared_onboardingNotCompleted_resetsAppData() {
+        // Given
+        mockUseCase.result = false
+
+        // When
+        sut.send(.viewAppeared)
+
+        // Then
+        XCTAssertTrue(mockResetAppData.executeCalled)
+    }
+
     func test_send_viewAppeared_onboardingCompleted_setsHomeState() {
         // Given
         mockUseCase.result = true
@@ -61,9 +78,24 @@ final class LaunchViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state, .home)
     }
 
+    func test_send_viewAppeared_onboardingCompleted_doesNotResetAppData() {
+        // Given
+        mockUseCase.result = true
+
+        // When
+        sut.send(.viewAppeared)
+
+        // Then
+        XCTAssertFalse(mockResetAppData.executeCalled)
+    }
+
     func test_send_onboardingCompleted_setsHomeState() {
         // Given
-        sut = LaunchViewModel(state: .onboarding, checkOnboardingUseCase: mockUseCase)
+        sut = LaunchViewModel(
+            state: .onboarding,
+            checkOnboardingUseCase: mockUseCase,
+            resetAppDataUseCase: mockResetAppData
+        )
 
         // When
         sut.send(.onboardingCompleted)
