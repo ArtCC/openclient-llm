@@ -33,7 +33,7 @@ struct WebContentView: View {
                         } label: {
                             Image(systemName: "xmark")
                         }
-                        .buttonStyle(.glass)
+                        .buttonStyle(.plain)
                     }
                 }
                 #else
@@ -78,8 +78,7 @@ private struct WebView: NSViewRepresentable {
 #endif
 
 #Preview {
-    WebContentView(
-        title: "Privacy Policy",
-        url: URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/privacy")!
-    )
+    if let url = URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/privacy") {
+        WebContentView(title: "Privacy Policy", url: url)
+    }
 }

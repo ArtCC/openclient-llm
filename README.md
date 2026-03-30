@@ -69,8 +69,9 @@ openclient-llm/                    # iOS target
 │   │   ├── Networking/            # API client, SSE streaming
 │   │   │   └── Models/            # Request/response DTOs
 │   │   ├── Managers/              # Settings, conversation starters
+│   │   ├── Views/                 # Reusable views
 │   │   ├── Extensions/            # Swift/SwiftUI extensions
-│   │   └── Utils/                 # Shared utilities
+│   │   └── Utils/                 # Constants, shared utilities
 │   └── Resources/
 │       └── Localizable.xcstrings  # Localization
 └── Resources/

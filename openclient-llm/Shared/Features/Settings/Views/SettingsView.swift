@@ -31,7 +31,9 @@ struct SettingsView: View {
             }
             .navigationTitle(String(localized: "Settings"))
             .sheet(item: $presentedWebURL) { destination in
-                WebContentView(title: destination.title, url: destination.url)
+                if let url = destination.url {
+                    WebContentView(title: destination.title, url: url)
+                }
             }
         }
         .task {
@@ -192,6 +194,8 @@ extension SettingsView {
         case privacyPolicy
         case termsOfUse
 
+        // MARK: - Properties
+
         var id: String {
             switch self {
             case .privacyPolicy: "privacy"
@@ -206,12 +210,12 @@ extension SettingsView {
             }
         }
 
-        var url: URL {
+        var url: URL? {
             switch self {
             case .privacyPolicy:
-                URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/privacy")!
+                Constants.URLs.privacyPolicy
             case .termsOfUse:
-                URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/terms")!
+                Constants.URLs.termsOfUse
             }
         }
     }
