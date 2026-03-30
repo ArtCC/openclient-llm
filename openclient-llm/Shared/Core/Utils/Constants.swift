@@ -18,8 +18,8 @@ enum Constants {
     // MARK: - URLs
 
     enum URLs {
-        static let privacyPolicy = URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/privacy")
-        static let termsOfUse = URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/terms")
+        static let privacyPolicy = URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/privacy-app")
+        static let termsOfUse = URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/terms-app")
         static let authorGitHub = URL(string: "https://github.com/ArtCC")
     }
 }
