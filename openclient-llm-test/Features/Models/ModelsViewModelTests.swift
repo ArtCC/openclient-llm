@@ -18,18 +18,18 @@ final class ModelsViewModelTests: XCTestCase {
 
     // MARK: - Setup
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         mockFetchModels = MockFetchModelsUseCase()
         sut = ModelsViewModel(fetchModelsUseCase: mockFetchModels)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         sut = nil
         mockFetchModels = nil
 
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - Tests — Init

@@ -159,42 +159,46 @@ private extension OnboardingView {
                     viewModel.send(.serverURLChanged(newValue))
                 }
 
-                HStack {
-                    Group {
-                        if isAPIKeyVisible {
-                            TextField(
-                                String(localized: "API Key (Optional)"),
-                                text: $apiKey
-                            )
-                        } else {
-                            SecureField(
-                                String(localized: "API Key (Optional)"),
-                                text: $apiKey
-                            )
-                        }
-                    }
-                    .textFieldStyle(.roundedBorder)
-                    .textSelection(.enabled)
-
-                    Button {
-                        isAPIKeyVisible.toggle()
-                    } label: {
-                        Image(systemName: isAPIKeyVisible ? "eye.slash" : "eye")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(
-                        isAPIKeyVisible
-                            ? String(localized: "Hide API Key")
-                            : String(localized: "Show API Key")
-                    )
-                }
-                .onChange(of: apiKey) { _, newValue in
-                    viewModel.send(.apiKeyChanged(newValue))
-                }
+                apiKeyField
             }
 
             connectionSection(loadedState)
+        }
+    }
+
+    var apiKeyField: some View {
+        HStack {
+            Group {
+                if isAPIKeyVisible {
+                    TextField(
+                        String(localized: "API Key (Optional)"),
+                        text: $apiKey
+                    )
+                } else {
+                    SecureField(
+                        String(localized: "API Key (Optional)"),
+                        text: $apiKey
+                    )
+                }
+            }
+            .textFieldStyle(.roundedBorder)
+            .textSelection(.enabled)
+
+            Button {
+                isAPIKeyVisible.toggle()
+            } label: {
+                Image(systemName: isAPIKeyVisible ? "eye.slash" : "eye")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(
+                isAPIKeyVisible
+                    ? String(localized: "Hide API Key")
+                    : String(localized: "Show API Key")
+            )
+        }
+        .onChange(of: apiKey) { _, newValue in
+            viewModel.send(.apiKeyChanged(newValue))
         }
     }
 

@@ -20,8 +20,8 @@ final class ChatViewModelTests: XCTestCase {
 
     // MARK: - Setup
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         mockFetchModels = MockFetchModelsUseCase()
         mockStreamMessage = MockStreamMessageUseCase()
@@ -33,13 +33,13 @@ final class ChatViewModelTests: XCTestCase {
         )
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         sut = nil
         mockFetchModels = nil
         mockStreamMessage = nil
         mockSettingsManager = nil
 
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - Tests — Init

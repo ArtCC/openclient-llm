@@ -18,18 +18,18 @@ final class CheckOnboardingUseCaseTests: XCTestCase {
 
     // MARK: - Setup
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         mockSettingsManager = MockSettingsManager()
         sut = CheckOnboardingUseCase(settingsManager: mockSettingsManager)
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         sut = nil
         mockSettingsManager = nil
 
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - Tests

@@ -20,8 +20,8 @@ final class OnboardingViewModelTests: XCTestCase {
 
     // MARK: - Setup
 
-    override func setUp() {
-        super.setUp()
+    override func setUp() async throws {
+        try await super.setUp()
 
         mockCompleteOnboarding = MockCompleteOnboardingUseCase()
         mockSaveServerConfig = MockSaveServerConfigurationUseCase()
@@ -33,13 +33,13 @@ final class OnboardingViewModelTests: XCTestCase {
         )
     }
 
-    override func tearDown() {
+    override func tearDown() async throws {
         sut = nil
         mockCompleteOnboarding = nil
         mockSaveServerConfig = nil
         mockTestConnection = nil
 
-        super.tearDown()
+        try await super.tearDown()
     }
 
     // MARK: - Tests — Init
