@@ -1,5 +1,9 @@
 # OpenClient LLM — Project Guidelines
 
+## Important
+
+Any modification to project instructions, guidelines, or definition files (`.github/copilot-instructions.md`, `.github/instructions/*.md`, `.github/prompts/*.md`, `.swiftlint.yml`) must be **explicitly confirmed by the user before applying changes**. Always explain the proposed change first and wait for approval.
+
 ## Overview
 
 OpenClient LLM is a native Apple client for LiteLLM, a self-hosted LLM proxy server. The app allows users to interact with any LLM provider (Ollama, OpenAI, Anthropic, etc.) through a single unified LiteLLM endpoint.
@@ -64,6 +68,7 @@ Every Swift file must include this header at the top:
 //  openclient-llm
 //
 //  Created by Arturo Carretero Calvo on DD/MM/YYYY.
+//  Copyright © YYYY Arturo Carretero Calvo. All rights reserved.
 //
 
 import Foundation
@@ -71,6 +76,7 @@ import Foundation
 
 - Replace `FileName.swift` with the actual file name
 - Replace `DD/MM/YYYY` with the creation date
+- Replace `YYYY` with the creation year
 - `import` goes after the header, separated by one blank line
 
 ### MARK Conventions
