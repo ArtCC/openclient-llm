@@ -18,7 +18,7 @@
   },
   "testTargets" : [
     {
-      "parallelizable" : true,
+      "parallelizable" : false,
       "target" : {
         "containerPath" : "container:openclient-llm.xcodeproj",
         "identifier" : "808077492F7A67CD009BC8C4",

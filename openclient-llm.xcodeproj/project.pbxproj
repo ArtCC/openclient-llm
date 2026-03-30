@@ -18,6 +18,7 @@
 
 /* Begin PBXFileReference section */
 		805E798B2F79AC9B0070CBB3 /* openclient-llm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "openclient-llm.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		80765FFF2F7AC43C00C14063 /* openclient-llm.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = "openclient-llm.xctestplan"; path = "openclient-llm/Resources/openclient-llm.xctestplan"; sourceTree = "<group>"; };
 		8080773A2F7A66EF009BC8C4 /* openclient-llm-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "openclient-llm-macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8080774A2F7A67CD009BC8C4 /* openclient-llm-test.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "openclient-llm-test.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -101,6 +102,7 @@
 		805E79822F79AC9B0070CBB3 = {
 			isa = PBXGroup;
 			children = (
+				80765FFF2F7AC43C00C14063 /* openclient-llm.xctestplan */,
 				800F26972F7A6352009A58C6 /* openclient-llm */,
 				8080773B2F7A66EF009BC8C4 /* openclient-llm-macOS */,
 				8080774B2F7A67CD009BC8C4 /* openclient-llm-test */,
