@@ -39,7 +39,7 @@ private extension MessageBubbleView {
                 .padding(.vertical, 12)
                 .foregroundStyle(Color.primary)
                 .glassEffect(
-                    .regular.tint(.accent),
+                    .regular.tint(Color.accentColor),
                     in: .rect(cornerRadius: 18)
                 )
         }

@@ -27,9 +27,9 @@ struct ChatView: View {
                 }
             }
             .navigationTitle("")
-            #if os(iOS)
+#if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
-            #endif
+#endif
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     modelSelector
@@ -91,13 +91,13 @@ private extension ChatView {
                             MessageBubbleView(
                                 message: message,
                                 isStreaming: loadedState.isStreaming
-                                    && message.id
-                                        == loadedState.messages.last?.id
+                                && message.id
+                                == loadedState.messages.last?.id
                             )
                             .id(message.id)
                             .transition(
                                 .move(edge: .bottom)
-                                    .combined(with: .opacity)
+                                .combined(with: .opacity)
                             )
                         }
                     }
@@ -231,9 +231,9 @@ private extension ChatView {
             .textFieldStyle(.plain)
             .textSelection(.enabled)
             .lineLimit(1...5)
-            #if os(iOS)
+#if os(iOS)
             .submitLabel(.send)
-            #endif
+#endif
             .onSubmit {
                 viewModel.send(.sendTapped)
             }
@@ -296,8 +296,7 @@ private extension ChatView {
     @ViewBuilder
     var modelSelector: some View {
         if case .loaded(let loadedState) = viewModel.state,
-           !loadedState.availableModels.isEmpty
-        {
+           !loadedState.availableModels.isEmpty {
             Menu {
                 ForEach(loadedState.availableModels) { model in
                     Button {
@@ -315,7 +314,7 @@ private extension ChatView {
                 HStack(spacing: 4) {
                     Text(
                         loadedState.selectedModel?.id
-                            ?? String(localized: "No Model")
+                        ?? String(localized: "No Model")
                     )
                     .font(.headline)
                     .lineLimit(1)
