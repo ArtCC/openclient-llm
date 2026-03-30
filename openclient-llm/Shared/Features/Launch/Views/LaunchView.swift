@@ -27,8 +27,7 @@ struct LaunchView: View {
                     }
                 }
             case .home:
-                // TODO: Replace with HomeView when implemented
-                Text(String(localized: "Home"))
+                HomeView()
             }
         }
         .task {
