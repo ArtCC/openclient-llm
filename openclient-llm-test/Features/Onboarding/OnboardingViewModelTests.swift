@@ -259,7 +259,7 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertEqual(loaded.connectionStatus, .testing)
     }
 
-    func test_send_testConnectionTapped_success_setsSuccessStatus() async {
+    func test_send_testConnectionTapped_success_setsSuccessStatus() async throws {
         // Given
         sut.send(.viewAppeared)
         sut.send(.serverURLChanged("https://example.com"))
@@ -267,7 +267,7 @@ final class OnboardingViewModelTests: XCTestCase {
 
         // When
         sut.send(.testConnectionTapped)
-        await Task.yield()
+        try await Task.sleep(for: .milliseconds(100))
 
         // Then
         guard case .loaded(let loaded) = sut.state else {
@@ -277,7 +277,7 @@ final class OnboardingViewModelTests: XCTestCase {
         XCTAssertEqual(loaded.connectionStatus, .success)
     }
 
-    func test_send_testConnectionTapped_failure_setsFailureStatus() async {
+    func test_send_testConnectionTapped_failure_setsFailureStatus() async throws {
         // Given
         sut.send(.viewAppeared)
         sut.send(.serverURLChanged("https://example.com"))
@@ -285,7 +285,7 @@ final class OnboardingViewModelTests: XCTestCase {
 
         // When
         sut.send(.testConnectionTapped)
-        await Task.yield()
+        try await Task.sleep(for: .milliseconds(100))
 
         // Then
         guard case .loaded(let loaded) = sut.state else {
