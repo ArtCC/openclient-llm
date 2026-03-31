@@ -399,8 +399,10 @@ private extension ChatView {
                 viewModel.send(.stopStreamingTapped)
             } label: {
                 Image(systemName: "stop.circle.fill")
-                    .font(.title2)
+                    .font(.title)
                     .foregroundStyle(.red)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(String(localized: "Stop"))
@@ -417,8 +419,10 @@ private extension ChatView {
                     viewModel.send(.sendTapped)
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.title2)
+                        .font(.title)
                         .foregroundStyle(Color.accentColor)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(String(localized: "Send"))
