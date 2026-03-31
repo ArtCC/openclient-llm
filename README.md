@@ -38,7 +38,7 @@ openclient-llm/                    # iOS target
 ├── Shared/                        # Shared code (iOS + macOS)
 │   ├── Features/                  # Feature modules
 │   │   ├── Chat/                  # Chat with SSE streaming
-│   │   │   ├── Views/             # ChatView, MessageBubbleView
+│   │   │   ├── Views/             # ChatView, MessageBubbleView, CodeBlockView
 │   │   │   ├── ViewModels/        # ChatViewModel (Event/State)
 │   │   │   ├── UseCases/          # SendMessage, StreamMessage
 │   │   │   ├── Repositories/      # ChatRepository
@@ -50,11 +50,11 @@ openclient-llm/                    # iOS target
 │   │   │   ├── ViewModels/        # LaunchViewModel
 │   │   │   └── UseCases/          # CheckOnboarding, ResetAppData
 │   │   ├── Models/                # LLM model listing
-│   │   │   ├── Views/             # ModelsView
-│   │   │   ├── ViewModels/        # ModelsViewModel
-│   │   │   ├── UseCases/          # FetchModelsUseCase
-│   │   │   ├── Repositories/      # ModelsRepository
-│   │   │   └── Models/            # LLMModel
+│   │       ├── Views/             # ModelsView (Local/Cloud sections)
+│   │       ├── ViewModels/        # ModelsViewModel
+│   │       ├── UseCases/          # FetchModelsUseCase
+│   │       ├── Repositories/      # ModelsRepository
+│   │       └── Models/            # LLMModel (Provider, Capability)
 │   │   ├── Onboarding/            # Server setup wizard
 │   │   │   ├── Views/             # OnboardingView
 │   │   │   ├── ViewModels/        # OnboardingViewModel
@@ -70,7 +70,7 @@ openclient-llm/                    # iOS target
 │   │   ├── Managers/              # Settings, Keychain, conversation starters
 │   │   ├── Views/                 # Reusable views
 │   │   ├── Extensions/            # Swift/SwiftUI extensions
-│   │   └── Utils/                 # Constants, shared utilities
+│       └── Utils/                 # Constants, MarkdownParser
 │   └── Resources/
 │       └── Localizable.xcstrings  # Localization
 └── Resources/
