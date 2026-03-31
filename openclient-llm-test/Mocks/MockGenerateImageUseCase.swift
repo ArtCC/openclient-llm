@@ -19,7 +19,7 @@ final class MockGenerateImageUseCase: GenerateImageUseCaseProtocol, @unchecked S
 
     // MARK: - Execute
 
-    func execute(prompt: String, model: String, size: String) async throws -> GeneratedImage {
+    func execute(prompt: String, model: String, size: String, mode: LLMModel.Mode) async throws -> GeneratedImage {
         executeCalled = true
         guard let result else {
             return GeneratedImage(prompt: "", imageData: Data(), modelId: "")

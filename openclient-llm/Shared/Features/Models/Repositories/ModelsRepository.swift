@@ -62,7 +62,8 @@ struct ModelsRepository: ModelsRepositoryProtocol {
             }
 
             let provider = LLMModel.Provider.from(info.modelInfo?.litellmProvider)
-            return LLMModel(id: info.modelName, capabilities: capabilities, provider: provider)
+            let mode = LLMModel.Mode(rawString: info.modelInfo?.mode)
+            return LLMModel(id: info.modelName, capabilities: capabilities, provider: provider, mode: mode)
         }
     }
 }

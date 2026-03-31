@@ -52,7 +52,8 @@ struct ChatRepository: ChatRepositoryProtocol {
             temperature: parameters.temperature,
             maxTokens: parameters.maxTokens,
             topP: parameters.topP,
-            streamOptions: nil
+            streamOptions: nil,
+            modalities: nil
         )
 
         let response: ChatCompletionResponse = try await apiClient.request(
@@ -88,7 +89,8 @@ struct ChatRepository: ChatRepositoryProtocol {
             temperature: parameters.temperature,
             maxTokens: parameters.maxTokens,
             topP: parameters.topP,
-            streamOptions: ChatCompletionRequest.StreamOptions(includeUsage: true)
+            streamOptions: ChatCompletionRequest.StreamOptions(includeUsage: true),
+            modalities: nil
         )
 
         let decoder = JSONDecoder()

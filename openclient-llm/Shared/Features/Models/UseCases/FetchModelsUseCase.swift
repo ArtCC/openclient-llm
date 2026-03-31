@@ -39,6 +39,7 @@ struct FetchModelsUseCase: FetchModelsUseCaseProtocol {
                 if let info = infoByName[model.id] {
                     updated.capabilities = info.capabilities
                     updated.provider = info.provider
+                    updated.mode = info.mode
                 } else {
                     updated.provider = LLMModel.Provider.from(model.ownedBy)
                 }

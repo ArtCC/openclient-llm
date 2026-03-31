@@ -9,7 +9,7 @@
 import Foundation
 
 protocol GenerateImageUseCaseProtocol: Sendable {
-    func execute(prompt: String, model: String, size: String) async throws -> GeneratedImage
+    func execute(prompt: String, model: String, size: String, mode: LLMModel.Mode) async throws -> GeneratedImage
 }
 
 struct GenerateImageUseCase: GenerateImageUseCaseProtocol {
@@ -25,7 +25,7 @@ struct GenerateImageUseCase: GenerateImageUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute(prompt: String, model: String, size: String) async throws -> GeneratedImage {
-        try await repository.generateImage(prompt: prompt, model: model, size: size)
+    func execute(prompt: String, model: String, size: String, mode: LLMModel.Mode) async throws -> GeneratedImage {
+        try await repository.generateImage(prompt: prompt, model: model, size: size, mode: mode)
     }
 }

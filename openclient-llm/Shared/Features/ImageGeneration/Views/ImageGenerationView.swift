@@ -60,6 +60,9 @@ private extension ImageGenerationView {
                 imageGrid(loadedState)
             }
         }
+        #if os(iOS)
+        .scrollDismissesKeyboard(.interactively)
+        #endif
     }
 
     var emptyState: some View {

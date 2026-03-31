@@ -16,6 +16,7 @@ nonisolated struct ChatCompletionRequest: Encodable, Sendable {
     let maxTokens: Int?
     let topP: Double?
     let streamOptions: StreamOptions?
+    let modalities: [String]?
 
     struct StreamOptions: Encodable, Sendable {
         let includeUsage: Bool
@@ -29,6 +30,7 @@ nonisolated struct ChatCompletionRequest: Encodable, Sendable {
         case maxTokens = "max_tokens"
         case topP = "top_p"
         case streamOptions = "stream_options"
+        case modalities
     }
 
     func encode(to encoder: Encoder) throws {
@@ -40,6 +42,7 @@ nonisolated struct ChatCompletionRequest: Encodable, Sendable {
         try container.encodeIfPresent(maxTokens, forKey: .maxTokens)
         try container.encodeIfPresent(topP, forKey: .topP)
         try container.encodeIfPresent(streamOptions, forKey: .streamOptions)
+        try container.encodeIfPresent(modalities, forKey: .modalities)
     }
 }
 

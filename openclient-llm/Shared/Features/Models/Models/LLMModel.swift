@@ -15,14 +15,22 @@ struct LLMModel: Identifiable, Equatable, Sendable {
     let ownedBy: String
     var capabilities: [Capability]
     var provider: Provider
+    var mode: Mode
 
     // MARK: - Init
 
-    init(id: String, ownedBy: String = "", capabilities: [Capability] = [], provider: Provider = .cloud) {
+    init(
+        id: String,
+        ownedBy: String = "",
+        capabilities: [Capability] = [],
+        provider: Provider = .cloud,
+        mode: Mode = .chat
+    ) {
         self.id = id
         self.ownedBy = ownedBy
         self.capabilities = capabilities
         self.provider = provider
+        self.mode = mode
     }
 }
 
@@ -55,6 +63,30 @@ extension LLMModel {
             let localProviders: Set<String> = ["ollama", "lm_studio", "llamacpp"]
             guard let value = providerString?.lowercased() else { return .cloud }
             return localProviders.contains(value) ? .local : .cloud
+        }
+    }
+}
+
+// MARK: - Mode
+
+extension LLMModel {
+    enum Mode: String, Equatable, Sendable {
+        case chat
+        case completion
+        case embedding
+        case imageGeneration = "image_generation"
+        case audioTranscription = "audio_transcription"
+        case audioSpeech = "audio_speech"
+        case unknown
+
+        // MARK: - Init
+
+        init(rawString: String?) {
+            guard let rawString else {
+                self = .chat
+                return
+            }
+            self = Mode(rawValue: rawString) ?? .unknown
         }
     }
 }

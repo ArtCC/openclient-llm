@@ -81,7 +81,8 @@ private extension ImageGenerationViewModel {
 
         Task {
             do {
-                let models = try await fetchModelsUseCase.execute()
+                let allModels = try await fetchModelsUseCase.execute()
+                let models = allModels.filter { $0.mode == .imageGeneration || $0.mode == .chat }
                 let defaultModel = models.first?.id ?? ""
                 state = .loaded(LoadedState(
                     selectedModel: defaultModel,
@@ -124,13 +125,15 @@ private extension ImageGenerationViewModel {
 
         let model = loadedState.selectedModel
         let size = loadedState.selectedSize
+        let mode = loadedState.availableModels.first { $0.id == model }?.mode ?? .imageGeneration
 
         Task {
             do {
                 let image = try await generateImageUseCase.execute(
                     prompt: prompt,
                     model: model,
-                    size: size
+                    size: size,
+                    mode: mode
                 )
 
                 guard case .loaded(var currentState) = state else { return }

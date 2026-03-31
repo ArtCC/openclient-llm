@@ -49,7 +49,10 @@ final class ImageGenerationViewModelTests: XCTestCase {
 
     func test_send_viewAppeared_withModels_setsLoadedState() async throws {
         // Given
-        let models = [LLMModel(id: "dall-e-3"), LLMModel(id: "dall-e-2")]
+        let models = [
+            LLMModel(id: "dall-e-3", mode: .imageGeneration),
+            LLMModel(id: "dall-e-2", mode: .imageGeneration)
+        ]
         mockFetchModels.result = .success(models)
 
         // When
@@ -65,6 +68,32 @@ final class ImageGenerationViewModelTests: XCTestCase {
         XCTAssertEqual(loadedState.selectedModel, "dall-e-3")
         XCTAssertTrue(loadedState.generatedImages.isEmpty)
         XCTAssertNil(loadedState.errorMessage)
+    }
+
+    func test_send_viewAppeared_filtersNonImageCapableModels() async throws {
+        // Given
+        let models = [
+            LLMModel(id: "dall-e-3", mode: .imageGeneration),
+            LLMModel(id: "gpt-4", mode: .chat),
+            LLMModel(id: "gpt-image-1", mode: .imageGeneration),
+            LLMModel(id: "text-embedding", mode: .embedding),
+            LLMModel(id: "whisper-1", mode: .audioTranscription)
+        ]
+        mockFetchModels.result = .success(models)
+
+        // When
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.availableModels.count, 3)
+        XCTAssertTrue(loadedState.availableModels.allSatisfy { $0.mode == .imageGeneration || $0.mode == .chat })
+        XCTAssertNil(loadedState.availableModels.first(where: { $0.id == "text-embedding" }))
+        XCTAssertNil(loadedState.availableModels.first(where: { $0.id == "whisper-1" }))
     }
 
     func test_send_viewAppeared_withError_setsErrorMessage() async throws {
@@ -88,7 +117,7 @@ final class ImageGenerationViewModelTests: XCTestCase {
 
     func test_send_promptChanged_updatesPrompt() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "dall-e-3")])
+        mockFetchModels.result = .success([LLMModel(id: "dall-e-3", mode: .imageGeneration)])
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
@@ -107,7 +136,10 @@ final class ImageGenerationViewModelTests: XCTestCase {
 
     func test_send_modelSelected_updatesModel() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "dall-e-3"), LLMModel(id: "dall-e-2")])
+        mockFetchModels.result = .success([
+            LLMModel(id: "dall-e-3", mode: .imageGeneration),
+            LLMModel(id: "dall-e-2", mode: .imageGeneration)
+        ])
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
@@ -126,7 +158,7 @@ final class ImageGenerationViewModelTests: XCTestCase {
 
     func test_send_sizeSelected_updatesSize() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "dall-e-3")])
+        mockFetchModels.result = .success([LLMModel(id: "dall-e-3", mode: .imageGeneration)])
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
@@ -146,7 +178,7 @@ final class ImageGenerationViewModelTests: XCTestCase {
     func test_send_generateTapped_withValidInput_generatesImage() async throws {
         // Given
         let image = GeneratedImage(prompt: "A cat", imageData: Data([1, 2, 3]), modelId: "dall-e-3")
-        mockFetchModels.result = .success([LLMModel(id: "dall-e-3")])
+        mockFetchModels.result = .success([LLMModel(id: "dall-e-3", mode: .imageGeneration)])
         mockGenerateImage.result = .success(image)
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
@@ -170,7 +202,7 @@ final class ImageGenerationViewModelTests: XCTestCase {
 
     func test_send_generateTapped_withEmptyPrompt_doesNotGenerate() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "dall-e-3")])
+        mockFetchModels.result = .success([LLMModel(id: "dall-e-3", mode: .imageGeneration)])
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
@@ -184,7 +216,7 @@ final class ImageGenerationViewModelTests: XCTestCase {
 
     func test_send_generateTapped_withError_setsErrorMessage() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "dall-e-3")])
+        mockFetchModels.result = .success([LLMModel(id: "dall-e-3", mode: .imageGeneration)])
         mockGenerateImage.result = .failure(APIError.serverUnreachable)
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
