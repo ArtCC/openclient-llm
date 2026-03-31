@@ -16,6 +16,7 @@ final class ChatViewModelTests: XCTestCase {
     private var sut: ChatViewModel!
     private var mockFetchModels: MockFetchModelsUseCase!
     private var mockStreamMessage: MockStreamMessageUseCase!
+    private var mockSaveConversation: MockSaveConversationUseCase!
     private var mockSettingsManager: MockSettingsManager!
     private var mockConversationStarters: MockConversationStartersManager!
 
@@ -26,11 +27,13 @@ final class ChatViewModelTests: XCTestCase {
 
         mockFetchModels = MockFetchModelsUseCase()
         mockStreamMessage = MockStreamMessageUseCase()
+        mockSaveConversation = MockSaveConversationUseCase()
         mockSettingsManager = MockSettingsManager()
         mockConversationStarters = MockConversationStartersManager()
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
             streamMessageUseCase: mockStreamMessage,
+            saveConversationUseCase: mockSaveConversation,
             settingsManager: mockSettingsManager,
             conversationStartersManager: mockConversationStarters
         )
@@ -40,6 +43,7 @@ final class ChatViewModelTests: XCTestCase {
         sut = nil
         mockFetchModels = nil
         mockStreamMessage = nil
+        mockSaveConversation = nil
         mockSettingsManager = nil
         mockConversationStarters = nil
 
@@ -341,5 +345,194 @@ final class ChatViewModelTests: XCTestCase {
             "Explain quantum computing"
         )
         XCTAssertEqual(loadedState.messages[1].role, .assistant)
+    }
+
+    // MARK: - Tests — Conversation persistence
+
+    func test_send_sendTapped_createsConversation() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockStreamMessage.tokens = ["Hello"]
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        sut.send(.inputChanged("Hi"))
+
+        // When
+        sut.send(.sendTapped)
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertNotNil(loadedState.conversation)
+        XCTAssertEqual(loadedState.conversation?.modelId, "gpt-4")
+    }
+
+    func test_send_sendTapped_persistsConversation() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockStreamMessage.tokens = ["Response"]
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        sut.send(.inputChanged("Hello"))
+
+        // When
+        sut.send(.sendTapped)
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Then
+        XCTAssertFalse(mockSaveConversation.savedConversations.isEmpty)
+    }
+
+    func test_send_conversationLoaded_restoresMessages() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        let messages = [
+            ChatMessage(role: .user, content: "Hello"),
+            ChatMessage(role: .assistant, content: "Hi there!")
+        ]
+        let conversation = Conversation(
+            modelId: "gpt-4",
+            systemPrompt: "Be helpful",
+            messages: messages
+        )
+
+        // When
+        sut.send(.conversationLoaded(conversation))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.messages.count, 2)
+        XCTAssertEqual(loadedState.systemPrompt, "Be helpful")
+        XCTAssertNotNil(loadedState.conversation)
+    }
+
+    // MARK: - Tests — System prompt
+
+    func test_send_systemPromptChanged_updatesState() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // When
+        sut.send(.systemPromptChanged("You are a pirate"))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.systemPrompt, "You are a pirate")
+    }
+
+    // MARK: - Tests — Attachments
+
+    func test_send_attachmentAdded_addsToState() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        let attachment = ChatMessage.Attachment(
+            type: .image,
+            fileName: "test.jpg",
+            data: Data()
+        )
+
+        // When
+        sut.send(.attachmentAdded(attachment))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.pendingAttachments.count, 1)
+        XCTAssertEqual(loadedState.pendingAttachments.first?.fileName, "test.jpg")
+    }
+
+    func test_send_attachmentRemoved_removesFromState() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        let attachment = ChatMessage.Attachment(
+            type: .image,
+            fileName: "test.jpg",
+            data: Data()
+        )
+        sut.send(.attachmentAdded(attachment))
+
+        // When
+        sut.send(.attachmentRemoved(attachment.id))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertTrue(loadedState.pendingAttachments.isEmpty)
+    }
+
+    func test_send_sendTapped_clearsAttachments() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockStreamMessage.tokens = ["Response"]
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        let attachment = ChatMessage.Attachment(
+            type: .image,
+            fileName: "test.jpg",
+            data: Data()
+        )
+        sut.send(.attachmentAdded(attachment))
+        sut.send(.inputChanged("Describe this image"))
+
+        // When
+        sut.send(.sendTapped)
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertTrue(loadedState.pendingAttachments.isEmpty)
+        XCTAssertFalse(loadedState.messages.first(where: { $0.role == .user })?.attachments.isEmpty ?? true)
+    }
+
+    // MARK: - Tests — Conversation auto-title
+
+    func test_send_sendTapped_setsConversationTitleFromFirstMessage() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockStreamMessage.tokens = ["Response"]
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        sut.send(.inputChanged("What is quantum computing?"))
+
+        // When
+        sut.send(.sendTapped)
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.conversation?.title, "What is quantum computing?")
     }
 }

@@ -18,6 +18,12 @@ struct ChatView: View {
     @State private var inputText: String = ""
     @State private var shouldAutoScroll: Bool = true
     @State private var isNearBottom: Bool = true
+    @State private var showSystemPromptSheet: Bool = false
+    @State private var showImagePicker: Bool = false
+    @State private var showDocumentPicker: Bool = false
+
+    var conversation: Conversation?
+    var onConversationUpdated: (() -> Void)?
 
     // MARK: - View
 
@@ -39,10 +45,33 @@ struct ChatView: View {
                 ToolbarItem(placement: .principal) {
                     modelSelector
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    systemPromptButton
+                }
+            }
+            .sheet(isPresented: $showSystemPromptSheet) {
+                systemPromptSheet
             }
         }
         .task {
+            viewModel.onConversationUpdated = onConversationUpdated
             viewModel.send(.viewAppeared)
+        }
+        .onChange(of: conversation) { _, newConversation in
+            if let newConversation {
+                viewModel.send(.conversationLoaded(newConversation))
+            }
+        }
+        .task(id: conversation?.id) {
+            if let conversation {
+                viewModel.send(.conversationLoaded(conversation))
+            }
+        }
+        .imagePicker(isPresented: $showImagePicker) { attachment in
+            viewModel.send(.attachmentAdded(attachment))
+        }
+        .documentPicker(isPresented: $showDocumentPicker) { attachment in
+            viewModel.send(.attachmentAdded(attachment))
         }
     }
 }
@@ -57,6 +86,7 @@ private extension ChatView {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 VStack(spacing: 0) {
                     errorBanner(loadedState.errorMessage)
+                    attachmentPreview(loadedState)
                     inputBar(loadedState)
                 }
             }
@@ -248,12 +278,56 @@ private extension ChatView {
         }
     }
 
+    // MARK: - Attachment Preview
+
+    @ViewBuilder
+    func attachmentPreview(_ loadedState: ChatViewModel.LoadedState) -> some View {
+        if !loadedState.pendingAttachments.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(loadedState.pendingAttachments) { attachment in
+                        attachmentThumbnail(attachment)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+        }
+    }
+
+    func attachmentThumbnail(_ attachment: ChatMessage.Attachment) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: attachment.type == .image ? "photo" : "doc.fill")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text(attachment.fileName)
+                .font(.caption)
+                .lineLimit(1)
+                .foregroundStyle(.primary)
+
+            Button {
+                viewModel.send(.attachmentRemoved(attachment.id))
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .glassEffect(.regular, in: .capsule)
+    }
+
     // MARK: - Input Bar
 
     func inputBar(
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
         HStack(spacing: 8) {
+            attachmentButton(loadedState)
+
             TextField(
                 String(localized: "Message..."),
                 text: $inputText,
@@ -287,6 +361,28 @@ private extension ChatView {
     }
 
     @ViewBuilder
+    func attachmentButton(_ loadedState: ChatViewModel.LoadedState) -> some View {
+        Menu {
+            Button {
+                showImagePicker = true
+            } label: {
+                Label(String(localized: "Photo Library"), systemImage: "photo.on.rectangle")
+            }
+
+            Button {
+                showDocumentPicker = true
+            } label: {
+                Label(String(localized: "Document"), systemImage: "doc")
+            }
+        } label: {
+            Image(systemName: "plus.circle.fill")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
     func actionButton(
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
@@ -306,8 +402,9 @@ private extension ChatView {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
                 .isEmpty
             let hasModel = loadedState.selectedModel != nil
+            let hasAttachments = !loadedState.pendingAttachments.isEmpty
 
-            if hasText && hasModel {
+            if (hasText || hasAttachments) && hasModel {
                 Button {
                     viewModel.send(.sendTapped)
                 } label: {
@@ -358,9 +455,62 @@ private extension ChatView {
         }
     }
 
-    // MARK: - Helpers
+    // MARK: - System Prompt
+
+    var systemPromptButton: some View {
+        Button {
+            showSystemPromptSheet = true
+        } label: {
+            Image(systemName: "text.bubble")
+        }
+        .accessibilityLabel(String(localized: "System Prompt"))
+    }
+
+    var systemPromptSheet: some View {
+        NavigationStack {
+            systemPromptEditor
+                .navigationTitle(String(localized: "System Prompt"))
+#if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+#endif
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(String(localized: "Done")) {
+                            showSystemPromptSheet = false
+                        }
+                    }
+                }
+        }
+#if os(macOS)
+        .frame(width: 500, height: 400)
+#endif
+    }
+
+    @ViewBuilder
+    var systemPromptEditor: some View {
+        if case .loaded(let loadedState) = viewModel.state {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(String(localized: "Set instructions for the assistant's behavior in this conversation."))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+
+                TextEditor(text: Binding(
+                    get: { loadedState.systemPrompt },
+                    set: { viewModel.send(.systemPromptChanged($0)) }
+                ))
+                .font(.body)
+#if os(macOS)
+                .frame(minHeight: 200)
+#endif
+                .padding(.horizontal)
+            }
+            .padding(.top)
+        }
+    }
 }
 
 #Preview {
     ChatView()
 }
+

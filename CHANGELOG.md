@@ -47,6 +47,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Selected model highlighted with a 1.5pt accent-color border instead of a tinted background
 - Smart auto-scroll in chat: follows new content only when the user is at the bottom; pauses when user scrolls up and resumes when they reach the bottom again
 - Chat message area capped at 760pt max width, centered horizontally (better iPad/Mac layout)
+- Conversation persistence: save/load conversations locally using Codable + FileManager (Documents/Conversations/)
+- Conversation list screen with past conversations, swipe-to-delete, pull-to-refresh, and empty state
+- New conversation creation from the conversation list, using the selected model from settings
+- Configurable system prompt per conversation via toolbar sheet
+- Copy/share messages: context menu on message bubbles with Copy and ShareLink actions
+- Vision support: attach images from photo library; sent as base64 image_url content parts to the chat completions API
+- Document understanding: attach PDFs; text extracted via PDFKit and sent as context to the chat completions API
+- AttachmentPickerView with PhotosPicker (images) and fileImporter (PDFs) integration
+- Multimodal content support in networking layer (text + image_url content parts in ChatCompletionMessage)
+- ConversationRepository with FileManager-based CRUD (atomic writes, ISO8601 date encoding)
+- ConversationListViewModel with Event/State pattern for conversation management
+- Attachment model on ChatMessage (type, fileName, data) with Codable support
+- Pending attachments bar in chat input area with remove capability
+- Attachment badges on sent messages showing file names
+- Auto-generated conversation titles from the first user message
+- Auto-persistence of conversations after streaming completes
+- Unit tests for ConversationListViewModel, conversation persistence, system prompt, and attachment handling
+- Mock test doubles for ConversationRepository, LoadConversationsUseCase, SaveConversationUseCase, DeleteConversationUseCase
 
 ### Changed
 
@@ -68,3 +86,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Server URL and API key are no longer stored in plain text in UserDefaults
 - Keychain items use `kSecAttrAccessibleAfterFirstUnlock` protection level
+
+### Changed (Phase 2)
+
+- ChatViewModel rewritten to support conversation lifecycle (create, load, persist, auto-title)
+- ChatView updated with system prompt sheet, attachment pickers, and conversation loading
+- HomeView refactored with conversation list integration (NavigationStack on iOS, NavigationSplitView on macOS)
+- MessageBubbleView enhanced with context menu actions and attachment display
+- ChatCompletionRequest.content now supports multimodal encoding (text string or array of content parts)
+- ChatRepository builds multimodal messages with base64 image and PDF text extraction

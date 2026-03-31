@@ -34,15 +34,23 @@ private extension MessageBubbleView {
         HStack {
             Spacer(minLength: 60)
 
-            Text(message.content)
-                .textSelection(.enabled)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .foregroundStyle(Color.primary)
-                .glassEffect(
-                    .regular.tint(Color.accentColor),
-                    in: .rect(cornerRadius: 18)
-                )
+            VStack(alignment: .trailing, spacing: 4) {
+                if !message.attachments.isEmpty {
+                    attachmentsView
+                }
+                Text(message.content)
+                    .textSelection(.enabled)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .foregroundStyle(Color.primary)
+                    .glassEffect(
+                        .regular.tint(Color.accentColor),
+                        in: .rect(cornerRadius: 18)
+                    )
+            }
+            .contextMenu {
+                messageContextMenu(message.content)
+            }
         }
     }
 
@@ -62,6 +70,11 @@ private extension MessageBubbleView {
                 }
             }
             .frame(minHeight: 28, alignment: .center)
+            .contextMenu {
+                if !message.content.isEmpty {
+                    messageContextMenu(message.content)
+                }
+            }
 
             Spacer(minLength: 40)
         }
@@ -76,6 +89,62 @@ private extension MessageBubbleView {
             }
         }
     }
+
+    // MARK: - Attachments
+
+    @ViewBuilder
+    var attachmentsView: some View {
+        HStack(spacing: 6) {
+            ForEach(message.attachments) { attachment in
+                attachmentBadge(attachment)
+            }
+        }
+    }
+
+    func attachmentBadge(_ attachment: ChatMessage.Attachment) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: attachment.type == .image ? "photo" : "doc.fill")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(attachment.fileName)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .glassEffect(.regular, in: .capsule)
+    }
+
+    // MARK: - Context Menu
+
+    @ViewBuilder
+    func messageContextMenu(_ content: String) -> some View {
+        Button {
+            copyToClipboard(content)
+        } label: {
+            Label(String(localized: "Copy"), systemImage: "doc.on.doc")
+        }
+
+        ShareLink(
+            item: content,
+            subject: Text(String(localized: "Chat Message")),
+            message: Text(content)
+        ) {
+            Label(String(localized: "Share"), systemImage: "square.and.arrow.up")
+        }
+    }
+
+    func copyToClipboard(_ text: String) {
+#if os(iOS)
+        UIPasteboard.general.string = text
+#elseif os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+#endif
+    }
+
+    // MARK: - Blocks
 
     var blocksView: some View {
         let blocks = MarkdownParser.parse(message.content)

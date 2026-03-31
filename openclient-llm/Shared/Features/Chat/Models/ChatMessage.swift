@@ -8,15 +8,16 @@
 
 import Foundation
 
-struct ChatMessage: Identifiable, Equatable, Sendable {
+struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
     // MARK: - Properties
 
     let id: UUID
     let role: Role
     var content: String
     let timestamp: Date
+    var attachments: [Attachment]
 
-    enum Role: String, Sendable, Equatable {
+    enum Role: String, Sendable, Equatable, Codable {
         case user
         case assistant
         case system
@@ -28,11 +29,45 @@ struct ChatMessage: Identifiable, Equatable, Sendable {
         id: UUID = UUID(),
         role: Role,
         content: String,
-        timestamp: Date = Date()
+        timestamp: Date = Date(),
+        attachments: [Attachment] = []
     ) {
         self.id = id
         self.role = role
         self.content = content
         self.timestamp = timestamp
+        self.attachments = attachments
+    }
+}
+
+// MARK: - Attachment
+
+extension ChatMessage {
+    struct Attachment: Identifiable, Equatable, Sendable, Codable {
+        // MARK: - Properties
+
+        let id: UUID
+        let type: AttachmentType
+        let fileName: String
+        let data: Data
+
+        enum AttachmentType: String, Sendable, Equatable, Codable {
+            case image
+            case pdf
+        }
+
+        // MARK: - Init
+
+        init(
+            id: UUID = UUID(),
+            type: AttachmentType,
+            fileName: String,
+            data: Data
+        ) {
+            self.id = id
+            self.type = type
+            self.fileName = fileName
+            self.data = data
+        }
     }
 }
