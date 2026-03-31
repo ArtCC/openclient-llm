@@ -107,9 +107,13 @@ private extension ConversationRepository {
 
         var conversations: [Conversation] = []
         for url in fileURLs where url.pathExtension == "json" {
-            let data = try Data(contentsOf: url)
-            let conversation = try decoder.decode(Conversation.self, from: data)
-            conversations.append(conversation)
+            do {
+                let data = try Data(contentsOf: url)
+                let conversation = try decoder.decode(Conversation.self, from: data)
+                conversations.append(conversation)
+            } catch {
+                continue
+            }
         }
         return conversations
     }

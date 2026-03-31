@@ -42,6 +42,18 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         self.updatedAt = updatedAt
     }
 
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        modelId = try container.decode(String.self, forKey: .modelId)
+        systemPrompt = try container.decode(String.self, forKey: .systemPrompt)
+        messages = try container.decode([ChatMessage].self, forKey: .messages)
+        modelParameters = try container.decodeIfPresent(ModelParameters.self, forKey: .modelParameters) ?? .default
+        createdAt = try container.decode(Date.self, forKey: .createdAt)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+    }
+
     // MARK: - Computed
 
     var totalTokens: Int {
