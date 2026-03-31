@@ -62,40 +62,46 @@ private extension OnboardingView {
     }
 
     func topBar(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
-        HStack {
-            if loadedState.currentStep != .welcome {
-                Button {
-                    withAnimation(.smooth) {
-                        viewModel.send(.backTapped)
+        ZStack {
+            HStack {
+                if loadedState.currentStep != .welcome {
+                    Button {
+                        withAnimation(.smooth) {
+                            viewModel.send(.backTapped)
+                        }
+                    } label: {
+                        Image(systemName: "chevron.left")
                     }
-                } label: {
-                    Image(systemName: "chevron.left")
-                }
-                .accessibilityLabel(String(localized: "Back"))
+                    .accessibilityLabel(String(localized: "Back"))
 #if os(macOS)
-                .buttonStyle(.bordered)
+                    .buttonStyle(.bordered)
 #endif
-            } else {
-                Image(systemName: "chevron.left")
-                    .hidden()
-            }
-
-            Spacer()
-
-            stepIndicator(currentStep: loadedState.currentStep)
-
-            Spacer()
-
-            Button {
-                viewModel.send(.skipTapped)
-            } label: {
-                HStack(spacing: 4) {
-                    Text(String(localized: "Skip"))
-                    Image(systemName: "forward.fill")
-                        .font(.caption2)
+                } else {
+                    Image(systemName: "chevron.left")
+                        .hidden()
                 }
+
+                Spacer()
+
+                Button {
+                    viewModel.send(.skipTapped)
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(String(localized: "Skip"))
+                        Image(systemName: "forward.fill")
+                            .font(.caption2)
+                    }
+                }
+                .buttonStyle(.glass)
             }
-            .buttonStyle(.glass)
+
+            HStack {
+                Spacer()
+
+                stepIndicator(currentStep: loadedState.currentStep)
+
+                Spacer()
+            }
         }
     }
 

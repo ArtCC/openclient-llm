@@ -123,10 +123,10 @@ private extension ConversationListViewModel {
         guard case .loaded(let loadedState) = state else { return }
 
         let savedModelId = settingsManager.getSelectedModelId()
-        let defaultModel = loadedState.availableModels.first(where: { $0.id == savedModelId })
-            ?? loadedState.availableModels.first
-
-        guard let modelId = defaultModel?.id else { return }
+        let modelId = loadedState.availableModels.first(where: { $0.id == savedModelId })?.id
+            ?? loadedState.availableModels.first?.id
+            ?? savedModelId
+            ?? ""
 
         let conversation = Conversation(modelId: modelId)
         onConversationSelected?(conversation)

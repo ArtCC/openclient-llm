@@ -134,7 +134,7 @@ private extension ChatViewModel {
                     messages: pending?.messages ?? [],
                     selectedModel: selectedModel,
                     availableModels: models,
-                    conversationStarters: pending == nil ? starters : [],
+                    conversationStarters: (pending?.messages ?? []).isEmpty ? starters : [],
                     systemPrompt: pending?.systemPrompt ?? ""
                 ))
             } catch {

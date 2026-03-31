@@ -153,21 +153,23 @@ final class ConversationListViewModelTests: XCTestCase {
         XCTAssertEqual(selectedConversation?.modelId, "llama3")
     }
 
-    func test_send_newConversationTapped_noModels_doesNothing() async throws {
+    func test_send_newConversationTapped_noModels_createsConversationWithEmptyModelId() async throws {
         // Given
         mockLoadConversations.result = .success([])
         mockFetchModels.result = .success([])
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
-        var callbackCalled = false
-        sut.onConversationSelected = { _ in callbackCalled = true }
+        var selectedConversation: Conversation?
+        sut.onConversationSelected = { selectedConversation = $0 }
 
         // When
         sut.send(.newConversationTapped)
 
         // Then
-        XCTAssertFalse(callbackCalled)
+        XCTAssertNotNil(selectedConversation)
+        XCTAssertEqual(selectedConversation?.modelId, "")
+        XCTAssertTrue(selectedConversation?.messages.isEmpty ?? false)
     }
 
     // MARK: - Tests — conversationTapped
