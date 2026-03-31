@@ -13,11 +13,12 @@ import XCTest
 final class ChatViewModelTests: XCTestCase {
     // MARK: - Properties
 
-    private var sut: ChatViewModel!
-    private var mockFetchModels: MockFetchModelsUseCase!
-    private var mockStreamMessage: MockStreamMessageUseCase!
-    private var mockSettingsManager: MockSettingsManager!
-    private var mockConversationStarters: MockConversationStartersManager!
+    var sut: ChatViewModel!
+    var mockFetchModels: MockFetchModelsUseCase!
+    var mockStreamMessage: MockStreamMessageUseCase!
+    var mockSaveConversation: MockSaveConversationUseCase!
+    var mockSettingsManager: MockSettingsManager!
+    var mockConversationStarters: MockConversationStartersManager!
 
     // MARK: - Setup
 
@@ -26,11 +27,13 @@ final class ChatViewModelTests: XCTestCase {
 
         mockFetchModels = MockFetchModelsUseCase()
         mockStreamMessage = MockStreamMessageUseCase()
+        mockSaveConversation = MockSaveConversationUseCase()
         mockSettingsManager = MockSettingsManager()
         mockConversationStarters = MockConversationStartersManager()
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
             streamMessageUseCase: mockStreamMessage,
+            saveConversationUseCase: mockSaveConversation,
             settingsManager: mockSettingsManager,
             conversationStartersManager: mockConversationStarters
         )
@@ -40,6 +43,7 @@ final class ChatViewModelTests: XCTestCase {
         sut = nil
         mockFetchModels = nil
         mockStreamMessage = nil
+        mockSaveConversation = nil
         mockSettingsManager = nil
         mockConversationStarters = nil
 

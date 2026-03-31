@@ -38,11 +38,13 @@ openclient-llm/                    # iOS target
 ├── Shared/                        # Shared code (iOS + macOS)
 │   ├── Features/                  # Feature modules
 │   │   ├── Chat/                  # Chat with SSE streaming
-│   │   │   ├── Views/             # ChatView, MessageBubbleView, CodeBlockView
-│   │   │   ├── ViewModels/        # ChatViewModel (Event/State)
-│   │   │   ├── UseCases/          # SendMessage, StreamMessage
-│   │   │   ├── Repositories/      # ChatRepository
-│   │   │   └── Models/            # ChatMessage
+│   │   │   ├── Views/             # ChatView, MessageBubbleView, CodeBlockView,
+│   │   │   │                      # ConversationListView, AttachmentPickerView
+│   │   │   ├── ViewModels/        # ChatViewModel, ConversationListViewModel
+│   │   │   ├── UseCases/          # SendMessage, StreamMessage,
+│   │   │   │                      # LoadConversations, SaveConversation, DeleteConversation
+│   │   │   ├── Repositories/      # ChatRepository, ConversationRepository
+│   │   │   └── Models/            # ChatMessage, Conversation
 │   │   ├── Home/                  # TabView (iOS) / SplitView (macOS)
 │   │   │   └── Views/             # HomeView
 │   │   ├── Launch/                # Initial routing
