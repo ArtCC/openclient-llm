@@ -73,9 +73,7 @@ private extension OnboardingView {
                         Image(systemName: "chevron.left")
                     }
                     .accessibilityLabel(String(localized: "Back"))
-#if os(macOS)
-                    .buttonStyle(.bordered)
-#endif
+                    .buttonStyle(.glass)
                 } else {
                     Image(systemName: "chevron.left")
                         .hidden()
