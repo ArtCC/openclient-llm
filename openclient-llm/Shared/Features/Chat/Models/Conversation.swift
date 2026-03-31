@@ -16,6 +16,7 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
     var modelId: String
     var systemPrompt: String
     var messages: [ChatMessage]
+    var modelParameters: ModelParameters
     let createdAt: Date
     var updatedAt: Date
 
@@ -27,6 +28,7 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         modelId: String,
         systemPrompt: String = "",
         messages: [ChatMessage] = [],
+        modelParameters: ModelParameters = .default,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -35,7 +37,14 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         self.modelId = modelId
         self.systemPrompt = systemPrompt
         self.messages = messages
+        self.modelParameters = modelParameters
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+    }
+
+    // MARK: - Computed
+
+    var totalTokens: Int {
+        messages.compactMap(\.tokenUsage?.totalTokens).reduce(0, +)
     }
 }

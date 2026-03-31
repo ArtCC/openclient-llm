@@ -9,7 +9,7 @@
 import Foundation
 
 protocol StreamMessageUseCaseProtocol: Sendable {
-    func execute(messages: [ChatMessage], model: String) -> AsyncThrowingStream<String, Error>
+    func execute(messages: [ChatMessage], model: String, parameters: ModelParameters) -> AsyncThrowingStream<StreamChunk, Error>
 }
 
 struct StreamMessageUseCase: StreamMessageUseCaseProtocol {
@@ -25,7 +25,7 @@ struct StreamMessageUseCase: StreamMessageUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute(messages: [ChatMessage], model: String) -> AsyncThrowingStream<String, Error> {
-        repository.streamMessage(messages: messages, model: model)
+    func execute(messages: [ChatMessage], model: String, parameters: ModelParameters) -> AsyncThrowingStream<StreamChunk, Error> {
+        repository.streamMessage(messages: messages, model: model, parameters: parameters)
     }
 }

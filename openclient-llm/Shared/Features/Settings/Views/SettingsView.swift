@@ -61,6 +61,7 @@ private extension SettingsView {
     func loadedView(_ loadedState: SettingsViewModel.LoadedState) -> some View {
         Form {
             serverSection(loadedState)
+            cloudSyncSection(loadedState)
             feedbackSection()
             legalSection()
         }
@@ -198,6 +199,31 @@ private extension SettingsView {
             }
         } header: {
             Text(String(localized: "Feedback"))
+        }
+    }
+
+    func cloudSyncSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { loadedState.isCloudSyncEnabled },
+                set: { viewModel.send(.cloudSyncToggled($0)) }
+            )) {
+                Label(String(localized: "iCloud Sync"), systemImage: "icloud")
+            }
+            .disabled(!loadedState.isCloudAvailable)
+
+            if !loadedState.isCloudAvailable {
+                Label(
+                    String(localized: "Sign in to iCloud to enable sync"),
+                    systemImage: "exclamationmark.triangle"
+                )
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text(String(localized: "Sync"))
+        } footer: {
+            Text(String(localized: "Sync conversations across your devices via iCloud."))
         }
     }
 

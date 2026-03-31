@@ -18,6 +18,18 @@ protocol APIClientProtocol: Sendable {
         endpoint: String,
         body: any Encodable & Sendable
     ) -> AsyncThrowingStream<Data, Error>
+    func multipartRequest<T: Decodable & Sendable>(
+        endpoint: String,
+        fields: [String: String],
+        fileField: String,
+        fileData: Data,
+        fileName: String,
+        mimeType: String
+    ) async throws -> T
+    func rawDataRequest(
+        endpoint: String,
+        body: any Encodable & Sendable
+    ) async throws -> Data
 }
 
 enum HTTPMethod: String, Sendable {
@@ -102,6 +114,71 @@ struct APIClient: APIClientProtocol, Sendable {
                 task.cancel()
             }
         }
+    }
+
+    func multipartRequest<T: Decodable & Sendable>(
+        endpoint: String,
+        fields: [String: String],
+        fileField: String,
+        fileData: Data,
+        fileName: String,
+        mimeType: String
+    ) async throws -> T {
+        let baseURL = settingsManager.getServerBaseURL()
+        guard let url = URL(string: baseURL)?.appendingPathComponent(endpoint) else {
+            throw APIError.invalidURL
+        }
+
+        let boundary = UUID().uuidString
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 120
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        let apiKey = settingsManager.getAPIKey()
+        if !apiKey.isEmpty {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        var body = Data()
+
+        for (key, value) in fields {
+            body.append(Data("--\(boundary)\r\n".utf8))
+            body.append(Data("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".utf8))
+            body.append(Data("\(value)\r\n".utf8))
+        }
+
+        body.append(Data("--\(boundary)\r\n".utf8))
+        body.append(Data("Content-Disposition: form-data; name=\"\(fileField)\"; filename=\"\(fileName)\"\r\n".utf8))
+        body.append(Data("Content-Type: \(mimeType)\r\n\r\n".utf8))
+        body.append(fileData)
+        body.append(Data("\r\n".utf8))
+        body.append(Data("--\(boundary)--\r\n".utf8))
+
+        request.httpBody = body
+
+        let (data, response) = try await performRequest(request)
+        try validateResponse(response)
+
+        do {
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            throw APIError.decodingError
+        }
+    }
+
+    func rawDataRequest(
+        endpoint: String,
+        body: any Encodable & Sendable
+    ) async throws -> Data {
+        let urlRequest = try buildRequest(endpoint: endpoint, method: .post, body: body)
+
+        let (data, response) = try await performRequest(urlRequest)
+        try validateResponse(response)
+
+        return data
     }
 }
 

@@ -17,6 +17,10 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     var requestError: Error?
     var streamChunks: [Data] = []
     var streamError: Error?
+    var multipartResult: Any?
+    var multipartError: Error?
+    var rawDataResult: Data?
+    var rawDataError: Error?
 
     // MARK: - Public
 
@@ -52,5 +56,32 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
                 }
             }
         }
+    }
+
+    func multipartRequest<T: Decodable & Sendable>(
+        endpoint: String,
+        fields: [String: String],
+        fileField: String,
+        fileData: Data,
+        fileName: String,
+        mimeType: String
+    ) async throws -> T {
+        if let error = multipartError {
+            throw error
+        }
+        guard let result = multipartResult as? T else {
+            throw APIError.decodingError
+        }
+        return result
+    }
+
+    func rawDataRequest(
+        endpoint: String,
+        body: any Encodable & Sendable
+    ) async throws -> Data {
+        if let error = rawDataError {
+            throw error
+        }
+        return rawDataResult ?? Data()
     }
 }

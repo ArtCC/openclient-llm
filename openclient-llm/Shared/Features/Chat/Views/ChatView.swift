@@ -19,6 +19,7 @@ struct ChatView: View {
     @State private var shouldAutoScroll: Bool = true
     @State private var isNearBottom: Bool = true
     @State private var showSystemPromptSheet: Bool = false
+    @State private var showModelParametersSheet: Bool = false
     @State private var showImagePicker: Bool = false
     @State private var showDocumentPicker: Bool = false
     @State private var showCameraPicker: Bool = false
@@ -55,18 +56,33 @@ struct ChatView: View {
                     modelSelector
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        showSystemPromptSheet = true
-                    } label: {
-                        Image(systemName: "text.bubble")
+                    HStack(spacing: 4) {
+                        Button {
+                            showModelParametersSheet = true
+                        } label: {
+                            Image(systemName: "slider.horizontal.3")
+                        }
+                        .accessibilityLabel(String(localized: "Model Parameters"))
+
+                        Button {
+                            showSystemPromptSheet = true
+                        } label: {
+                            Image(systemName: "text.bubble")
+                        }
+                        .accessibilityLabel(String(localized: "System Prompt"))
                     }
-                    .accessibilityLabel(String(localized: "System Prompt"))
                 }
             }
             .sheet(isPresented: $showSystemPromptSheet) {
                 ChatSystemPromptView(
                     viewModel: viewModel,
                     isPresented: $showSystemPromptSheet
+                )
+            }
+            .sheet(isPresented: $showModelParametersSheet) {
+                ChatModelParametersView(
+                    viewModel: viewModel,
+                    isPresented: $showModelParametersSheet
                 )
             }
         }
@@ -181,7 +197,14 @@ private extension ChatView {
                     message: message,
                     isStreaming: loadedState.isStreaming
                     && message.id
-                    == loadedState.messages.last?.id
+                    == loadedState.messages.last?.id,
+                    isSpeaking: loadedState.speakingMessageId == message.id,
+                    onSpeakTapped: {
+                        viewModel.send(.speakMessageTapped(message))
+                    },
+                    onStopSpeakingTapped: {
+                        viewModel.send(.stopSpeakingTapped)
+                    }
                 )
                 .id(message.id)
                 .transition(.opacity)

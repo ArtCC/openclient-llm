@@ -18,6 +18,7 @@ final class ConversationListViewModel {
         case newConversationTapped
         case conversationTapped(Conversation)
         case deleteConversation(UUID)
+        case searchChanged(String)
     }
 
     enum State: Equatable {
@@ -30,6 +31,8 @@ final class ConversationListViewModel {
         var selectedConversation: Conversation?
         var availableModels: [LLMModel] = []
         var errorMessage: String?
+        var searchQuery: String = ""
+        var filteredConversations: [Conversation] = []
     }
 
     private(set) var state: State
@@ -69,6 +72,8 @@ final class ConversationListViewModel {
             selectConversation(conversation)
         case .deleteConversation(let id):
             deleteConversation(id)
+        case .searchChanged(let query):
+            updateSearch(query)
         }
     }
 
@@ -95,7 +100,8 @@ private extension ConversationListViewModel {
                 let conversations = try loadConversationsUseCase.execute()
                 state = .loaded(LoadedState(
                     conversations: conversations,
-                    availableModels: models
+                    availableModels: models,
+                    filteredConversations: conversations
                 ))
             } catch {
                 state = .loaded(LoadedState(
@@ -112,6 +118,7 @@ private extension ConversationListViewModel {
         do {
             loadedState.conversations = try loadConversationsUseCase.execute()
             loadedState.errorMessage = nil
+            applySearchFilter(&loadedState)
             state = .loaded(loadedState)
         } catch {
             loadedState.errorMessage = error.localizedDescription
@@ -149,10 +156,35 @@ private extension ConversationListViewModel {
                 loadedState.selectedConversation = nil
                 onConversationSelected?(nil)
             }
+            applySearchFilter(&loadedState)
             state = .loaded(loadedState)
         } catch {
             loadedState.errorMessage = error.localizedDescription
             state = .loaded(loadedState)
+        }
+    }
+
+    func updateSearch(_ query: String) {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.searchQuery = query
+        applySearchFilter(&loadedState)
+        state = .loaded(loadedState)
+    }
+
+    func applySearchFilter(_ loadedState: inout LoadedState) {
+        let query = loadedState.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !query.isEmpty else {
+            loadedState.filteredConversations = loadedState.conversations
+            return
+        }
+
+        loadedState.filteredConversations = loadedState.conversations.filter { conversation in
+            if conversation.title.lowercased().contains(query) {
+                return true
+            }
+            return conversation.messages.contains { message in
+                message.content.lowercased().contains(query)
+            }
         }
     }
 }

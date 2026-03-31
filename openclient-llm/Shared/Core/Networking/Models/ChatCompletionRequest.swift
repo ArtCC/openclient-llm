@@ -12,6 +12,35 @@ nonisolated struct ChatCompletionRequest: Encodable, Sendable {
     let model: String
     let messages: [ChatCompletionMessage]
     let stream: Bool
+    let temperature: Double?
+    let maxTokens: Int?
+    let topP: Double?
+    let streamOptions: StreamOptions?
+
+    struct StreamOptions: Encodable, Sendable {
+        let includeUsage: Bool
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case model
+        case messages
+        case stream
+        case temperature
+        case maxTokens = "max_tokens"
+        case topP = "top_p"
+        case streamOptions = "stream_options"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(model, forKey: .model)
+        try container.encode(messages, forKey: .messages)
+        try container.encode(stream, forKey: .stream)
+        try container.encodeIfPresent(temperature, forKey: .temperature)
+        try container.encodeIfPresent(maxTokens, forKey: .maxTokens)
+        try container.encodeIfPresent(topP, forKey: .topP)
+        try container.encodeIfPresent(streamOptions, forKey: .streamOptions)
+    }
 }
 
 nonisolated struct ChatCompletionMessage: Encodable, Sendable {
