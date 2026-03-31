@@ -177,6 +177,76 @@ extension ChatViewModelTests {
         XCTAssertFalse(loadedState.messages.first(where: { $0.role == .user })?.attachments.isEmpty ?? true)
     }
 
+    // MARK: - Tests — Conversation at init
+
+    func test_init_withConversation_loadsConversationAfterModels() async throws {
+        // Given
+        let models = [LLMModel(id: "gpt-4"), LLMModel(id: "llama3")]
+        let messages = [
+            ChatMessage(role: .user, content: "Hello"),
+            ChatMessage(role: .assistant, content: "Hi!")
+        ]
+        let conversation = Conversation(
+            modelId: "llama3",
+            systemPrompt: "Be helpful",
+            messages: messages
+        )
+
+        mockFetchModels.result = .success(models)
+        sut = ChatViewModel(
+            conversation: conversation,
+            fetchModelsUseCase: mockFetchModels,
+            streamMessageUseCase: mockStreamMessage,
+            saveConversationUseCase: mockSaveConversation,
+            settingsManager: mockSettingsManager,
+            conversationStartersManager: mockConversationStarters
+        )
+
+        // When
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.messages.count, 2)
+        XCTAssertEqual(loadedState.conversation?.id, conversation.id)
+        XCTAssertEqual(loadedState.selectedModel?.id, "llama3")
+        XCTAssertEqual(loadedState.systemPrompt, "Be helpful")
+        XCTAssertTrue(loadedState.conversationStarters.isEmpty)
+    }
+
+    func test_init_withConversation_loadsConversationEvenOnModelError() async throws {
+        // Given
+        let messages = [ChatMessage(role: .user, content: "Hello")]
+        let conversation = Conversation(modelId: "gpt-4", messages: messages)
+
+        mockFetchModels.result = .failure(APIError.serverUnreachable)
+        sut = ChatViewModel(
+            conversation: conversation,
+            fetchModelsUseCase: mockFetchModels,
+            streamMessageUseCase: mockStreamMessage,
+            saveConversationUseCase: mockSaveConversation,
+            settingsManager: mockSettingsManager,
+            conversationStartersManager: mockConversationStarters
+        )
+
+        // When
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.messages.count, 1)
+        XCTAssertNotNil(loadedState.conversation)
+        XCTAssertNotNil(loadedState.errorMessage)
+    }
+
     // MARK: - Tests — Conversation auto-title
 
     func test_send_sendTapped_setsConversationTitleFromFirstMessage() async throws {

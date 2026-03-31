@@ -14,7 +14,7 @@ import UIKit
 struct ChatView: View {
     // MARK: - Properties
 
-    @State private var viewModel = ChatViewModel()
+    @State private var viewModel: ChatViewModel
     @State private var inputText: String = ""
     @State private var shouldAutoScroll: Bool = true
     @State private var isNearBottom: Bool = true
@@ -25,6 +25,14 @@ struct ChatView: View {
 
     var conversation: Conversation?
     var onConversationUpdated: (() -> Void)?
+
+    // MARK: - Init
+
+    init(conversation: Conversation? = nil, onConversationUpdated: (() -> Void)? = nil) {
+        _viewModel = State(initialValue: ChatViewModel(conversation: conversation))
+        self.conversation = conversation
+        self.onConversationUpdated = onConversationUpdated
+    }
 
     // MARK: - View
 
@@ -69,11 +77,6 @@ struct ChatView: View {
         .onChange(of: conversation) { _, newConversation in
             if let newConversation {
                 viewModel.send(.conversationLoaded(newConversation))
-            }
-        }
-        .task(id: conversation?.id) {
-            if let conversation {
-                viewModel.send(.conversationLoaded(conversation))
             }
         }
         .imagePicker(isPresented: $showImagePicker) { attachment in

@@ -54,10 +54,12 @@ final class ChatViewModel {
     private let settingsManager: SettingsManagerProtocol
     private let conversationStartersManager: ConversationStartersManagerProtocol
     private var streamTask: Task<Void, Never>?
+    private var pendingConversation: Conversation?
 
     // MARK: - Init
 
     init(
+        conversation: Conversation? = nil,
         state: State = .loading,
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
         streamMessageUseCase: StreamMessageUseCaseProtocol = StreamMessageUseCase(),
@@ -66,6 +68,7 @@ final class ChatViewModel {
         conversationStartersManager: ConversationStartersManagerProtocol = ConversationStartersManager()
     ) {
         self.state = state
+        self.pendingConversation = conversation
         self.fetchModelsUseCase = fetchModelsUseCase
         self.streamMessageUseCase = streamMessageUseCase
         self.saveConversationUseCase = saveConversationUseCase
@@ -110,34 +113,47 @@ private extension ChatViewModel {
         Task {
             do {
                 let models = try await fetchModelsUseCase.execute()
+                let pending = pendingConversation
+                pendingConversation = nil
+
                 let savedModelId = settingsManager.getSelectedModelId()
-                let selectedModel = models.first(where: { $0.id == savedModelId }) ?? models.first
+                let selectedModel: LLMModel?
+
+                if let pending {
+                    selectedModel = models.first(where: { $0.id == pending.modelId })
+                        ?? models.first(where: { $0.id == savedModelId })
+                        ?? models.first
+                } else {
+                    selectedModel = models.first(where: { $0.id == savedModelId }) ?? models.first
+                }
+
                 let starters = conversationStartersManager.randomStarters(count: 4)
+
                 state = .loaded(LoadedState(
+                    conversation: pending,
+                    messages: pending?.messages ?? [],
                     selectedModel: selectedModel,
                     availableModels: models,
-                    conversationStarters: starters
+                    conversationStarters: pending == nil ? starters : [],
+                    systemPrompt: pending?.systemPrompt ?? ""
                 ))
             } catch {
-                state = .loaded(LoadedState(errorMessage: error.localizedDescription))
+                let pending = pendingConversation
+                pendingConversation = nil
+
+                state = .loaded(LoadedState(
+                    conversation: pending,
+                    messages: pending?.messages ?? [],
+                    errorMessage: error.localizedDescription,
+                    systemPrompt: pending?.systemPrompt ?? ""
+                ))
             }
         }
     }
 
     func loadConversation(_ conversation: Conversation) {
         guard case .loaded(var loadedState) = state else {
-            // If still loading, wait for initial data then load conversation
-            Task {
-                try? await Task.sleep(for: .milliseconds(200))
-                guard case .loaded(var loadedState) = state else { return }
-                loadedState.conversation = conversation
-                loadedState.messages = conversation.messages
-                loadedState.systemPrompt = conversation.systemPrompt
-                let selectedModel = loadedState.availableModels.first(where: { $0.id == conversation.modelId })
-                    ?? loadedState.selectedModel
-                loadedState.selectedModel = selectedModel
-                state = .loaded(loadedState)
-            }
+            pendingConversation = conversation
             return
         }
         loadedState.conversation = conversation
