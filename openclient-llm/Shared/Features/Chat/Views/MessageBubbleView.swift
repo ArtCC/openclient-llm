@@ -61,6 +61,7 @@ private extension MessageBubbleView {
                     blocksView
                 }
             }
+            .frame(minHeight: 28, alignment: .center)
 
             Spacer(minLength: 40)
         }

@@ -7,9 +7,6 @@
 //
 
 import SwiftUI
-#if canImport(UIKit)
-import UIKit
-#endif
 
 struct ChatView: View {
     // MARK: - Properties
@@ -52,11 +49,13 @@ private extension ChatView {
     func loadedView(
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
-        VStack(spacing: 0) {
-            messagesScrollView(loadedState)
-            errorBanner(loadedState.errorMessage)
-            inputBar(loadedState)
-        }
+        messagesScrollView(loadedState)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 0) {
+                    errorBanner(loadedState.errorMessage)
+                    inputBar(loadedState)
+                }
+            }
     }
 
     // MARK: - Messages
@@ -98,18 +97,6 @@ private extension ChatView {
             guard isAtBottom else { return }
             proxy.scrollTo("scroll-bottom")
         }
-#if os(iOS)
-        .onReceive(
-            NotificationCenter.default.publisher(
-                for: UIResponder.keyboardWillShowNotification
-            )
-        ) { _ in
-            guard isAtBottom else { return }
-            withAnimation(.smooth) {
-                proxy.scrollTo("scroll-bottom")
-            }
-        }
-#endif
     }
 
     func messagesList(
@@ -273,7 +260,7 @@ private extension ChatView {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .glassEffect(.regular, in: .capsule)
-        .padding(.horizontal)
+        .padding(.horizontal, 16)
         .padding(.bottom, 8)
     }
 

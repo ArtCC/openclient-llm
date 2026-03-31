@@ -120,12 +120,6 @@ private extension ModelsView {
                 }
             }
         }
-        .overlay {
-            if isSelected {
-                RoundedRectangle(cornerRadius: 10)
-                    .strokeBorder(Color.accentColor, lineWidth: 1.5)
-            }
-        }
     }
 
     func capabilityTags(_ capabilities: [LLMModel.Capability]) -> some View {
