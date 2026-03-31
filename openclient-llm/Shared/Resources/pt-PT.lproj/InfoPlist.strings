@@ -1,0 +1,10 @@
+/* 
+  InfoPlist.strings
+  openclient-llm
+
+  Created by Arturo Carretero Calvo on 31/03/2026.
+  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
+*/
+
+"NSCameraUsageDescription" = "O OpenClient LLM utiliza a câmara para capturar fotos e enviá-las ao modelo de IA.";
+"NSLocalNetworkUsageDescription" = "O OpenClient LLM precisa de aceder à sua rede local para se ligar ao seu servidor LiteLLM.";

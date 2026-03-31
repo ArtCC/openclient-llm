@@ -21,6 +21,7 @@ struct ChatView: View {
     @State private var showSystemPromptSheet: Bool = false
     @State private var showImagePicker: Bool = false
     @State private var showDocumentPicker: Bool = false
+    @State private var showCameraPicker: Bool = false
 
     var conversation: Conversation?
     var onConversationUpdated: (() -> Void)?
@@ -81,6 +82,11 @@ struct ChatView: View {
         .documentPicker(isPresented: $showDocumentPicker) { attachment in
             viewModel.send(.attachmentAdded(attachment))
         }
+#if os(iOS)
+        .cameraPicker(isPresented: $showCameraPicker) { attachment in
+            viewModel.send(.attachmentAdded(attachment))
+        }
+#endif
     }
 }
 
@@ -371,21 +377,31 @@ private extension ChatView {
     @ViewBuilder
     func attachmentButton(_ loadedState: ChatViewModel.LoadedState) -> some View {
         Menu {
+#if os(iOS)
             Button {
-                showImagePicker = true
+                showCameraPicker = true
             } label: {
-                Label(String(localized: "Photo Library"), systemImage: "photo.on.rectangle")
+                Label(String(localized: "Camera"), systemImage: "camera")
             }
+#endif
 
             Button {
                 showDocumentPicker = true
             } label: {
                 Label(String(localized: "Document"), systemImage: "doc")
             }
+
+            Button {
+                showImagePicker = true
+            } label: {
+                Label(String(localized: "Photo Library"), systemImage: "photo.on.rectangle")
+            }
         } label: {
             Image(systemName: "plus.circle.fill")
-                .font(.title3)
+                .font(.title)
                 .foregroundStyle(.secondary)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
     }

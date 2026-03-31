@@ -41,26 +41,53 @@ Goal: Daily-usable chat experience.
 
 Goal: Platform-optimized experience.
 
-- [ ] **macOS sidebar**: NavigationSplitView with conversation list
-- [ ] **iPadOS split view**: Adaptive layout for iPad
-- [ ] **Keyboard shortcuts**: macOS keyboard navigation
-- [ ] **Menu bar**: macOS menu items for common actions
-- [ ] **Dark/Light mode**: Full theme support with semantic colors
+- [x] **macOS sidebar**: NavigationSplitView with conversation list
+- [x] **iPadOS split view**: Adaptive layout for iPad
+- [x] **Keyboard shortcuts**: macOS keyboard navigation
+- [x] **Menu bar**: macOS menu items for common actions
+- [x] **Dark/Light mode**: Full theme support with semantic colors
+- [x] **Debug logging system**: LogManager with emoji-differentiated log levels (info, debug, warning, error, network) for readable console output in DEBUG builds
+- [x] **Attachment thumbnails in chat**: Show image thumbnails inline in sent messages (small rounded preview); show document attachments as icon + filename card
+- [x] **Camera image capture**: Attach images directly from the device camera in chat (iOS/iPadOS only)
 
 ## Phase 4 — Advanced Features
 
 Goal: Power user features.
 
-- [ ] **Multiple servers**: Support multiple LiteLLM server configurations
 - [ ] **Token usage display**: Show token count per message/conversation
 - [ ] **Model parameters**: Temperature, max tokens, top_p per conversation
 - [ ] **Search conversations**: Full-text search across conversations
-- [ ] **Export**: Export conversations to JSON/Markdown
 - [ ] **iCloud sync**: Sync conversations across devices
 - [ ] **Image generation**: Generate images from text prompts via POST /v1/images/generations (DALL-E, Stable Diffusion, Gemini, etc.)
 - [ ] **Audio transcription (Speech-to-Text)**: Record or upload audio for transcription via POST /v1/audio/transcriptions (Whisper, Groq, Deepgram, Gemini)
 - [ ] **Text-to-Speech**: Read assistant responses aloud via POST /v1/audio/speech (OpenAI TTS, AWS Polly, ElevenLabs, Gemini TTS)
 
-## Current Phase: 3 — Multi-Platform Polish
+## Phase 5 — Advanced Interactions
 
-Focus exclusively on Phase 3 features. Do not over-engineer for future phases.
+Goal: Web search, agentic capabilities, and enhanced chat workflows.
+
+- [ ] **Export**: Export conversations to JSON/Markdown
+- [ ] **Web browsing**: Enable models to search and retrieve web content via Brave Search API for grounded, up-to-date responses
+- [ ] **Agent mode (tool calling)**: Support LiteLLM function/tool calling loop — parse tool_calls from model responses, execute registered tools, send results back, and repeat until final answer
+- [ ] **Conversation branching**: Fork a conversation from any message to explore alternative responses (edit & resend)
+- [ ] **Prompt templates/library**: Library of predefined system prompts (coding assistant, translator, summarizer...) that users can save and reuse
+- [ ] **Message editing**: Edit an already sent user message and regenerate the assistant response
+- [ ] **Response regeneration**: "Regenerate" button to request a new response to the last message
+
+## Phase 6 — Ecosystem & Personalization
+
+Goal: Deep OS integration and user customization.
+
+- [ ] **Shortcuts & Siri integration**: iOS/macOS Shortcuts to send quick prompts or start chats from Siri
+- [ ] **Widgets**: iOS/macOS widget for quick access to the last chat or to send a direct prompt
+- [ ] **Share extension**: Share text/images/PDFs from other apps directly into an OpenClient chat
+- [ ] **Local RAG (embeddings)**: Index local user documents and use them as context in responses
+- [ ] **Conversation statistics**: Usage dashboard — tokens spent, most used models, chats per day
+- [ ] **Custom themes**: Allow users to customize bubble colors, fonts, etc.
+- [ ] **Multiple servers**: Manage multiple LiteLLM server configurations simultaneously
+- [ ] **Pinned conversations**: Pin important conversations to the top of the list
+- [ ] **Conversation folders/tags**: Organize chats into folders or with tags
+
+## Current Phase: 4 — Advanced Features
+
+Focus exclusively on Phase 4 features. Do not over-engineer for future phases.

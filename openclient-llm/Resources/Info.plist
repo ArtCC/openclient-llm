@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>OpenClient LLM uses the camera to capture photos for sending to the AI model.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>OpenClient LLM needs access to your local network to connect to your self-hosted LiteLLM server.</string>
 	<key>NSBonjourServices</key>
