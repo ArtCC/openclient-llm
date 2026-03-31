@@ -46,11 +46,19 @@ struct ChatView: View {
                     modelSelector
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    systemPromptButton
+                    Button {
+                        showSystemPromptSheet = true
+                    } label: {
+                        Image(systemName: "text.bubble")
+                    }
+                    .accessibilityLabel(String(localized: "System Prompt"))
                 }
             }
             .sheet(isPresented: $showSystemPromptSheet) {
-                systemPromptSheet
+                ChatSystemPromptView(
+                    viewModel: viewModel,
+                    isPresented: $showSystemPromptSheet
+                )
             }
         }
         .task {
@@ -455,62 +463,8 @@ private extension ChatView {
         }
     }
 
-    // MARK: - System Prompt
-
-    var systemPromptButton: some View {
-        Button {
-            showSystemPromptSheet = true
-        } label: {
-            Image(systemName: "text.bubble")
-        }
-        .accessibilityLabel(String(localized: "System Prompt"))
-    }
-
-    var systemPromptSheet: some View {
-        NavigationStack {
-            systemPromptEditor
-                .navigationTitle(String(localized: "System Prompt"))
-#if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-#endif
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(String(localized: "Done")) {
-                            showSystemPromptSheet = false
-                        }
-                    }
-                }
-        }
-#if os(macOS)
-        .frame(width: 500, height: 400)
-#endif
-    }
-
-    @ViewBuilder
-    var systemPromptEditor: some View {
-        if case .loaded(let loadedState) = viewModel.state {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(String(localized: "Set instructions for the assistant's behavior in this conversation."))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-
-                TextEditor(text: Binding(
-                    get: { loadedState.systemPrompt },
-                    set: { viewModel.send(.systemPromptChanged($0)) }
-                ))
-                .font(.body)
-#if os(macOS)
-                .frame(minHeight: 200)
-#endif
-                .padding(.horizontal)
-            }
-            .padding(.top)
-        }
-    }
 }
 
 #Preview {
     ChatView()
 }
-

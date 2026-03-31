@@ -43,6 +43,11 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
 // MARK: - Attachment
 
 extension ChatMessage {
+    enum AttachmentType: String, Sendable, Equatable, Codable {
+        case image
+        case pdf
+    }
+
     struct Attachment: Identifiable, Equatable, Sendable, Codable {
         // MARK: - Properties
 
@@ -50,11 +55,6 @@ extension ChatMessage {
         let type: AttachmentType
         let fileName: String
         let data: Data
-
-        enum AttachmentType: String, Sendable, Equatable, Codable {
-            case image
-            case pdf
-        }
 
         // MARK: - Init
 
