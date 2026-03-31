@@ -16,7 +16,8 @@ struct ChatView: View {
 
     @State private var viewModel = ChatViewModel()
     @State private var inputText: String = ""
-    @State private var isAtBottom: Bool = true
+    @State private var shouldAutoScroll: Bool = true
+    @State private var isNearBottom: Bool = true
 
     // MARK: - View
 
@@ -88,16 +89,23 @@ private extension ChatView {
                 - geometry.contentOffset.y
                 - geometry.containerSize.height < 80
         } action: { _, newValue in
-            isAtBottom = newValue
+            isNearBottom = newValue
+        }
+        .onScrollPhaseChange { oldPhase, newPhase in
+            if newPhase == .interacting {
+                shouldAutoScroll = false
+            } else if newPhase == .idle, oldPhase != .animating {
+                shouldAutoScroll = isNearBottom
+            }
         }
         .onChange(of: loadedState.messages.count) {
-            isAtBottom = true
+            shouldAutoScroll = true
             withAnimation(.smooth) {
                 proxy.scrollTo("scroll-bottom")
             }
         }
         .onChange(of: loadedState.messages.last?.content) {
-            guard isAtBottom else { return }
+            guard shouldAutoScroll else { return }
             proxy.scrollTo("scroll-bottom")
         }
 #if os(iOS)
@@ -111,7 +119,7 @@ private extension ChatView {
             ] as? Double ?? 0.25
             DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
                 proxy.scrollTo("scroll-bottom")
-                isAtBottom = true
+                shouldAutoScroll = true
             }
         }
 #endif
