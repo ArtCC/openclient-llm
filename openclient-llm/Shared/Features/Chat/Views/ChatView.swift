@@ -290,8 +290,8 @@ private extension ChatView {
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
-            .background(Color.red.opacity(0.1))
-            .foregroundStyle(.red)
+            .background(Color.red.opacity(0.85))
+            .foregroundStyle(.white)
         }
     }
 

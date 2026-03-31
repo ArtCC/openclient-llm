@@ -139,7 +139,7 @@ private extension APIClient {
         do {
             return try await session.data(for: request)
         } catch let error as URLError {
-            throw APIError.networkError(error.localizedDescription)
+            throw mapURLError(error)
         }
     }
 
@@ -165,8 +165,32 @@ private extension APIClient {
             return error
         }
         if let urlError = error as? URLError {
-            return APIError.networkError(urlError.localizedDescription)
+            return mapURLError(urlError)
         }
         return error
+    }
+
+    func mapURLError(_ error: URLError) -> APIError {
+        switch error.code {
+        case .cannotFindHost, .dnsLookupFailed:
+            .networkError(String(localized: "Could not find the server. Please check the URL."))
+        case .cannotConnectToHost:
+            .networkError(String(localized: "Could not connect to the server."))
+        case .notConnectedToInternet:
+            .networkError(String(localized: "No internet connection. Please check your network."))
+        case .timedOut:
+            .networkError(String(localized: "The request timed out. The server may be slow or unreachable."))
+        case .networkConnectionLost:
+            .networkError(String(localized: "The network connection was lost."))
+        case .secureConnectionFailed:
+            .networkError(String(localized: "Could not establish a secure connection to the server."))
+        case .serverCertificateUntrusted, .serverCertificateHasBadDate,
+            .serverCertificateNotYetValid, .serverCertificateHasUnknownRoot:
+            .networkError(String(localized: "The server certificate is not trusted."))
+        case .cancelled:
+            .networkError(String(localized: "The request was cancelled."))
+        default:
+            .networkError(String(localized: "A network error occurred. Please try again."))
+        }
     }
 }

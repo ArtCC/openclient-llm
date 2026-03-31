@@ -86,12 +86,16 @@ private extension OnboardingView {
 
             Spacer()
 
-            Button(String(localized: "Skip")) {
+            Button {
                 viewModel.send(.skipTapped)
+            } label: {
+                HStack(spacing: 4) {
+                    Text(String(localized: "Skip"))
+                    Image(systemName: "forward.fill")
+                        .font(.caption2)
+                }
             }
-#if os(macOS)
-            .buttonStyle(.bordered)
-#endif
+            .buttonStyle(.glass)
         }
     }
 
