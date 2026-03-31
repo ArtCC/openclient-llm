@@ -283,10 +283,10 @@ private extension ImageGenerationView {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .glassEffect(.regular, in: .capsule)
-            .transaction { $0.animation = nil }
+            .background(.ultraThinMaterial, in: .capsule)
         }
         .buttonStyle(.plain)
+        .id(loadedState.selectedModel)
     }
 
     func sizePicker(_ loadedState: ImageGenerationViewModel.LoadedState) -> some View {

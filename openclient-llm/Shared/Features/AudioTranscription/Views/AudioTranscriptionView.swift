@@ -41,14 +41,18 @@ struct AudioTranscriptionView: View {
 private extension AudioTranscriptionView {
     func loadedView(_ loadedState: AudioTranscriptionViewModel.LoadedState) -> some View {
         VStack(spacing: 0) {
-            transcriptionsList(loadedState)
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    VStack(spacing: 0) {
-                        errorBanner(loadedState.errorMessage)
-                        configBar(loadedState)
-                        audioBar(loadedState)
+            if loadedState.availableModels.isEmpty {
+                noModelsState
+            } else {
+                transcriptionsList(loadedState)
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        VStack(spacing: 0) {
+                            errorBanner(loadedState.errorMessage)
+                            configBar(loadedState)
+                            audioBar(loadedState)
+                        }
                     }
-                }
+            }
         }
         .fileImporter(
             isPresented: $showFilePicker,
@@ -57,6 +61,35 @@ private extension AudioTranscriptionView {
         ) { result in
             handleFileImport(result)
         }
+    }
+
+    var noModelsState: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            Image(systemName: "waveform.badge.exclamationmark")
+                .font(.system(size: 44))
+                .foregroundStyle(.secondary)
+                .frame(width: 80, height: 80)
+                .glassEffect(.regular, in: .circle)
+
+            VStack(spacing: 8) {
+                Text(String(localized: "No Transcription Models Available"))
+                    .font(.title2)
+                    .fontWeight(.semibold)
+
+                // swiftlint:disable line_length
+                Text(String(localized: "Your server has no audio transcription models configured. Add a model like whisper-1 to your LiteLLM configuration."))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                // swiftlint:enable line_length
+            }
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 32)
     }
 
     // MARK: - Transcriptions List
@@ -75,6 +108,9 @@ private extension AudioTranscriptionView {
                 .padding(.vertical, 8)
             }
         }
+        #if os(iOS)
+        .scrollDismissesKeyboard(.interactively)
+        #endif
     }
 
     var emptyState: some View {
@@ -216,10 +252,10 @@ private extension AudioTranscriptionView {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .glassEffect(.regular, in: .capsule)
-            .transaction { $0.animation = nil }
+            .background(.ultraThinMaterial, in: .capsule)
         }
         .buttonStyle(.plain)
+        .id(loadedState.selectedModel)
     }
 
     // MARK: - Audio Bar
@@ -279,6 +315,8 @@ private extension AudioTranscriptionView {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                Spacer()
             }
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
@@ -314,8 +352,10 @@ private extension AudioTranscriptionView {
                 viewModel.send(.clearTapped)
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.caption)
+                    .font(.title3)
                     .foregroundStyle(.secondary)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
         }
@@ -332,8 +372,8 @@ private extension AudioTranscriptionView {
             Button {
                 viewModel.send(.transcribeTapped)
             } label: {
-                Image(systemName: "text.viewfinder")
-                    .font(.title2)
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.title)
                     .foregroundStyle(Color.accentColor)
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Circle())

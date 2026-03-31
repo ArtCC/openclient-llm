@@ -74,13 +74,18 @@ Goal: Web search, agentic capabilities, and enhanced chat workflows.
 - [ ] **Message editing**: Edit an already sent user message and regenerate the assistant response
 - [ ] **Response regeneration**: "Regenerate" button to request a new response to the last message
 
-## Phase 6 — Ecosystem & Personalization
+## Phase 6 — Personalization
 
-Goal: Deep OS integration and user customization.
+Goal: User customization.
 
 - [ ] **Custom themes**: Allow users to customize bubble colors, fonts, etc.
 - [ ] **Pinned conversations**: Pin important conversations to the top of the list
 - [ ] **Conversation folders/tags**: Organize chats into folders or with tags
+
+## Phase 7 — Ecosystem
+
+Goal: Deep OS integration.
+
 - [ ] **Shortcuts & Siri integration**: iOS/macOS Shortcuts to send quick prompts or start chats from Siri
 - [ ] **Share extension**: Share text/images/PDFs from other apps directly into an OpenClient chat
 

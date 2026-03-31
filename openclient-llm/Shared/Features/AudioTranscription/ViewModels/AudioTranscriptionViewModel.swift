@@ -88,7 +88,8 @@ private extension AudioTranscriptionViewModel {
 
         Task {
             do {
-                let models = try await fetchModelsUseCase.execute()
+                let allModels = try await fetchModelsUseCase.execute()
+                let models = allModels.filter { $0.mode == .audioTranscription }
                 let defaultModel = models.first?.id ?? ""
                 state = .loaded(LoadedState(
                     selectedModel: defaultModel,
