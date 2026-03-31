@@ -7,4 +7,5 @@
 */
 
 "NSCameraUsageDescription" = "OpenClient LLM använder kameran för att ta foton och skicka dem till AI-modellen.";
+"NSMicrophoneUsageDescription" = "OpenClient LLM använder mikrofonen för att spela in ljud och transkribera det med AI-modellen.";
 "NSLocalNetworkUsageDescription" = "OpenClient LLM behöver åtkomst till ditt lokala nätverk för att ansluta till din LiteLLM-server.";
