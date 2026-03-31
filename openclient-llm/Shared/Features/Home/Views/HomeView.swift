@@ -9,6 +9,11 @@
 import SwiftUI
 
 struct HomeView: View {
+    // MARK: - Properties
+
+    @State private var selectedConversation: Conversation?
+    @State private var conversationListId = UUID()
+
     // MARK: - View
 
     var body: some View {
@@ -26,8 +31,8 @@ private extension HomeView {
     #if os(iOS)
     var iOSLayout: some View {
         TabView {
-            Tab(String(localized: "Chat"), systemImage: "bubble.left.and.bubble.right") {
-                ChatView()
+            Tab(String(localized: "Chats"), systemImage: "bubble.left.and.bubble.right") {
+                chatsTab
             }
             Tab(String(localized: "Models"), systemImage: "cpu") {
                 ModelsView()
@@ -37,36 +42,89 @@ private extension HomeView {
             }
         }
     }
+
+    var chatsTab: some View {
+        NavigationStack {
+            ConversationListView { conversation in
+                selectedConversation = conversation
+            }
+            .id(conversationListId)
+            .navigationTitle(String(localized: "Chats"))
+            .navigationDestination(item: $selectedConversation) { conversation in
+                ChatView(
+                    conversation: conversation,
+                    onConversationUpdated: {
+                        conversationListId = UUID()
+                    }
+                )
+            }
+        }
+    }
     #endif
 
     #if os(macOS)
     var macOSLayout: some View {
         NavigationSplitView {
             List {
-                NavigationLink {
-                    ChatView()
-                } label: {
-                    Label(String(localized: "Chat"), systemImage: "bubble.left.and.bubble.right")
-                }
+                Section {
+                    NavigationLink {
+                        macOSChatsView
+                    } label: {
+                        Label(String(localized: "Chats"), systemImage: "bubble.left.and.bubble.right")
+                    }
 
-                NavigationLink {
-                    ModelsView()
-                } label: {
-                    Label(String(localized: "Models"), systemImage: "cpu")
-                }
+                    NavigationLink {
+                        ModelsView()
+                    } label: {
+                        Label(String(localized: "Models"), systemImage: "cpu")
+                    }
 
-                NavigationLink {
-                    SettingsView()
-                } label: {
-                    Label(String(localized: "Settings"), systemImage: "gearshape")
+                    NavigationLink {
+                        SettingsView()
+                    } label: {
+                        Label(String(localized: "Settings"), systemImage: "gearshape")
+                    }
                 }
             }
             .navigationTitle(String(localized: "OpenClient"))
         } detail: {
-            ChatView()
+            macOSChatsView
+        }
+    }
+
+    var macOSChatsView: some View {
+        NavigationSplitView {
+            ConversationListView { conversation in
+                selectedConversation = conversation
+            }
+            .id(conversationListId)
+            .navigationTitle(String(localized: "Chats"))
+        } detail: {
+            if let selectedConversation {
+                ChatView(
+                    conversation: selectedConversation,
+                    onConversationUpdated: {
+                        conversationListId = UUID()
+                    }
+                )
+            } else {
+                ContentUnavailableView(
+                    String(localized: "No Conversation Selected"),
+                    systemImage: "bubble.left.and.bubble.right",
+                    description: Text(String(localized: "Select or create a conversation to start chatting"))
+                )
+            }
         }
     }
     #endif
+}
+
+// MARK: - Hashable
+
+extension Conversation: Hashable {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
 }
 
 #Preview {

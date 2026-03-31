@@ -7,12 +7,23 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct ChatView: View {
     // MARK: - Properties
 
     @State private var viewModel = ChatViewModel()
     @State private var inputText: String = ""
+    @State private var shouldAutoScroll: Bool = true
+    @State private var isNearBottom: Bool = true
+    @State private var showSystemPromptSheet: Bool = false
+    @State private var showImagePicker: Bool = false
+    @State private var showDocumentPicker: Bool = false
+
+    var conversation: Conversation?
+    var onConversationUpdated: (() -> Void)?
 
     // MARK: - View
 
@@ -34,10 +45,41 @@ struct ChatView: View {
                 ToolbarItem(placement: .principal) {
                     modelSelector
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showSystemPromptSheet = true
+                    } label: {
+                        Image(systemName: "text.bubble")
+                    }
+                    .accessibilityLabel(String(localized: "System Prompt"))
+                }
+            }
+            .sheet(isPresented: $showSystemPromptSheet) {
+                ChatSystemPromptView(
+                    viewModel: viewModel,
+                    isPresented: $showSystemPromptSheet
+                )
             }
         }
         .task {
+            viewModel.onConversationUpdated = onConversationUpdated
             viewModel.send(.viewAppeared)
+        }
+        .onChange(of: conversation) { _, newConversation in
+            if let newConversation {
+                viewModel.send(.conversationLoaded(newConversation))
+            }
+        }
+        .task(id: conversation?.id) {
+            if let conversation {
+                viewModel.send(.conversationLoaded(conversation))
+            }
+        }
+        .imagePicker(isPresented: $showImagePicker) { attachment in
+            viewModel.send(.attachmentAdded(attachment))
+        }
+        .documentPicker(isPresented: $showDocumentPicker) { attachment in
+            viewModel.send(.attachmentAdded(attachment))
         }
     }
 }
@@ -48,11 +90,14 @@ private extension ChatView {
     func loadedView(
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
-        VStack(spacing: 0) {
-            messagesScrollView(loadedState)
-            errorBanner(loadedState.errorMessage)
-            inputBar(loadedState)
-        }
+        messagesScrollView(loadedState)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 0) {
+                    errorBanner(loadedState.errorMessage)
+                    attachmentPreview(loadedState)
+                    inputBar(loadedState)
+                }
+            }
     }
 
     // MARK: - Messages
@@ -61,40 +106,84 @@ private extension ChatView {
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                if loadedState.messages.isEmpty {
-                    emptyState(loadedState)
-                } else {
-                    LazyVStack(spacing: 16) {
-                        ForEach(loadedState.messages) { message in
-                            MessageBubbleView(
-                                message: message,
-                                isStreaming: loadedState.isStreaming
-                                && message.id
-                                == loadedState.messages.last?.id
-                            )
-                            .id(message.id)
-                            .transition(
-                                .move(edge: .bottom)
-                                .combined(with: .opacity)
-                            )
-                        }
-                    }
-                    .padding()
-                    .animation(
-                        .spring(duration: 0.3),
-                        value: loadedState.messages.count
-                    )
-                }
-            }
-            .scrollDismissesKeyboard(.immediately)
-            .onChange(of: loadedState.messages.last?.content) {
-                scrollToBottom(
-                    proxy: proxy,
-                    loadedState: loadedState
-                )
+            scrollContent(loadedState, proxy: proxy)
+        }
+    }
+
+    func scrollContent(
+        _ loadedState: ChatViewModel.LoadedState,
+        proxy: ScrollViewProxy
+    ) -> some View {
+        ScrollView {
+            if loadedState.messages.isEmpty {
+                emptyState(loadedState)
+            } else {
+                messagesList(loadedState)
             }
         }
+#if os(iOS)
+        .scrollDismissesKeyboard(.interactively)
+#endif
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentSize.height
+                - geometry.contentOffset.y
+                - geometry.containerSize.height < 80
+        } action: { _, newValue in
+            isNearBottom = newValue
+        }
+        .onScrollPhaseChange { oldPhase, newPhase in
+            if newPhase == .interacting {
+                shouldAutoScroll = false
+            } else if newPhase == .idle, oldPhase != .animating {
+                shouldAutoScroll = isNearBottom
+            }
+        }
+        .onChange(of: loadedState.messages.count) {
+            shouldAutoScroll = true
+            proxy.scrollTo("scroll-bottom")
+        }
+        .onChange(of: loadedState.messages.last?.content) {
+            guard shouldAutoScroll else { return }
+            proxy.scrollTo("scroll-bottom")
+        }
+#if os(iOS)
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIResponder.keyboardWillShowNotification
+            )
+        ) { notification in
+            let duration = notification.userInfo?[
+                UIResponder.keyboardAnimationDurationUserInfoKey
+            ] as? Double ?? 0.25
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                proxy.scrollTo("scroll-bottom")
+                shouldAutoScroll = true
+            }
+        }
+#endif
+    }
+
+    func messagesList(
+        _ loadedState: ChatViewModel.LoadedState
+    ) -> some View {
+        LazyVStack(spacing: 16) {
+            ForEach(loadedState.messages) { message in
+                MessageBubbleView(
+                    message: message,
+                    isStreaming: loadedState.isStreaming
+                    && message.id
+                    == loadedState.messages.last?.id
+                )
+                .id(message.id)
+                .transition(.opacity)
+            }
+            Color.clear
+                .frame(height: 1)
+                .id("scroll-bottom")
+        }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: 760)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Empty State
@@ -197,12 +286,56 @@ private extension ChatView {
         }
     }
 
+    // MARK: - Attachment Preview
+
+    @ViewBuilder
+    func attachmentPreview(_ loadedState: ChatViewModel.LoadedState) -> some View {
+        if !loadedState.pendingAttachments.isEmpty {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(loadedState.pendingAttachments) { attachment in
+                        attachmentThumbnail(attachment)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+        }
+    }
+
+    func attachmentThumbnail(_ attachment: ChatMessage.Attachment) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: attachment.type == .image ? "photo" : "doc.fill")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            Text(attachment.fileName)
+                .font(.caption)
+                .lineLimit(1)
+                .foregroundStyle(.primary)
+
+            Button {
+                viewModel.send(.attachmentRemoved(attachment.id))
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .glassEffect(.regular, in: .capsule)
+    }
+
     // MARK: - Input Bar
 
     func inputBar(
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
         HStack(spacing: 8) {
+            attachmentButton(loadedState)
+
             TextField(
                 String(localized: "Message..."),
                 text: $inputText,
@@ -231,8 +364,30 @@ private extension ChatView {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .glassEffect(.regular, in: .capsule)
-        .padding(.horizontal)
+        .padding(.horizontal, 16)
         .padding(.bottom, 8)
+    }
+
+    @ViewBuilder
+    func attachmentButton(_ loadedState: ChatViewModel.LoadedState) -> some View {
+        Menu {
+            Button {
+                showImagePicker = true
+            } label: {
+                Label(String(localized: "Photo Library"), systemImage: "photo.on.rectangle")
+            }
+
+            Button {
+                showDocumentPicker = true
+            } label: {
+                Label(String(localized: "Document"), systemImage: "doc")
+            }
+        } label: {
+            Image(systemName: "plus.circle.fill")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
@@ -244,8 +399,10 @@ private extension ChatView {
                 viewModel.send(.stopStreamingTapped)
             } label: {
                 Image(systemName: "stop.circle.fill")
-                    .font(.title2)
+                    .font(.title)
                     .foregroundStyle(.red)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(String(localized: "Stop"))
@@ -255,14 +412,17 @@ private extension ChatView {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
                 .isEmpty
             let hasModel = loadedState.selectedModel != nil
+            let hasAttachments = !loadedState.pendingAttachments.isEmpty
 
-            if hasText && hasModel {
+            if (hasText || hasAttachments) && hasModel {
                 Button {
                     viewModel.send(.sendTapped)
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.title2)
+                        .font(.title)
                         .foregroundStyle(Color.accentColor)
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(String(localized: "Send"))
@@ -307,19 +467,6 @@ private extension ChatView {
         }
     }
 
-    // MARK: - Helpers
-
-    func scrollToBottom(
-        proxy: ScrollViewProxy,
-        loadedState: ChatViewModel.LoadedState
-    ) {
-        guard let lastMessage = loadedState.messages.last else {
-            return
-        }
-        withAnimation(.smooth) {
-            proxy.scrollTo(lastMessage.id, anchor: .bottom)
-        }
-    }
 }
 
 #Preview {

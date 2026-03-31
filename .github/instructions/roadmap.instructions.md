@@ -28,14 +28,14 @@ Goal: Basic chat with a LiteLLM server.
 
 Goal: Daily-usable chat experience.
 
-- [ ] **Conversation persistence**: Save/load conversations locally (Codable + FileManager)
-- [ ] **Conversation list**: Sidebar/list of past conversations
-- [ ] **New conversation**: Create new chats, select model per conversation
-- [ ] **System prompt**: Configurable system prompt per conversation
-- [ ] **Copy/share messages**: Copy individual messages, share conversations
-- [ ] **Markdown rendering**: Render assistant responses with full Markdown + code blocks (basic inline markdown already implemented)
-- [ ] **Vision (images in chat)**: Attach photos from camera/gallery for the LLM to analyze (same /chat/completions endpoint with image_url content)
-- [ ] **Document understanding (PDFs in chat)**: Upload PDFs and ask questions about their content (same /chat/completions endpoint with file content)
+- [x] **Conversation persistence**: Save/load conversations locally (Codable + FileManager)
+- [x] **Conversation list**: Sidebar/list of past conversations
+- [x] **New conversation**: Create new chats, select model per conversation
+- [x] **System prompt**: Configurable system prompt per conversation
+- [x] **Copy/share messages**: Copy individual messages, share conversations
+- [x] **Markdown rendering**: Render assistant responses with full Markdown + code blocks (basic inline markdown already implemented)
+- [x] **Vision (images in chat)**: Attach photos from camera/gallery for the LLM to analyze (same /chat/completions endpoint with image_url content)
+- [x] **Document understanding (PDFs in chat)**: Upload PDFs and ask questions about their content (same /chat/completions endpoint with file content)
 
 ## Phase 3 — Multi-Platform Polish
 
@@ -61,6 +61,6 @@ Goal: Power user features.
 - [ ] **Audio transcription (Speech-to-Text)**: Record or upload audio for transcription via POST /v1/audio/transcriptions (Whisper, Groq, Deepgram, Gemini)
 - [ ] **Text-to-Speech**: Read assistant responses aloud via POST /v1/audio/speech (OpenAI TTS, AWS Polly, ElevenLabs, Gemini TTS)
 
-## Current Phase: 2 — Usability
+## Current Phase: 3 — Multi-Platform Polish
 
-Focus exclusively on Phase 2 features. Do not over-engineer for future phases.
+Focus exclusively on Phase 3 features. Do not over-engineer for future phases.

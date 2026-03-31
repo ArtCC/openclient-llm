@@ -184,6 +184,54 @@ Modern, clean conversational interface inspired by leading AI chat applications.
 - Minimal toolbar items — only what's essential for the current context
 - Navigation bar uses inline display mode to maximize content area
 
+## macOS Chat Adaptations
+
+The chat interface shares the same core layout across platforms, but macOS requires subtle adjustments for a native desktop feel.
+
+### Input Bar
+
+- Same glass capsule input bar as iOS
+- On macOS, the text field should use `.textFieldStyle(.plain)` — consistent with iOS (glass provides the chrome)
+- Send/stop button: use `.buttonStyle(.plain)` since it's an icon inside the glass pill — same as iOS
+- No `.submitLabel()` on macOS — handle Enter key via `.onSubmit {}` (same behavior, no modifier needed)
+
+### Message Bubbles
+
+- Same layout rules as iOS (user right-aligned with glass, assistant left-aligned without background)
+- On macOS, user bubble glass may render slightly differently due to window backgrounds — test with various desktop wallpapers
+- Hover effect on messages: show timestamp on hover (future enhancement)
+
+### Action Buttons Inside Messages
+
+- Copy button, code block actions: use `.buttonStyle(.plain)` with `.onHover` highlight on macOS
+- Avoid `.buttonStyle(.bordered)` for small inline actions inside messages — it adds too much chrome
+- These inline icon buttons are **not** standard form actions, so plain style is correct on both platforms
+
+### Scroll Behavior
+
+- macOS uses visible scroll indicators by default — don't hide them
+- `.scrollDismissesKeyboard()` is iOS-only — omit on macOS (already guarded by `#if os(iOS)`)
+- Elastic overscroll is native on macOS — don't disable it
+- On macOS the keyboard notification for scroll adjustment is not needed — the keyboard doesn't overlay content
+
+### Model Selector (Toolbar)
+
+- Same `Menu` + chevron pattern as iOS
+- On macOS, `ToolbarItem(placement: .principal)` works but may render differently — test that the model name centers correctly in the macOS toolbar
+- macOS toolbar has built-in glass — don't add extra glass to the selector label
+
+### Suggestion Chips
+
+- Same 2-column grid with glass interactive chips
+- On macOS, chips respond to hover (`.interactive()` handles this automatically with Liquid Glass)
+- Ensure chips have pointer cursor on hover (system default for interactive glass)
+
+### Empty State
+
+- Same layout as iOS — centered icon + greeting + chips
+- On macOS with larger windows, the `maxWidth(400)` constraint keeps it readable
+- No adjustment needed — the constraint handles both platforms
+
 ---
 
 # Annex: App-Specific — OpenClient LLM
