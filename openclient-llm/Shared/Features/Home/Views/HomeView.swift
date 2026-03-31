@@ -18,6 +18,10 @@ struct HomeView: View {
     @State private var sidebarDestination: SidebarDestination = .chats
     #endif
 
+    #if os(iOS)
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    #endif
+
     // MARK: - View
 
     var body: some View {
@@ -48,6 +52,34 @@ private extension HomeView {
     }
 
     var chatsTab: some View {
+        Group {
+            if horizontalSizeClass == .regular {
+                iPadChatsLayout
+            } else {
+                iPhoneChatsLayout
+            }
+        }
+    }
+
+    var iPhoneChatsLayout: some View {
+        NavigationStack {
+            ConversationListView { conversation in
+                selectedConversation = conversation
+            }
+            .id(conversationListId)
+            .navigationTitle(String(localized: "Chats"))
+            .navigationDestination(item: $selectedConversation) { conversation in
+                ChatView(
+                    conversation: conversation,
+                    onConversationUpdated: {
+                        conversationListId = UUID()
+                    }
+                )
+            }
+        }
+    }
+
+    var iPadChatsLayout: some View {
         NavigationSplitView {
             ConversationListView { conversation in
                 selectedConversation = conversation
