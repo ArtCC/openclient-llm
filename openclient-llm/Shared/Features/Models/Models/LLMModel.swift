@@ -14,13 +14,48 @@ struct LLMModel: Identifiable, Equatable, Sendable {
     let id: String
     let ownedBy: String
     var capabilities: [Capability]
+    var provider: Provider
 
     // MARK: - Init
 
-    init(id: String, ownedBy: String = "", capabilities: [Capability] = []) {
+    init(id: String, ownedBy: String = "", capabilities: [Capability] = [], provider: Provider = .cloud) {
         self.id = id
         self.ownedBy = ownedBy
         self.capabilities = capabilities
+        self.provider = provider
+    }
+}
+
+// MARK: - Provider
+
+extension LLMModel {
+    enum Provider: Equatable, Sendable {
+        case local
+        case cloud
+
+        // MARK: - Properties
+
+        var label: String {
+            switch self {
+            case .local: String(localized: "Local")
+            case .cloud: String(localized: "Cloud")
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .local: "desktopcomputer"
+            case .cloud: "cloud"
+            }
+        }
+
+        // MARK: - Static
+
+        static func from(_ providerString: String?) -> Provider {
+            let localProviders: Set<String> = ["ollama", "lm_studio", "llamacpp"]
+            guard let value = providerString?.lowercased() else { return .cloud }
+            return localProviders.contains(value) ? .local : .cloud
+        }
     }
 }
 

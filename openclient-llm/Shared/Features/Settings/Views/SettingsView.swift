@@ -61,8 +61,6 @@ private extension SettingsView {
     func loadedView(_ loadedState: SettingsViewModel.LoadedState) -> some View {
         Form {
             serverSection(loadedState)
-            connectionSection(loadedState)
-            saveSection(loadedState)
             feedbackSection()
             legalSection()
         }
@@ -75,6 +73,38 @@ private extension SettingsView {
         Section {
             serverURLField()
             apiKeyField()
+            connectionStatusView(loadedState.connectionStatus)
+            Button {
+                focusedField = nil
+                viewModel.send(.testConnectionTapped)
+            } label: {
+                HStack(spacing: 8) {
+                    if loadedState.connectionStatus == .testing {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                    Text(
+                        loadedState.connectionStatus == .testing
+                            ? String(localized: "Testing...")
+                            : String(localized: "Test Connection")
+                    )
+                }
+            }
+            .disabled(loadedState.serverURL.isEmpty || loadedState.connectionStatus == .testing)
+
+            Button {
+                focusedField = nil
+                viewModel.send(.saveTapped)
+            } label: {
+                HStack {
+                    Text(String(localized: "Save"))
+                    Spacer()
+                    if loadedState.isSaved {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    }
+                }
+            }
         } header: {
             Text(String(localized: "Server"))
         }
@@ -132,50 +162,6 @@ private extension SettingsView {
         }
         .onChange(of: apiKey) { _, newValue in
             viewModel.send(.apiKeyChanged(newValue))
-        }
-    }
-
-    func connectionSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
-        Section {
-            Button {
-                focusedField = nil
-                viewModel.send(.testConnectionTapped)
-            } label: {
-                HStack(spacing: 8) {
-                    if loadedState.connectionStatus == .testing {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
-                    Text(
-                        loadedState.connectionStatus == .testing
-                            ? String(localized: "Testing...")
-                            : String(localized: "Test Connection")
-                    )
-                }
-            }
-            .disabled(loadedState.serverURL.isEmpty || loadedState.connectionStatus == .testing)
-
-            connectionStatusView(loadedState.connectionStatus)
-        } header: {
-            Text(String(localized: "Connection"))
-        }
-    }
-
-    func saveSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
-        Section {
-            Button {
-                focusedField = nil
-                viewModel.send(.saveTapped)
-            } label: {
-                HStack {
-                    Text(String(localized: "Save"))
-                    Spacer()
-                    if loadedState.isSaved {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                    }
-                }
-            }
         }
     }
 

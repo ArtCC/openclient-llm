@@ -5,7 +5,6 @@
 <h1 align="center">OpenClient LLM</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.1.0-brightgreen?style=flat-square" alt="Version" />
   <img src="https://img.shields.io/badge/Platform-iOS%2026+%20|%20iPadOS%2026+%20|%20macOS%2026+-blue?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift" alt="Swift" />
   <img src="https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift" alt="SwiftUI" />

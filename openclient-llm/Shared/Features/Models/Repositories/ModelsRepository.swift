@@ -61,7 +61,8 @@ struct ModelsRepository: ModelsRepositoryProtocol {
                 capabilities.append(.jsonSchema)
             }
 
-            return LLMModel(id: info.modelName, capabilities: capabilities)
+            let provider = LLMModel.Provider.from(info.modelInfo?.litellmProvider)
+            return LLMModel(id: info.modelName, capabilities: capabilities, provider: provider)
         }
     }
 }

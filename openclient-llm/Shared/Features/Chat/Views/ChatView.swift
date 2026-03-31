@@ -7,12 +7,16 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct ChatView: View {
     // MARK: - Properties
 
     @State private var viewModel = ChatViewModel()
     @State private var inputText: String = ""
+    @State private var isAtBottom: Bool = true
 
     // MARK: - View
 
@@ -74,26 +78,51 @@ private extension ChatView {
                                 == loadedState.messages.last?.id
                             )
                             .id(message.id)
-                            .transition(
-                                .move(edge: .bottom)
-                                .combined(with: .opacity)
-                            )
+                            .transition(.opacity)
                         }
+                        Color.clear
+                            .frame(height: 1)
+                            .id("scroll-bottom")
                     }
-                    .padding()
+                    .padding(.horizontal, 16)
                     .animation(
                         .spring(duration: 0.3),
                         value: loadedState.messages.count
                     )
+                    .frame(maxWidth: 760)
+                    .frame(maxWidth: .infinity)
                 }
             }
             .scrollDismissesKeyboard(.immediately)
-            .onChange(of: loadedState.messages.last?.content) {
-                scrollToBottom(
-                    proxy: proxy,
-                    loadedState: loadedState
-                )
+            .onScrollGeometryChange(for: Bool.self) { geometry in
+                geometry.contentSize.height
+                    - geometry.contentOffset.y
+                    - geometry.containerSize.height < 80
+            } action: { _, newValue in
+                isAtBottom = newValue
             }
+            .onChange(of: loadedState.messages.count) {
+                isAtBottom = true
+                withAnimation(.smooth) {
+                    proxy.scrollTo("scroll-bottom")
+                }
+            }
+            .onChange(of: loadedState.messages.last?.content) {
+                guard isAtBottom else { return }
+                proxy.scrollTo("scroll-bottom")
+            }
+#if os(iOS)
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: UIResponder.keyboardWillShowNotification
+                )
+            ) { _ in
+                guard isAtBottom else { return }
+                withAnimation(.smooth) {
+                    proxy.scrollTo("scroll-bottom")
+                }
+            }
+#endif
         }
     }
 
@@ -308,18 +337,6 @@ private extension ChatView {
     }
 
     // MARK: - Helpers
-
-    func scrollToBottom(
-        proxy: ScrollViewProxy,
-        loadedState: ChatViewModel.LoadedState
-    ) {
-        guard let lastMessage = loadedState.messages.last else {
-            return
-        }
-        withAnimation(.smooth) {
-            proxy.scrollTo(lastMessage.id, anchor: .bottom)
-        }
-    }
 }
 
 #Preview {

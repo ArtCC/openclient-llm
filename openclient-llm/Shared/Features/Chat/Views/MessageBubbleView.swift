@@ -13,6 +13,7 @@ struct MessageBubbleView: View {
 
     let message: ChatMessage
     var isStreaming: Bool = false
+    @State private var cursorVisible: Bool = false
 
     // MARK: - View
 
@@ -54,14 +55,8 @@ private extension MessageBubbleView {
                 .glassEffect(.regular, in: .circle)
 
             VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 0) {
-                    markdownText
-                        .textSelection(.enabled)
-
-                    if isStreaming {
-                        blinkingCursor
-                    }
-                }
+                inlineStreamingText
+                    .textSelection(.enabled)
 
                 if isStreaming && message.content.isEmpty {
                     thinkingIndicator
@@ -70,6 +65,21 @@ private extension MessageBubbleView {
 
             Spacer(minLength: 40)
         }
+        .task(id: isStreaming) {
+            guard isStreaming else {
+                cursorVisible = false
+                return
+            }
+            while !Task.isCancelled {
+                cursorVisible.toggle()
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+        }
+    }
+
+    var inlineStreamingText: Text {
+        guard isStreaming && cursorVisible else { return markdownText }
+        return markdownText + Text("█").foregroundStyle(Color.accentColor)
     }
 
     var thinkingIndicator: some View {
@@ -98,15 +108,6 @@ private extension MessageBubbleView {
         return Text(content)
     }
 
-    var blinkingCursor: some View {
-        Text("|")
-            .fontWeight(.light)
-            .phaseAnimator([1.0, 0.0]) { content, phase in
-                content.opacity(phase)
-            } animation: { _ in
-                .easeInOut(duration: 0.5)
-            }
-    }
 }
 
 #Preview("User message") {
