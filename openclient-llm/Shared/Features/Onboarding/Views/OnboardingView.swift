@@ -72,6 +72,9 @@ private extension OnboardingView {
                     Image(systemName: "chevron.left")
                 }
                 .accessibilityLabel(String(localized: "Back"))
+#if os(macOS)
+                .buttonStyle(.bordered)
+#endif
             } else {
                 Image(systemName: "chevron.left")
                     .hidden()
@@ -86,6 +89,9 @@ private extension OnboardingView {
             Button(String(localized: "Skip")) {
                 viewModel.send(.skipTapped)
             }
+#if os(macOS)
+            .buttonStyle(.bordered)
+#endif
         }
     }
 
@@ -224,6 +230,9 @@ private extension OnboardingView {
                     )
                 }
             }
+#if os(macOS)
+            .buttonStyle(.bordered)
+#endif
             .disabled(loadedState.serverURL.isEmpty || loadedState.connectionStatus == .testing)
 
             switch loadedState.connectionStatus {

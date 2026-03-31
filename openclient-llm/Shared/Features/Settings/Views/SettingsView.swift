@@ -90,6 +90,9 @@ private extension SettingsView {
                     )
                 }
             }
+#if os(macOS)
+            .buttonStyle(.bordered)
+#endif
             .disabled(loadedState.serverURL.isEmpty || loadedState.connectionStatus == .testing)
 
             Button {

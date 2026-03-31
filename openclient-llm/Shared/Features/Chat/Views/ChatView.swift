@@ -83,7 +83,9 @@ private extension ChatView {
                 messagesList(loadedState)
             }
         }
+#if os(iOS)
         .scrollDismissesKeyboard(.interactively)
+#endif
         .onScrollGeometryChange(for: Bool.self) { geometry in
             geometry.contentSize.height
                 - geometry.contentOffset.y
@@ -100,9 +102,7 @@ private extension ChatView {
         }
         .onChange(of: loadedState.messages.count) {
             shouldAutoScroll = true
-            withAnimation(.smooth) {
-                proxy.scrollTo("scroll-bottom")
-            }
+            proxy.scrollTo("scroll-bottom")
         }
         .onChange(of: loadedState.messages.last?.content) {
             guard shouldAutoScroll else { return }

@@ -69,7 +69,12 @@ private extension CodeBlockView {
                 .foregroundStyle(copied ? Color.green : Color.secondary)
                 .contentTransition(.symbolEffect(.replace))
             }
+#if os(macOS)
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+#else
             .buttonStyle(.plain)
+#endif
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
