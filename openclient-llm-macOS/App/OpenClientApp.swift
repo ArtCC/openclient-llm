@@ -15,7 +15,11 @@ struct OpenClientApp: App {
     var body: some Scene {
         WindowGroup(id: "main") {
             LaunchView()
+                .frame(minWidth: 800, minHeight: 600)
         }
         .defaultSize(width: 1000, height: 700)
+        .commands {
+            AppCommands()
+        }
     }
 }

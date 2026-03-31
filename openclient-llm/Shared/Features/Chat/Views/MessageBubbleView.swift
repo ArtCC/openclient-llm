@@ -7,6 +7,11 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 struct MessageBubbleView: View {
     // MARK: - Properties
@@ -94,27 +99,70 @@ private extension MessageBubbleView {
 
     @ViewBuilder
     var attachmentsView: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             ForEach(message.attachments) { attachment in
-                attachmentBadge(attachment)
+                switch attachment.type {
+                case .image:
+                    imageThumbnail(attachment)
+                case .pdf:
+                    documentCard(attachment)
+                }
             }
         }
     }
 
-    func attachmentBadge(_ attachment: ChatMessage.Attachment) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: attachment.type == .image ? "photo" : "doc.fill")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            Text(attachment.fileName)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
+    @ViewBuilder
+    func imageThumbnail(_ attachment: ChatMessage.Attachment) -> some View {
+        if let image = platformImage(from: attachment.data) {
+            #if os(iOS)
+            Image(uiImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 120, height: 120)
+                .clipShape(.rect(cornerRadius: 12))
+            #elseif os(macOS)
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 120, height: 120)
+                .clipShape(.rect(cornerRadius: 12))
+            #endif
+        } else {
+            documentCard(attachment)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .glassEffect(.regular, in: .capsule)
     }
+
+    func documentCard(_ attachment: ChatMessage.Attachment) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: attachment.type == .image ? "photo" : "doc.fill")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(attachment.fileName)
+                    .font(.caption)
+                    .lineLimit(1)
+                    .foregroundStyle(.primary)
+                Text(attachment.type == .image
+                     ? String(localized: "Image")
+                     : String(localized: "PDF Document"))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
+    }
+
+    #if os(iOS)
+    func platformImage(from data: Data) -> UIImage? {
+        UIImage(data: data)
+    }
+    #elseif os(macOS)
+    func platformImage(from data: Data) -> NSImage? {
+        NSImage(data: data)
+    }
+    #endif
 
     // MARK: - Context Menu
 

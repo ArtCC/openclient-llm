@@ -26,6 +26,11 @@ struct ConversationListView: View {
                 loadedView(loadedState)
             }
         }
+        #if os(macOS)
+        .focusedSceneValue(\.newChatAction) {
+            viewModel.send(.newConversationTapped)
+        }
+        #endif
         .task {
             viewModel.onConversationSelected = onConversationSelected
             viewModel.send(.viewAppeared)
@@ -52,6 +57,7 @@ private extension ConversationListView {
                     Image(systemName: "square.and.pencil")
                 }
                 .accessibilityLabel(String(localized: "New Chat"))
+                .keyboardShortcut("n", modifiers: .command)
             }
         }
     }
@@ -113,7 +119,7 @@ private extension ConversationListView {
                         .font(.caption)
                         .foregroundStyle(.tertiary)
 
-                    Text(conversation.updatedAt, style: .relative)
+                    Text(formattedDate(conversation.createdAt))
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
@@ -134,6 +140,20 @@ private extension ConversationListView {
                 ? Color.accentColor.opacity(0.1)
                 : Color.clear
         )
+    }
+
+    func formattedDate(_ date: Date) -> String {
+        let calendar = Calendar.current
+
+        if calendar.isDateInToday(date) {
+            return date.formatted(date: .omitted, time: .shortened)
+        } else if calendar.isDateInYesterday(date) {
+            return String(localized: "Yesterday")
+        } else if let daysAgo = calendar.dateComponents([.day], from: date, to: .now).day, daysAgo < 7 {
+            return date.formatted(.dateTime.weekday(.wide))
+        } else {
+            return date.formatted(date: .abbreviated, time: .omitted)
+        }
     }
 
     func conversationTitle(_ conversation: Conversation) -> String {

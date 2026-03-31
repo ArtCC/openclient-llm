@@ -69,7 +69,7 @@ openclient-llm/                    # iOS target
 │   ├── Core/
 │   │   ├── Networking/            # API client, SSE streaming
 │   │   │   └── Models/            # Request/response DTOs
-│   │   ├── Managers/              # Settings, Keychain, conversation starters
+│   │   ├── Managers/              # Settings, Keychain, Log, conversation starters
 │   │   ├── Views/                 # Reusable views
 │   │   ├── Extensions/            # Swift/SwiftUI extensions
 │       └── Utils/                 # Constants, MarkdownParser
@@ -81,6 +81,8 @@ openclient-llm/                    # iOS target
 openclient-llm-macOS/              # macOS target
 ├── App/                           # macOS app entry point
 │   └── OpenClientApp.swift
+├── Views/                         # macOS-only views
+│   └── AppCommands.swift          # Menu bar commands (⌘N New Chat)
 └── Resources/
     └── Assets.xcassets/           # macOS assets, accent color, app icon
 
