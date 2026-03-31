@@ -48,6 +48,7 @@ Goal: Platform-optimized experience.
 - [x] **Dark/Light mode**: Full theme support with semantic colors
 - [x] **Debug logging system**: LogManager with emoji-differentiated log levels (info, debug, warning, error, network) for readable console output in DEBUG builds
 - [x] **Attachment thumbnails in chat**: Show image thumbnails inline in sent messages (small rounded preview); show document attachments as icon + filename card
+- [x] **Camera image capture**: Attach images directly from the device camera in chat (iOS/iPadOS only)
 
 ## Phase 4 — Advanced Features
 
@@ -67,6 +68,8 @@ Goal: Power user features.
 Goal: Support for multiple server configurations and infrastructure improvements.
 
 - [ ] **Multiple servers**: Support multiple LiteLLM server configurations
+- [ ] **Web browsing**: Enable models to search and retrieve web content via Brave Search API for grounded, up-to-date responses
+- [ ] **Agent mode (tool calling)**: Support LiteLLM function/tool calling loop — parse tool_calls from model responses, execute registered tools, send results back, and repeat until final answer
 
 ## Current Phase: 4 — Advanced Features
 
