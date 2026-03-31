@@ -7,6 +7,9 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct ChatView: View {
     // MARK: - Properties
@@ -79,7 +82,7 @@ private extension ChatView {
                 messagesList(loadedState)
             }
         }
-        .scrollDismissesKeyboard(.immediately)
+        .scrollDismissesKeyboard(.interactively)
         .onScrollGeometryChange(for: Bool.self) { geometry in
             geometry.contentSize.height
                 - geometry.contentOffset.y
@@ -97,6 +100,21 @@ private extension ChatView {
             guard isAtBottom else { return }
             proxy.scrollTo("scroll-bottom")
         }
+#if os(iOS)
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIResponder.keyboardWillShowNotification
+            )
+        ) { notification in
+            let duration = notification.userInfo?[
+                UIResponder.keyboardAnimationDurationUserInfoKey
+            ] as? Double ?? 0.25
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                proxy.scrollTo("scroll-bottom")
+                isAtBottom = true
+            }
+        }
+#endif
     }
 
     func messagesList(
