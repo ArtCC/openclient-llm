@@ -49,7 +49,10 @@ final class AudioTranscriptionViewModelTests: XCTestCase {
 
     func test_send_viewAppeared_withModels_setsLoadedState() async throws {
         // Given
-        let models = [LLMModel(id: "whisper-1"), LLMModel(id: "whisper-large")]
+        let models = [
+            LLMModel(id: "whisper-1", mode: .audioTranscription),
+            LLMModel(id: "whisper-large", mode: .audioTranscription)
+        ]
         mockFetchModels.result = .success(models)
 
         // When
@@ -88,7 +91,10 @@ final class AudioTranscriptionViewModelTests: XCTestCase {
 
     func test_send_modelSelected_updatesModel() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "whisper-1"), LLMModel(id: "whisper-large")])
+        mockFetchModels.result = .success([
+            LLMModel(id: "whisper-1", mode: .audioTranscription),
+            LLMModel(id: "whisper-large", mode: .audioTranscription)
+        ])
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
@@ -107,7 +113,7 @@ final class AudioTranscriptionViewModelTests: XCTestCase {
 
     func test_send_languageChanged_updatesLanguage() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "whisper-1")])
+        mockFetchModels.result = .success([LLMModel(id: "whisper-1", mode: .audioTranscription)])
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
@@ -126,7 +132,7 @@ final class AudioTranscriptionViewModelTests: XCTestCase {
 
     func test_send_audioRecorded_setsAudioData() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "whisper-1")])
+        mockFetchModels.result = .success([LLMModel(id: "whisper-1", mode: .audioTranscription)])
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
@@ -149,7 +155,7 @@ final class AudioTranscriptionViewModelTests: XCTestCase {
 
     func test_send_audioFileSelected_setsAudioFile() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "whisper-1")])
+        mockFetchModels.result = .success([LLMModel(id: "whisper-1", mode: .audioTranscription)])
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
@@ -171,7 +177,7 @@ final class AudioTranscriptionViewModelTests: XCTestCase {
 
     func test_send_clearTapped_clearsAudioData() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "whisper-1")])
+        mockFetchModels.result = .success([LLMModel(id: "whisper-1", mode: .audioTranscription)])
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
@@ -194,7 +200,7 @@ final class AudioTranscriptionViewModelTests: XCTestCase {
 
     func test_send_transcribeTapped_withAudio_transcribesSuccessfully() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "whisper-1")])
+        mockFetchModels.result = .success([LLMModel(id: "whisper-1", mode: .audioTranscription)])
         mockTranscribeAudio.result = .success("Hello, world!")
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
@@ -219,7 +225,7 @@ final class AudioTranscriptionViewModelTests: XCTestCase {
 
     func test_send_transcribeTapped_withoutAudio_doesNotTranscribe() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "whisper-1")])
+        mockFetchModels.result = .success([LLMModel(id: "whisper-1", mode: .audioTranscription)])
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
@@ -233,7 +239,7 @@ final class AudioTranscriptionViewModelTests: XCTestCase {
 
     func test_send_transcribeTapped_withError_setsErrorMessage() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "whisper-1")])
+        mockFetchModels.result = .success([LLMModel(id: "whisper-1", mode: .audioTranscription)])
         mockTranscribeAudio.result = .failure(APIError.serverUnreachable)
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
