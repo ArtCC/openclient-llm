@@ -54,6 +54,16 @@ private extension ImageGenerationView {
         }
     }
 
+    var noModelsDescription: String {
+        String(
+            localized: """
+                Your server has no image generation \
+                models configured. Add a model like DALL·E \
+                or gpt-image-1 to your LiteLLM configuration.
+                """
+        )
+    }
+
     var noModelsState: some View {
         VStack(spacing: 24) {
             Spacer()
@@ -69,7 +79,7 @@ private extension ImageGenerationView {
                     .font(.title2)
                     .fontWeight(.semibold)
 
-                Text(String(localized: "Your server has no image generation models configured. Add a model like DALL·E or gpt-image-1 to your LiteLLM configuration."))
+                Text(noModelsDescription)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
