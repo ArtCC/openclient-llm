@@ -41,6 +41,7 @@ final class ConversationListViewModel {
     private let deleteConversationUseCase: DeleteConversationUseCaseProtocol
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
+    private var errorDismissTask: Task<Void, Never>?
 
     var onConversationSelected: ((Conversation?) -> Void)?
 
@@ -108,6 +109,7 @@ private extension ConversationListViewModel {
                     availableModels: models,
                     errorMessage: error.localizedDescription
                 ))
+                scheduleErrorDismiss()
             }
         }
     }
@@ -123,6 +125,7 @@ private extension ConversationListViewModel {
         } catch {
             loadedState.errorMessage = error.localizedDescription
             state = .loaded(loadedState)
+            scheduleErrorDismiss()
         }
     }
 
@@ -161,6 +164,7 @@ private extension ConversationListViewModel {
         } catch {
             loadedState.errorMessage = error.localizedDescription
             state = .loaded(loadedState)
+            scheduleErrorDismiss()
         }
     }
 
@@ -185,6 +189,16 @@ private extension ConversationListViewModel {
             return conversation.messages.contains { message in
                 message.content.lowercased().contains(query)
             }
+        }
+    }
+
+    func scheduleErrorDismiss() {
+        errorDismissTask?.cancel()
+        errorDismissTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+            currentState.errorMessage = nil
+            state = .loaded(currentState)
         }
     }
 }

@@ -48,6 +48,7 @@ final class ChatViewModel {
         var modelParameters: ModelParameters = .default
         var isSpeaking: Bool = false
         var speakingMessageId: UUID?
+        var ttsModel: LLMModel?
     }
 
     private(set) var state: State
@@ -62,6 +63,7 @@ final class ChatViewModel {
     private let conversationStartersManager: ConversationStartersManagerProtocol
     private let audioPlayerManager: AudioPlayerManager
     private var streamTask: Task<Void, Never>?
+    private var errorDismissTask: Task<Void, Never>?
     private var pendingConversation: Conversation?
 
     // MARK: - Init
@@ -162,6 +164,8 @@ private extension ChatViewModel {
 
                 let starters = conversationStartersManager.randomStarters(count: 4)
 
+                let ttsModel = models.first { $0.mode == .audioSpeech }
+
                 state = .loaded(LoadedState(
                     conversation: pending,
                     messages: pending?.messages ?? [],
@@ -169,7 +173,8 @@ private extension ChatViewModel {
                     availableModels: models,
                     conversationStarters: (pending?.messages ?? []).isEmpty ? starters : [],
                     systemPrompt: pending?.systemPrompt ?? "",
-                    modelParameters: pending?.modelParameters ?? .default
+                    modelParameters: pending?.modelParameters ?? .default,
+                    ttsModel: ttsModel
                 ))
             } catch {
                 let pending = pendingConversation
@@ -182,6 +187,7 @@ private extension ChatViewModel {
                     systemPrompt: pending?.systemPrompt ?? "",
                     modelParameters: pending?.modelParameters ?? .default
                 ))
+                scheduleErrorDismiss()
             }
         }
     }
@@ -353,6 +359,7 @@ private extension ChatViewModel {
             currentState.isStreaming = false
             currentState.errorMessage = error.localizedDescription
             state = .loaded(currentState)
+            scheduleErrorDismiss()
             persistConversation()
         }
     }
@@ -376,8 +383,16 @@ private extension ChatViewModel {
 
     func speakMessage(_ message: ChatMessage) {
         guard case .loaded(var loadedState) = state,
-              let model = loadedState.selectedModel,
               !message.content.isEmpty else { return }
+
+        guard let ttsModel = loadedState.ttsModel else {
+            loadedState.errorMessage = String(
+                localized: "No text-to-speech models available. Add a TTS model like tts-1 to your LiteLLM server."
+            )
+            state = .loaded(loadedState)
+            scheduleErrorDismiss()
+            return
+        }
 
         loadedState.isSpeaking = true
         loadedState.speakingMessageId = message.id
@@ -387,7 +402,7 @@ private extension ChatViewModel {
             do {
                 let audioData = try await synthesizeSpeechUseCase.execute(
                     text: message.content,
-                    model: model.id,
+                    model: ttsModel.id,
                     voice: "alloy"
                 )
                 audioPlayerManager.play(data: audioData, messageId: message.id)
@@ -408,6 +423,7 @@ private extension ChatViewModel {
                 currentState.speakingMessageId = nil
                 currentState.errorMessage = error.localizedDescription
                 state = .loaded(currentState)
+                scheduleErrorDismiss()
             }
         }
     }
@@ -437,6 +453,16 @@ private extension ChatViewModel {
             onConversationUpdated?()
         } catch {
             // Silently fail — persistence is best-effort
+        }
+    }
+
+    func scheduleErrorDismiss() {
+        errorDismissTask?.cancel()
+        errorDismissTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+            currentState.errorMessage = nil
+            state = .loaded(currentState)
         }
     }
 }

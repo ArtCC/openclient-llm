@@ -16,6 +16,7 @@ struct LLMModel: Identifiable, Equatable, Sendable {
     var capabilities: [Capability]
     var provider: Provider
     var mode: Mode
+    var providerName: String
 
     // MARK: - Init
 
@@ -24,13 +25,15 @@ struct LLMModel: Identifiable, Equatable, Sendable {
         ownedBy: String = "",
         capabilities: [Capability] = [],
         provider: Provider = .cloud,
-        mode: Mode = .chat
+        mode: Mode = .chat,
+        providerName: String = ""
     ) {
         self.id = id
         self.ownedBy = ownedBy
         self.capabilities = capabilities
         self.provider = provider
         self.mode = mode
+        self.providerName = providerName
     }
 }
 
@@ -63,6 +66,35 @@ extension LLMModel {
             let localProviders: Set<String> = ["ollama", "lm_studio", "llamacpp"]
             guard let value = providerString?.lowercased() else { return .cloud }
             return localProviders.contains(value) ? .local : .cloud
+        }
+
+        static func displayName(from providerString: String?) -> String {
+            guard let key = providerString?.lowercased() else { return "" }
+            let mapping: [String: String] = [
+                "openai": "OpenAI",
+                "anthropic": "Anthropic",
+                "ollama": "Ollama",
+                "vertex_ai": "Google",
+                "vertex_ai_beta": "Google",
+                "gemini": "Google",
+                "deepseek": "DeepSeek",
+                "cohere": "Cohere",
+                "mistral": "Mistral",
+                "groq": "Groq",
+                "azure": "Azure",
+                "azure_ai": "Azure",
+                "bedrock": "AWS Bedrock",
+                "lm_studio": "LM Studio",
+                "llamacpp": "llama.cpp",
+                "replicate": "Replicate",
+                "huggingface": "Hugging Face",
+                "together_ai": "Together AI",
+                "fireworks_ai": "Fireworks AI",
+                "perplexity": "Perplexity",
+                "anyscale": "Anyscale",
+                "xai": "xAI"
+            ]
+            return mapping[key] ?? providerString ?? ""
         }
     }
 }

@@ -17,7 +17,10 @@ extension ChatViewModelTests {
         // Given
         let mockSynthesize = MockSynthesizeSpeechUseCase()
         mockSynthesize.result = .success(Data([1, 2, 3]))
-        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockFetchModels.result = .success([
+            LLMModel(id: "gpt-4"),
+            LLMModel(id: "tts-1", mode: .audioSpeech)
+        ])
 
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
@@ -45,7 +48,10 @@ extension ChatViewModelTests {
         // Given
         let mockSynthesize = MockSynthesizeSpeechUseCase()
         mockSynthesize.result = .success(Data([1, 2, 3]))
-        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockFetchModels.result = .success([
+            LLMModel(id: "gpt-4"),
+            LLMModel(id: "tts-1", mode: .audioSpeech)
+        ])
 
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
@@ -76,7 +82,10 @@ extension ChatViewModelTests {
     func test_send_speakMessageTapped_withEmptyContent_doesNotSpeak() async throws {
         // Given
         let mockSynthesize = MockSynthesizeSpeechUseCase()
-        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockFetchModels.result = .success([
+            LLMModel(id: "gpt-4"),
+            LLMModel(id: "tts-1", mode: .audioSpeech)
+        ])
 
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
@@ -104,7 +113,10 @@ extension ChatViewModelTests {
         // Given
         let mockSynthesize = MockSynthesizeSpeechUseCase()
         mockSynthesize.result = .failure(APIError.serverUnreachable)
-        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockFetchModels.result = .success([
+            LLMModel(id: "gpt-4"),
+            LLMModel(id: "tts-1", mode: .audioSpeech)
+        ])
 
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
@@ -138,7 +150,10 @@ extension ChatViewModelTests {
         // Given
         let mockSynthesize = MockSynthesizeSpeechUseCase()
         mockSynthesize.result = .success(Data([1, 2, 3]))
-        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockFetchModels.result = .success([
+            LLMModel(id: "gpt-4"),
+            LLMModel(id: "tts-1", mode: .audioSpeech)
+        ])
 
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
@@ -166,5 +181,38 @@ extension ChatViewModelTests {
         }
         XCTAssertFalse(loadedState.isSpeaking)
         XCTAssertNil(loadedState.speakingMessageId)
+    }
+
+    func test_send_speakMessageTapped_withoutTTSModel_showsError() async throws {
+        // Given
+        let mockSynthesize = MockSynthesizeSpeechUseCase()
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+
+        sut = ChatViewModel(
+            fetchModelsUseCase: mockFetchModels,
+            streamMessageUseCase: mockStreamMessage,
+            saveConversationUseCase: mockSaveConversation,
+            synthesizeSpeechUseCase: mockSynthesize,
+            settingsManager: mockSettingsManager,
+            conversationStartersManager: mockConversationStarters
+        )
+
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        let message = ChatMessage(role: .assistant, content: "Hello")
+
+        // When
+        sut.send(.speakMessageTapped(message))
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertFalse(mockSynthesize.executeCalled)
+        XCTAssertNotNil(loadedState.errorMessage)
+        XCTAssertFalse(loadedState.isSpeaking)
     }
 }

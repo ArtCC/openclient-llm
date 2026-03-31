@@ -211,14 +211,13 @@ private extension AudioTranscriptionView {
                      : loadedState.selectedModel)
                     .font(.caption)
                     .lineLimit(1)
-                    .contentTransition(.identity)
                 Image(systemName: "chevron.down")
                     .font(.system(size: 8))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .glassEffect(.regular, in: .capsule)
-            .animation(.none, value: loadedState.selectedModel)
+            .transaction { $0.animation = nil }
         }
         .buttonStyle(.plain)
     }

@@ -90,8 +90,9 @@ final class ImageGenerationViewModelTests: XCTestCase {
             XCTFail("Expected loaded state")
             return
         }
-        XCTAssertEqual(loadedState.availableModels.count, 3)
-        XCTAssertTrue(loadedState.availableModels.allSatisfy { $0.mode == .imageGeneration || $0.mode == .chat })
+        XCTAssertEqual(loadedState.availableModels.count, 2)
+        XCTAssertTrue(loadedState.availableModels.allSatisfy { $0.mode == .imageGeneration })
+        XCTAssertNil(loadedState.availableModels.first(where: { $0.id == "gpt-4" }))
         XCTAssertNil(loadedState.availableModels.first(where: { $0.id == "text-embedding" }))
         XCTAssertNil(loadedState.availableModels.first(where: { $0.id == "whisper-1" }))
     }

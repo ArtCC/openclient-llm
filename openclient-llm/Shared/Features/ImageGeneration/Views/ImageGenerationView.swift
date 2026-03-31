@@ -39,15 +39,46 @@ struct ImageGenerationView: View {
 private extension ImageGenerationView {
     func loadedView(_ loadedState: ImageGenerationViewModel.LoadedState) -> some View {
         VStack(spacing: 0) {
-            imageGallery(loadedState)
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    VStack(spacing: 0) {
-                        errorBanner(loadedState.errorMessage)
-                        configBar(loadedState)
-                        inputBar(loadedState)
+            if loadedState.availableModels.isEmpty {
+                noModelsState
+            } else {
+                imageGallery(loadedState)
+                    .safeAreaInset(edge: .bottom, spacing: 0) {
+                        VStack(spacing: 0) {
+                            errorBanner(loadedState.errorMessage)
+                            configBar(loadedState)
+                            inputBar(loadedState)
+                        }
                     }
-                }
+            }
         }
+    }
+
+    var noModelsState: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            Image(systemName: "photo.badge.exclamationmark")
+                .font(.system(size: 44))
+                .foregroundStyle(.secondary)
+                .frame(width: 80, height: 80)
+                .glassEffect(.regular, in: .circle)
+
+            VStack(spacing: 8) {
+                Text(String(localized: "No Image Models Available"))
+                    .font(.title2)
+                    .fontWeight(.semibold)
+
+                Text(String(localized: "Your server has no image generation models configured. Add a model like DALL·E or gpt-image-1 to your LiteLLM configuration."))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 32)
     }
 
     // MARK: - Gallery
@@ -237,14 +268,13 @@ private extension ImageGenerationView {
                      : loadedState.selectedModel)
                     .font(.caption)
                     .lineLimit(1)
-                    .contentTransition(.identity)
                 Image(systemName: "chevron.down")
                     .font(.system(size: 8))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             .glassEffect(.regular, in: .capsule)
-            .animation(.none, value: loadedState.selectedModel)
+            .transaction { $0.animation = nil }
         }
         .buttonStyle(.plain)
     }

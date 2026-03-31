@@ -35,6 +35,7 @@ final class ModelsViewModel {
 
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
+    private var errorDismissTask: Task<Void, Never>?
 
     // MARK: - Init
 
@@ -75,6 +76,7 @@ private extension ModelsViewModel {
                 state = .loaded(LoadedState(models: models, selectedModelId: selectedModelId))
             } catch {
                 state = .loaded(LoadedState(errorMessage: error.localizedDescription))
+                scheduleErrorDismiss()
             }
         }
     }
@@ -95,6 +97,7 @@ private extension ModelsViewModel {
                 currentState.isRefreshing = false
                 currentState.errorMessage = error.localizedDescription
                 state = .loaded(currentState)
+                scheduleErrorDismiss()
             }
         }
     }
@@ -104,5 +107,15 @@ private extension ModelsViewModel {
         loadedState.selectedModelId = model.id
         state = .loaded(loadedState)
         settingsManager.setSelectedModelId(model.id)
+    }
+
+    func scheduleErrorDismiss() {
+        errorDismissTask?.cancel()
+        errorDismissTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+            currentState.errorMessage = nil
+            state = .loaded(currentState)
+        }
     }
 }

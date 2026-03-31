@@ -97,8 +97,8 @@ private extension ModelsView {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(model.id)
                             .font(.body)
-                        if !model.ownedBy.isEmpty {
-                            Text(model.ownedBy)
+                        if !model.providerName.isEmpty {
+                            Text(model.providerName)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

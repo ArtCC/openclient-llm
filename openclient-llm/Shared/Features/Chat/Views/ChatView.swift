@@ -201,6 +201,7 @@ private extension ChatView {
                     && message.id
                     == loadedState.messages.last?.id,
                     isSpeaking: loadedState.speakingMessageId == message.id,
+                    hasTTS: loadedState.ttsModel != nil,
                     onSpeakTapped: {
                         viewModel.send(.speakMessageTapped(message))
                     },

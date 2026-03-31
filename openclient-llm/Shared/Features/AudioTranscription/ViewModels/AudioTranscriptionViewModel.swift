@@ -44,6 +44,7 @@ final class AudioTranscriptionViewModel {
 
     private let transcribeAudioUseCase: TranscribeAudioUseCaseProtocol
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
+    private var errorDismissTask: Task<Void, Never>?
 
     // MARK: - Init
 
@@ -97,6 +98,7 @@ private extension AudioTranscriptionViewModel {
                 state = .loaded(LoadedState(
                     errorMessage: error.localizedDescription
                 ))
+                scheduleErrorDismiss()
             }
         }
     }
@@ -178,7 +180,18 @@ private extension AudioTranscriptionViewModel {
                 currentState.isTranscribing = false
                 currentState.errorMessage = error.localizedDescription
                 state = .loaded(currentState)
+                scheduleErrorDismiss()
             }
+        }
+    }
+
+    func scheduleErrorDismiss() {
+        errorDismissTask?.cancel()
+        errorDismissTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+            currentState.errorMessage = nil
+            state = .loaded(currentState)
         }
     }
 }

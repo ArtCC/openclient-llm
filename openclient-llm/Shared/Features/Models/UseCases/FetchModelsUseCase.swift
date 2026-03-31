@@ -40,6 +40,7 @@ struct FetchModelsUseCase: FetchModelsUseCaseProtocol {
                     updated.capabilities = info.capabilities
                     updated.provider = info.provider
                     updated.mode = info.mode
+                    updated.providerName = info.providerName
                 } else {
                     updated.provider = LLMModel.Provider.from(model.ownedBy)
                 }

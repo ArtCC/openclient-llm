@@ -19,6 +19,7 @@ struct MessageBubbleView: View {
     let message: ChatMessage
     var isStreaming: Bool = false
     var isSpeaking: Bool = false
+    var hasTTS: Bool = false
     var onSpeakTapped: (() -> Void)?
     var onStopSpeakingTapped: (() -> Void)?
     @State private var cursorVisible: Bool = false
@@ -81,7 +82,7 @@ private extension MessageBubbleView {
                     tokenUsageLabel(usage)
                 }
 
-                if !isStreaming && !message.content.isEmpty && message.role == .assistant {
+                if !isStreaming && !message.content.isEmpty && message.role == .assistant && hasTTS {
                     speakButton
                 }
             }

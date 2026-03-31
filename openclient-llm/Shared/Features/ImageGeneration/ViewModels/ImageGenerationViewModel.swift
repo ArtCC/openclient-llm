@@ -42,6 +42,7 @@ final class ImageGenerationViewModel {
 
     private let generateImageUseCase: GenerateImageUseCaseProtocol
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
+    private var errorDismissTask: Task<Void, Never>?
 
     // MARK: - Init
 
@@ -82,7 +83,7 @@ private extension ImageGenerationViewModel {
         Task {
             do {
                 let allModels = try await fetchModelsUseCase.execute()
-                let models = allModels.filter { $0.mode == .imageGeneration || $0.mode == .chat }
+                let models = allModels.filter { $0.mode == .imageGeneration }
                 let defaultModel = models.first?.id ?? ""
                 state = .loaded(LoadedState(
                     selectedModel: defaultModel,
@@ -92,6 +93,7 @@ private extension ImageGenerationViewModel {
                 state = .loaded(LoadedState(
                     errorMessage: error.localizedDescription
                 ))
+                scheduleErrorDismiss()
             }
         }
     }
@@ -125,7 +127,7 @@ private extension ImageGenerationViewModel {
 
         let model = loadedState.selectedModel
         let size = loadedState.selectedSize
-        let mode = loadedState.availableModels.first { $0.id == model }?.mode ?? .imageGeneration
+        let mode: LLMModel.Mode = .imageGeneration
 
         Task {
             do {
@@ -146,7 +148,18 @@ private extension ImageGenerationViewModel {
                 currentState.isGenerating = false
                 currentState.errorMessage = error.localizedDescription
                 state = .loaded(currentState)
+                scheduleErrorDismiss()
             }
+        }
+    }
+
+    func scheduleErrorDismiss() {
+        errorDismissTask?.cancel()
+        errorDismissTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+            currentState.errorMessage = nil
+            state = .loaded(currentState)
         }
     }
 }
