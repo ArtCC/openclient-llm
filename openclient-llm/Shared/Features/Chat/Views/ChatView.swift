@@ -65,65 +65,78 @@ private extension ChatView {
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                if loadedState.messages.isEmpty {
-                    emptyState(loadedState)
-                } else {
-                    LazyVStack(spacing: 16) {
-                        ForEach(loadedState.messages) { message in
-                            MessageBubbleView(
-                                message: message,
-                                isStreaming: loadedState.isStreaming
-                                && message.id
-                                == loadedState.messages.last?.id
-                            )
-                            .id(message.id)
-                            .transition(.opacity)
-                        }
-                        Color.clear
-                            .frame(height: 1)
-                            .id("scroll-bottom")
-                    }
-                    .padding(.horizontal, 16)
-                    .animation(
-                        .spring(duration: 0.3),
-                        value: loadedState.messages.count
-                    )
-                    .frame(maxWidth: 760)
-                    .frame(maxWidth: .infinity)
-                }
+            scrollContent(loadedState, proxy: proxy)
+        }
+    }
+
+    func scrollContent(
+        _ loadedState: ChatViewModel.LoadedState,
+        proxy: ScrollViewProxy
+    ) -> some View {
+        ScrollView {
+            if loadedState.messages.isEmpty {
+                emptyState(loadedState)
+            } else {
+                messagesList(loadedState)
             }
-            .scrollDismissesKeyboard(.immediately)
-            .onScrollGeometryChange(for: Bool.self) { geometry in
-                geometry.contentSize.height
-                    - geometry.contentOffset.y
-                    - geometry.containerSize.height < 80
-            } action: { _, newValue in
-                isAtBottom = newValue
-            }
-            .onChange(of: loadedState.messages.count) {
-                isAtBottom = true
-                withAnimation(.smooth) {
-                    proxy.scrollTo("scroll-bottom")
-                }
-            }
-            .onChange(of: loadedState.messages.last?.content) {
-                guard isAtBottom else { return }
+        }
+        .scrollDismissesKeyboard(.immediately)
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentSize.height
+                - geometry.contentOffset.y
+                - geometry.containerSize.height < 80
+        } action: { _, newValue in
+            isAtBottom = newValue
+        }
+        .onChange(of: loadedState.messages.count) {
+            isAtBottom = true
+            withAnimation(.smooth) {
                 proxy.scrollTo("scroll-bottom")
             }
-#if os(iOS)
-            .onReceive(
-                NotificationCenter.default.publisher(
-                    for: UIResponder.keyboardWillShowNotification
-                )
-            ) { _ in
-                guard isAtBottom else { return }
-                withAnimation(.smooth) {
-                    proxy.scrollTo("scroll-bottom")
-                }
-            }
-#endif
         }
+        .onChange(of: loadedState.messages.last?.content) {
+            guard isAtBottom else { return }
+            proxy.scrollTo("scroll-bottom")
+        }
+#if os(iOS)
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIResponder.keyboardWillShowNotification
+            )
+        ) { _ in
+            guard isAtBottom else { return }
+            withAnimation(.smooth) {
+                proxy.scrollTo("scroll-bottom")
+            }
+        }
+#endif
+    }
+
+    func messagesList(
+        _ loadedState: ChatViewModel.LoadedState
+    ) -> some View {
+        LazyVStack(spacing: 16) {
+            ForEach(loadedState.messages) { message in
+                MessageBubbleView(
+                    message: message,
+                    isStreaming: loadedState.isStreaming
+                    && message.id
+                    == loadedState.messages.last?.id
+                )
+                .id(message.id)
+                .transition(.opacity)
+            }
+            Color.clear
+                .frame(height: 1)
+                .id("scroll-bottom")
+        }
+        .padding(.horizontal, 16)
+        .animation(
+            .spring(duration: 0.3),
+            value: loadedState.messages.count
+        )
+        .frame(maxWidth: 760)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Empty State

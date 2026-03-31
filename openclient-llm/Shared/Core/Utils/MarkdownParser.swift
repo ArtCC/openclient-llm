@@ -21,25 +21,26 @@ struct MarkdownParser: Sendable {
     // MARK: - Public
 
     static func parse(_ raw: String) -> [MessageBlock] {
-        var blocks: [MessageBlock] = []
-        var lines = raw.components(separatedBy: "\n")
-        var i = 0
+        let lines = raw.components(separatedBy: "\n")
 
-        while i < lines.count {
-            let line = lines[i]
+        var blocks: [MessageBlock] = []
+        var index = 0
+
+        while index < lines.count {
+            let line = lines[index]
 
             if line.hasPrefix("```") {
                 let language = extractLanguage(from: line)
                 var codeLines: [String] = []
-                i += 1
+                index += 1
 
-                while i < lines.count {
-                    if lines[i].hasPrefix("```") {
-                        i += 1
+                while index < lines.count {
+                    if lines[index].hasPrefix("```") {
+                        index += 1
                         break
                     }
-                    codeLines.append(lines[i])
-                    i += 1
+                    codeLines.append(lines[index])
+                    index += 1
                 }
 
                 let code = codeLines.joined(separator: "\n")
@@ -47,9 +48,9 @@ struct MarkdownParser: Sendable {
             } else {
                 var textLines: [String] = []
 
-                while i < lines.count && !lines[i].hasPrefix("```") {
-                    textLines.append(lines[i])
-                    i += 1
+                while index < lines.count && !lines[index].hasPrefix("```") {
+                    textLines.append(lines[index])
+                    index += 1
                 }
 
                 let text = textLines.joined(separator: "\n")

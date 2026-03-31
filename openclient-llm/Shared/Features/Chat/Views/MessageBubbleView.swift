@@ -139,6 +139,7 @@ private extension MessageBubbleView {
     .padding()
 }
 
+// swiftlint:disable line_length
 #Preview("Assistant message") {
     MessageBubbleView(
         message: ChatMessage(
@@ -158,6 +159,7 @@ private extension MessageBubbleView {
     )
     .padding()
 }
+// swiftlint:enable line_length
 
 #Preview("Streaming message") {
     MessageBubbleView(
