@@ -18,6 +18,7 @@ final class ConversationListViewModel {
         case newConversationTapped
         case conversationTapped(Conversation)
         case deleteConversation(UUID)
+        case searchChanged(String)
     }
 
     enum State: Equatable {
@@ -30,6 +31,8 @@ final class ConversationListViewModel {
         var selectedConversation: Conversation?
         var availableModels: [LLMModel] = []
         var errorMessage: String?
+        var searchQuery: String = ""
+        var filteredConversations: [Conversation] = []
     }
 
     private(set) var state: State
@@ -38,6 +41,7 @@ final class ConversationListViewModel {
     private let deleteConversationUseCase: DeleteConversationUseCaseProtocol
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
+    private var errorDismissTask: Task<Void, Never>?
 
     var onConversationSelected: ((Conversation?) -> Void)?
 
@@ -69,6 +73,8 @@ final class ConversationListViewModel {
             selectConversation(conversation)
         case .deleteConversation(let id):
             deleteConversation(id)
+        case .searchChanged(let query):
+            updateSearch(query)
         }
     }
 
@@ -95,13 +101,15 @@ private extension ConversationListViewModel {
                 let conversations = try loadConversationsUseCase.execute()
                 state = .loaded(LoadedState(
                     conversations: conversations,
-                    availableModels: models
+                    availableModels: models,
+                    filteredConversations: conversations
                 ))
             } catch {
                 state = .loaded(LoadedState(
                     availableModels: models,
                     errorMessage: error.localizedDescription
                 ))
+                scheduleErrorDismiss()
             }
         }
     }
@@ -112,10 +120,12 @@ private extension ConversationListViewModel {
         do {
             loadedState.conversations = try loadConversationsUseCase.execute()
             loadedState.errorMessage = nil
+            applySearchFilter(&loadedState)
             state = .loaded(loadedState)
         } catch {
             loadedState.errorMessage = error.localizedDescription
             state = .loaded(loadedState)
+            scheduleErrorDismiss()
         }
     }
 
@@ -123,10 +133,10 @@ private extension ConversationListViewModel {
         guard case .loaded(let loadedState) = state else { return }
 
         let savedModelId = settingsManager.getSelectedModelId()
-        let defaultModel = loadedState.availableModels.first(where: { $0.id == savedModelId })
-            ?? loadedState.availableModels.first
-
-        guard let modelId = defaultModel?.id else { return }
+        let modelId = loadedState.availableModels.first(where: { $0.id == savedModelId })?.id
+            ?? loadedState.availableModels.first?.id
+            ?? savedModelId
+            ?? ""
 
         let conversation = Conversation(modelId: modelId)
         onConversationSelected?(conversation)
@@ -149,10 +159,46 @@ private extension ConversationListViewModel {
                 loadedState.selectedConversation = nil
                 onConversationSelected?(nil)
             }
+            applySearchFilter(&loadedState)
             state = .loaded(loadedState)
         } catch {
             loadedState.errorMessage = error.localizedDescription
             state = .loaded(loadedState)
+            scheduleErrorDismiss()
+        }
+    }
+
+    func updateSearch(_ query: String) {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.searchQuery = query
+        applySearchFilter(&loadedState)
+        state = .loaded(loadedState)
+    }
+
+    func applySearchFilter(_ loadedState: inout LoadedState) {
+        let query = loadedState.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !query.isEmpty else {
+            loadedState.filteredConversations = loadedState.conversations
+            return
+        }
+
+        loadedState.filteredConversations = loadedState.conversations.filter { conversation in
+            if conversation.title.lowercased().contains(query) {
+                return true
+            }
+            return conversation.messages.contains { message in
+                message.content.lowercased().contains(query)
+            }
+        }
+    }
+
+    func scheduleErrorDismiss() {
+        errorDismissTask?.cancel()
+        errorDismissTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+            currentState.errorMessage = nil
+            state = .loaded(currentState)
         }
     }
 }

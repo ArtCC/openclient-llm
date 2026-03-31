@@ -17,6 +17,7 @@ final class SettingsViewModelTests: XCTestCase {
     private var mockSaveServerConfig: MockSaveServerConfigurationUseCase!
     private var mockTestConnection: MockTestServerConnectionUseCase!
     private var mockSettingsManager: MockSettingsManager!
+    private var mockCloudSyncManager: MockCloudSyncManager!
 
     // MARK: - Setup
 
@@ -26,10 +27,12 @@ final class SettingsViewModelTests: XCTestCase {
         mockSaveServerConfig = MockSaveServerConfigurationUseCase()
         mockTestConnection = MockTestServerConnectionUseCase()
         mockSettingsManager = MockSettingsManager()
+        mockCloudSyncManager = MockCloudSyncManager()
         sut = SettingsViewModel(
             saveServerConfigurationUseCase: mockSaveServerConfig,
             testServerConnectionUseCase: mockTestConnection,
-            settingsManager: mockSettingsManager
+            settingsManager: mockSettingsManager,
+            cloudSyncManager: mockCloudSyncManager
         )
     }
 
@@ -38,6 +41,7 @@ final class SettingsViewModelTests: XCTestCase {
         mockSaveServerConfig = nil
         mockTestConnection = nil
         mockSettingsManager = nil
+        mockCloudSyncManager = nil
 
         try await super.tearDown()
     }
@@ -164,5 +168,70 @@ final class SettingsViewModelTests: XCTestCase {
             return
         }
         XCTAssertTrue(loadedState.isSaved)
+    }
+
+    // MARK: - Tests — cloudSyncToggled
+
+    func test_send_cloudSyncToggled_enablesSync() {
+        // Given
+        sut.send(.viewAppeared)
+
+        // When
+        sut.send(.cloudSyncToggled(true))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertTrue(loadedState.isCloudSyncEnabled)
+        XCTAssertTrue(mockSettingsManager.isCloudSyncEnabled)
+    }
+
+    func test_send_cloudSyncToggled_disablesSync() {
+        // Given
+        mockSettingsManager.isCloudSyncEnabled = true
+        sut.send(.viewAppeared)
+
+        // When
+        sut.send(.cloudSyncToggled(false))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertFalse(loadedState.isCloudSyncEnabled)
+        XCTAssertFalse(mockSettingsManager.isCloudSyncEnabled)
+    }
+
+    func test_send_viewAppeared_loadsCloudAvailability() {
+        // Given
+        mockCloudSyncManager.cloudAvailable = true
+
+        // When
+        sut.send(.viewAppeared)
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertTrue(loadedState.isCloudAvailable)
+    }
+
+    func test_send_viewAppeared_cloudNotAvailable() {
+        // Given
+        mockCloudSyncManager.cloudAvailable = false
+
+        // When
+        sut.send(.viewAppeared)
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertFalse(loadedState.isCloudAvailable)
     }
 }

@@ -17,6 +17,7 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     var serverBaseURL: String = ""
     var apiKey: String = ""
     var selectedModelId: String?
+    var isCloudSyncEnabled: Bool = false
     var deleteAllCalled: Bool = false
 
     // MARK: - Public
@@ -51,6 +52,14 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
     func setSelectedModelId(_ value: String?) {
         selectedModelId = value
+    }
+
+    func getIsCloudSyncEnabled() -> Bool {
+        isCloudSyncEnabled
+    }
+
+    func setIsCloudSyncEnabled(_ value: Bool) {
+        isCloudSyncEnabled = value
     }
 
     func deleteAll() {

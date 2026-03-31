@@ -291,6 +291,7 @@ The app communicates with a LiteLLM proxy server via its OpenAI-compatible REST 
 - **Base language**: English (en)
 - **Supported languages**: Defined in `knownRegions` inside `openclient-llm.xcodeproj/project.pbxproj`
 - **String catalog**: `Localizable.xcstrings` — the single source of truth for all translations
+- **Never manually edit `Localizable.xcstrings`**: Xcode automatically syncs strings from `String(localized:)` usage in code upon compilation. Just use the correct API in Swift code and the strings will appear in the catalog after building.
 - **API**: Always use `String(localized:)` for user-facing strings in Swift code:
   ```swift
   // Simple string
@@ -302,12 +303,13 @@ The app communicates with a LiteLLM proxy server via its OpenAI-compatible REST 
   // String with comment for translators
   String(localized: "Delete", comment: "Button to delete a conversation")
   ```
-- **Translations**: Only add strings in English. Do **not** add translations to other languages in `Localizable.xcstrings` — the author handles translations manually
+- **Translations**: Only write strings in English in Swift code. Do **not** add translations to other languages — the author handles translations manually
 - **Review checklist** when adding/editing strings:
   1. String uses `String(localized:)` — never raw string literals for user-facing text
   2. English (en) key is clear and descriptive
   3. Pluralization handled with the string catalog's plural rules when needed
   4. Context comments added for ambiguous strings
+  5. **Do not** manually edit `Localizable.xcstrings` — let Xcode sync it automatically
 - **Do not** hardcode user-facing text directly in views without localization
 
 ## Build and Test

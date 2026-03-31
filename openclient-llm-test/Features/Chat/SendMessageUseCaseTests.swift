@@ -36,11 +36,11 @@ final class SendMessageUseCaseTests: XCTestCase {
 
     func test_execute_withValidMessage_returnsResponse() async throws {
         // Given
-        mockRepository.sendMessageResult = .success("Hello! How can I help?")
+        mockRepository.sendMessageResult = .success(("Hello! How can I help?", nil))
         let messages = [ChatMessage(role: .user, content: "Hello")]
 
         // When
-        let response = try await sut.execute(messages: messages, model: "gpt-4")
+        let (response, _) = try await sut.execute(messages: messages, model: "gpt-4", parameters: .default)
 
         // Then
         XCTAssertEqual(response, "Hello! How can I help?")
@@ -53,7 +53,7 @@ final class SendMessageUseCaseTests: XCTestCase {
 
         // When / Then
         do {
-            _ = try await sut.execute(messages: messages, model: "gpt-4")
+            _ = try await sut.execute(messages: messages, model: "gpt-4", parameters: .default)
             XCTFail("Expected error to be thrown")
         } catch {
             XCTAssertTrue(error is APIError)

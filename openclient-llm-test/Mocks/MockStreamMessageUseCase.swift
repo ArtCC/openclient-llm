@@ -13,23 +13,27 @@ import Foundation
 final class MockStreamMessageUseCase: StreamMessageUseCaseProtocol, @unchecked Sendable {
     // MARK: - Properties
 
-    var tokens: [String] = []
+    var chunks: [StreamChunk] = []
     var error: Error?
     var tokenDelay: Duration?
 
     // MARK: - Execute
 
-    func execute(messages: [ChatMessage], model: String) -> AsyncThrowingStream<String, Error> {
-        let tokens = tokens
+    func execute(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) -> AsyncThrowingStream<StreamChunk, Error> {
+        let chunks = chunks
         let error = error
         let tokenDelay = tokenDelay
         return AsyncThrowingStream { continuation in
             Task {
-                for token in tokens {
+                for chunk in chunks {
                     if let delay = tokenDelay {
                         try? await Task.sleep(for: delay)
                     }
-                    continuation.yield(token)
+                    continuation.yield(chunk)
                 }
                 if let error {
                     continuation.finish(throwing: error)

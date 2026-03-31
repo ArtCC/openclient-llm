@@ -37,42 +37,59 @@ openclient-llm/                    # iOS target
 │   └── OpenClientApp.swift
 ├── Shared/                        # Shared code (iOS + macOS)
 │   ├── Features/                  # Feature modules
+│   │   ├── AudioTranscription/    # Speech-to-Text
+│   │   │   ├── Views/             # AudioTranscriptionView
+│   │   │   ├── ViewModels/        # AudioTranscriptionViewModel
+│   │   │   ├── UseCases/          # TranscribeAudioUseCase
+│   │   │   ├── Repositories/      # AudioTranscriptionRepository
+│   │   │   └── Models/            # Transcription
 │   │   ├── Chat/                  # Chat with SSE streaming
 │   │   │   ├── Views/             # ChatView, MessageBubbleView, CodeBlockView,
-│   │   │   │                      # ConversationListView, AttachmentPickerView
+│   │   │   │                      # ConversationListView, AttachmentPickerView,
+│   │   │   │                      # ChatModelParametersView, ChatSystemPromptView
 │   │   │   ├── ViewModels/        # ChatViewModel, ConversationListViewModel
 │   │   │   ├── UseCases/          # SendMessage, StreamMessage,
 │   │   │   │                      # LoadConversations, SaveConversation, DeleteConversation
 │   │   │   ├── Repositories/      # ChatRepository, ConversationRepository
-│   │   │   └── Models/            # ChatMessage, Conversation
+│   │   │   └── Models/            # ChatMessage, Conversation, TokenUsage, ModelParameters
 │   │   ├── Home/                  # TabView (iOS) / SplitView (macOS)
 │   │   │   └── Views/             # HomeView
+│   │   ├── ImageGeneration/       # AI image generation
+│   │   │   ├── Views/             # ImageGenerationView
+│   │   │   ├── ViewModels/        # ImageGenerationViewModel
+│   │   │   ├── UseCases/          # GenerateImageUseCase
+│   │   │   ├── Repositories/      # ImageGenerationRepository
+│   │   │   └── Models/            # GeneratedImage
 │   │   ├── Launch/                # Initial routing
 │   │   │   ├── Views/             # LaunchView
 │   │   │   ├── ViewModels/        # LaunchViewModel
 │   │   │   └── UseCases/          # CheckOnboarding, ResetAppData
 │   │   ├── Models/                # LLM model listing
-│   │       ├── Views/             # ModelsView (Local/Cloud sections)
-│   │       ├── ViewModels/        # ModelsViewModel
-│   │       ├── UseCases/          # FetchModelsUseCase
-│   │       ├── Repositories/      # ModelsRepository
-│   │       └── Models/            # LLMModel (Provider, Capability)
+│   │   │   ├── Views/             # ModelsView (Local/Cloud sections)
+│   │   │   ├── ViewModels/        # ModelsViewModel
+│   │   │   ├── UseCases/          # FetchModelsUseCase
+│   │   │   ├── Repositories/      # ModelsRepository
+│   │   │   └── Models/            # LLMModel (Provider, Capability)
 │   │   ├── Onboarding/            # Server setup wizard
 │   │   │   ├── Views/             # OnboardingView
 │   │   │   ├── ViewModels/        # OnboardingViewModel
 │   │   │   ├── UseCases/          # TestConnection, SaveConfig, Complete
 │   │   │   ├── Repositories/      # OnboardingRepository
 │   │   │   └── Models/            # OnboardingStep
-│   │   └── Settings/              # Server configuration
-│   │       ├── Views/             # SettingsView
-│   │       └── ViewModels/        # SettingsViewModel
+│   │   ├── Settings/              # Server configuration
+│   │   │   ├── Views/             # SettingsView
+│   │   │   └── ViewModels/        # SettingsViewModel
+│   │   └── TextToSpeech/          # Text-to-Speech
+│   │       ├── UseCases/          # SynthesizeSpeechUseCase
+│   │       └── Repositories/      # TextToSpeechRepository
 │   ├── Core/
-│   │   ├── Networking/            # API client, SSE streaming
+│   │   ├── Networking/            # API client, SSE streaming, multipart upload
 │   │   │   └── Models/            # Request/response DTOs
-│   │   ├── Managers/              # Settings, Keychain, Log, conversation starters
+│   │   ├── Managers/              # Settings, Keychain, Log, CloudSync,
+│   │   │                          # AudioPlayer, AudioRecorder, ConversationStarters
 │   │   ├── Views/                 # Reusable views
 │   │   ├── Extensions/            # Swift/SwiftUI extensions
-│       └── Utils/                 # Constants, MarkdownParser
+│   │   └── Utils/                 # Constants, MarkdownParser
 │   └── Resources/
 │       └── Localizable.xcstrings  # Localization
 └── Resources/
@@ -90,7 +107,9 @@ openclient-llm-test/               # Unit tests
 ├── Core/
 │   └── Managers/                  # KeychainManager tests
 ├── Features/
-│   ├── Chat/                      # ChatViewModel, UseCase tests
+│   ├── AudioTranscription/        # AudioTranscriptionViewModel tests
+│   ├── Chat/                      # ChatViewModel, ConversationListViewModel tests
+│   ├── ImageGeneration/           # ImageGenerationViewModel tests
 │   ├── Launch/                    # LaunchViewModel, UseCase tests
 │   ├── Models/                    # ModelsViewModel, UseCase tests
 │   ├── Onboarding/                # OnboardingViewModel, UseCase tests

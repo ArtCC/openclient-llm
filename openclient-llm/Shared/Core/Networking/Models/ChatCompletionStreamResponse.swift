@@ -11,6 +11,7 @@ import Foundation
 nonisolated struct ChatCompletionStreamResponse: Decodable, Sendable {
     let id: String
     let choices: [Choice]
+    let usage: Usage?
 
     struct Choice: Decodable, Sendable {
         let delta: Delta
@@ -20,5 +21,11 @@ nonisolated struct ChatCompletionStreamResponse: Decodable, Sendable {
     struct Delta: Decodable, Sendable {
         let role: String?
         let content: String?
+    }
+
+    struct Usage: Decodable, Sendable {
+        let promptTokens: Int?
+        let completionTokens: Int?
+        let totalTokens: Int?
     }
 }

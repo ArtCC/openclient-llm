@@ -71,6 +71,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-persistence of conversations after streaming completes
 - Unit tests for ConversationListViewModel, conversation persistence, system prompt, and attachment handling
 - Mock test doubles for ConversationRepository, LoadConversationsUseCase, SaveConversationUseCase, DeleteConversationUseCase
+- Token usage display: prompt, completion, and total token counts shown below assistant messages after streaming completes
+- `TokenUsage` model on `ChatMessage` with automatic accumulation from streamed chunks
+- `totalTokens` property on `Conversation` for usage tracking across all messages
+- Model parameters UI: `ChatModelParametersView` sheet with sliders for temperature (0–2), max tokens (100–32768), and top P (0–1)
+- `ModelParameters` model persisted per conversation with sensible defaults (temperature 0.7, maxTokens 4096, topP 1.0)
+- Model parameters passed to `ChatCompletionRequest` on every message send
+- Search conversations: `.searchable()` modifier on `ConversationListView` with real-time filtering by title
+- `filteredConversations` in `ConversationListViewModel` with case-insensitive search
+- iCloud sync via `CloudSyncManager` using iCloud Documents container (`NSUbiquitousKeyValueStore`-backed)
+- `CloudSyncManager` syncs conversations on save and merges remote changes on load (newer-wins strategy)
+- iCloud sync toggle in Settings with `isCloudSyncEnabled` on `SettingsManager`
+- Image generation feature: `ImageGenerationView` with prompt input, model picker, size selector, and image count
+- Generated images displayed in a gallery grid with context menu actions (share, copy)
+- `ImageGenerationRepository`, `GenerateImageUseCase`, `ImageGenerationViewModel` with Event/State pattern
+- `ImageGenerationRequest`/`ImageGenerationResponse` API models for `POST /v1/images/generations`
+- Audio transcription (Speech-to-Text): `AudioTranscriptionView` with record button, file picker, model and language selection
+- `AudioRecorderManager` for platform audio recording with `AVAudioRecorder`
+- `AudioTranscriptionRepository`, `TranscribeAudioUseCase`, `AudioTranscriptionViewModel` with Event/State pattern
+- `AudioTranscriptionRequest`/`AudioTranscriptionResponse` API models for `POST /v1/audio/transcriptions`
+- Multipart form data upload support in `APIClient` for audio file uploads
+- Raw data request support in `APIClient` for binary audio responses
+- Text-to-Speech: "Read Aloud" button on assistant messages with play/stop toggle
+- `TextToSpeechRepository`, `SynthesizeSpeechUseCase` for `POST /v1/audio/speech`
+- `AudioPlayerManager` for playback of TTS audio data with `AVAudioPlayer`
+- `TextToSpeechRequest` API model with voice and speed parameters
+- Image Generation and Audio Transcription tabs in HomeView (iOS TabView, macOS sidebar)
+- Unit tests for ImageGenerationViewModel, AudioTranscriptionViewModel, and TTS integration in ChatViewModel
+- Mock test doubles for GenerateImageUseCase, TranscribeAudioUseCase, SynthesizeSpeechUseCase, CloudSyncManager
 
 ### Changed
 
@@ -89,6 +117,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ChatCompletionRequest.content now supports multimodal encoding (text string or array of content parts)
 - ChatRepository builds multimodal messages with base64 image and PDF text extraction
 - macOS app entry point includes `.commands {}` and `.frame(minWidth:minHeight:)` for native window behavior
+- `ChatRepository` returns `StreamChunk` (text + optional `TokenUsage`) instead of plain `String` tokens
+- `StreamMessageUseCase` accepts optional `ModelParameters` for per-request parameter customization
+- `ChatViewModel` tracks `isSpeaking` and `speakingMessageId` state for TTS playback coordination
+- `MessageBubbleView` receives TTS action closures and displays speak/stop button on assistant messages
+- `ConversationListView` iterates over `filteredConversations` instead of raw `conversations` for search support
+- `ConversationRepository` integrates `CloudSyncManager` for automatic upload/download on save/load
+- `SettingsViewModel` handles `cloudSyncToggled` event to persist iCloud sync preference
+- `SettingsView` includes iCloud Sync section with toggle control
+- `APIClient` protocol extended with `multipartRequest` and `rawDataRequest` methods
+- HomeView updated with Image Generation and Audio Transcription tabs for iOS and macOS
 
 ### Fixed
 

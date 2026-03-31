@@ -7,4 +7,5 @@
 */
 
 "NSCameraUsageDescription" = "Το OpenClient LLM χρησιμοποιεί την κάμερα για λήψη φωτογραφιών και αποστολή τους στο μοντέλο AI.";
+"NSMicrophoneUsageDescription" = "Το OpenClient LLM χρησιμοποιεί το μικρόφωνο για εγγραφή ήχου και μεταγραφή του με το μοντέλο AI.";
 "NSLocalNetworkUsageDescription" = "Το OpenClient LLM χρειάζεται πρόσβαση στο τοπικό σας δίκτυο για σύνδεση με τον διακομιστή LiteLLM.";

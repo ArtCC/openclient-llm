@@ -7,4 +7,5 @@
 */
 
 "NSCameraUsageDescription" = "OpenClient LLMはカメラを使用して写真を撮影し、AIモデルに送信します。";
+"NSMicrophoneUsageDescription" = "OpenClient LLMはマイクを使用して音声を録音し、AIモデルで文字起こしします。";
 "NSLocalNetworkUsageDescription" = "OpenClient LLMは、自己ホスト型LiteLLMサーバーに接続するためにローカルネットワークへのアクセスが必要です。";

@@ -19,6 +19,7 @@ final class SettingsViewModel {
         case apiKeyChanged(String)
         case testConnectionTapped
         case saveTapped
+        case cloudSyncToggled(Bool)
     }
 
     enum State: Equatable {
@@ -31,6 +32,8 @@ final class SettingsViewModel {
         var apiKey: String = ""
         var connectionStatus: ConnectionStatus = .idle
         var isSaved: Bool = false
+        var isCloudSyncEnabled: Bool = false
+        var isCloudAvailable: Bool = false
     }
 
     enum ConnectionStatus: Equatable {
@@ -45,6 +48,7 @@ final class SettingsViewModel {
     private let saveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol
     private let testServerConnectionUseCase: TestServerConnectionUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
+    private let cloudSyncManager: CloudSyncManagerProtocol
 
     // MARK: - Init
 
@@ -52,12 +56,14 @@ final class SettingsViewModel {
         state: State = .loading,
         saveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol = SaveServerConfigurationUseCase(),
         testServerConnectionUseCase: TestServerConnectionUseCaseProtocol = TestServerConnectionUseCase(),
-        settingsManager: SettingsManagerProtocol = SettingsManager()
+        settingsManager: SettingsManagerProtocol = SettingsManager(),
+        cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager()
     ) {
         self.state = state
         self.saveServerConfigurationUseCase = saveServerConfigurationUseCase
         self.testServerConnectionUseCase = testServerConnectionUseCase
         self.settingsManager = settingsManager
+        self.cloudSyncManager = cloudSyncManager
     }
 
     // MARK: - Input functions
@@ -74,6 +80,8 @@ final class SettingsViewModel {
             testConnection()
         case .saveTapped:
             saveSettings()
+        case .cloudSyncToggled(let enabled):
+            toggleCloudSync(enabled)
         }
     }
 }
@@ -84,7 +92,9 @@ private extension SettingsViewModel {
     func loadSettings() {
         let loadedState = LoadedState(
             serverURL: settingsManager.getServerBaseURL(),
-            apiKey: settingsManager.getAPIKey()
+            apiKey: settingsManager.getAPIKey(),
+            isCloudSyncEnabled: settingsManager.getIsCloudSyncEnabled(),
+            isCloudAvailable: cloudSyncManager.isCloudAvailable()
         )
         state = .loaded(loadedState)
     }
@@ -134,6 +144,13 @@ private extension SettingsViewModel {
             apiKey: loadedState.apiKey
         )
         loadedState.isSaved = true
+        state = .loaded(loadedState)
+    }
+
+    func toggleCloudSync(_ enabled: Bool) {
+        guard case .loaded(var loadedState) = state else { return }
+        settingsManager.setIsCloudSyncEnabled(enabled)
+        loadedState.isCloudSyncEnabled = enabled
         state = .loaded(loadedState)
     }
 }

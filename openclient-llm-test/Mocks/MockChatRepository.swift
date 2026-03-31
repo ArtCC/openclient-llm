@@ -13,23 +13,31 @@ import Foundation
 final class MockChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
     // MARK: - Properties
 
-    var sendMessageResult: Result<String, Error> = .success("Mock response")
-    var streamTokens: [String] = []
+    var sendMessageResult: Result<(String, TokenUsage?), Error> = .success(("Mock response", nil))
+    var streamChunks: [StreamChunk] = []
     var streamError: Error?
 
     // MARK: - Public
 
-    func sendMessage(messages: [ChatMessage], model: String) async throws -> String {
+    func sendMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) async throws -> (String, TokenUsage?) {
         try sendMessageResult.get()
     }
 
-    func streamMessage(messages: [ChatMessage], model: String) -> AsyncThrowingStream<String, Error> {
-        let tokens = streamTokens
+    func streamMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) -> AsyncThrowingStream<StreamChunk, Error> {
+        let chunks = streamChunks
         let error = streamError
         return AsyncThrowingStream { continuation in
             Task {
-                for token in tokens {
-                    continuation.yield(token)
+                for chunk in chunks {
+                    continuation.yield(chunk)
                 }
                 if let error {
                     continuation.finish(throwing: error)
