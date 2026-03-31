@@ -5,3 +5,6 @@
   Created by Arturo Carretero Calvo on 31/03/2026.
   Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
 */
+
+"NSCameraUsageDescription" = "Το OpenClient LLM χρησιμοποιεί την κάμερα για λήψη φωτογραφιών και αποστολή τους στο μοντέλο AI.";
+"NSLocalNetworkUsageDescription" = "Το OpenClient LLM χρειάζεται πρόσβαση στο τοπικό σας δίκτυο για σύνδεση με τον διακομιστή LiteLLM.";
