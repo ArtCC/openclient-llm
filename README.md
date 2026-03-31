@@ -14,7 +14,7 @@
 
 ## Description
 
-Native Apple client for [LiteLLM](https://github.com/BerriAI/litellm), a self-hosted LLM proxy server. Connect to any LLM provider (Ollama, OpenAI, Anthropic, Groq, and more) through a single unified endpoint with a beautiful, native iOS, iPadOS, and macOS experience.
+Native Apple client for OpenAI-compatible LLM servers. Works out of the box with [LiteLLM](https://github.com/BerriAI/litellm) — a self-hosted proxy that connects to any LLM provider (Ollama, OpenAI, Anthropic, Groq, and more) — and also directly with [Ollama](https://ollama.com) using its built-in OpenAI-compatible endpoint (`/v1`). Just point the app at your server and start chatting.
 
 ## Technologies
 
@@ -105,14 +105,16 @@ openclient-llm-test/               # Unit tests
    cd openclient-llm
    open openclient-llm.xcodeproj
    ```
-3. **Configure** your LiteLLM server URL in the app settings
+3. **Configure** your server URL in the app settings:
+   - **LiteLLM**: `http://your-server:4000`
+   - **Ollama** (direct): `http://your-server:11434/v1`
 4. **Run** on your device or simulator
 
 ### Requirements
 
 - Xcode 26+
 - iOS 26+ / macOS 26+
-- A running [LiteLLM](https://docs.litellm.ai/) server (local or remote)
+- A running [LiteLLM](https://docs.litellm.ai/) server (local or remote), **or** a running [Ollama](https://ollama.com) instance (v0.1.24+ for OpenAI-compatible `/v1` endpoint)
 
 ## License
 
