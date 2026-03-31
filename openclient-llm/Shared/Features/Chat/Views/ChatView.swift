@@ -144,10 +144,6 @@ private extension ChatView {
                 .id("scroll-bottom")
         }
         .padding(.horizontal, 16)
-        .animation(
-            .spring(duration: 0.3),
-            value: loadedState.messages.count
-        )
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity)
     }
