@@ -46,6 +46,8 @@ Goal: Platform-optimized experience.
 - [x] **Keyboard shortcuts**: macOS keyboard navigation
 - [x] **Menu bar**: macOS menu items for common actions
 - [x] **Dark/Light mode**: Full theme support with semantic colors
+- [x] **Debug logging system**: LogManager with emoji-differentiated log levels (info, debug, warning, error, network) for readable console output in DEBUG builds
+- [x] **Attachment thumbnails in chat**: Show image thumbnails inline in sent messages (small rounded preview); show document attachments as icon + filename card
 
 ## Phase 4 — Advanced Features
 

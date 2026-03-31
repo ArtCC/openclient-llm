@@ -65,7 +65,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ConversationListViewModel with Event/State pattern for conversation management
 - Attachment model on ChatMessage (type, fileName, data) with Codable support
 - Pending attachments bar in chat input area with remove capability
-- Attachment badges on sent messages showing file names
+- Attachment thumbnails: image attachments shown as 120pt rounded previews inline in chat messages; PDF attachments shown as icon + filename cards with glass effect
+- LogManager debug logging system with emoji-differentiated log levels (🔍 DEBUG, ℹ️ INFO, ⚠️ WARNING, ❌ ERROR, 🌐 NETWORK, ✅ SUCCESS) — only active in DEBUG builds, includes timestamp, file, function, and line number
 - Auto-generated conversation titles from the first user message
 - Auto-persistence of conversations after streaming completes
 - Unit tests for ConversationListViewModel, conversation persistence, system prompt, and attachment handling
@@ -82,7 +83,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Assistant message spacing increased to 8pt between blocks for readability
 - ChatViewModel rewritten to support conversation lifecycle (create, load, persist, auto-title)
 - ChatView updated with system prompt sheet, attachment pickers, and conversation loading
-- HomeView refactored: iOS uses TabView with NavigationSplitView in Chats tab; macOS uses 3-column NavigationSplitView with sidebar selection
+- HomeView refactored: iOS uses TabView with NavigationStack (iPhone) / NavigationSplitView (iPad); macOS uses 3-column NavigationSplitView with sidebar selection
+- MessageBubbleView attachments: replaced text badges with image thumbnails (120pt rounded) and document cards (icon + filename + type label)
 - MessageBubbleView enhanced with context menu actions and attachment display
 - ChatCompletionRequest.content now supports multimodal encoding (text string or array of content parts)
 - ChatRepository builds multimodal messages with base64 image and PDF text extraction
