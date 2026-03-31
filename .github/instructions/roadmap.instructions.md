@@ -57,19 +57,36 @@ Goal: Power user features.
 - [ ] **Token usage display**: Show token count per message/conversation
 - [ ] **Model parameters**: Temperature, max tokens, top_p per conversation
 - [ ] **Search conversations**: Full-text search across conversations
-- [ ] **Export**: Export conversations to JSON/Markdown
 - [ ] **iCloud sync**: Sync conversations across devices
 - [ ] **Image generation**: Generate images from text prompts via POST /v1/images/generations (DALL-E, Stable Diffusion, Gemini, etc.)
 - [ ] **Audio transcription (Speech-to-Text)**: Record or upload audio for transcription via POST /v1/audio/transcriptions (Whisper, Groq, Deepgram, Gemini)
 - [ ] **Text-to-Speech**: Read assistant responses aloud via POST /v1/audio/speech (OpenAI TTS, AWS Polly, ElevenLabs, Gemini TTS)
 
-## Phase 5 — Infrastructure, Multi-Server & Others
+## Phase 5 — Advanced Interactions
 
-Goal: Support for multiple server configurations and infrastructure improvements.
+Goal: Web search, agentic capabilities, and enhanced chat workflows.
 
-- [ ] **Multiple servers**: Support multiple LiteLLM server configurations
+- [ ] **Export**: Export conversations to JSON/Markdown
 - [ ] **Web browsing**: Enable models to search and retrieve web content via Brave Search API for grounded, up-to-date responses
 - [ ] **Agent mode (tool calling)**: Support LiteLLM function/tool calling loop — parse tool_calls from model responses, execute registered tools, send results back, and repeat until final answer
+- [ ] **Conversation branching**: Fork a conversation from any message to explore alternative responses (edit & resend)
+- [ ] **Prompt templates/library**: Library of predefined system prompts (coding assistant, translator, summarizer...) that users can save and reuse
+- [ ] **Message editing**: Edit an already sent user message and regenerate the assistant response
+- [ ] **Response regeneration**: "Regenerate" button to request a new response to the last message
+
+## Phase 6 — Ecosystem & Personalization
+
+Goal: Deep OS integration and user customization.
+
+- [ ] **Shortcuts & Siri integration**: iOS/macOS Shortcuts to send quick prompts or start chats from Siri
+- [ ] **Widgets**: iOS/macOS widget for quick access to the last chat or to send a direct prompt
+- [ ] **Share extension**: Share text/images/PDFs from other apps directly into an OpenClient chat
+- [ ] **Local RAG (embeddings)**: Index local user documents and use them as context in responses
+- [ ] **Conversation statistics**: Usage dashboard — tokens spent, most used models, chats per day
+- [ ] **Custom themes**: Allow users to customize bubble colors, fonts, etc.
+- [ ] **Multiple servers**: Manage multiple LiteLLM server configurations simultaneously
+- [ ] **Pinned conversations**: Pin important conversations to the top of the list
+- [ ] **Conversation folders/tags**: Organize chats into folders or with tags
 
 ## Current Phase: 4 — Advanced Features
 

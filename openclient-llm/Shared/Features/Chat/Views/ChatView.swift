@@ -386,20 +386,22 @@ private extension ChatView {
 #endif
 
             Button {
-                showImagePicker = true
-            } label: {
-                Label(String(localized: "Photo Library"), systemImage: "photo.on.rectangle")
-            }
-
-            Button {
                 showDocumentPicker = true
             } label: {
                 Label(String(localized: "Document"), systemImage: "doc")
             }
+
+            Button {
+                showImagePicker = true
+            } label: {
+                Label(String(localized: "Photo Library"), systemImage: "photo.on.rectangle")
+            }
         } label: {
             Image(systemName: "plus.circle.fill")
-                .font(.title3)
+                .font(.title)
                 .foregroundStyle(.secondary)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
     }
