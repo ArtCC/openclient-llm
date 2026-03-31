@@ -61,10 +61,7 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     func multipartRequest<T: Decodable & Sendable>(
         endpoint: String,
         fields: [String: String],
-        fileField: String,
-        fileData: Data,
-        fileName: String,
-        mimeType: String
+        file: MultipartFileData
     ) async throws -> T {
         if let error = multipartError {
             throw error

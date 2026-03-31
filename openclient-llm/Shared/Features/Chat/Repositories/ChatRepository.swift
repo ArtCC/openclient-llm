@@ -10,8 +10,16 @@ import Foundation
 import PDFKit
 
 protocol ChatRepositoryProtocol: Sendable {
-    func sendMessage(messages: [ChatMessage], model: String, parameters: ModelParameters) async throws -> (String, TokenUsage?)
-    func streamMessage(messages: [ChatMessage], model: String, parameters: ModelParameters) -> AsyncThrowingStream<StreamChunk, Error>
+    func sendMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) async throws -> (String, TokenUsage?)
+    func streamMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) -> AsyncThrowingStream<StreamChunk, Error>
 }
 
 enum StreamChunk: Sendable {
@@ -32,7 +40,11 @@ struct ChatRepository: ChatRepositoryProtocol {
 
     // MARK: - Public
 
-    func sendMessage(messages: [ChatMessage], model: String, parameters: ModelParameters) async throws -> (String, TokenUsage?) {
+    func sendMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) async throws -> (String, TokenUsage?) {
         let request = ChatCompletionRequest(
             model: model,
             messages: messages.map { buildCompletionMessage($0) },
@@ -64,7 +76,11 @@ struct ChatRepository: ChatRepositoryProtocol {
         return (content, tokenUsage)
     }
 
-    func streamMessage(messages: [ChatMessage], model: String, parameters: ModelParameters) -> AsyncThrowingStream<StreamChunk, Error> {
+    func streamMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) -> AsyncThrowingStream<StreamChunk, Error> {
         let request = ChatCompletionRequest(
             model: model,
             messages: messages.map { buildCompletionMessage($0) },

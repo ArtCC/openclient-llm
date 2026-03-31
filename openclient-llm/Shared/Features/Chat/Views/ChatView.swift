@@ -141,7 +141,11 @@ private extension ChatView {
     ) -> some View {
         ScrollView {
             if loadedState.messages.isEmpty {
-                emptyState(loadedState)
+                ChatEmptyStateView(
+                    selectedModel: loadedState.selectedModel,
+                    conversationStarters: loadedState.conversationStarters,
+                    onSuggestionTapped: { viewModel.send(.suggestionTapped($0)) }
+                )
             } else {
                 messagesList(loadedState)
             }
@@ -149,10 +153,8 @@ private extension ChatView {
 #if os(iOS)
         .scrollDismissesKeyboard(.interactively)
 #endif
-        .onScrollGeometryChange(for: Bool.self) { geometry in
-            geometry.contentSize.height
-                - geometry.contentOffset.y
-                - geometry.containerSize.height < 80
+        .onScrollGeometryChange(for: Bool.self) { geo in
+            geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height < 80
         } action: { _, newValue in
             isNearBottom = newValue
         }
@@ -216,88 +218,6 @@ private extension ChatView {
         .padding(.horizontal, 16)
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity)
-    }
-
-    // MARK: - Empty State
-
-    func emptyState(
-        _ loadedState: ChatViewModel.LoadedState
-    ) -> some View {
-        VStack(spacing: 24) {
-            Spacer()
-
-            Image(systemName: "sparkles")
-                .font(.system(size: 44))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 80, height: 80)
-                .glassEffect(.regular, in: .circle)
-
-            VStack(spacing: 8) {
-                Text(
-                    String(localized: "How can I help you?")
-                )
-                .font(.title2)
-                .fontWeight(.semibold)
-
-                if loadedState.selectedModel == nil {
-                    Text(
-                        String(
-                            localized:
-                                "Select a model to start chatting"
-                        )
-                    )
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                }
-            }
-
-            if loadedState.selectedModel != nil {
-                suggestionChipsGrid(loadedState)
-            }
-
-            Spacer()
-        }
-        .frame(maxWidth: 400)
-        .frame(maxWidth: .infinity)
-        .padding()
-    }
-
-    func suggestionChipsGrid(
-        _ loadedState: ChatViewModel.LoadedState
-    ) -> some View {
-        LazyVGrid(
-            columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-            ],
-            spacing: 12
-        ) {
-            ForEach(
-                loadedState.conversationStarters
-            ) { starter in
-                Button {
-                    viewModel.send(.suggestionTapped(starter.text))
-                } label: {
-                    HStack(spacing: 8) {
-                        Image(systemName: starter.icon)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(starter.text)
-                            .font(.subheadline)
-                            .multilineTextAlignment(.leading)
-                            .foregroundStyle(.primary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 12)
-                }
-                .buttonStyle(.plain)
-                .glassEffect(
-                    .regular.interactive(),
-                    in: .rect(cornerRadius: 14)
-                )
-            }
-        }
     }
 
     // MARK: - Error Banner

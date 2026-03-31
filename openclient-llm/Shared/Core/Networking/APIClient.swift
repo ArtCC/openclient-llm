@@ -8,6 +8,13 @@
 
 import Foundation
 
+struct MultipartFileData: Sendable {
+    let field: String
+    let data: Data
+    let fileName: String
+    let mimeType: String
+}
+
 protocol APIClientProtocol: Sendable {
     func request<T: Decodable & Sendable>(
         endpoint: String,
@@ -21,10 +28,7 @@ protocol APIClientProtocol: Sendable {
     func multipartRequest<T: Decodable & Sendable>(
         endpoint: String,
         fields: [String: String],
-        fileField: String,
-        fileData: Data,
-        fileName: String,
-        mimeType: String
+        file: MultipartFileData
     ) async throws -> T
     func rawDataRequest(
         endpoint: String,
@@ -119,10 +123,7 @@ struct APIClient: APIClientProtocol, Sendable {
     func multipartRequest<T: Decodable & Sendable>(
         endpoint: String,
         fields: [String: String],
-        fileField: String,
-        fileData: Data,
-        fileName: String,
-        mimeType: String
+        file: MultipartFileData
     ) async throws -> T {
         let baseURL = settingsManager.getServerBaseURL()
         guard let url = URL(string: baseURL)?.appendingPathComponent(endpoint) else {
@@ -149,9 +150,10 @@ struct APIClient: APIClientProtocol, Sendable {
         }
 
         body.append(Data("--\(boundary)\r\n".utf8))
-        body.append(Data("Content-Disposition: form-data; name=\"\(fileField)\"; filename=\"\(fileName)\"\r\n".utf8))
-        body.append(Data("Content-Type: \(mimeType)\r\n\r\n".utf8))
-        body.append(fileData)
+        let disposition = "Content-Disposition: form-data; name=\"\(file.field)\"; filename=\"\(file.fileName)\"\r\n"
+        body.append(Data(disposition.utf8))
+        body.append(Data("Content-Type: \(file.mimeType)\r\n\r\n".utf8))
+        body.append(file.data)
         body.append(Data("\r\n".utf8))
         body.append(Data("--\(boundary)--\r\n".utf8))
 

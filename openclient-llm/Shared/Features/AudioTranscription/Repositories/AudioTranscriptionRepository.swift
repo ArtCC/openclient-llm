@@ -34,10 +34,12 @@ struct AudioTranscriptionRepository: AudioTranscriptionRepositoryProtocol {
         let response: AudioTranscriptionResponse = try await apiClient.multipartRequest(
             endpoint: "v1/audio/transcriptions",
             fields: fields,
-            fileField: "file",
-            fileData: audioData,
-            fileName: fileName,
-            mimeType: "audio/m4a"
+            file: MultipartFileData(
+                field: "file",
+                data: audioData,
+                fileName: fileName,
+                mimeType: "audio/m4a"
+            )
         )
 
         return response.text

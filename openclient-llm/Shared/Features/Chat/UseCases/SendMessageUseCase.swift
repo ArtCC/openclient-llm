@@ -9,7 +9,11 @@
 import Foundation
 
 protocol SendMessageUseCaseProtocol: Sendable {
-    func execute(messages: [ChatMessage], model: String, parameters: ModelParameters) async throws -> (String, TokenUsage?)
+    func execute(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) async throws -> (String, TokenUsage?)
 }
 
 struct SendMessageUseCase: SendMessageUseCaseProtocol {
@@ -25,7 +29,11 @@ struct SendMessageUseCase: SendMessageUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute(messages: [ChatMessage], model: String, parameters: ModelParameters) async throws -> (String, TokenUsage?) {
+    func execute(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) async throws -> (String, TokenUsage?) {
         try await repository.sendMessage(messages: messages, model: model, parameters: parameters)
     }
 }

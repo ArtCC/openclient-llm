@@ -19,11 +19,19 @@ final class MockChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
 
     // MARK: - Public
 
-    func sendMessage(messages: [ChatMessage], model: String, parameters: ModelParameters) async throws -> (String, TokenUsage?) {
+    func sendMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) async throws -> (String, TokenUsage?) {
         try sendMessageResult.get()
     }
 
-    func streamMessage(messages: [ChatMessage], model: String, parameters: ModelParameters) -> AsyncThrowingStream<StreamChunk, Error> {
+    func streamMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) -> AsyncThrowingStream<StreamChunk, Error> {
         let chunks = streamChunks
         let error = streamError
         return AsyncThrowingStream { continuation in

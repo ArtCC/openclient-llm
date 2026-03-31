@@ -104,6 +104,23 @@ final class ChatViewModel {
             stopStreaming()
         case .suggestionTapped(let prompt):
             handleSuggestionTapped(prompt)
+        case .modelSelected,
+             .systemPromptChanged,
+             .attachmentAdded,
+             .attachmentRemoved,
+             .modelParametersChanged,
+             .speakMessageTapped,
+             .stopSpeakingTapped:
+            handleConfigurationEvent(event)
+        }
+    }
+}
+
+// MARK: - Private
+
+private extension ChatViewModel {
+    func handleConfigurationEvent(_ event: Event) {
+        switch event {
         case .modelSelected(let model):
             selectModel(model)
         case .systemPromptChanged(let prompt):
@@ -118,13 +135,11 @@ final class ChatViewModel {
             speakMessage(message)
         case .stopSpeakingTapped:
             stopSpeaking()
+        default:
+            break
         }
     }
-}
 
-// MARK: - Private
-
-private extension ChatViewModel {
     func loadInitialData() {
         state = .loading
 
@@ -321,16 +336,7 @@ private extension ChatViewModel {
             let stream = streamMessageUseCase.execute(messages: allMessages, model: model, parameters: parameters)
             for try await chunk in stream {
                 guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
-                switch chunk {
-                case .token(let token):
-                    if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }) {
-                        currentState.messages[index].content += token
-                    }
-                case .usage(let usage):
-                    if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }) {
-                        currentState.messages[index].tokenUsage = usage
-                    }
-                }
+                applyStreamChunk(chunk, to: &currentState, assistantMessageId: assistantMessageId)
                 state = .loaded(currentState)
             }
 
@@ -348,6 +354,23 @@ private extension ChatViewModel {
             currentState.errorMessage = error.localizedDescription
             state = .loaded(currentState)
             persistConversation()
+        }
+    }
+
+    func applyStreamChunk(
+        _ chunk: StreamChunk,
+        to state: inout LoadedState,
+        assistantMessageId: UUID
+    ) {
+        switch chunk {
+        case .token(let token):
+            if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
+                state.messages[index].content += token
+            }
+        case .usage(let usage):
+            if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
+                state.messages[index].tokenUsage = usage
+            }
         }
     }
 

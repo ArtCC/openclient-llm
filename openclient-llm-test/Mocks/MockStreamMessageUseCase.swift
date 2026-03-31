@@ -19,7 +19,11 @@ final class MockStreamMessageUseCase: StreamMessageUseCaseProtocol, @unchecked S
 
     // MARK: - Execute
 
-    func execute(messages: [ChatMessage], model: String, parameters: ModelParameters) -> AsyncThrowingStream<StreamChunk, Error> {
+    func execute(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) -> AsyncThrowingStream<StreamChunk, Error> {
         let chunks = chunks
         let error = error
         let tokenDelay = tokenDelay
