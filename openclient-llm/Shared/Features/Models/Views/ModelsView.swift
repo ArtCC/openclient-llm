@@ -65,43 +65,60 @@ private extension ModelsView {
     }
 
     func modelsList(_ loadedState: ModelsViewModel.LoadedState) -> some View {
-        List(loadedState.models) { model in
-            Button {
-                viewModel.send(.modelTapped(model))
-            } label: {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(model.id)
-                                .font(.body)
-                            if !model.ownedBy.isEmpty {
-                                Text(model.ownedBy)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
+        let localModels = loadedState.models.filter { $0.provider == .local }
+        let cloudModels = loadedState.models.filter { $0.provider == .cloud }
 
-                        Spacer()
+        return List {
+            if !localModels.isEmpty {
+                Section(String(localized: "Local")) {
+                    ForEach(localModels) { model in
+                        modelRow(model, loadedState: loadedState)
+                    }
+                }
+            }
+            if !cloudModels.isEmpty {
+                Section(String(localized: "Cloud")) {
+                    ForEach(cloudModels) { model in
+                        modelRow(model, loadedState: loadedState)
+                    }
+                }
+            }
+        }
+    }
 
-                        if model.id == loadedState.selectedModelId {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(Color.accentColor)
-                        } else {
-                            Image(systemName: "cpu")
+    func modelRow(_ model: LLMModel, loadedState: ModelsViewModel.LoadedState) -> some View {
+        let isSelected = model.id == loadedState.selectedModelId
+
+        return Button {
+            viewModel.send(.modelTapped(model))
+        } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(model.id)
+                            .font(.body)
+                        if !model.ownedBy.isEmpty {
+                            Text(model.ownedBy)
+                                .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
                     }
 
-                    if !model.capabilities.isEmpty {
-                        capabilityTags(model.capabilities)
+                    Spacer()
+
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(Color.accentColor)
+                    } else {
+                        Image(systemName: model.provider.icon)
+                            .foregroundStyle(.secondary)
                     }
                 }
+
+                if !model.capabilities.isEmpty {
+                    capabilityTags(model.capabilities)
+                }
             }
-            .listRowBackground(
-                model.id == loadedState.selectedModelId
-                    ? Color.accentColor.opacity(0.08)
-                    : nil
-            )
         }
     }
 

@@ -5,7 +5,6 @@
 <h1 align="center">OpenClient LLM</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.1.0-brightgreen?style=flat-square" alt="Version" />
   <img src="https://img.shields.io/badge/Platform-iOS%2026+%20|%20iPadOS%2026+%20|%20macOS%2026+-blue?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift" alt="Swift" />
   <img src="https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift" alt="SwiftUI" />
@@ -15,7 +14,7 @@
 
 ## Description
 
-Native Apple client for [LiteLLM](https://github.com/BerriAI/litellm), a self-hosted LLM proxy server. Connect to any LLM provider (Ollama, OpenAI, Anthropic, Groq, and more) through a single unified endpoint with a beautiful, native iOS, iPadOS, and macOS experience.
+Native Apple client for OpenAI-compatible LLM servers. Works out of the box with [LiteLLM](https://github.com/BerriAI/litellm) — a self-hosted proxy that connects to any LLM provider (Ollama, OpenAI, Anthropic, Groq, and more) — and also directly with [Ollama](https://ollama.com) using its built-in OpenAI-compatible endpoint (`/v1`). Just point the app at your server and start chatting.
 
 ## Technologies
 
@@ -39,7 +38,7 @@ openclient-llm/                    # iOS target
 ├── Shared/                        # Shared code (iOS + macOS)
 │   ├── Features/                  # Feature modules
 │   │   ├── Chat/                  # Chat with SSE streaming
-│   │   │   ├── Views/             # ChatView, MessageBubbleView
+│   │   │   ├── Views/             # ChatView, MessageBubbleView, CodeBlockView
 │   │   │   ├── ViewModels/        # ChatViewModel (Event/State)
 │   │   │   ├── UseCases/          # SendMessage, StreamMessage
 │   │   │   ├── Repositories/      # ChatRepository
@@ -51,11 +50,11 @@ openclient-llm/                    # iOS target
 │   │   │   ├── ViewModels/        # LaunchViewModel
 │   │   │   └── UseCases/          # CheckOnboarding, ResetAppData
 │   │   ├── Models/                # LLM model listing
-│   │   │   ├── Views/             # ModelsView
-│   │   │   ├── ViewModels/        # ModelsViewModel
-│   │   │   ├── UseCases/          # FetchModelsUseCase
-│   │   │   ├── Repositories/      # ModelsRepository
-│   │   │   └── Models/            # LLMModel
+│   │       ├── Views/             # ModelsView (Local/Cloud sections)
+│   │       ├── ViewModels/        # ModelsViewModel
+│   │       ├── UseCases/          # FetchModelsUseCase
+│   │       ├── Repositories/      # ModelsRepository
+│   │       └── Models/            # LLMModel (Provider, Capability)
 │   │   ├── Onboarding/            # Server setup wizard
 │   │   │   ├── Views/             # OnboardingView
 │   │   │   ├── ViewModels/        # OnboardingViewModel
@@ -71,7 +70,7 @@ openclient-llm/                    # iOS target
 │   │   ├── Managers/              # Settings, Keychain, conversation starters
 │   │   ├── Views/                 # Reusable views
 │   │   ├── Extensions/            # Swift/SwiftUI extensions
-│   │   └── Utils/                 # Constants, shared utilities
+│       └── Utils/                 # Constants, MarkdownParser
 │   └── Resources/
 │       └── Localizable.xcstrings  # Localization
 └── Resources/
@@ -106,14 +105,16 @@ openclient-llm-test/               # Unit tests
    cd openclient-llm
    open openclient-llm.xcodeproj
    ```
-3. **Configure** your LiteLLM server URL in the app settings
+3. **Configure** your server URL in the app settings:
+   - **LiteLLM**: `http://your-server:4000`
+   - **Ollama** (direct): `http://your-server:11434/v1`
 4. **Run** on your device or simulator
 
 ### Requirements
 
 - Xcode 26+
 - iOS 26+ / macOS 26+
-- A running [LiteLLM](https://docs.litellm.ai/) server (local or remote)
+- A running [LiteLLM](https://docs.litellm.ai/) server (local or remote), **or** a running [Ollama](https://ollama.com) instance (v0.1.24+ for OpenAI-compatible `/v1` endpoint)
 
 ## License
 

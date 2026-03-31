@@ -161,6 +161,66 @@ macOS does **not** use Tab Bar. Instead, use `NavigationSplitView` with a sideba
 - Use `.searchable()` for search functionality
 - Use `.sheet()`, `.popover()`, `.confirmationDialog()` for modal presentations
 
+## Platform-Specific Control Patterns
+
+When a shared view needs different control appearance per platform, use `#if os()` to apply platform-appropriate styles. Common divergences:
+
+### Buttons
+
+```swift
+// Primary action — looks native on both platforms
+Button("Save") { }
+#if os(macOS)
+    .buttonStyle(.borderedProminent)
+    .controlSize(.regular)
+#endif
+
+// Secondary action inside a non-glass context
+Button("Cancel") { }
+#if os(macOS)
+    .buttonStyle(.bordered)
+#endif
+```
+
+### Text Fields
+
+```swift
+// Standalone text field (outside Form)
+TextField("URL", text: $url)
+#if os(macOS)
+    .textFieldStyle(.roundedBorder)
+#else
+    .textFieldStyle(.plain)
+#endif
+```
+
+### Modal Presentations
+
+```swift
+// Small contextual content
+#if os(macOS)
+.popover(isPresented: $showPicker) { content }
+#else
+.sheet(isPresented: $showPicker) { content }
+#endif
+```
+
+### Conditional Padding Helper
+
+When iOS and macOS need different spacing, define platform constants:
+
+```swift
+private extension CGFloat {
+    #if os(macOS)
+    static let horizontalContentPadding: CGFloat = 12
+    static let verticalItemSpacing: CGFloat = 8
+    #else
+    static let horizontalContentPadding: CGFloat = 16
+    static let verticalItemSpacing: CGFloat = 12
+    #endif
+}
+```
+
 ---
 
 ## App-Specific Sections Summary

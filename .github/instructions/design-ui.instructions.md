@@ -189,6 +189,106 @@ All custom colors are defined in the Asset Catalog with Light and Dark variants:
 - Keep haptics subtle — don't overuse
 - Guard with `#if os(iOS)` — no haptics on macOS
 
+## macOS-Specific Design
+
+macOS has different visual expectations than iOS. The same SwiftUI code can look out of place on Mac if it uses iOS-centric patterns. Follow these rules to ensure a native macOS feel.
+
+### Button Styles
+
+- **Never** use `.buttonStyle(.plain)` for standard macOS actions — it removes the native button chrome and looks broken
+- Use `.buttonStyle(.bordered)` as the default for secondary/standard buttons on macOS
+- Use `.buttonStyle(.borderedProminent)` for primary/call-to-action buttons
+- Use `.buttonStyle(.glass)` or `.buttonStyle(.glassProminent)` only for elements inside Liquid Glass contexts (toolbars, floating panels)
+- Use `.buttonStyle(.plain)` only for inline/invisible tap targets (e.g., icons inside custom rows)
+- Apply platform-specific button styles with `#if os()` when iOS and macOS need different treatments:
+
+```swift
+Button("Action") { }
+#if os(macOS)
+    .buttonStyle(.bordered)
+#else
+    .buttonStyle(.plain)
+#endif
+```
+
+### Control Sizes
+
+- macOS supports `.controlSize()` which significantly impacts visual density:
+  - `.controlSize(.small)` — Use in toolbars, sidebars, compact lists
+  - `.controlSize(.regular)` — Default for most content areas
+  - `.controlSize(.large)` — Use for primary actions in onboarding or prominent forms
+- Apply `.controlSize()` at the container level (e.g., on a `Form` or `VStack`) to affect all children
+- iOS ignores `.controlSize()` — safe to apply unconditionally but prefer `#if os(macOS)` for clarity
+
+### Spacing & Padding
+
+- macOS uses more compact spacing than iOS — information density is expected on desktop
+- Use platform-conditional padding when a view feels too spread out on Mac:
+
+```swift
+.padding(.horizontal, platformHorizontalPadding)
+
+// Define as computed property or constant:
+#if os(macOS)
+private let platformHorizontalPadding: CGFloat = 12
+#else
+private let platformHorizontalPadding: CGFloat = 16
+#endif
+```
+
+- Sidebar items: 8-10pt vertical padding (macOS) vs 12-14pt (iOS)
+- Form rows: macOS uses native `Form` spacing — don't override it
+- List rows: macOS uses tighter default spacing — respect it
+
+### Forms & Settings
+
+- On macOS, `Form` renders as a grouped macOS-style form automatically — don't wrap in custom containers
+- `Toggle`, `Picker`, `TextField` inside `Form` on macOS get native AppKit-style rendering
+- Don't add custom backgrounds or glass effects to form controls on macOS — they already have system chrome
+- Use `LabeledContent` for read-only form rows on macOS
+- `.textFieldStyle(.roundedBorder)` on macOS for standalone text fields outside of Forms
+
+### Sheets & Popovers
+
+- On macOS, prefer `.popover()` over `.sheet()` for small contextual content (pickers, confirmations)
+- `.sheet()` on macOS renders as a floating window-attached sheet — use for multi-step flows or larger forms
+- `.confirmationDialog()` renders as a native macOS alert sheet — use for destructive confirmations
+- Size sheets explicitly on macOS with `.frame(width:height:)` inside the sheet content — macOS sheets don't auto-size as gracefully as iOS
+- Avoid full-screen covers (`.fullScreenCover()`) on macOS — they don't exist; use `.sheet()` instead
+
+### Toolbar & Menu Bar
+
+- macOS toolbars have built-in Liquid Glass — don't add extra glass to toolbar content
+- Use `ToolbarItem(placement: .automatic)` on macOS — specific placements like `.navigationBarTrailing` don't exist
+- Toolbar buttons on macOS should use SF Symbols with `.label` style (icon + text) for discoverability
+- Add keyboard shortcuts to frequently used actions via `.keyboardShortcut()`:
+
+```swift
+Button("New Chat") { }
+    .keyboardShortcut("n", modifiers: .command)
+```
+
+### Scroll & Content Areas
+
+- macOS scroll views have elastic bouncing and scroll bars — respect system defaults
+- Don't hide scroll indicators on macOS — users expect visible scroll bars
+- Use `.scrollContentBackground(.visible)` on macOS Lists to keep the native background
+- Avoid `.scrollDismissesKeyboard()` on macOS — it's iOS-only behavior
+
+### Hover Effects
+
+- macOS supports hover states — use `.onHover()` for interactive feedback:
+  - Highlight list rows on hover
+  - Show secondary actions on hover (e.g., timestamp on message hover)
+- Prefer subtle background change or opacity shift over bold color changes
+- Don't use `.onHover()` on iOS — it's ignored on touch devices
+
+### Focus & Keyboard Navigation
+
+- macOS users navigate with Tab key — ensure logical focus order
+- Use `.focusable()` and `.focused()` for keyboard-navigable custom controls
+- Highlight focused elements with a visible focus ring (system default)
+
 ## Animations
 
 - Use SwiftUI built-in transitions and animations (`.animation()`, `withAnimation {}`)

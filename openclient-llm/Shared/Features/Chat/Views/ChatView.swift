@@ -7,12 +7,17 @@
 //
 
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct ChatView: View {
     // MARK: - Properties
 
     @State private var viewModel = ChatViewModel()
     @State private var inputText: String = ""
+    @State private var shouldAutoScroll: Bool = true
+    @State private var isNearBottom: Bool = true
 
     // MARK: - View
 
@@ -48,11 +53,13 @@ private extension ChatView {
     func loadedView(
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
-        VStack(spacing: 0) {
-            messagesScrollView(loadedState)
-            errorBanner(loadedState.errorMessage)
-            inputBar(loadedState)
-        }
+        messagesScrollView(loadedState)
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 0) {
+                    errorBanner(loadedState.errorMessage)
+                    inputBar(loadedState)
+                }
+            }
     }
 
     // MARK: - Messages
@@ -61,40 +68,84 @@ private extension ChatView {
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                if loadedState.messages.isEmpty {
-                    emptyState(loadedState)
-                } else {
-                    LazyVStack(spacing: 16) {
-                        ForEach(loadedState.messages) { message in
-                            MessageBubbleView(
-                                message: message,
-                                isStreaming: loadedState.isStreaming
-                                && message.id
-                                == loadedState.messages.last?.id
-                            )
-                            .id(message.id)
-                            .transition(
-                                .move(edge: .bottom)
-                                .combined(with: .opacity)
-                            )
-                        }
-                    }
-                    .padding()
-                    .animation(
-                        .spring(duration: 0.3),
-                        value: loadedState.messages.count
-                    )
-                }
-            }
-            .scrollDismissesKeyboard(.immediately)
-            .onChange(of: loadedState.messages.last?.content) {
-                scrollToBottom(
-                    proxy: proxy,
-                    loadedState: loadedState
-                )
+            scrollContent(loadedState, proxy: proxy)
+        }
+    }
+
+    func scrollContent(
+        _ loadedState: ChatViewModel.LoadedState,
+        proxy: ScrollViewProxy
+    ) -> some View {
+        ScrollView {
+            if loadedState.messages.isEmpty {
+                emptyState(loadedState)
+            } else {
+                messagesList(loadedState)
             }
         }
+#if os(iOS)
+        .scrollDismissesKeyboard(.interactively)
+#endif
+        .onScrollGeometryChange(for: Bool.self) { geometry in
+            geometry.contentSize.height
+                - geometry.contentOffset.y
+                - geometry.containerSize.height < 80
+        } action: { _, newValue in
+            isNearBottom = newValue
+        }
+        .onScrollPhaseChange { oldPhase, newPhase in
+            if newPhase == .interacting {
+                shouldAutoScroll = false
+            } else if newPhase == .idle, oldPhase != .animating {
+                shouldAutoScroll = isNearBottom
+            }
+        }
+        .onChange(of: loadedState.messages.count) {
+            shouldAutoScroll = true
+            proxy.scrollTo("scroll-bottom")
+        }
+        .onChange(of: loadedState.messages.last?.content) {
+            guard shouldAutoScroll else { return }
+            proxy.scrollTo("scroll-bottom")
+        }
+#if os(iOS)
+        .onReceive(
+            NotificationCenter.default.publisher(
+                for: UIResponder.keyboardWillShowNotification
+            )
+        ) { notification in
+            let duration = notification.userInfo?[
+                UIResponder.keyboardAnimationDurationUserInfoKey
+            ] as? Double ?? 0.25
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                proxy.scrollTo("scroll-bottom")
+                shouldAutoScroll = true
+            }
+        }
+#endif
+    }
+
+    func messagesList(
+        _ loadedState: ChatViewModel.LoadedState
+    ) -> some View {
+        LazyVStack(spacing: 16) {
+            ForEach(loadedState.messages) { message in
+                MessageBubbleView(
+                    message: message,
+                    isStreaming: loadedState.isStreaming
+                    && message.id
+                    == loadedState.messages.last?.id
+                )
+                .id(message.id)
+                .transition(.opacity)
+            }
+            Color.clear
+                .frame(height: 1)
+                .id("scroll-bottom")
+        }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: 760)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Empty State
@@ -231,7 +282,7 @@ private extension ChatView {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .glassEffect(.regular, in: .capsule)
-        .padding(.horizontal)
+        .padding(.horizontal, 16)
         .padding(.bottom, 8)
     }
 
@@ -308,18 +359,6 @@ private extension ChatView {
     }
 
     // MARK: - Helpers
-
-    func scrollToBottom(
-        proxy: ScrollViewProxy,
-        loadedState: ChatViewModel.LoadedState
-    ) {
-        guard let lastMessage = loadedState.messages.last else {
-            return
-        }
-        withAnimation(.smooth) {
-            proxy.scrollTo(lastMessage.id, anchor: .bottom)
-        }
-    }
 }
 
 #Preview {

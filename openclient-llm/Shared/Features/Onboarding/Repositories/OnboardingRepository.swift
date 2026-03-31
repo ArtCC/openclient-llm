@@ -26,7 +26,7 @@ struct OnboardingRepository: OnboardingRepositoryProtocol {
     // MARK: - Public
 
     func testConnection(serverURL: String, apiKey: String) async throws {
-        guard let url = URL(string: serverURL)?.appendingPathComponent("health") else {
+        guard let url = URL(string: serverURL)?.appendingPathComponent("models") else {
             throw OnboardingRepositoryError.invalidURL
         }
 
