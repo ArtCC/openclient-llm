@@ -140,7 +140,7 @@ final class ChatViewModelTests: XCTestCase {
     func test_send_sendTapped_addsUserAndAssistantMessages() async throws {
         // Given
         mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
-        mockStreamMessage.tokens = ["Hello", " there"]
+        mockStreamMessage.chunks = [.token("Hello"), .token(" there")]
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
@@ -166,7 +166,7 @@ final class ChatViewModelTests: XCTestCase {
     func test_send_sendTapped_clearsInputText() async throws {
         // Given
         mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
-        mockStreamMessage.tokens = ["Response"]
+        mockStreamMessage.chunks = [.token("Response")]
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
@@ -300,7 +300,7 @@ final class ChatViewModelTests: XCTestCase {
     func test_send_stopStreamingTapped_stopsStreaming() async throws {
         // Given
         mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
-        mockStreamMessage.tokens = ["Hello", " ", "world"]
+        mockStreamMessage.chunks = [.token("Hello"), .token(" "), .token("world")]
         mockStreamMessage.tokenDelay = .milliseconds(100)
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
@@ -325,7 +325,7 @@ final class ChatViewModelTests: XCTestCase {
     func test_send_suggestionTapped_sendsPromptAsMessage() async throws {
         // Given
         mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
-        mockStreamMessage.tokens = ["Response"]
+        mockStreamMessage.chunks = [.token("Response")]
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 

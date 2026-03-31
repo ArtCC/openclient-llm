@@ -12,6 +12,7 @@ struct ConversationListView: View {
     // MARK: - Properties
 
     @State private var viewModel = ConversationListViewModel()
+    @State private var searchText: String = ""
 
     let onConversationSelected: (Conversation?) -> Void
 
@@ -31,6 +32,13 @@ struct ConversationListView: View {
             viewModel.send(.newConversationTapped)
         }
         #endif
+        .searchable(
+            text: $searchText,
+            prompt: String(localized: "Search conversations...")
+        )
+        .onChange(of: searchText) { _, newValue in
+            viewModel.send(.searchChanged(newValue))
+        }
         .task {
             viewModel.onConversationSelected = onConversationSelected
             viewModel.send(.viewAppeared)
@@ -45,6 +53,8 @@ private extension ConversationListView {
         Group {
             if loadedState.conversations.isEmpty {
                 emptyState
+            } else if loadedState.filteredConversations.isEmpty {
+                noSearchResults
             } else {
                 conversationList(loadedState)
             }
@@ -60,6 +70,10 @@ private extension ConversationListView {
                 .keyboardShortcut("n", modifiers: .command)
             }
         }
+    }
+
+    var noSearchResults: some View {
+        ContentUnavailableView.search(text: searchText)
     }
 
     var emptyState: some View {
@@ -82,12 +96,12 @@ private extension ConversationListView {
 
     func conversationList(_ loadedState: ConversationListViewModel.LoadedState) -> some View {
         List {
-            ForEach(loadedState.conversations) { conversation in
+            ForEach(loadedState.filteredConversations) { conversation in
                 conversationRow(conversation, loadedState: loadedState)
             }
             .onDelete { indexSet in
                 for index in indexSet {
-                    let conversation = loadedState.conversations[index]
+                    let conversation = loadedState.filteredConversations[index]
                     viewModel.send(.deleteConversation(conversation.id))
                 }
             }

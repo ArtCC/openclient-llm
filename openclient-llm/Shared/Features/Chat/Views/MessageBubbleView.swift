@@ -18,6 +18,10 @@ struct MessageBubbleView: View {
 
     let message: ChatMessage
     var isStreaming: Bool = false
+    var isSpeaking: Bool = false
+    var hasTTS: Bool = false
+    var onSpeakTapped: (() -> Void)?
+    var onStopSpeakingTapped: (() -> Void)?
     @State private var cursorVisible: Bool = false
 
     // MARK: - View
@@ -72,6 +76,14 @@ private extension MessageBubbleView {
                     thinkingIndicator
                 } else {
                     blocksView
+                }
+
+                if let usage = message.tokenUsage, !isStreaming {
+                    tokenUsageLabel(usage)
+                }
+
+                if !isStreaming && !message.content.isEmpty && message.role == .assistant && hasTTS {
+                    speakButton
                 }
             }
             .frame(minHeight: 28, alignment: .center)
@@ -247,6 +259,37 @@ private extension MessageBubbleView {
             } animation: { _ in
                 .easeInOut(duration: 0.8)
             }
+    }
+
+    func tokenUsageLabel(_ usage: TokenUsage) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: "number")
+                .font(.system(size: 9))
+            Text(String(localized: "\(usage.totalTokens) tokens"))
+                .font(.caption2)
+        }
+        .foregroundStyle(.tertiary)
+    }
+
+    var speakButton: some View {
+        Button {
+            if isSpeaking {
+                onStopSpeakingTapped?()
+            } else {
+                onSpeakTapped?()
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: isSpeaking ? "stop.circle.fill" : "speaker.wave.2")
+                    .font(.system(size: 10))
+                Text(isSpeaking
+                     ? String(localized: "Stop")
+                     : String(localized: "Read Aloud"))
+                    .font(.caption2)
+            }
+            .foregroundStyle(isSpeaking ? AnyShapeStyle(.red) : AnyShapeStyle(.tertiary))
+        }
+        .buttonStyle(.plain)
     }
 }
 

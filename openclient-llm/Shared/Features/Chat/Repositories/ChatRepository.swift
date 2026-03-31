@@ -10,8 +10,21 @@ import Foundation
 import PDFKit
 
 protocol ChatRepositoryProtocol: Sendable {
-    func sendMessage(messages: [ChatMessage], model: String) async throws -> String
-    func streamMessage(messages: [ChatMessage], model: String) -> AsyncThrowingStream<String, Error>
+    func sendMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) async throws -> (String, TokenUsage?)
+    func streamMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) -> AsyncThrowingStream<StreamChunk, Error>
+}
+
+enum StreamChunk: Sendable {
+    case token(String)
+    case usage(TokenUsage)
 }
 
 struct ChatRepository: ChatRepositoryProtocol {
@@ -27,11 +40,20 @@ struct ChatRepository: ChatRepositoryProtocol {
 
     // MARK: - Public
 
-    func sendMessage(messages: [ChatMessage], model: String) async throws -> String {
+    func sendMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) async throws -> (String, TokenUsage?) {
         let request = ChatCompletionRequest(
             model: model,
             messages: messages.map { buildCompletionMessage($0) },
-            stream: false
+            stream: false,
+            temperature: parameters.temperature,
+            maxTokens: parameters.maxTokens,
+            topP: parameters.topP,
+            streamOptions: nil,
+            modalities: nil
         )
 
         let response: ChatCompletionResponse = try await apiClient.request(
@@ -44,14 +66,31 @@ struct ChatRepository: ChatRepositoryProtocol {
             throw APIError.invalidResponse
         }
 
-        return content
+        let tokenUsage = response.usage.map {
+            TokenUsage(
+                promptTokens: $0.promptTokens ?? 0,
+                completionTokens: $0.completionTokens ?? 0,
+                totalTokens: $0.totalTokens ?? 0
+            )
+        }
+
+        return (content, tokenUsage)
     }
 
-    func streamMessage(messages: [ChatMessage], model: String) -> AsyncThrowingStream<String, Error> {
+    func streamMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) -> AsyncThrowingStream<StreamChunk, Error> {
         let request = ChatCompletionRequest(
             model: model,
             messages: messages.map { buildCompletionMessage($0) },
-            stream: true
+            stream: true,
+            temperature: parameters.temperature,
+            maxTokens: parameters.maxTokens,
+            topP: parameters.topP,
+            streamOptions: ChatCompletionRequest.StreamOptions(includeUsage: true),
+            modalities: nil
         )
 
         let decoder = JSONDecoder()
@@ -67,7 +106,15 @@ struct ChatRepository: ChatRepositoryProtocol {
 
                         let chunk = try decoder.decode(ChatCompletionStreamResponse.self, from: data)
                         if let content = chunk.choices.first?.delta.content {
-                            continuation.yield(content)
+                            continuation.yield(.token(content))
+                        }
+                        if let usage = chunk.usage {
+                            let tokenUsage = TokenUsage(
+                                promptTokens: usage.promptTokens ?? 0,
+                                completionTokens: usage.completionTokens ?? 0,
+                                totalTokens: usage.totalTokens ?? 0
+                            )
+                            continuation.yield(.usage(tokenUsage))
                         }
                     }
                     continuation.finish()

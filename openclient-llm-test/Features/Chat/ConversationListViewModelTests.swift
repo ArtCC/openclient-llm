@@ -153,21 +153,23 @@ final class ConversationListViewModelTests: XCTestCase {
         XCTAssertEqual(selectedConversation?.modelId, "llama3")
     }
 
-    func test_send_newConversationTapped_noModels_doesNothing() async throws {
+    func test_send_newConversationTapped_noModels_createsConversationWithEmptyModelId() async throws {
         // Given
         mockLoadConversations.result = .success([])
         mockFetchModels.result = .success([])
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
-        var callbackCalled = false
-        sut.onConversationSelected = { _ in callbackCalled = true }
+        var selectedConversation: Conversation?
+        sut.onConversationSelected = { selectedConversation = $0 }
 
         // When
         sut.send(.newConversationTapped)
 
         // Then
-        XCTAssertFalse(callbackCalled)
+        XCTAssertNotNil(selectedConversation)
+        XCTAssertEqual(selectedConversation?.modelId, "")
+        XCTAssertTrue(selectedConversation?.messages.isEmpty ?? false)
     }
 
     // MARK: - Tests — conversationTapped
@@ -288,5 +290,108 @@ final class ConversationListViewModelTests: XCTestCase {
             return
         }
         XCTAssertEqual(loadedState.conversations.count, 1)
+    }
+
+    // MARK: - Tests — searchChanged
+
+    func test_send_searchChanged_filtersByTitle() async throws {
+        // Given
+        let conversations = [
+            Conversation(title: "Swift coding", modelId: "gpt-4"),
+            Conversation(title: "Python tips", modelId: "gpt-4"),
+            Conversation(title: "SwiftUI views", modelId: "llama3")
+        ]
+        mockLoadConversations.result = .success(conversations)
+        mockFetchModels.result = .success([])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // When
+        sut.send(.searchChanged("Swift"))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.filteredConversations.count, 2)
+        XCTAssertEqual(loadedState.searchQuery, "Swift")
+    }
+
+    func test_send_searchChanged_filtersByMessageContent() async throws {
+        // Given
+        let conversations = [
+            Conversation(
+                title: "Chat 1",
+                modelId: "gpt-4",
+                messages: [ChatMessage(role: .user, content: "Tell me about quantum physics")]
+            ),
+            Conversation(
+                title: "Chat 2",
+                modelId: "gpt-4",
+                messages: [ChatMessage(role: .user, content: "Write a poem")]
+            )
+        ]
+        mockLoadConversations.result = .success(conversations)
+        mockFetchModels.result = .success([])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // When
+        sut.send(.searchChanged("quantum"))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.filteredConversations.count, 1)
+        XCTAssertEqual(loadedState.filteredConversations.first?.title, "Chat 1")
+    }
+
+    func test_send_searchChanged_withEmptyQuery_showsAll() async throws {
+        // Given
+        let conversations = [
+            Conversation(title: "Chat 1", modelId: "gpt-4"),
+            Conversation(title: "Chat 2", modelId: "gpt-4")
+        ]
+        mockLoadConversations.result = .success(conversations)
+        mockFetchModels.result = .success([])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        sut.send(.searchChanged("Chat 1"))
+
+        // When
+        sut.send(.searchChanged(""))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.filteredConversations.count, 2)
+    }
+
+    func test_send_searchChanged_noMatch_returnsEmpty() async throws {
+        // Given
+        let conversations = [
+            Conversation(title: "Chat 1", modelId: "gpt-4"),
+            Conversation(title: "Chat 2", modelId: "gpt-4")
+        ]
+        mockLoadConversations.result = .success(conversations)
+        mockFetchModels.result = .success([])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // When
+        sut.send(.searchChanged("nonexistent"))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertTrue(loadedState.filteredConversations.isEmpty)
     }
 }

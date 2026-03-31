@@ -36,14 +36,16 @@ final class StreamMessageUseCaseTests: XCTestCase {
 
     func test_execute_withTokens_streamsAllTokens() async throws {
         // Given
-        mockRepository.streamTokens = ["Hello", " ", "world", "!"]
+        mockRepository.streamChunks = [.token("Hello"), .token(" "), .token("world"), .token("!")]
         let messages = [ChatMessage(role: .user, content: "Hi")]
 
         // When
         var receivedTokens: [String] = []
-        let stream = sut.execute(messages: messages, model: "gpt-4")
-        for try await token in stream {
-            receivedTokens.append(token)
+        let stream = sut.execute(messages: messages, model: "gpt-4", parameters: .default)
+        for try await chunk in stream {
+            if case .token(let token) = chunk {
+                receivedTokens.append(token)
+            }
         }
 
         // Then
@@ -57,7 +59,7 @@ final class StreamMessageUseCaseTests: XCTestCase {
 
         // When / Then
         do {
-            let stream = sut.execute(messages: messages, model: "gpt-4")
+            let stream = sut.execute(messages: messages, model: "gpt-4", parameters: .default)
             for try await _ in stream {}
             XCTFail("Expected error to be thrown")
         } catch {

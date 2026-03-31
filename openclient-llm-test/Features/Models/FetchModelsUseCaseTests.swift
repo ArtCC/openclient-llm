@@ -88,6 +88,53 @@ final class FetchModelsUseCaseTests: XCTestCase {
         XCTAssertTrue(result.first(where: { $0.id == "llama3" })?.capabilities.isEmpty == true)
     }
 
+    func test_execute_mergesModeFromModelInfo() async throws {
+        // Given
+        let models = [
+            LLMModel(id: "dall-e-3", ownedBy: "openai"),
+            LLMModel(id: "gpt-4", ownedBy: "openai")
+        ]
+        mockRepository.fetchModelsResult = .success(models)
+
+        let modelInfoList = [
+            LLMModel(id: "dall-e-3", mode: .imageGeneration),
+            LLMModel(id: "gpt-4", mode: .chat)
+        ]
+        mockRepository.fetchModelInfoResult = .success(modelInfoList)
+
+        // When
+        let result = try await sut.execute()
+
+        // Then
+        XCTAssertEqual(result.first(where: { $0.id == "dall-e-3" })?.mode, .imageGeneration)
+        XCTAssertEqual(result.first(where: { $0.id == "gpt-4" })?.mode, .chat)
+    }
+
+    func test_execute_mergesProviderNameFromModelInfo() async throws {
+        // Given
+        let models = [
+            LLMModel(id: "gpt-4", ownedBy: "openai"),
+            LLMModel(id: "claude-3", ownedBy: "openai"),
+            LLMModel(id: "llama3", ownedBy: "openai")
+        ]
+        mockRepository.fetchModelsResult = .success(models)
+
+        let modelInfoList = [
+            LLMModel(id: "gpt-4", providerName: "OpenAI"),
+            LLMModel(id: "claude-3", providerName: "Anthropic"),
+            LLMModel(id: "llama3", providerName: "Ollama")
+        ]
+        mockRepository.fetchModelInfoResult = .success(modelInfoList)
+
+        // When
+        let result = try await sut.execute()
+
+        // Then
+        XCTAssertEqual(result.first(where: { $0.id == "gpt-4" })?.providerName, "OpenAI")
+        XCTAssertEqual(result.first(where: { $0.id == "claude-3" })?.providerName, "Anthropic")
+        XCTAssertEqual(result.first(where: { $0.id == "llama3" })?.providerName, "Ollama")
+    }
+
     func test_execute_modelInfoFailure_stillReturnsModels() async throws {
         // Given
         let models = [LLMModel(id: "gpt-4")]

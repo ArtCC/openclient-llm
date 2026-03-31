@@ -8,6 +8,13 @@
 
 import Foundation
 
+struct MultipartFileData: Sendable {
+    let field: String
+    let data: Data
+    let fileName: String
+    let mimeType: String
+}
+
 protocol APIClientProtocol: Sendable {
     func request<T: Decodable & Sendable>(
         endpoint: String,
@@ -18,6 +25,15 @@ protocol APIClientProtocol: Sendable {
         endpoint: String,
         body: any Encodable & Sendable
     ) -> AsyncThrowingStream<Data, Error>
+    func multipartRequest<T: Decodable & Sendable>(
+        endpoint: String,
+        fields: [String: String],
+        file: MultipartFileData
+    ) async throws -> T
+    func rawDataRequest(
+        endpoint: String,
+        body: any Encodable & Sendable
+    ) async throws -> Data
 }
 
 enum HTTPMethod: String, Sendable {
@@ -103,6 +119,69 @@ struct APIClient: APIClientProtocol, Sendable {
             }
         }
     }
+
+    func multipartRequest<T: Decodable & Sendable>(
+        endpoint: String,
+        fields: [String: String],
+        file: MultipartFileData
+    ) async throws -> T {
+        let baseURL = settingsManager.getServerBaseURL()
+        guard let url = URL(string: baseURL)?.appendingPathComponent(endpoint) else {
+            throw APIError.invalidURL
+        }
+
+        let boundary = UUID().uuidString
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.timeoutInterval = 120
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+
+        let apiKey = settingsManager.getAPIKey()
+        if !apiKey.isEmpty {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        var body = Data()
+
+        for (key, value) in fields {
+            body.append(Data("--\(boundary)\r\n".utf8))
+            body.append(Data("Content-Disposition: form-data; name=\"\(key)\"\r\n\r\n".utf8))
+            body.append(Data("\(value)\r\n".utf8))
+        }
+
+        body.append(Data("--\(boundary)\r\n".utf8))
+        let disposition = "Content-Disposition: form-data; name=\"\(file.field)\"; filename=\"\(file.fileName)\"\r\n"
+        body.append(Data(disposition.utf8))
+        body.append(Data("Content-Type: \(file.mimeType)\r\n\r\n".utf8))
+        body.append(file.data)
+        body.append(Data("\r\n".utf8))
+        body.append(Data("--\(boundary)--\r\n".utf8))
+
+        request.httpBody = body
+
+        let (data, response) = try await performRequest(request)
+        try validateResponse(response)
+
+        do {
+            let decoder = JSONDecoder()
+            decoder.keyDecodingStrategy = .convertFromSnakeCase
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            throw APIError.decodingError
+        }
+    }
+
+    func rawDataRequest(
+        endpoint: String,
+        body: any Encodable & Sendable
+    ) async throws -> Data {
+        let urlRequest = try buildRequest(endpoint: endpoint, method: .post, body: body)
+
+        let (data, response) = try await performRequest(urlRequest)
+        try validateResponse(response)
+
+        return data
+    }
 }
 
 // MARK: - Private
@@ -139,7 +218,7 @@ private extension APIClient {
         do {
             return try await session.data(for: request)
         } catch let error as URLError {
-            throw APIError.networkError(error.localizedDescription)
+            throw mapURLError(error)
         }
     }
 
@@ -165,8 +244,32 @@ private extension APIClient {
             return error
         }
         if let urlError = error as? URLError {
-            return APIError.networkError(urlError.localizedDescription)
+            return mapURLError(urlError)
         }
         return error
+    }
+
+    func mapURLError(_ error: URLError) -> APIError {
+        switch error.code {
+        case .cannotFindHost, .dnsLookupFailed:
+            .networkError(String(localized: "Could not find the server. Please check the URL."))
+        case .cannotConnectToHost:
+            .networkError(String(localized: "Could not connect to the server."))
+        case .notConnectedToInternet:
+            .networkError(String(localized: "No internet connection. Please check your network."))
+        case .timedOut:
+            .networkError(String(localized: "The request timed out. The server may be slow or unreachable."))
+        case .networkConnectionLost:
+            .networkError(String(localized: "The network connection was lost."))
+        case .secureConnectionFailed:
+            .networkError(String(localized: "Could not establish a secure connection to the server."))
+        case .serverCertificateUntrusted, .serverCertificateHasBadDate,
+            .serverCertificateNotYetValid, .serverCertificateHasUnknownRoot:
+            .networkError(String(localized: "The server certificate is not trusted."))
+        case .cancelled:
+            .networkError(String(localized: "The request was cancelled."))
+        default:
+            .networkError(String(localized: "A network error occurred. Please try again."))
+        }
     }
 }

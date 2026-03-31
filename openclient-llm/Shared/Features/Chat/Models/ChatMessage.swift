@@ -16,6 +16,7 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
     var content: String
     let timestamp: Date
     var attachments: [Attachment]
+    var tokenUsage: TokenUsage?
 
     enum Role: String, Sendable, Equatable, Codable {
         case user
@@ -30,13 +31,15 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
         role: Role,
         content: String,
         timestamp: Date = Date(),
-        attachments: [Attachment] = []
+        attachments: [Attachment] = [],
+        tokenUsage: TokenUsage? = nil
     ) {
         self.id = id
         self.role = role
         self.content = content
         self.timestamp = timestamp
         self.attachments = attachments
+        self.tokenUsage = tokenUsage
     }
 }
 
