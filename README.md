@@ -69,7 +69,7 @@ openclient-llm/                    # iOS target
 │   ├── Core/
 │   │   ├── Networking/            # API client, SSE streaming
 │   │   │   └── Models/            # Request/response DTOs
-│   │   ├── Managers/              # Settings, Keychain, conversation starters
+│   │   ├── Managers/              # Settings, Keychain, Log, conversation starters
 │   │   ├── Views/                 # Reusable views
 │   │   ├── Extensions/            # Swift/SwiftUI extensions
 │       └── Utils/                 # Constants, MarkdownParser
