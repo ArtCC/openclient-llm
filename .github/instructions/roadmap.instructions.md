@@ -41,17 +41,16 @@ Goal: Daily-usable chat experience.
 
 Goal: Platform-optimized experience.
 
-- [ ] **macOS sidebar**: NavigationSplitView with conversation list
-- [ ] **iPadOS split view**: Adaptive layout for iPad
-- [ ] **Keyboard shortcuts**: macOS keyboard navigation
-- [ ] **Menu bar**: macOS menu items for common actions
-- [ ] **Dark/Light mode**: Full theme support with semantic colors
+- [x] **macOS sidebar**: NavigationSplitView with conversation list
+- [x] **iPadOS split view**: Adaptive layout for iPad
+- [x] **Keyboard shortcuts**: macOS keyboard navigation
+- [x] **Menu bar**: macOS menu items for common actions
+- [x] **Dark/Light mode**: Full theme support with semantic colors
 
 ## Phase 4 — Advanced Features
 
 Goal: Power user features.
 
-- [ ] **Multiple servers**: Support multiple LiteLLM server configurations
 - [ ] **Token usage display**: Show token count per message/conversation
 - [ ] **Model parameters**: Temperature, max tokens, top_p per conversation
 - [ ] **Search conversations**: Full-text search across conversations
@@ -61,6 +60,12 @@ Goal: Power user features.
 - [ ] **Audio transcription (Speech-to-Text)**: Record or upload audio for transcription via POST /v1/audio/transcriptions (Whisper, Groq, Deepgram, Gemini)
 - [ ] **Text-to-Speech**: Read assistant responses aloud via POST /v1/audio/speech (OpenAI TTS, AWS Polly, ElevenLabs, Gemini TTS)
 
-## Current Phase: 3 — Multi-Platform Polish
+## Phase 5 — Infrastructure, Multi-Server & Others
 
-Focus exclusively on Phase 3 features. Do not over-engineer for future phases.
+Goal: Support for multiple server configurations and infrastructure improvements.
+
+- [ ] **Multiple servers**: Support multiple LiteLLM server configurations
+
+## Current Phase: 4 — Advanced Features
+
+Focus exclusively on Phase 4 features. Do not over-engineer for future phases.

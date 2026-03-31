@@ -81,6 +81,8 @@ openclient-llm/                    # iOS target
 openclient-llm-macOS/              # macOS target
 ├── App/                           # macOS app entry point
 │   └── OpenClientApp.swift
+├── Views/                         # macOS-only views
+│   └── AppCommands.swift          # Menu bar commands (⌘N New Chat)
 └── Resources/
     └── Assets.xcassets/           # macOS assets, accent color, app icon
 

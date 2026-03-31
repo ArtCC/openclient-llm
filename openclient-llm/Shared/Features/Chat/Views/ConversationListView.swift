@@ -26,6 +26,11 @@ struct ConversationListView: View {
                 loadedView(loadedState)
             }
         }
+        #if os(macOS)
+        .focusedSceneValue(\.newChatAction) {
+            viewModel.send(.newConversationTapped)
+        }
+        #endif
         .task {
             viewModel.onConversationSelected = onConversationSelected
             viewModel.send(.viewAppeared)
@@ -52,6 +57,7 @@ private extension ConversationListView {
                     Image(systemName: "square.and.pencil")
                 }
                 .accessibilityLabel(String(localized: "New Chat"))
+                .keyboardShortcut("n", modifiers: .command)
             }
         }
     }

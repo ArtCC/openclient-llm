@@ -19,12 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Liquid Glass design language applied across the UI (iOS 26+)
 - Glass effect on chat input bar, assistant message bubbles, onboarding elements
 - Glass prominent buttons in onboarding flow
-- macOS support with NavigationSplitView sidebar layout
+- macOS support with 3-column NavigationSplitView (sidebar → content → detail)
+- macOS menu bar commands with `AppCommands` (⌘N New Chat)
+- macOS minimum window size (800×600) with default size (1000×700)
+- iPadOS adaptive split view layout in the Chats tab
+- Keyboard shortcuts: ⌘N for new chat
+- FocusedValues integration for menu bar ↔ view communication
 - Local network access support (NSBonjourServices + NSLocalNetworkUsageDescription)
 - Localization for 10 languages: English, Spanish, French, Italian, German, Portuguese (PT), Japanese, Dutch, Greek, Swedish
 - Unit tests for all ViewModels, UseCases, and Repositories (60 tests)
 - SwiftLint integration via SPM
-- Dark Mode support with semantic colors
+- Dark Mode support with semantic colors and CodeBlockBackground asset
 - ChatGPT-inspired visual redesign: assistant messages with sparkles avatar, user messages with glass accent bubbles, empty state with centered icon and suggestion chips
 - ConversationStartersManager with 8 suggestion prompts, randomly showing 4 per session
 - "Thinking..." indicator with pulse animation below assistant messages while waiting for first token
@@ -75,6 +80,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ModelsRepository.fetchModelInfo()` maps `litellm_provider` to `LLMModel.Provider`
 - `LazyVStack` in chat uses `.padding(.horizontal, 16)` only (removed unneeded vertical padding)
 - Assistant message spacing increased to 8pt between blocks for readability
+- ChatViewModel rewritten to support conversation lifecycle (create, load, persist, auto-title)
+- ChatView updated with system prompt sheet, attachment pickers, and conversation loading
+- HomeView refactored: iOS uses TabView with NavigationSplitView in Chats tab; macOS uses 3-column NavigationSplitView with sidebar selection
+- MessageBubbleView enhanced with context menu actions and attachment display
+- ChatCompletionRequest.content now supports multimodal encoding (text string or array of content parts)
+- ChatRepository builds multimodal messages with base64 image and PDF text extraction
+- macOS app entry point includes `.commands {}` and `.frame(minWidth:minHeight:)` for native window behavior
 
 ### Fixed
 
@@ -86,12 +98,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Server URL and API key are no longer stored in plain text in UserDefaults
 - Keychain items use `kSecAttrAccessibleAfterFirstUnlock` protection level
-
-### Changed (Phase 2)
-
-- ChatViewModel rewritten to support conversation lifecycle (create, load, persist, auto-title)
-- ChatView updated with system prompt sheet, attachment pickers, and conversation loading
-- HomeView refactored with conversation list integration (NavigationStack on iOS, NavigationSplitView on macOS)
-- MessageBubbleView enhanced with context menu actions and attachment display
-- ChatCompletionRequest.content now supports multimodal encoding (text string or array of content parts)
-- ChatRepository builds multimodal messages with base64 image and PDF text extraction
