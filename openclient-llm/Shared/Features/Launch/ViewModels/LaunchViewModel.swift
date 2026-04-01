@@ -28,17 +28,20 @@ final class LaunchViewModel {
 
     private let checkOnboardingUseCase: CheckOnboardingUseCaseProtocol
     private let resetAppDataUseCase: ResetAppDataUseCaseProtocol
+    private let configureVoticeUseCase: ConfigureVoticeUseCaseProtocol
 
     // MARK: - Init
 
     init(
         state: State = .loading,
         checkOnboardingUseCase: CheckOnboardingUseCaseProtocol = CheckOnboardingUseCase(),
-        resetAppDataUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase()
+        resetAppDataUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase(),
+        configureVoticeUseCase: ConfigureVoticeUseCaseProtocol = ConfigureVoticeUseCase()
     ) {
         self.state = state
         self.checkOnboardingUseCase = checkOnboardingUseCase
         self.resetAppDataUseCase = resetAppDataUseCase
+        self.configureVoticeUseCase = configureVoticeUseCase
     }
 
     // MARK: - Input functions
@@ -46,6 +49,8 @@ final class LaunchViewModel {
     func send(_ event: Event) {
         switch event {
         case .viewAppeared:
+            configureVotice()
+
             let isCompleted = checkOnboardingUseCase.execute()
             if !isCompleted {
                 resetAppDataUseCase.execute()
@@ -53,6 +58,16 @@ final class LaunchViewModel {
             state = isCompleted ? .home : .onboarding
         case .onboardingCompleted:
             state = .home
+        }
+    }
+
+    // MARK: - Private functions
+
+    func configureVotice() {
+        do {
+            try configureVoticeUseCase.execute(userIsPremium: false)
+        } catch {
+            LogManager.error("LaunchViewModel: configureVoticeUseCase: execute: error: \(error)")
         }
     }
 }

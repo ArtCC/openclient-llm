@@ -15,5 +15,11 @@
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>VOTICE_API_KEY</key>
+	<string>$(VOTICE_API_KEY)</string>
+	<key>VOTICE_API_SECRET</key>
+	<string>$(VOTICE_API_SECRET)</string>
+	<key>VOTICE_APP_ID</key>
+	<string>$(VOTICE_APP_ID)</string>
 </dict>
 </plist>

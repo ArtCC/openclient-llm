@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		8042FA682F7B01E800F0E933 /* VoticeSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 8042FA672F7B01E800F0E933 /* VoticeSDK */; };
 		8042FA6B2F7B01F800F0E933 /* VoticeSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 8042FA6A2F7B01F800F0E933 /* VoticeSDK */; };
+		8089F4112F7D000500465D6C /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 8089F4102F7D000500465D6C /* Secrets.xcconfig */; };
+		8089F4122F7D000500465D6C /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 8089F4102F7D000500465D6C /* Secrets.xcconfig */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -25,6 +27,7 @@
 		805E798B2F79AC9B0070CBB3 /* openclient-llm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "openclient-llm.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8080773A2F7A66EF009BC8C4 /* openclient-llm-macOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "openclient-llm-macOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8080774A2F7A67CD009BC8C4 /* openclient-llm-test.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "openclient-llm-test.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8089F4102F7D000500465D6C /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -112,6 +115,7 @@
 				8080773B2F7A66EF009BC8C4 /* openclient-llm-macOS */,
 				8080774B2F7A67CD009BC8C4 /* openclient-llm-test */,
 				805E798C2F79AC9B0070CBB3 /* Products */,
+				8089F4102F7D000500465D6C /* Secrets.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
@@ -262,6 +266,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8089F4112F7D000500465D6C /* Secrets.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -269,6 +274,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8089F4122F7D000500465D6C /* Secrets.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -482,6 +488,7 @@
 		};
 		805E79972F79AC9C0070CBB3 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8089F4102F7D000500465D6C /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -524,6 +531,7 @@
 		};
 		805E79982F79AC9C0070CBB3 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8089F4102F7D000500465D6C /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -566,6 +574,7 @@
 		};
 		808077432F7A66F1009BC8C4 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8089F4102F7D000500465D6C /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -618,6 +627,7 @@
 		};
 		808077442F7A66F1009BC8C4 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8089F4102F7D000500465D6C /* Secrets.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
