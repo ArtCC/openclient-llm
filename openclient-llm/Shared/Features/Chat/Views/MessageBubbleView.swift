@@ -20,6 +20,7 @@ struct MessageBubbleView: View {
     var isStreaming: Bool = false
     var isSpeaking: Bool = false
     var hasTTS: Bool = false
+    var showTokenUsage: Bool = true
     var onSpeakTapped: (() -> Void)?
     var onStopSpeakingTapped: (() -> Void)?
     @State private var cursorVisible: Bool = false
@@ -78,7 +79,7 @@ private extension MessageBubbleView {
                     blocksView
                 }
 
-                if let usage = message.tokenUsage, !isStreaming {
+                if let usage = message.tokenUsage, !isStreaming, showTokenUsage {
                     tokenUsageLabel(usage)
                 }
 

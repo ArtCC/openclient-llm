@@ -67,6 +67,7 @@ private extension SettingsView {
         Form {
             serverSection(loadedState)
             cloudSyncSection(loadedState)
+            chatSection(loadedState)
             feedbackSection()
             legalSection()
         }
@@ -228,6 +229,21 @@ private extension SettingsView {
             Text(String(localized: "Sync"))
         } footer: {
             Text(String(localized: "Sync conversations across your devices via iCloud."))
+        }
+    }
+
+    func chatSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { loadedState.showTokenUsage },
+                set: { viewModel.send(.showTokenUsageToggled($0)) }
+            )) {
+                Label(String(localized: "Show Token Usage"), systemImage: "number")
+            }
+        } header: {
+            Text(String(localized: "Chat"))
+        } footer: {
+            Text(String(localized: "Show token count below each assistant response."))
         }
     }
 

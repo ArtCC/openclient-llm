@@ -33,6 +33,10 @@ final class ConversationListViewModel {
         var errorMessage: String?
         var searchQuery: String = ""
         var filteredConversations: [Conversation] = []
+
+        var groupedConversations: [ConversationSection] {
+            ConversationSection.group(filteredConversations)
+        }
     }
 
     private(set) var state: State

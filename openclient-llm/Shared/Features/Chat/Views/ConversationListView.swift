@@ -96,16 +96,29 @@ private extension ConversationListView {
 
     func conversationList(_ loadedState: ConversationListViewModel.LoadedState) -> some View {
         List {
-            ForEach(loadedState.filteredConversations) { conversation in
-                conversationRow(conversation, loadedState: loadedState)
-            }
-            .onDelete { indexSet in
-                for index in indexSet {
-                    let conversation = loadedState.filteredConversations[index]
-                    viewModel.send(.deleteConversation(conversation.id))
+            ForEach(loadedState.groupedConversations) { section in
+                Section {
+                    ForEach(section.conversations) { conversation in
+                        conversationRow(conversation, loadedState: loadedState)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                    }
+                    .onDelete { indexSet in
+                        for index in indexSet {
+                            let conversation = section.conversations[index]
+                            viewModel.send(.deleteConversation(conversation.id))
+                        }
+                    }
+                } header: {
+                    Text(section.period.localizedTitle)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.secondary)
+                        .textCase(nil)
                 }
             }
         }
+        .listStyle(.plain)
         .refreshable {
             viewModel.refresh()
         }
@@ -115,45 +128,67 @@ private extension ConversationListView {
         _ conversation: Conversation,
         loadedState: ConversationListViewModel.LoadedState
     ) -> some View {
-        Button {
+        let isSelected = loadedState.selectedConversation?.id == conversation.id
+
+        return Button {
             viewModel.send(.conversationTapped(conversation))
         } label: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(conversationTitle(conversation))
-                    .font(.headline)
-                    .lineLimit(1)
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Color.accentColor)
+                    .frame(width: 36, height: 36)
+                    .glassEffect(
+                        isSelected ? .regular.tint(Color.accentColor) : .regular,
+                        in: .circle
+                    )
 
-                HStack(spacing: 6) {
-                    Text(conversation.modelId)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(conversationTitle(conversation))
+                            .font(.headline)
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Text("·")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        Text(formattedDate(conversation.updatedAt))
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
 
-                    Text(formattedDate(conversation.createdAt))
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
+                    if let lastMessage = conversation.messages.last(where: { $0.role != .system }) {
+                        Text(lastMessage.content)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
+                    }
 
-                if let lastMessage = conversation.messages.last(where: { $0.role != .system }) {
-                    Text(lastMessage.content)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
+                    modelBadge(conversation.modelId)
+                        .padding(.top, 2)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.accentColor.opacity(0.12))
+                }
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(.plain)
-        .listRowBackground(
-            loadedState.selectedConversation?.id == conversation.id
-                ? Color.accentColor.opacity(0.1)
-                : Color.clear
-        )
+    }
+
+    func modelBadge(_ modelId: String) -> some View {
+        let name = modelId.split(separator: "/").last.map(String.init) ?? modelId
+        return Text(name)
+            .font(.caption2)
+            .fontWeight(.medium)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(.secondary.opacity(0.12), in: .capsule)
     }
 
     func formattedDate(_ date: Date) -> String {

@@ -154,3 +154,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Server URL and API key are no longer stored in plain text in UserDefaults
 - Keychain items use `kSecAttrAccessibleAfterFirstUnlock` protection level
+
+### Bug Fixes (post-release)
+
+- `StreamOptions.includeUsage` was serialized as `"includeUsage"` (camelCase) instead of `"include_usage"` (snake_case), causing some cloud providers to reject streaming requests with 400/500 errors
+- `ContentPart` multimodal messages included `"text": null` and `"image_url": null` fields when not applicable; providers like Anthropic and Gemini rejected these with 400 errors; fields are now omitted when absent via `encodeIfPresent`
+- Assistant message text rendered without line breaks because `AttributedString(markdown:)` collapses single `\n` into spaces per CommonMark spec; single newlines are now normalized to double newlines before rendering so paragraph breaks display correctly
+
+### Improvements (post-release)
+
+- **Show Token Usage toggle**: New "Chat" section in Settings with a toggle to show or hide the token count displayed below each assistant response; preference stored in `UserDefaults` and respected in `MessageBubbleView`
+- **Conversation list redesign**: Conversations are now grouped into time sections (Today, Yesterday, This Week, Earlier); each row shows a Liquid Glass avatar icon, title + date on the same line, last message preview, and a model badge pill; selection highlighted with an accent-tinted glass background; list uses `.plain` style for a cleaner layout aligned with the rest of the app

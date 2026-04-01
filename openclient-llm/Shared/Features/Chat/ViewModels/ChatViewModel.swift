@@ -55,6 +55,7 @@ final class ChatViewModel {
         var isTranscribing: Bool = false
         var imageModel: LLMModel?
         var isGeneratingImage: Bool = false
+        var showTokenUsage: Bool = true
     }
 
     var state: State
@@ -187,7 +188,8 @@ private extension ChatViewModel {
                 modelParameters: pending?.modelParameters ?? .default,
                 ttsModel: ttsModel,
                 transcriptionModel: transcriptionModel,
-                imageModel: imageModel
+                imageModel: imageModel,
+                showTokenUsage: settingsManager.getShowTokenUsage()
             ))
         } catch {
             let pending = pendingConversation

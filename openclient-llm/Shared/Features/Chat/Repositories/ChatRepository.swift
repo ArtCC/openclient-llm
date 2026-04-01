@@ -89,7 +89,7 @@ struct ChatRepository: ChatRepositoryProtocol {
             temperature: parameters.temperature,
             maxTokens: parameters.maxTokens,
             topP: parameters.topP,
-            streamOptions: ChatCompletionRequest.StreamOptions(includeUsage: true),
+            streamOptions: ChatStreamOptions(includeUsage: true),
             modalities: nil
         )
 

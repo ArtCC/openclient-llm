@@ -8,6 +8,18 @@
 
 import Foundation
 
+// MARK: - ChatStreamOptions
+
+nonisolated struct ChatStreamOptions: Encodable, Sendable {
+    let includeUsage: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case includeUsage = "include_usage"
+    }
+}
+
+// MARK: - ChatCompletionRequest
+
 nonisolated struct ChatCompletionRequest: Encodable, Sendable {
     let model: String
     let messages: [ChatCompletionMessage]
@@ -15,16 +27,8 @@ nonisolated struct ChatCompletionRequest: Encodable, Sendable {
     let temperature: Double?
     let maxTokens: Int?
     let topP: Double?
-    let streamOptions: StreamOptions?
+    let streamOptions: ChatStreamOptions?
     let modalities: [String]?
-
-    struct StreamOptions: Encodable, Sendable {
-        let includeUsage: Bool
-
-        enum CodingKeys: String, CodingKey {
-            case includeUsage = "include_usage"
-        }
-    }
 
     enum CodingKeys: String, CodingKey {
         case model
