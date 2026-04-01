@@ -41,20 +41,19 @@ openclient-llm/                    # iOS target
 │   │   │   ├── UseCases/          # TranscribeAudioUseCase
 │   │   │   ├── Repositories/      # AudioTranscriptionRepository
 │   │   │   └── Models/            # Transcription
-│   │   ├── Chat/                  # Chat with SSE streaming + voice dictation
+│   │   ├── Chat/                  # Chat with SSE streaming, voice dictation + image generation
 │   │   │   ├── Views/             # ChatView, MessageBubbleView, CodeBlockView,
 │   │   │   │                      # ConversationListView, AttachmentPickerView,
 │   │   │   │                      # ChatModelParametersView, ChatSystemPromptView
-│   │   │   ├── ViewModels/        # ChatViewModel, ConversationListViewModel
+│   │   │   ├── ViewModels/        # ChatViewModel (+ ImageGeneration, + Transcription),
+│   │   │   │                      # ConversationListViewModel
 │   │   │   ├── UseCases/          # SendMessage, StreamMessage,
 │   │   │   │                      # LoadConversations, SaveConversation, DeleteConversation
 │   │   │   ├── Repositories/      # ChatRepository, ConversationRepository
 │   │   │   └── Models/            # ChatMessage, Conversation, TokenUsage, ModelParameters
 │   │   ├── Home/                  # TabView (iOS) / SplitView (macOS)
 │   │   │   └── Views/             # HomeView
-│   │   ├── ImageGeneration/       # AI image generation
-│   │   │   ├── Views/             # ImageGenerationView
-│   │   │   ├── ViewModels/        # ImageGenerationViewModel
+│   │   ├── ImageGeneration/       # AI image generation (integrated in Chat)
 │   │   │   ├── UseCases/          # GenerateImageUseCase
 │   │   │   ├── Repositories/      # ImageGenerationRepository
 │   │   │   └── Models/            # GeneratedImage
@@ -106,7 +105,8 @@ openclient-llm-test/               # Unit tests
 │   └── Managers/                  # KeychainManager tests
 ├── Features/
 │   ├── Chat/                      # ChatViewModel, ConversationListViewModel tests
-│   ├── ImageGeneration/           # ImageGenerationViewModel tests
+│   │                               # + image generation and transcription extension tests
+│   ├── ImageGeneration/           # GenerateImageUseCase, ImageGenerationRepository tests
 │   ├── Launch/                    # LaunchViewModel, UseCase tests
 │   ├── Models/                    # ModelsViewModel, UseCase tests
 │   ├── Onboarding/                # OnboardingViewModel, UseCase tests

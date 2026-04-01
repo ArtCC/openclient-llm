@@ -130,11 +130,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HomeView updated with Image Generation and Audio Transcription tabs for iOS and macOS
 - Audio transcription (Speech-to-Text) redesigned from a standalone tab into a voice dictation feature integrated directly in the chat input bar; the microphone button appears automatically when the server exposes a Whisper-compatible model; removed file import and transcription history; transcribed text populates the input field ready to send
 - Chat model selector now excludes TTS and transcription models; only chat/completion models are shown
+- Image generation redesigned from a standalone tab into a chat action; a wand button (✦) appears in the input bar when the server exposes an image generation model (e.g. DALL·E, gpt-image-1); generated images appear as assistant message attachments inline in the conversation
+- `ChatViewModel` extended with `generateImage()` and `performImageGeneration()` (extracted to `ChatViewModel+ImageGeneration.swift`) to handle image generation events and state
+- `ChatViewModel` split into extension files: `ChatViewModel+ImageGeneration.swift` and `ChatViewModel+Transcription.swift` to keep the main file under 500 lines
+- `ImageGenerationRepository.generateViaImagesEndpoint` now supports `url` fallback when `b64_json` is nil, downloading image data from the response URL
+- Chat `LoadedState` includes `imageModel: LLMModel?` and `isGeneratingImage: Bool` for image generation coordination
+- `ChatViewModel` uses `persistConversation()` and `scheduleErrorDismiss()` as internal-scoped helpers shared across extension files
 
 ### Removed
 
 - `AudioTranscriptionView` and `AudioTranscriptionViewModel` standalone screen
 - Transcription tab from iOS TabView and macOS sidebar
+- `ImageGenerationView` and `ImageGenerationViewModel` standalone screen
+- Images tab from iOS TabView and macOS sidebar
 
 ### Fixed
 

@@ -28,6 +28,7 @@ final class ChatViewModel {
         case speakMessageTapped(ChatMessage)
         case stopSpeakingTapped
         case audioRecorded(Data, TimeInterval)
+        case generateImageTapped
     }
 
     enum State: Equatable {
@@ -52,9 +53,11 @@ final class ChatViewModel {
         var ttsModel: LLMModel?
         var transcriptionModel: LLMModel?
         var isTranscribing: Bool = false
+        var imageModel: LLMModel?
+        var isGeneratingImage: Bool = false
     }
 
-    private(set) var state: State
+    var state: State
 
     var onConversationUpdated: (() -> Void)?
 
@@ -62,7 +65,8 @@ final class ChatViewModel {
     private let streamMessageUseCase: StreamMessageUseCaseProtocol
     private let saveConversationUseCase: SaveConversationUseCaseProtocol
     private let synthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol
-    private let transcribeAudioUseCase: TranscribeAudioUseCaseProtocol
+    let transcribeAudioUseCase: TranscribeAudioUseCaseProtocol
+    let generateImageUseCase: GenerateImageUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
     private let conversationStartersManager: ConversationStartersManagerProtocol
     private let audioPlayerManager: AudioPlayerManager
@@ -80,6 +84,7 @@ final class ChatViewModel {
         saveConversationUseCase: SaveConversationUseCaseProtocol = SaveConversationUseCase(),
         synthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol = SynthesizeSpeechUseCase(),
         transcribeAudioUseCase: TranscribeAudioUseCaseProtocol = TranscribeAudioUseCase(),
+        generateImageUseCase: GenerateImageUseCaseProtocol = GenerateImageUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         conversationStartersManager: ConversationStartersManagerProtocol = ConversationStartersManager(),
         audioPlayerManager: AudioPlayerManager = AudioPlayerManager()
@@ -91,6 +96,7 @@ final class ChatViewModel {
         self.saveConversationUseCase = saveConversationUseCase
         self.synthesizeSpeechUseCase = synthesizeSpeechUseCase
         self.transcribeAudioUseCase = transcribeAudioUseCase
+        self.generateImageUseCase = generateImageUseCase
         self.settingsManager = settingsManager
         self.conversationStartersManager = conversationStartersManager
         self.audioPlayerManager = audioPlayerManager
@@ -119,7 +125,8 @@ final class ChatViewModel {
              .modelParametersChanged,
              .speakMessageTapped,
              .stopSpeakingTapped,
-             .audioRecorded:
+             .audioRecorded,
+             .generateImageTapped:
             handleConfigurationEvent(event)
         }
     }
@@ -138,59 +145,61 @@ private extension ChatViewModel {
         case .speakMessageTapped(let message): speakMessage(message)
         case .stopSpeakingTapped: stopSpeaking()
         case .audioRecorded(let data, let duration): transcribeAudio(data: data, duration: duration)
+        case .generateImageTapped: generateImage()
         default: break
         }
     }
 
     func loadInitialData() {
         state = .loading
+        Task { await fetchAndBuildInitialState() }
+    }
 
-        Task {
-            do {
-                let models = try await fetchModelsUseCase.execute()
-                let pending = pendingConversation
-                pendingConversation = nil
+    func fetchAndBuildInitialState() async {
+        do {
+            let models = try await fetchModelsUseCase.execute()
+            let pending = pendingConversation
+            pendingConversation = nil
 
-                let chatModels = models.filter { [.chat, .completion, .unknown].contains($0.mode) }
-                let ttsModel = models.first { $0.mode == .audioSpeech }
-                let transcriptionModel = models.first { $0.mode == .audioTranscription }
-                let savedModelId = settingsManager.getSelectedModelId()
-                let selectedModel: LLMModel?
+            let chatModels = models.filter { [.chat, .completion, .unknown].contains($0.mode) }
+            let ttsModel = models.first { $0.mode == .audioSpeech }
+            let transcriptionModel = models.first { $0.mode == .audioTranscription }
+            let imageModel = models.first { $0.mode == .imageGeneration }
+            let savedModelId = settingsManager.getSelectedModelId()
+            let selectedModel: LLMModel?
 
-                if let pending {
-                    selectedModel = chatModels.first(where: { $0.id == pending.modelId })
-                        ?? chatModels.first(where: { $0.id == savedModelId })
-                        ?? chatModels.first
-                } else {
-                    selectedModel = chatModels.first(where: { $0.id == savedModelId }) ?? chatModels.first
-                }
-
-                let starters = conversationStartersManager.randomStarters(count: 4)
-
-                state = .loaded(LoadedState(
-                    conversation: pending,
-                    messages: pending?.messages ?? [],
-                    selectedModel: selectedModel,
-                    availableModels: chatModels,
-                    conversationStarters: (pending?.messages ?? []).isEmpty ? starters : [],
-                    systemPrompt: pending?.systemPrompt ?? "",
-                    modelParameters: pending?.modelParameters ?? .default,
-                    ttsModel: ttsModel,
-                    transcriptionModel: transcriptionModel
-                ))
-            } catch {
-                let pending = pendingConversation
-                pendingConversation = nil
-
-                state = .loaded(LoadedState(
-                    conversation: pending,
-                    messages: pending?.messages ?? [],
-                    errorMessage: error.localizedDescription,
-                    systemPrompt: pending?.systemPrompt ?? "",
-                    modelParameters: pending?.modelParameters ?? .default
-                ))
-                scheduleErrorDismiss()
+            if let pending {
+                selectedModel = chatModels.first(where: { $0.id == pending.modelId })
+                    ?? chatModels.first(where: { $0.id == savedModelId })
+                    ?? chatModels.first
+            } else {
+                selectedModel = chatModels.first(where: { $0.id == savedModelId }) ?? chatModels.first
             }
+
+            let starters = conversationStartersManager.randomStarters(count: 4)
+            state = .loaded(LoadedState(
+                conversation: pending,
+                messages: pending?.messages ?? [],
+                selectedModel: selectedModel,
+                availableModels: chatModels,
+                conversationStarters: (pending?.messages ?? []).isEmpty ? starters : [],
+                systemPrompt: pending?.systemPrompt ?? "",
+                modelParameters: pending?.modelParameters ?? .default,
+                ttsModel: ttsModel,
+                transcriptionModel: transcriptionModel,
+                imageModel: imageModel
+            ))
+        } catch {
+            let pending = pendingConversation
+            pendingConversation = nil
+            state = .loaded(LoadedState(
+                conversation: pending,
+                messages: pending?.messages ?? [],
+                errorMessage: error.localizedDescription,
+                systemPrompt: pending?.systemPrompt ?? "",
+                modelParameters: pending?.modelParameters ?? .default
+            ))
+            scheduleErrorDismiss()
         }
     }
 
@@ -433,6 +442,11 @@ private extension ChatViewModel {
         state = .loaded(loadedState)
     }
 
+}
+
+// MARK: - Internal helpers
+
+extension ChatViewModel {
     func persistConversation() {
         guard case .loaded(let loadedState) = state,
               var conversation = loadedState.conversation else { return }
@@ -450,40 +464,6 @@ private extension ChatViewModel {
             onConversationUpdated?()
         } catch {
             // Silently fail — persistence is best-effort
-        }
-    }
-
-    func transcribeAudio(data: Data, duration: TimeInterval) {
-        guard case .loaded(var loadedState) = state else { return }
-        guard let transcriptionModel = loadedState.transcriptionModel else {
-            loadedState.errorMessage = String(
-                localized: "No transcription models available. Add a model like whisper-1 to your LiteLLM server."
-            )
-            state = .loaded(loadedState)
-            scheduleErrorDismiss()
-            return
-        }
-        loadedState.isTranscribing = true
-        state = .loaded(loadedState)
-        Task {
-            do {
-                let text = try await transcribeAudioUseCase.execute(
-                    audioData: data,
-                    model: transcriptionModel.id,
-                    language: nil,
-                    fileName: "recording.m4a"
-                )
-                guard case .loaded(var currentState) = state else { return }
-                currentState.inputText = text
-                currentState.isTranscribing = false
-                state = .loaded(currentState)
-            } catch {
-                guard case .loaded(var currentState) = state else { return }
-                currentState.isTranscribing = false
-                currentState.errorMessage = error.localizedDescription
-                state = .loaded(currentState)
-                scheduleErrorDismiss()
-            }
         }
     }
 

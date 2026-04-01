@@ -66,8 +66,12 @@ private extension ImageGenerationRepository {
             throw APIError.invalidResponse
         }
 
-        guard let b64Json = imageData.b64Json,
-              let data = Data(base64Encoded: b64Json) else {
+        let data: Data
+        if let b64Json = imageData.b64Json, let decoded = Data(base64Encoded: b64Json) {
+            data = decoded
+        } else if let urlString = imageData.url, let url = URL(string: urlString) {
+            data = try await URLSession.shared.data(from: url).0
+        } else {
             throw APIError.invalidResponse
         }
 

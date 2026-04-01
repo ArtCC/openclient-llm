@@ -361,7 +361,7 @@ private extension ChatView {
     ) -> some View {
         if loadedState.isStreaming {
             stopStreamingButton
-        } else if loadedState.isTranscribing {
+        } else if loadedState.isTranscribing || loadedState.isGeneratingImage {
             ProgressView()
                 .controlSize(.small)
                 .frame(minWidth: 44, minHeight: 44)
@@ -379,69 +379,10 @@ private extension ChatView {
                 sendButton
             } else if loadedState.transcriptionModel != nil && hasModel {
                 micButton
+            } else if loadedState.imageModel != nil && hasModel {
+                imageButton
             }
         }
-    }
-
-    var stopStreamingButton: some View {
-        Button {
-            viewModel.send(.stopStreamingTapped)
-        } label: {
-            Image(systemName: "stop.circle.fill")
-                .font(.title)
-                .foregroundStyle(.red)
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Stop"))
-        .transition(.scale.combined(with: .opacity))
-    }
-
-    var stopRecordingButton: some View {
-        Button {
-            stopRecording()
-        } label: {
-            Image(systemName: "stop.circle.fill")
-                .font(.title)
-                .foregroundStyle(.red)
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Stop Recording"))
-        .transition(.scale.combined(with: .opacity))
-    }
-
-    var sendButton: some View {
-        Button {
-            inputText = ""
-            viewModel.send(.sendTapped)
-        } label: {
-            Image(systemName: "arrow.up.circle.fill")
-                .font(.title)
-                .foregroundStyle(Color.accentColor)
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Send"))
-        .transition(.scale.combined(with: .opacity))
-    }
-
-    var micButton: some View {
-        Button {
-            startRecording()
-        } label: {
-            Image(systemName: "mic.circle.fill")
-                .font(.title)
-                .foregroundStyle(.secondary)
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Record Audio"))
-        .transition(.scale.combined(with: .opacity))
     }
 
     // MARK: - Model Selector
@@ -491,6 +432,58 @@ private extension ChatView {
             guard let data else { return }
             viewModel.send(.audioRecorded(data, duration))
         }
+    }
+
+    // MARK: - Action Buttons
+
+    var stopStreamingButton: some View {
+        Button { viewModel.send(.stopStreamingTapped) } label: {
+            Image(systemName: "stop.circle.fill").font(.title).foregroundStyle(.red)
+                .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(String(localized: "Stop"))
+        .transition(.scale.combined(with: .opacity))
+    }
+
+    var stopRecordingButton: some View {
+        Button { stopRecording() } label: {
+            Image(systemName: "stop.circle.fill").font(.title).foregroundStyle(.red)
+                .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(String(localized: "Stop Recording"))
+        .transition(.scale.combined(with: .opacity))
+    }
+
+    var sendButton: some View {
+        Button { inputText = ""; viewModel.send(.sendTapped) } label: {
+            Image(systemName: "arrow.up.circle.fill").font(.title).foregroundStyle(Color.accentColor)
+                .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(String(localized: "Send"))
+        .transition(.scale.combined(with: .opacity))
+    }
+
+    var micButton: some View {
+        Button { startRecording() } label: {
+            Image(systemName: "mic.circle.fill").font(.title).foregroundStyle(.secondary)
+                .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(String(localized: "Record Audio"))
+        .transition(.scale.combined(with: .opacity))
+    }
+
+    var imageButton: some View {
+        Button { viewModel.send(.generateImageTapped) } label: {
+            Image(systemName: "wand.and.stars").font(.title2).foregroundStyle(.secondary)
+                .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(String(localized: "Generate Image"))
+        .transition(.scale.combined(with: .opacity))
     }
 
 }

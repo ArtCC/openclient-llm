@@ -42,9 +42,6 @@ private extension HomeView {
             Tab(String(localized: "Chats"), systemImage: "bubble.left.and.bubble.right") {
                 chatsTab
             }
-            Tab(String(localized: "Images"), systemImage: "photo.artframe") {
-                ImageGenerationView()
-            }
             Tab(String(localized: "Models"), systemImage: "cpu") {
                 ModelsView()
             }
@@ -111,7 +108,6 @@ private extension HomeView {
     #if os(macOS)
     enum SidebarDestination: Hashable {
         case chats
-        case imageGeneration
         case models
         case settings
     }
@@ -131,9 +127,6 @@ private extension HomeView {
             Section {
                 Label(String(localized: "Chats"), systemImage: "bubble.left.and.bubble.right")
                     .tag(SidebarDestination.chats)
-
-                Label(String(localized: "Images"), systemImage: "photo.artframe")
-                    .tag(SidebarDestination.imageGeneration)
             }
 
             Section {
@@ -156,8 +149,6 @@ private extension HomeView {
             }
             .id(conversationListId)
             .navigationTitle(String(localized: "Chats"))
-        case .imageGeneration:
-            ImageGenerationView()
         case .models:
             ModelsView()
         case .settings:
@@ -183,7 +174,7 @@ private extension HomeView {
                     description: Text(String(localized: "Select or create a conversation to start chatting"))
                 )
             }
-        case .models, .settings, .imageGeneration:
+        case .models, .settings:
             ContentUnavailableView(
                 String(localized: "Select a Section"),
                 systemImage: "sidebar.left",
