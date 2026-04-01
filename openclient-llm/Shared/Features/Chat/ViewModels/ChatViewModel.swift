@@ -27,6 +27,7 @@ final class ChatViewModel {
         case modelParametersChanged(ModelParameters)
         case speakMessageTapped(ChatMessage)
         case stopSpeakingTapped
+        case audioRecorded(Data, TimeInterval)
     }
 
     enum State: Equatable {
@@ -49,6 +50,8 @@ final class ChatViewModel {
         var isSpeaking: Bool = false
         var speakingMessageId: UUID?
         var ttsModel: LLMModel?
+        var transcriptionModel: LLMModel?
+        var isTranscribing: Bool = false
     }
 
     private(set) var state: State
@@ -59,6 +62,7 @@ final class ChatViewModel {
     private let streamMessageUseCase: StreamMessageUseCaseProtocol
     private let saveConversationUseCase: SaveConversationUseCaseProtocol
     private let synthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol
+    private let transcribeAudioUseCase: TranscribeAudioUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
     private let conversationStartersManager: ConversationStartersManagerProtocol
     private let audioPlayerManager: AudioPlayerManager
@@ -75,6 +79,7 @@ final class ChatViewModel {
         streamMessageUseCase: StreamMessageUseCaseProtocol = StreamMessageUseCase(),
         saveConversationUseCase: SaveConversationUseCaseProtocol = SaveConversationUseCase(),
         synthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol = SynthesizeSpeechUseCase(),
+        transcribeAudioUseCase: TranscribeAudioUseCaseProtocol = TranscribeAudioUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         conversationStartersManager: ConversationStartersManagerProtocol = ConversationStartersManager(),
         audioPlayerManager: AudioPlayerManager = AudioPlayerManager()
@@ -85,6 +90,7 @@ final class ChatViewModel {
         self.streamMessageUseCase = streamMessageUseCase
         self.saveConversationUseCase = saveConversationUseCase
         self.synthesizeSpeechUseCase = synthesizeSpeechUseCase
+        self.transcribeAudioUseCase = transcribeAudioUseCase
         self.settingsManager = settingsManager
         self.conversationStartersManager = conversationStartersManager
         self.audioPlayerManager = audioPlayerManager
@@ -112,7 +118,8 @@ final class ChatViewModel {
              .attachmentRemoved,
              .modelParametersChanged,
              .speakMessageTapped,
-             .stopSpeakingTapped:
+             .stopSpeakingTapped,
+             .audioRecorded:
             handleConfigurationEvent(event)
         }
     }
@@ -123,22 +130,15 @@ final class ChatViewModel {
 private extension ChatViewModel {
     func handleConfigurationEvent(_ event: Event) {
         switch event {
-        case .modelSelected(let model):
-            selectModel(model)
-        case .systemPromptChanged(let prompt):
-            updateSystemPrompt(prompt)
-        case .attachmentAdded(let attachment):
-            addAttachment(attachment)
-        case .attachmentRemoved(let id):
-            removeAttachment(id)
-        case .modelParametersChanged(let parameters):
-            updateModelParameters(parameters)
-        case .speakMessageTapped(let message):
-            speakMessage(message)
-        case .stopSpeakingTapped:
-            stopSpeaking()
-        default:
-            break
+        case .modelSelected(let model): selectModel(model)
+        case .systemPromptChanged(let prompt): updateSystemPrompt(prompt)
+        case .attachmentAdded(let attachment): addAttachment(attachment)
+        case .attachmentRemoved(let id): removeAttachment(id)
+        case .modelParametersChanged(let parameters): updateModelParameters(parameters)
+        case .speakMessageTapped(let message): speakMessage(message)
+        case .stopSpeakingTapped: stopSpeaking()
+        case .audioRecorded(let data, let duration): transcribeAudio(data: data, duration: duration)
+        default: break
         }
     }
 
@@ -151,30 +151,32 @@ private extension ChatViewModel {
                 let pending = pendingConversation
                 pendingConversation = nil
 
+                let chatModels = models.filter { [.chat, .completion, .unknown].contains($0.mode) }
+                let ttsModel = models.first { $0.mode == .audioSpeech }
+                let transcriptionModel = models.first { $0.mode == .audioTranscription }
                 let savedModelId = settingsManager.getSelectedModelId()
                 let selectedModel: LLMModel?
 
                 if let pending {
-                    selectedModel = models.first(where: { $0.id == pending.modelId })
-                        ?? models.first(where: { $0.id == savedModelId })
-                        ?? models.first
+                    selectedModel = chatModels.first(where: { $0.id == pending.modelId })
+                        ?? chatModels.first(where: { $0.id == savedModelId })
+                        ?? chatModels.first
                 } else {
-                    selectedModel = models.first(where: { $0.id == savedModelId }) ?? models.first
+                    selectedModel = chatModels.first(where: { $0.id == savedModelId }) ?? chatModels.first
                 }
 
                 let starters = conversationStartersManager.randomStarters(count: 4)
-
-                let ttsModel = models.first { $0.mode == .audioSpeech }
 
                 state = .loaded(LoadedState(
                     conversation: pending,
                     messages: pending?.messages ?? [],
                     selectedModel: selectedModel,
-                    availableModels: models,
+                    availableModels: chatModels,
                     conversationStarters: (pending?.messages ?? []).isEmpty ? starters : [],
                     systemPrompt: pending?.systemPrompt ?? "",
                     modelParameters: pending?.modelParameters ?? .default,
-                    ttsModel: ttsModel
+                    ttsModel: ttsModel,
+                    transcriptionModel: transcriptionModel
                 ))
             } catch {
                 let pending = pendingConversation
@@ -221,7 +223,6 @@ private extension ChatViewModel {
         loadedState.selectedModel = model
         state = .loaded(loadedState)
         settingsManager.setSelectedModelId(model.id)
-
         if loadedState.conversation != nil {
             loadedState.conversation?.modelId = model.id
             state = .loaded(loadedState)
@@ -384,7 +385,6 @@ private extension ChatViewModel {
     func speakMessage(_ message: ChatMessage) {
         guard case .loaded(var loadedState) = state,
               !message.content.isEmpty else { return }
-
         guard let ttsModel = loadedState.ttsModel else {
             loadedState.errorMessage = String(
                 localized: "No text-to-speech models available. Add a TTS model like tts-1 to your LiteLLM server."
@@ -397,7 +397,6 @@ private extension ChatViewModel {
         loadedState.isSpeaking = true
         loadedState.speakingMessageId = message.id
         state = .loaded(loadedState)
-
         Task {
             do {
                 let audioData = try await synthesizeSpeechUseCase.execute(
@@ -406,8 +405,6 @@ private extension ChatViewModel {
                     voice: "alloy"
                 )
                 audioPlayerManager.play(data: audioData, messageId: message.id)
-
-                // Observe when playback finishes
                 Task {
                     while audioPlayerManager.isPlaying {
                         try? await Task.sleep(for: .milliseconds(200))
@@ -453,6 +450,40 @@ private extension ChatViewModel {
             onConversationUpdated?()
         } catch {
             // Silently fail — persistence is best-effort
+        }
+    }
+
+    func transcribeAudio(data: Data, duration: TimeInterval) {
+        guard case .loaded(var loadedState) = state else { return }
+        guard let transcriptionModel = loadedState.transcriptionModel else {
+            loadedState.errorMessage = String(
+                localized: "No transcription models available. Add a model like whisper-1 to your LiteLLM server."
+            )
+            state = .loaded(loadedState)
+            scheduleErrorDismiss()
+            return
+        }
+        loadedState.isTranscribing = true
+        state = .loaded(loadedState)
+        Task {
+            do {
+                let text = try await transcribeAudioUseCase.execute(
+                    audioData: data,
+                    model: transcriptionModel.id,
+                    language: nil,
+                    fileName: "recording.m4a"
+                )
+                guard case .loaded(var currentState) = state else { return }
+                currentState.inputText = text
+                currentState.isTranscribing = false
+                state = .loaded(currentState)
+            } catch {
+                guard case .loaded(var currentState) = state else { return }
+                currentState.isTranscribing = false
+                currentState.errorMessage = error.localizedDescription
+                state = .loaded(currentState)
+                scheduleErrorDismiss()
+            }
         }
     }
 
