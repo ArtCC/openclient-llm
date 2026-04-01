@@ -302,6 +302,7 @@ private extension ChatView {
             .submitLabel(.send)
 #endif
             .onSubmit {
+                inputText = ""
                 viewModel.send(.sendTapped)
             }
             .onChange(of: inputText) { _, newValue in
@@ -414,6 +415,7 @@ private extension ChatView {
 
     var sendButton: some View {
         Button {
+            inputText = ""
             viewModel.send(.sendTapped)
         } label: {
             Image(systemName: "arrow.up.circle.fill")
