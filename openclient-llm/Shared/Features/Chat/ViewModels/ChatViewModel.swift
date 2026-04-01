@@ -384,11 +384,7 @@ private extension ChatViewModel {
         }
     }
 
-    func applyStreamChunk(
-        _ chunk: StreamChunk,
-        to state: inout LoadedState,
-        assistantMessageId: UUID
-    ) {
+    func applyStreamChunk(_ chunk: StreamChunk, to state: inout LoadedState, assistantMessageId: UUID) {
         switch chunk {
         case .token(let token):
             if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
@@ -397,6 +393,15 @@ private extension ChatViewModel {
         case .usage(let usage):
             if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
                 state.messages[index].tokenUsage = usage
+            }
+        case .image(let imageData):
+            if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
+                let attachment = ChatMessage.Attachment(
+                    type: .image,
+                    fileName: String(localized: "Generated Image"),
+                    data: imageData
+                )
+                state.messages[index].attachments.append(attachment)
             }
         }
     }

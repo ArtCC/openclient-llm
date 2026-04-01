@@ -25,6 +25,7 @@ protocol ChatRepositoryProtocol: Sendable {
 enum StreamChunk: Sendable {
     case token(String)
     case usage(TokenUsage)
+    case image(Data)
 }
 
 struct ChatRepository: ChatRepositoryProtocol {
@@ -108,6 +109,17 @@ struct ChatRepository: ChatRepositoryProtocol {
                         if let content = chunk.choices.first?.delta.content {
                             continuation.yield(.token(content))
                         }
+                        if let images = chunk.choices.first?.delta.images {
+                            for item in images {
+                                let urlString = item.imageUrl.url
+                                if let commaIndex = urlString.firstIndex(of: ",") {
+                                    let base64 = String(urlString[urlString.index(after: commaIndex)...])
+                                    if let imageData = Data(base64Encoded: base64) {
+                                        continuation.yield(.image(imageData))
+                                    }
+                                }
+                            }
+                        }
                         if let usage = chunk.usage {
                             let tokenUsage = TokenUsage(
                                 promptTokens: usage.promptTokens ?? 0,
@@ -122,7 +134,6 @@ struct ChatRepository: ChatRepositoryProtocol {
                     continuation.finish(throwing: error)
                 }
             }
-
             continuation.onTermination = { _ in
                 task.cancel()
             }

@@ -9,3 +9,4 @@
 "NSCameraUsageDescription" = "OpenClient LLM uses the camera to capture photos for sending to the AI model.";
 "NSMicrophoneUsageDescription" = "OpenClient LLM uses the microphone to record audio for transcription by the AI model.";
 "NSLocalNetworkUsageDescription" = "OpenClient LLM needs access to your local network to connect to your self-hosted LiteLLM server.";
+"NSPhotoLibraryAddUsageDescription" = "Save generated images to your photo library.";
