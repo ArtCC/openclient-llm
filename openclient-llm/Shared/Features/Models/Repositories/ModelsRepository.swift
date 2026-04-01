@@ -27,25 +27,29 @@ struct ModelsRepository: ModelsRepositoryProtocol {
     // MARK: - Public
 
     func fetchModels() async throws -> [LLMModel] {
+        LogManager.info("fetchModels")
         let response: ModelsResponse = try await apiClient.request(
             endpoint: "models",
             method: .get,
             body: nil
         )
 
-        return response.data
+        let models = response.data
             .map { LLMModel(id: $0.id, ownedBy: $0.ownedBy ?? "") }
             .sorted { $0.id.localizedCaseInsensitiveCompare($1.id) == .orderedAscending }
+        LogManager.success("fetchModels returned \(models.count) models")
+        return models
     }
 
     func fetchModelInfo() async throws -> [LLMModel] {
+        LogManager.info("fetchModelInfo")
         let response: ModelInfoResponse = try await apiClient.request(
             endpoint: "model/info",
             method: .get,
             body: nil
         )
 
-        return response.data.map { info in
+        let result = response.data.map { info in
             var capabilities: [LLMModel.Capability] = []
 
             if info.modelInfo?.supportsVision == true {
@@ -72,5 +76,7 @@ struct ModelsRepository: ModelsRepositoryProtocol {
                 providerName: providerName
             )
         }
+        LogManager.success("fetchModelInfo returned \(result.count) models")
+        return result
     }
 }

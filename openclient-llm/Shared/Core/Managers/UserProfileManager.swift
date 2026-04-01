@@ -107,7 +107,7 @@ private struct CloudKeyValueStore: KeyValueStore {
     }
 
     func string(forKey key: String) -> String? {
-        store.string(forKey: key)
+        store.string(forKey: key) ?? UserDefaults.standard.string(forKey: key)
     }
 
     func set(_ value: Any?, forKey key: String) {

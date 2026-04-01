@@ -24,6 +24,7 @@ struct MessageBubbleView: View {
     var onSpeakTapped: (() -> Void)?
     var onStopSpeakingTapped: (() -> Void)?
     @State private var cursorVisible: Bool = false
+    @State private var expandedImageData: Data?
 
     // MARK: - View
 
@@ -73,9 +74,13 @@ private extension MessageBubbleView {
                 .glassEffect(.regular, in: .circle)
 
             VStack(alignment: .leading, spacing: 8) {
+                if !message.attachments.isEmpty {
+                    attachmentsView
+                }
+
                 if message.content.isEmpty && isStreaming {
                     thinkingIndicator
-                } else {
+                } else if !message.content.isEmpty {
                     blocksView
                 }
 
@@ -133,12 +138,30 @@ private extension MessageBubbleView {
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 120, height: 120)
                 .clipShape(.rect(cornerRadius: 12))
+                .contentShape(.rect(cornerRadius: 12))
+                .onTapGesture { expandedImageData = attachment.data }
+                .contextMenu { imageSaveContextMenu(attachment.data) }
+                .sheet(item: Binding(
+                    get: { expandedImageData.map { ExpandedImage(data: $0) } },
+                    set: { if $0 == nil { expandedImageData = nil } }
+                )) { expanded in
+                    ImagePreviewView(data: expanded.data)
+                }
             #elseif os(macOS)
             Image(nsImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 120, height: 120)
                 .clipShape(.rect(cornerRadius: 12))
+                .contentShape(.rect(cornerRadius: 12))
+                .onTapGesture { expandedImageData = attachment.data }
+                .contextMenu { imageSaveContextMenu(attachment.data) }
+                .sheet(item: Binding(
+                    get: { expandedImageData.map { ExpandedImage(data: $0) } },
+                    set: { if $0 == nil { expandedImageData = nil } }
+                )) { expanded in
+                    ImagePreviewView(data: expanded.data)
+                }
             #endif
         } else {
             documentCard(attachment)
@@ -292,12 +315,61 @@ private extension MessageBubbleView {
                     .font(.system(size: 10))
                 Text(isSpeaking
                      ? String(localized: "Stop")
-                     : String(localized: "Read Aloud"))
+                     : String(localized: "Listen"))
                     .font(.caption2)
             }
             .foregroundStyle(isSpeaking ? AnyShapeStyle(.red) : AnyShapeStyle(.tertiary))
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Image Actions
+
+    @ViewBuilder
+    func imageSaveContextMenu(_ data: Data) -> some View {
+#if os(iOS)
+        Button {
+            saveImageToPhotos(data)
+        } label: {
+            Label(String(localized: "Save to Photos"), systemImage: "photo.badge.plus")
+        }
+#elseif os(macOS)
+        Button {
+            saveImageToDownloads(data)
+        } label: {
+            Label(String(localized: "Save to Downloads"), systemImage: "arrow.down.circle")
+        }
+#endif
+        Button {
+            copyImageToClipboard(data)
+        } label: {
+            Label(String(localized: "Copy Image"), systemImage: "doc.on.doc")
+        }
+    }
+
+#if os(iOS)
+    func saveImageToPhotos(_ data: Data) {
+        guard let image = UIImage(data: data) else { return }
+        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+    }
+#elseif os(macOS)
+    func saveImageToDownloads(_ data: Data) {
+        let timestamp = Int(Date().timeIntervalSince1970)
+        guard let url = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)
+            .first?.appendingPathComponent("generated-image-\(timestamp).png") else { return }
+        try? data.write(to: url)
+    }
+#endif
+
+    func copyImageToClipboard(_ data: Data) {
+#if os(iOS)
+        guard let image = UIImage(data: data) else { return }
+        UIPasteboard.general.image = image
+#elseif os(macOS)
+        guard let image = NSImage(data: data) else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.writeObjects([image])
+#endif
     }
 }
 

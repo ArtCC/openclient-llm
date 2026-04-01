@@ -28,7 +28,6 @@ final class ChatViewModel {
         case speakMessageTapped(ChatMessage)
         case stopSpeakingTapped
         case audioRecorded(Data, TimeInterval)
-        case generateImageTapped
     }
 
     enum State: Equatable {
@@ -51,9 +50,10 @@ final class ChatViewModel {
         var isSpeaking: Bool = false
         var speakingMessageId: UUID?
         var isTranscribing: Bool = false
-        var isGeneratingImage: Bool = false
         var showTokenUsage: Bool = true
         var scrollToBottomTrigger: Bool = false
+        var ttsModelId: String?
+        var transcriptionModelId: String?
     }
 
     var state: State
@@ -62,16 +62,15 @@ final class ChatViewModel {
 
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     private let streamMessageUseCase: StreamMessageUseCaseProtocol
-    private let saveConversationUseCase: SaveConversationUseCaseProtocol
+    let saveConversationUseCase: SaveConversationUseCaseProtocol
     private let synthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol
     let transcribeAudioUseCase: TranscribeAudioUseCaseProtocol
-    let generateImageUseCase: GenerateImageUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
     private let userProfileManager: UserProfileManagerProtocol
     private let conversationStartersManager: ConversationStartersManagerProtocol
     private let audioPlayerManager: AudioPlayerManager
     private var streamTask: Task<Void, Never>?
-    private var errorDismissTask: Task<Void, Never>?
+    var errorDismissTask: Task<Void, Never>?
     private var pendingConversation: Conversation?
 
     // MARK: - Init
@@ -84,7 +83,6 @@ final class ChatViewModel {
         saveConversationUseCase: SaveConversationUseCaseProtocol = SaveConversationUseCase(),
         synthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol = SynthesizeSpeechUseCase(),
         transcribeAudioUseCase: TranscribeAudioUseCaseProtocol = TranscribeAudioUseCase(),
-        generateImageUseCase: GenerateImageUseCaseProtocol = GenerateImageUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
         conversationStartersManager: ConversationStartersManagerProtocol = ConversationStartersManager(),
@@ -97,7 +95,6 @@ final class ChatViewModel {
         self.saveConversationUseCase = saveConversationUseCase
         self.synthesizeSpeechUseCase = synthesizeSpeechUseCase
         self.transcribeAudioUseCase = transcribeAudioUseCase
-        self.generateImageUseCase = generateImageUseCase
         self.settingsManager = settingsManager
         self.userProfileManager = userProfileManager
         self.conversationStartersManager = conversationStartersManager
@@ -127,8 +124,7 @@ final class ChatViewModel {
              .modelParametersChanged,
              .speakMessageTapped,
              .stopSpeakingTapped,
-             .audioRecorded,
-             .generateImageTapped:
+             .audioRecorded:
             handleConfigurationEvent(event)
         }
     }
@@ -147,7 +143,6 @@ private extension ChatViewModel {
         case .speakMessageTapped(let message): speakMessage(message)
         case .stopSpeakingTapped: stopSpeaking()
         case .audioRecorded(let data, let duration): transcribeAudio(data: data, duration: duration)
-        case .generateImageTapped: generateImage()
         default: break
         }
     }
@@ -159,11 +154,14 @@ private extension ChatViewModel {
 
     func fetchAndBuildInitialState() async {
         do {
+            LogManager.debug("fetchAndBuildInitialState start")
             let models = try await fetchModelsUseCase.execute()
             let pending = pendingConversation
             pendingConversation = nil
 
-            let chatModels = models.filter { [.chat, .completion, .unknown].contains($0.mode) }
+            let chatModels = models.filter {
+                [.chat, .completion, .unknown, .imageGeneration].contains($0.mode)
+            }
             let savedModelId = settingsManager.getSelectedModelId()
             let selectedModel: LLMModel?
 
@@ -174,7 +172,11 @@ private extension ChatViewModel {
             } else {
                 selectedModel = chatModels.first(where: { $0.id == savedModelId }) ?? chatModels.first
             }
+            let selectedId = selectedModel?.id ?? "-"
+            LogManager.success("fetchAndBuildInitialState models=\(chatModels.count) selected=\(selectedId)")
 
+            let ttsModelId = models.first(where: { $0.mode == .audioSpeech })?.id
+            let transcriptionModelId = models.first(where: { $0.mode == .audioTranscription })?.id
             let starters = conversationStartersManager.randomStarters(count: 4)
             state = .loaded(LoadedState(
                 conversation: pending,
@@ -184,9 +186,12 @@ private extension ChatViewModel {
                 conversationStarters: (pending?.messages ?? []).isEmpty ? starters : [],
                 systemPrompt: pending?.systemPrompt ?? "",
                 modelParameters: pending?.modelParameters ?? .default,
-                showTokenUsage: settingsManager.getShowTokenUsage()
+                showTokenUsage: settingsManager.getShowTokenUsage(),
+                ttsModelId: ttsModelId,
+                transcriptionModelId: transcriptionModelId
             ))
         } catch {
+            LogManager.error("fetchAndBuildInitialState failed: \(error)")
             let pending = pendingConversation
             pendingConversation = nil
             state = .loaded(LoadedState(
@@ -229,6 +234,7 @@ private extension ChatViewModel {
 
     func selectModel(_ model: LLMModel) {
         guard case .loaded(var loadedState) = state else { return }
+        LogManager.info("selectModel id=\(model.id)")
         loadedState.selectedModel = model
         state = .loaded(loadedState)
         settingsManager.setSelectedModelId(model.id)
@@ -272,6 +278,7 @@ private extension ChatViewModel {
     }
 
     func stopStreaming() {
+        LogManager.debug("stopStreaming requested")
         streamTask?.cancel()
         streamTask = nil
         guard case .loaded(var loadedState) = state else { return }
@@ -289,6 +296,7 @@ private extension ChatViewModel {
         guard case .loaded(var loadedState) = state else { return }
         let text = loadedState.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, let model = loadedState.selectedModel, !loadedState.isStreaming else { return }
+        LogManager.info("sendMessage model=\(model.id) text=\"\(String(text.prefix(80)))\"")
 
         // Create or update conversation
         if loadedState.conversation == nil {
@@ -341,6 +349,7 @@ private extension ChatViewModel {
         systemPrompt: String,
         parameters: ModelParameters
     ) async {
+        LogManager.debug("performStreaming model=\(model) messages=\(messages.count)")
         // Build effective system prompt: user profile context + per-conversation system prompt
         let profileContext = userProfileManager.getProfile().systemPromptContext
         let effectiveSystemPrompt = buildEffectiveSystemPrompt(
@@ -366,9 +375,11 @@ private extension ChatViewModel {
             guard case .loaded(var currentState) = state else { return }
             currentState.isStreaming = false
             state = .loaded(currentState)
+            LogManager.success("performStreaming completed model=\(model)")
             persistConversation()
         } catch {
             guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+            LogManager.error("performStreaming error model=\(model): \(error)")
             if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }),
                currentState.messages[index].content.isEmpty {
                 currentState.messages.remove(at: index)
@@ -381,11 +392,7 @@ private extension ChatViewModel {
         }
     }
 
-    func applyStreamChunk(
-        _ chunk: StreamChunk,
-        to state: inout LoadedState,
-        assistantMessageId: UUID
-    ) {
+    func applyStreamChunk(_ chunk: StreamChunk, to state: inout LoadedState, assistantMessageId: UUID) {
         switch chunk {
         case .token(let token):
             if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
@@ -395,13 +402,22 @@ private extension ChatViewModel {
             if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
                 state.messages[index].tokenUsage = usage
             }
+        case .image(let imageData):
+            if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
+                let attachment = ChatMessage.Attachment(
+                    type: .image,
+                    fileName: String(localized: "Generated Image"),
+                    data: imageData
+                )
+                state.messages[index].attachments.append(attachment)
+            }
         }
     }
 
     func speakMessage(_ message: ChatMessage) {
         guard case .loaded(var loadedState) = state,
               !message.content.isEmpty else { return }
-        guard let selectedModel = loadedState.selectedModel else { return }
+        guard let ttsModelId = loadedState.ttsModelId else { return }
 
         loadedState.isSpeaking = true
         loadedState.speakingMessageId = message.id
@@ -410,7 +426,7 @@ private extension ChatViewModel {
             do {
                 let audioData = try await synthesizeSpeechUseCase.execute(
                     text: message.content,
-                    model: selectedModel.id,
+                    model: ttsModelId,
                     voice: "alloy"
                 )
                 audioPlayerManager.play(data: audioData, messageId: message.id)
@@ -440,50 +456,5 @@ private extension ChatViewModel {
         loadedState.isSpeaking = false
         loadedState.speakingMessageId = nil
         state = .loaded(loadedState)
-    }
-}
-
-// MARK: - Internal helpers
-
-extension ChatViewModel {
-    func buildEffectiveSystemPrompt(profileContext: String, conversationSystemPrompt: String) -> String {
-        let profile = profileContext.trimmingCharacters(in: .whitespacesAndNewlines)
-        let conversation = conversationSystemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        switch (profile.isEmpty, conversation.isEmpty) {
-        case (true, true): return ""
-        case (false, true): return profile
-        case (true, false): return conversation
-        case (false, false): return "\(profile)\n\n\(conversation)"
-        }
-    }
-    func persistConversation() {
-        guard case .loaded(let loadedState) = state,
-              var conversation = loadedState.conversation else { return }
-
-        conversation.messages = loadedState.messages
-        conversation.systemPrompt = loadedState.systemPrompt
-        conversation.modelParameters = loadedState.modelParameters
-        conversation.updatedAt = Date()
-        if let model = loadedState.selectedModel {
-            conversation.modelId = model.id
-        }
-
-        do {
-            try saveConversationUseCase.execute(conversation)
-            onConversationUpdated?()
-        } catch {
-            // Silently fail — persistence is best-effort
-        }
-    }
-
-    func scheduleErrorDismiss() {
-        errorDismissTask?.cancel()
-        errorDismissTask = Task {
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
-            currentState.errorMessage = nil
-            state = .loaded(currentState)
-        }
     }
 }

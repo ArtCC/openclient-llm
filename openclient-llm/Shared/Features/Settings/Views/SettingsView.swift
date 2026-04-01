@@ -68,17 +68,19 @@ private extension SettingsView {
     }
 
     func loadedView(_ loadedState: SettingsViewModel.LoadedState) -> some View {
-        Form {
-            serverSection(loadedState)
-            cloudSyncSection(loadedState)
-            personalizationSection()
-            chatSection(loadedState)
-            feedbackSection()
-            legalSection()
-        }
+        VStack(spacing: 0) {
+            Form {
+                serverSection(loadedState)
+                cloudSyncSection(loadedState)
+                personalizationSection()
+                chatSection(loadedState)
+                feedbackSection()
+                legalSection()
+            }
 #if os(iOS)
-        .scrollDismissesKeyboard(.immediately)
+            .scrollDismissesKeyboard(.immediately)
 #endif
+        }
     }
 
     func serverSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
@@ -291,9 +293,25 @@ private extension SettingsView {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            HStack {
+                Text(String(localized: "Version \(appVersion) (\(appBuild))"))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 5)
+                Spacer()
+            }
         } header: {
             Text(String(localized: "About"))
         }
+    }
+
+    var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+    }
+
+    var appBuild: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—"
     }
 
     func requestAppReview() {

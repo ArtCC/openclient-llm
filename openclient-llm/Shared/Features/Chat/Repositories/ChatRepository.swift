@@ -25,6 +25,7 @@ protocol ChatRepositoryProtocol: Sendable {
 enum StreamChunk: Sendable {
     case token(String)
     case usage(TokenUsage)
+    case image(Data)
 }
 
 struct ChatRepository: ChatRepositoryProtocol {
@@ -45,6 +46,7 @@ struct ChatRepository: ChatRepositoryProtocol {
         model: String,
         parameters: ModelParameters
     ) async throws -> (String, TokenUsage?) {
+        LogManager.info("sendMessage model=\(model) messages=\(messages.count)")
         let request = ChatCompletionRequest(
             model: model,
             messages: messages.map { buildCompletionMessage($0) },
@@ -63,6 +65,7 @@ struct ChatRepository: ChatRepositoryProtocol {
         )
 
         guard let content = response.choices.first?.message.content else {
+            LogManager.error("sendMessage: no content in response")
             throw APIError.invalidResponse
         }
 
@@ -73,7 +76,7 @@ struct ChatRepository: ChatRepositoryProtocol {
                 totalTokens: $0.totalTokens ?? 0
             )
         }
-
+        LogManager.success("sendMessage done \(content.count) chars tokens=\(tokenUsage?.totalTokens ?? 0)")
         return (content, tokenUsage)
     }
 
@@ -82,6 +85,7 @@ struct ChatRepository: ChatRepositoryProtocol {
         model: String,
         parameters: ModelParameters
     ) -> AsyncThrowingStream<StreamChunk, Error> {
+        LogManager.info("streamMessage model=\(model) messages=\(messages.count)")
         let request = ChatCompletionRequest(
             model: model,
             messages: messages.map { buildCompletionMessage($0) },
@@ -95,34 +99,12 @@ struct ChatRepository: ChatRepositoryProtocol {
 
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-
         let dataStream = apiClient.streamRequest(endpoint: "chat/completions", body: request)
 
         return AsyncThrowingStream { continuation in
             let task = Task {
-                do {
-                    for try await data in dataStream {
-                        guard !Task.isCancelled else { break }
-
-                        let chunk = try decoder.decode(ChatCompletionStreamResponse.self, from: data)
-                        if let content = chunk.choices.first?.delta.content {
-                            continuation.yield(.token(content))
-                        }
-                        if let usage = chunk.usage {
-                            let tokenUsage = TokenUsage(
-                                promptTokens: usage.promptTokens ?? 0,
-                                completionTokens: usage.completionTokens ?? 0,
-                                totalTokens: usage.totalTokens ?? 0
-                            )
-                            continuation.yield(.usage(tokenUsage))
-                        }
-                    }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
+                await runStream(dataStream: dataStream, decoder: decoder, continuation: continuation)
             }
-
             continuation.onTermination = { _ in
                 task.cancel()
             }
@@ -133,6 +115,52 @@ struct ChatRepository: ChatRepositoryProtocol {
 // MARK: - Private
 
 private extension ChatRepository {
+    func runStream(
+        dataStream: AsyncThrowingStream<Data, Error>,
+        decoder: JSONDecoder,
+        continuation: AsyncThrowingStream<StreamChunk, Error>.Continuation
+    ) async {
+        do {
+            var totalChars = 0
+            var imageChunks = 0
+            for try await data in dataStream {
+                guard !Task.isCancelled else { break }
+                let chunk = try decoder.decode(ChatCompletionStreamResponse.self, from: data)
+                if let content = chunk.choices.first?.delta.content {
+                    totalChars += content.count
+                    continuation.yield(.token(content))
+                }
+                if let images = chunk.choices.first?.delta.images {
+                    for item in images {
+                        if let imgData = imageData(from: item.imageUrl.url) {
+                            imageChunks += 1
+                            LogManager.debug("streamMessage image chunk \(imageChunks) \(imgData.count) bytes")
+                            continuation.yield(.image(imgData))
+                        } else {
+                            let urlPreview = item.imageUrl.url.prefix(80)
+                            LogManager.warning("streamMessage image chunk decode failed url=\(urlPreview)")
+                        }
+                    }
+                }
+                if let usage = chunk.usage {
+                    let tokenUsage = TokenUsage(
+                        promptTokens: usage.promptTokens ?? 0,
+                        completionTokens: usage.completionTokens ?? 0,
+                        totalTokens: usage.totalTokens ?? 0
+                    )
+                    let usageLog = "prompt=\(tokenUsage.promptTokens) completion=\(tokenUsage.completionTokens)"
+                    LogManager.debug("streamMessage usage \(usageLog) total=\(tokenUsage.totalTokens)")
+                    continuation.yield(.usage(tokenUsage))
+                }
+            }
+            LogManager.success("streamMessage finished totalChars=\(totalChars) imageChunks=\(imageChunks)")
+            continuation.finish()
+        } catch {
+            LogManager.error("streamMessage decoding/stream error: \(error)")
+            continuation.finish(throwing: error)
+        }
+    }
+
     func buildCompletionMessage(_ message: ChatMessage) -> ChatCompletionMessage {
         if message.attachments.isEmpty {
             return ChatCompletionMessage(
@@ -187,5 +215,11 @@ private extension ChatRepository {
             }
         }
         return fullText
+    }
+
+    func imageData(from dataURL: String) -> Data? {
+        guard let commaIndex = dataURL.firstIndex(of: ",") else { return nil }
+        let base64 = String(dataURL[dataURL.index(after: commaIndex)...])
+        return Data(base64Encoded: base64)
     }
 }

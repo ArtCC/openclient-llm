@@ -60,86 +60,35 @@ final class UserProfileViewModelTests: XCTestCase {
         XCTAssertEqual(loadedState.extraInfo, "Loves Swift")
     }
 
-    // MARK: - Tests — nameChanged
-
-    func test_send_nameChanged_updatesName() {
+    func test_send_viewAppeared_setsOriginalValues() {
         // Given
-        sut.send(.viewAppeared)
+        mockUserProfileManager.profile = UserProfile(
+            name: "Arturo",
+            profileDescription: "Developer",
+            extraInfo: "Loves Swift"
+        )
 
         // When
-        sut.send(.nameChanged("Alice"))
+        sut.send(.viewAppeared)
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
             XCTFail("Expected loaded state")
             return
         }
-        XCTAssertEqual(loadedState.name, "Alice")
+        XCTAssertEqual(loadedState.originalName, "Arturo")
+        XCTAssertEqual(loadedState.originalDescription, "Developer")
+        XCTAssertEqual(loadedState.originalExtraInfo, "Loves Swift")
     }
 
-    func test_send_nameChanged_truncatesAt50Chars() {
+    // MARK: - Tests — save
+
+    func test_send_save_persistsProfile() {
         // Given
         sut.send(.viewAppeared)
-        let longName = String(repeating: "A", count: 60)
 
         // When
-        sut.send(.nameChanged(longName))
-
-        // Then
-        guard case .loaded(let loadedState) = sut.state else {
-            XCTFail("Expected loaded state")
-            return
-        }
-        XCTAssertEqual(loadedState.name.count, 50)
-    }
-
-    // MARK: - Tests — descriptionChanged
-
-    func test_send_descriptionChanged_truncatesAt200Chars() {
-        // Given
-        sut.send(.viewAppeared)
-        let longDesc = String(repeating: "B", count: 250)
-
-        // When
-        sut.send(.descriptionChanged(longDesc))
-
-        // Then
-        guard case .loaded(let loadedState) = sut.state else {
-            XCTFail("Expected loaded state")
-            return
-        }
-        XCTAssertEqual(loadedState.profileDescription.count, 200)
-    }
-
-    // MARK: - Tests — extraInfoChanged
-
-    func test_send_extraInfoChanged_truncatesAt500Chars() {
-        // Given
-        sut.send(.viewAppeared)
-        let longInfo = String(repeating: "C", count: 600)
-
-        // When
-        sut.send(.extraInfoChanged(longInfo))
-
-        // Then
-        guard case .loaded(let loadedState) = sut.state else {
-            XCTFail("Expected loaded state")
-            return
-        }
-        XCTAssertEqual(loadedState.extraInfo.count, 500)
-    }
-
-    // MARK: - Tests — saveTapped
-
-    func test_send_saveTapped_persistsProfile() {
-        // Given
-        sut.send(.viewAppeared)
-        sut.send(.nameChanged("Bob"))
-        sut.send(.descriptionChanged("Engineer"))
-        sut.send(.extraInfoChanged("Swift enthusiast"))
-
-        // When
-        sut.send(.saveTapped)
+        sut.send(.save(name: "Bob", description: "Engineer", extraInfo: "Swift enthusiast"))
 
         // Then
         XCTAssertEqual(mockUserProfileManager.savedProfile?.name, "Bob")
@@ -147,40 +96,37 @@ final class UserProfileViewModelTests: XCTestCase {
         XCTAssertEqual(mockUserProfileManager.savedProfile?.extraInfo, "Swift enthusiast")
     }
 
-    func test_send_saveTapped_resetsHasChanges() {
+    func test_send_save_updatesLoadedState() {
         // Given
         sut.send(.viewAppeared)
-        sut.send(.nameChanged("NewName"))
-        XCTAssertTrue(sut.hasChanges)
 
         // When
-        sut.send(.saveTapped)
+        sut.send(.save(name: "Alice", description: "Designer", extraInfo: "Loves colors"))
 
         // Then
-        XCTAssertFalse(sut.hasChanges)
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.name, "Alice")
+        XCTAssertEqual(loadedState.profileDescription, "Designer")
+        XCTAssertEqual(loadedState.extraInfo, "Loves colors")
     }
 
-    // MARK: - Tests — hasChanges
-
-    func test_hasChanges_falseAfterLoad() {
-        // Given
-        mockUserProfileManager.profile = UserProfile(name: "Arturo", profileDescription: "", extraInfo: "")
-
-        // When
-        sut.send(.viewAppeared)
-
-        // Then
-        XCTAssertFalse(sut.hasChanges)
-    }
-
-    func test_hasChanges_trueAfterNameEdit() {
+    func test_send_save_updatesOriginalValues() {
         // Given
         sut.send(.viewAppeared)
 
         // When
-        sut.send(.nameChanged("Changed"))
+        sut.send(.save(name: "Alice", description: "Designer", extraInfo: "Loves colors"))
 
         // Then
-        XCTAssertTrue(sut.hasChanges)
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.originalName, "Alice")
+        XCTAssertEqual(loadedState.originalDescription, "Designer")
+        XCTAssertEqual(loadedState.originalExtraInfo, "Loves colors")
     }
 }

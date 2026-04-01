@@ -12,6 +12,9 @@ struct UserProfileView: View {
     // MARK: - Properties
 
     @State private var viewModel = UserProfileViewModel()
+    @State private var name: String = ""
+    @State private var profileDescription: String = ""
+    @State private var extraInfo: String = ""
     @Environment(\.dismiss) private var dismiss
 
     // MARK: - View
@@ -22,8 +25,8 @@ struct UserProfileView: View {
                 switch viewModel.state {
                 case .loading:
                     ProgressView()
-                case .loaded(let loadedState):
-                    loadedView(loadedState)
+                case .loaded:
+                    loadedView()
                 }
             }
             .navigationTitle(String(localized: "Personal Context"))
@@ -38,15 +41,24 @@ struct UserProfileView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "Save")) {
-                        viewModel.send(.saveTapped)
+                        viewModel.send(.save(
+                            name: name,
+                            description: profileDescription,
+                            extraInfo: extraInfo
+                        ))
                         dismiss()
                     }
-                    .disabled(!viewModel.hasChanges)
+                    .disabled(!hasChanges)
                 }
             }
         }
         .task {
             viewModel.send(.viewAppeared)
+            if case .loaded(let loadedState) = viewModel.state {
+                name = loadedState.name
+                profileDescription = loadedState.profileDescription
+                extraInfo = loadedState.extraInfo
+            }
         }
     }
 }
@@ -54,11 +66,18 @@ struct UserProfileView: View {
 // MARK: - Private
 
 private extension UserProfileView {
-    func loadedView(_ loadedState: UserProfileViewModel.LoadedState) -> some View {
+    var hasChanges: Bool {
+        guard case .loaded(let loadedState) = viewModel.state else { return false }
+        return name != loadedState.originalName
+            || profileDescription != loadedState.originalDescription
+            || extraInfo != loadedState.originalExtraInfo
+    }
+
+    func loadedView() -> some View {
         Form {
-            nameSection(loadedState)
-            descriptionSection(loadedState)
-            extraInfoSection(loadedState)
+            nameSection()
+            descriptionSection()
+            extraInfoSection()
             usageSection()
         }
 #if os(iOS)
@@ -67,19 +86,23 @@ private extension UserProfileView {
 #endif
     }
 
-    func nameSection(_ loadedState: UserProfileViewModel.LoadedState) -> some View {
+    func nameSection() -> some View {
         Section {
-            TextField(String(localized: "Your name"), text: Binding(
-                get: { loadedState.name },
-                set: { viewModel.send(.nameChanged($0)) }
-            ))
-            .autocorrectionDisabled()
+            VStack(alignment: .leading, spacing: 4) {
+                TextField(String(localized: "Your name"), text: $name, axis: .vertical)
+                    .autocorrectionDisabled()
+                    .lineLimit(2...)
 #if os(iOS)
-            .textInputAutocapitalization(.words)
+                    .textInputAutocapitalization(.words)
 #endif
-
-            if !loadedState.name.isEmpty {
-                characterCountLabel(count: loadedState.name.count, max: 50)
+                    .onChange(of: name) { _, newValue in
+                        if newValue.count > 50 {
+                            name = String(newValue.prefix(50))
+                        }
+                    }
+                if !name.isEmpty {
+                    characterCountLabel(count: name.count, max: 50)
+                }
             }
         } header: {
             Text(String(localized: "Name"))
@@ -88,25 +111,27 @@ private extension UserProfileView {
         }
     }
 
-    func descriptionSection(_ loadedState: UserProfileViewModel.LoadedState) -> some View {
+    func descriptionSection() -> some View {
         Section {
+            VStack(alignment: .leading, spacing: 4) {
+                TextField(
+                    String(localized: "A brief description about yourself"),
+                    text: $profileDescription,
+                    axis: .vertical
+                )
+                .autocorrectionDisabled()
+                .lineLimit(3...)
 #if os(iOS)
-            TextEditor(text: Binding(
-                get: { loadedState.profileDescription },
-                set: { viewModel.send(.descriptionChanged($0)) }
-            ))
-            .frame(minHeight: 80)
-            .autocorrectionDisabled()
-#else
-            TextEditor(text: Binding(
-                get: { loadedState.profileDescription },
-                set: { viewModel.send(.descriptionChanged($0)) }
-            ))
-            .frame(minHeight: 80)
+                .textInputAutocapitalization(.sentences)
 #endif
-
-            if !loadedState.profileDescription.isEmpty {
-                characterCountLabel(count: loadedState.profileDescription.count, max: 200)
+                .onChange(of: profileDescription) { _, newValue in
+                    if newValue.count > 200 {
+                        profileDescription = String(newValue.prefix(200))
+                    }
+                }
+                if !profileDescription.isEmpty {
+                    characterCountLabel(count: profileDescription.count, max: 200)
+                }
             }
         } header: {
             Text(String(localized: "Description"))
@@ -115,25 +140,27 @@ private extension UserProfileView {
         }
     }
 
-    func extraInfoSection(_ loadedState: UserProfileViewModel.LoadedState) -> some View {
+    func extraInfoSection() -> some View {
         Section {
+            VStack(alignment: .leading, spacing: 4) {
+                TextField(
+                    String(localized: "Any additional context for the assistant"),
+                    text: $extraInfo,
+                    axis: .vertical
+                )
+                .autocorrectionDisabled()
+                .lineLimit(4...)
 #if os(iOS)
-            TextEditor(text: Binding(
-                get: { loadedState.extraInfo },
-                set: { viewModel.send(.extraInfoChanged($0)) }
-            ))
-            .frame(minHeight: 100)
-            .autocorrectionDisabled()
-#else
-            TextEditor(text: Binding(
-                get: { loadedState.extraInfo },
-                set: { viewModel.send(.extraInfoChanged($0)) }
-            ))
-            .frame(minHeight: 100)
+                .textInputAutocapitalization(.sentences)
 #endif
-
-            if !loadedState.extraInfo.isEmpty {
-                characterCountLabel(count: loadedState.extraInfo.count, max: 500)
+                .onChange(of: extraInfo) { _, newValue in
+                    if newValue.count > 500 {
+                        extraInfo = String(newValue.prefix(500))
+                    }
+                }
+                if !extraInfo.isEmpty {
+                    characterCountLabel(count: extraInfo.count, max: 500)
+                }
             }
         } header: {
             Text(String(localized: "Extra Info"))
@@ -158,7 +185,7 @@ private extension UserProfileView {
             Spacer()
             Text("\(count)/\(max)")
                 .font(.caption2)
-                .foregroundStyle(count > max ? .red : .secondary)
+                .foregroundStyle(count >= max ? .red : .secondary)
         }
     }
 }

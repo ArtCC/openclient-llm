@@ -211,7 +211,7 @@ private extension ChatView {
                     && message.id
                     == loadedState.messages.last?.id,
                     isSpeaking: loadedState.speakingMessageId == message.id,
-                    hasTTS: loadedState.selectedModel != nil,
+                    hasTTS: loadedState.ttsModelId != nil,
                     showTokenUsage: loadedState.showTokenUsage,
                     onSpeakTapped: {
                         viewModel.send(.speakMessageTapped(message))
@@ -355,14 +355,6 @@ private extension ChatView {
             } label: {
                 Label(String(localized: "Photo Library"), systemImage: "photo.on.rectangle")
             }
-
-            if case .loaded(let loadedState) = viewModel.state, loadedState.selectedModel != nil {
-                Button {
-                    viewModel.send(.generateImageTapped)
-                } label: {
-                    Label(String(localized: "Generate Image"), systemImage: "wand.and.stars")
-                }
-            }
         } label: {
             Image(systemName: "plus.circle.fill")
                 .font(.title)
@@ -379,7 +371,7 @@ private extension ChatView {
     ) -> some View {
         if loadedState.isStreaming {
             stopStreamingButton
-        } else if loadedState.isTranscribing || loadedState.isGeneratingImage {
+        } else if loadedState.isTranscribing {
             ProgressView()
                 .controlSize(.small)
                 .frame(minWidth: 44, minHeight: 44)
@@ -428,6 +420,8 @@ private extension ChatView {
                     )
                     .font(.headline)
                     .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: 200)
 
                     Image(systemName: "chevron.down")
                         .font(.caption2)
