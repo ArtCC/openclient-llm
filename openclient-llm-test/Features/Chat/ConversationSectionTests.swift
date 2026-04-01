@@ -9,6 +9,7 @@
 import XCTest
 @testable import openclient_llm
 
+@MainActor
 final class ConversationSectionTests: XCTestCase {
     // MARK: - Tests — group pinned
 

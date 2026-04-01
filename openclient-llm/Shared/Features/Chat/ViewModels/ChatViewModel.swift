@@ -441,7 +441,11 @@ private extension ChatViewModel {
         loadedState.speakingMessageId = nil
         state = .loaded(loadedState)
     }
+}
 
+// MARK: - Internal helpers
+
+extension ChatViewModel {
     func buildEffectiveSystemPrompt(profileContext: String, conversationSystemPrompt: String) -> String {
         let profile = profileContext.trimmingCharacters(in: .whitespacesAndNewlines)
         let conversation = conversationSystemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -453,11 +457,6 @@ private extension ChatViewModel {
         case (false, false): return "\(profile)\n\n\(conversation)"
         }
     }
-}
-
-// MARK: - Internal helpers
-
-extension ChatViewModel {
     func persistConversation() {
         guard case .loaded(let loadedState) = state,
               var conversation = loadedState.conversation else { return }

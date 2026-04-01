@@ -13,13 +13,13 @@ import XCTest
 final class ConversationListViewModelTests: XCTestCase {
     // MARK: - Properties
 
-    private var sut: ConversationListViewModel!
-    private var mockLoadConversations: MockLoadConversationsUseCase!
-    private var mockDeleteConversation: MockDeleteConversationUseCase!
-    private var mockPinConversation: MockPinConversationUseCase!
-    private var mockUpdateTags: MockUpdateConversationTagsUseCase!
-    private var mockFetchModels: MockFetchModelsUseCase!
-    private var mockSettingsManager: MockSettingsManager!
+    var sut: ConversationListViewModel!
+    var mockLoadConversations: MockLoadConversationsUseCase!
+    var mockDeleteConversation: MockDeleteConversationUseCase!
+    var mockPinConversation: MockPinConversationUseCase!
+    var mockUpdateTags: MockUpdateConversationTagsUseCase!
+    var mockFetchModels: MockFetchModelsUseCase!
+    var mockSettingsManager: MockSettingsManager!
 
     // MARK: - Setup
 
