@@ -53,6 +53,7 @@ final class ChatViewModel {
         var showTokenUsage: Bool = true
         var scrollToBottomTrigger: Bool = false
         var ttsModelId: String?
+        var transcriptionModelId: String?
     }
 
     var state: State
@@ -175,6 +176,7 @@ private extension ChatViewModel {
             LogManager.success("fetchAndBuildInitialState models=\(chatModels.count) selected=\(selectedId)")
 
             let ttsModelId = models.first(where: { $0.mode == .audioSpeech })?.id
+            let transcriptionModelId = models.first(where: { $0.mode == .audioTranscription })?.id
             let starters = conversationStartersManager.randomStarters(count: 4)
             state = .loaded(LoadedState(
                 conversation: pending,
@@ -185,7 +187,8 @@ private extension ChatViewModel {
                 systemPrompt: pending?.systemPrompt ?? "",
                 modelParameters: pending?.modelParameters ?? .default,
                 showTokenUsage: settingsManager.getShowTokenUsage(),
-                ttsModelId: ttsModelId
+                ttsModelId: ttsModelId,
+                transcriptionModelId: transcriptionModelId
             ))
         } catch {
             LogManager.error("fetchAndBuildInitialState failed: \(error)")

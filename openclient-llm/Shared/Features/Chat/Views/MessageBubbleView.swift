@@ -24,6 +24,7 @@ struct MessageBubbleView: View {
     var onSpeakTapped: (() -> Void)?
     var onStopSpeakingTapped: (() -> Void)?
     @State private var cursorVisible: Bool = false
+    @State private var expandedImageData: Data?
 
     // MARK: - View
 
@@ -137,8 +138,14 @@ private extension MessageBubbleView {
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 120, height: 120)
                 .clipShape(.rect(cornerRadius: 12))
-                .contextMenu {
-                    imageSaveContextMenu(attachment.data)
+                .contentShape(.rect(cornerRadius: 12))
+                .onTapGesture { expandedImageData = attachment.data }
+                .contextMenu { imageSaveContextMenu(attachment.data) }
+                .sheet(item: Binding(
+                    get: { expandedImageData.map { ExpandedImage(data: $0) } },
+                    set: { if $0 == nil { expandedImageData = nil } }
+                )) { expanded in
+                    ImagePreviewView(data: expanded.data)
                 }
             #elseif os(macOS)
             Image(nsImage: image)
@@ -146,8 +153,14 @@ private extension MessageBubbleView {
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 120, height: 120)
                 .clipShape(.rect(cornerRadius: 12))
-                .contextMenu {
-                    imageSaveContextMenu(attachment.data)
+                .contentShape(.rect(cornerRadius: 12))
+                .onTapGesture { expandedImageData = attachment.data }
+                .contextMenu { imageSaveContextMenu(attachment.data) }
+                .sheet(item: Binding(
+                    get: { expandedImageData.map { ExpandedImage(data: $0) } },
+                    set: { if $0 == nil { expandedImageData = nil } }
+                )) { expanded in
+                    ImagePreviewView(data: expanded.data)
                 }
             #endif
         } else {
@@ -302,7 +315,7 @@ private extension MessageBubbleView {
                     .font(.system(size: 10))
                 Text(isSpeaking
                      ? String(localized: "Stop")
-                     : String(localized: "Read Aloud"))
+                     : String(localized: "Listen"))
                     .font(.caption2)
             }
             .foregroundStyle(isSpeaking ? AnyShapeStyle(.red) : AnyShapeStyle(.tertiary))
