@@ -15,10 +15,7 @@ final class UserProfileViewModel {
 
     enum Event {
         case viewAppeared
-        case nameChanged(String)
-        case descriptionChanged(String)
-        case extraInfoChanged(String)
-        case saveTapped
+        case save(name: String, description: String, extraInfo: String)
     }
 
     enum State: Equatable {
@@ -30,19 +27,14 @@ final class UserProfileViewModel {
         var name: String = ""
         var profileDescription: String = ""
         var extraInfo: String = ""
+        var originalName: String = ""
+        var originalDescription: String = ""
+        var originalExtraInfo: String = ""
     }
 
     private(set) var state: State
-    private var originalProfile: UserProfile = UserProfile()
 
     private let userProfileManager: UserProfileManagerProtocol
-
-    var hasChanges: Bool {
-        guard case .loaded(let loadedState) = state else { return false }
-        return loadedState.name != originalProfile.name
-            || loadedState.profileDescription != originalProfile.profileDescription
-            || loadedState.extraInfo != originalProfile.extraInfo
-    }
 
     // MARK: - Init
 
@@ -60,14 +52,8 @@ final class UserProfileViewModel {
         switch event {
         case .viewAppeared:
             loadProfile()
-        case .nameChanged(let name):
-            updateName(name)
-        case .descriptionChanged(let description):
-            updateDescription(description)
-        case .extraInfoChanged(let info):
-            updateExtraInfo(info)
-        case .saveTapped:
-            saveProfile()
+        case .save(let name, let description, let extraInfo):
+            saveProfile(name: name, description: description, extraInfo: extraInfo)
         }
     }
 }
@@ -77,40 +63,30 @@ final class UserProfileViewModel {
 private extension UserProfileViewModel {
     func loadProfile() {
         let profile = userProfileManager.getProfile()
-        originalProfile = profile
         state = .loaded(LoadedState(
             name: profile.name,
             profileDescription: profile.profileDescription,
-            extraInfo: profile.extraInfo
+            extraInfo: profile.extraInfo,
+            originalName: profile.name,
+            originalDescription: profile.profileDescription,
+            originalExtraInfo: profile.extraInfo
         ))
     }
 
-    func updateName(_ name: String) {
-        guard case .loaded(var loadedState) = state else { return }
-        loadedState.name = String(name.prefix(50))
-        state = .loaded(loadedState)
-    }
-
-    func updateDescription(_ description: String) {
-        guard case .loaded(var loadedState) = state else { return }
-        loadedState.profileDescription = String(description.prefix(200))
-        state = .loaded(loadedState)
-    }
-
-    func updateExtraInfo(_ info: String) {
-        guard case .loaded(var loadedState) = state else { return }
-        loadedState.extraInfo = String(info.prefix(500))
-        state = .loaded(loadedState)
-    }
-
-    func saveProfile() {
-        guard case .loaded(let loadedState) = state else { return }
+    func saveProfile(name: String, description: String, extraInfo: String) {
         let profile = UserProfile(
-            name: loadedState.name,
-            profileDescription: loadedState.profileDescription,
-            extraInfo: loadedState.extraInfo
+            name: name,
+            profileDescription: description,
+            extraInfo: extraInfo
         )
         userProfileManager.saveProfile(profile)
-        originalProfile = profile
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.name = name
+        loadedState.profileDescription = description
+        loadedState.extraInfo = extraInfo
+        loadedState.originalName = name
+        loadedState.originalDescription = description
+        loadedState.originalExtraInfo = extraInfo
+        state = .loaded(loadedState)
     }
 }

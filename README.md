@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/icon_radius.png" alt="OpenClient LLM" width="128" />
+  <img src="assets/icon_radius.png" alt="OpenClient" width="128" />
 </p>
 
-<h1 align="center">OpenClient LLM</h1>
+<h1 align="center">OpenClient</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-iOS%2026+%20|%20iPadOS%2026+%20|%20macOS%2026+-blue?style=flat-square" alt="Platform" />
@@ -25,7 +25,7 @@ Native Apple client for OpenAI-compatible LLM servers. Works out of the box with
 | Liquid Glass | Design language (iOS 26+) |
 | async/await | Concurrency |
 | URLSession + SSE | Networking & streaming |
-| Keychain | Secure storage (API keys) |
+| Keychain | Secure storage |
 | SwiftLint | Code linting |
 | SF Symbols | Iconography |
 
@@ -43,14 +43,18 @@ openclient-llm/                    # iOS target
 │   │   │   └── Models/            # Transcription
 │   │   ├── Chat/                  # Chat with SSE streaming, voice dictation + image generation
 │   │   │   ├── Views/             # ChatView, MessageBubbleView, CodeBlockView,
-│   │   │   │                      # ConversationListView, AttachmentPickerView,
-│   │   │   │                      # ChatModelParametersView, ChatSystemPromptView
-│   │   │   ├── ViewModels/        # ChatViewModel (+ ImageGeneration, + Transcription),
+│   │   │   │                      # ConversationListView, ConversationTagsView,
+│   │   │   │                      # AttachmentPickerView, CameraPickerView,
+│   │   │   │                      # ChatEmptyStateView, ChatModelParametersView,
+│   │   │   │                      # ChatSystemPromptView
+│   │   │   ├── ViewModels/        # ChatViewModel (+ ImageGeneration, + Transcription, + Helpers),
 │   │   │   │                      # ConversationListViewModel
 │   │   │   ├── UseCases/          # SendMessage, StreamMessage,
-│   │   │   │                      # LoadConversations, SaveConversation, DeleteConversation
+│   │   │   │                      # LoadConversations, SaveConversation, DeleteConversation,
+│   │   │   │                      # PinConversation, UpdateConversationTags
 │   │   │   ├── Repositories/      # ChatRepository, ConversationRepository
-│   │   │   └── Models/            # ChatMessage, Conversation, TokenUsage, ModelParameters
+│   │   │   └── Models/            # ChatMessage, Conversation, ConversationSection,
+│   │   │                          # TokenUsage, ModelParameters
 │   │   ├── Home/                  # TabView (iOS) / SplitView (macOS)
 │   │   │   └── Views/             # HomeView
 │   │   ├── ImageGeneration/       # AI image generation (integrated in Chat)
@@ -60,7 +64,7 @@ openclient-llm/                    # iOS target
 │   │   ├── Launch/                # Initial routing
 │   │   │   ├── Views/             # LaunchView
 │   │   │   ├── ViewModels/        # LaunchViewModel
-│   │   │   └── UseCases/          # CheckOnboarding, ResetAppData
+│   │   │   └── UseCases/          # CheckOnboarding, ResetAppData, ConfigureVotice
 │   │   ├── Models/                # LLM model listing
 │   │   │   ├── Views/             # ModelsView (Local/Cloud sections)
 │   │   │   ├── ViewModels/        # ModelsViewModel
@@ -73,9 +77,10 @@ openclient-llm/                    # iOS target
 │   │   │   ├── UseCases/          # TestConnection, SaveConfig, Complete
 │   │   │   ├── Repositories/      # OnboardingRepository
 │   │   │   └── Models/            # OnboardingStep
-│   │   ├── Settings/              # Server configuration
-│   │   │   ├── Views/             # SettingsView
-│   │   │   └── ViewModels/        # SettingsViewModel
+│   │   ├── Settings/              # Server configuration + personal context
+│   │   │   ├── Views/             # SettingsView, UserProfileView
+│   │   │   ├── ViewModels/        # SettingsViewModel, UserProfileViewModel
+│   │   │   └── Models/            # UserProfile
 │   │   └── TextToSpeech/          # Text-to-Speech
 │   │       ├── UseCases/          # SynthesizeSpeechUseCase
 │   │       └── Repositories/      # TextToSpeechRepository
@@ -83,7 +88,8 @@ openclient-llm/                    # iOS target
 │   │   ├── Networking/            # API client, SSE streaming, multipart upload
 │   │   │   └── Models/            # Request/response DTOs
 │   │   ├── Managers/              # Settings, Keychain, Log, CloudSync,
-│   │   │                          # AudioPlayer, AudioRecorder, ConversationStarters
+│   │   │                          # AudioPlayer, AudioRecorder, ConversationStarters,
+│   │   │                          # UserProfile, Votice
 │   │   ├── Views/                 # Reusable views
 │   │   ├── Extensions/            # Swift/SwiftUI extensions
 │   │   └── Utils/                 # Constants, MarkdownParser
@@ -104,13 +110,14 @@ openclient-llm-test/               # Unit tests
 ├── Core/
 │   └── Managers/                  # KeychainManager tests
 ├── Features/
-│   ├── Chat/                      # ChatViewModel, ConversationListViewModel tests
-│   │                               # + image generation and transcription extension tests
-│   ├── ImageGeneration/           # GenerateImageUseCase, ImageGenerationRepository tests
+│   ├── Chat/                      # ChatViewModel, ConversationListViewModel,
+│   │                               # ConversationSection tests
+│   │                               # + image generation, transcription, TTS,
+│   │                               # persistence, user profile, pinning, tags extensions
 │   ├── Launch/                    # LaunchViewModel, UseCase tests
 │   ├── Models/                    # ModelsViewModel, UseCase tests
 │   ├── Onboarding/                # OnboardingViewModel, UseCase tests
-│   └── Settings/                  # SettingsViewModel tests
+│   └── Settings/                  # SettingsViewModel, UserProfile, UserProfileViewModel tests
 └── Mocks/                         # Mock implementations
 ```
 
@@ -157,7 +164,7 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 
 <p align="center">
   <strong>Your AI. Your server. Your rules.</strong><br/><br/>
-  OpenClient LLM is built on the belief that generative AI should be something you control — not something that controls your data.<br/>
+  OpenClient is built on the belief that generative AI should be something you control — not something that controls your data.<br/>
   Run local models entirely on your own hardware, or route cloud providers through your own self-hosted proxy.<br/>
   Either way, you decide what gets sent where — no vendor lock-in, no platform middleman, no data you didn't choose to share.<br/><br/>
   Open source. No tracking. Full control.

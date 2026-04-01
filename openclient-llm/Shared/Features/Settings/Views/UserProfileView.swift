@@ -41,19 +41,23 @@ struct UserProfileView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "Save")) {
-                        viewModel.send(.saveTapped)
+                        viewModel.send(.save(
+                            name: name,
+                            description: profileDescription,
+                            extraInfo: extraInfo
+                        ))
                         dismiss()
                     }
-                    .disabled(!viewModel.hasChanges)
+                    .disabled(!hasChanges)
                 }
             }
         }
         .task {
             viewModel.send(.viewAppeared)
-            if case .loaded(let state) = viewModel.state {
-                name = state.name
-                profileDescription = state.profileDescription
-                extraInfo = state.extraInfo
+            if case .loaded(let loadedState) = viewModel.state {
+                name = loadedState.name
+                profileDescription = loadedState.profileDescription
+                extraInfo = loadedState.extraInfo
             }
         }
     }
@@ -62,6 +66,13 @@ struct UserProfileView: View {
 // MARK: - Private
 
 private extension UserProfileView {
+    var hasChanges: Bool {
+        guard case .loaded(let loadedState) = viewModel.state else { return false }
+        return name != loadedState.originalName
+            || profileDescription != loadedState.originalDescription
+            || extraInfo != loadedState.originalExtraInfo
+    }
+
     func loadedView() -> some View {
         Form {
             nameSection()
@@ -87,8 +98,6 @@ private extension UserProfileView {
                     .onChange(of: name) { _, newValue in
                         if newValue.count > 50 {
                             name = String(newValue.prefix(50))
-                        } else {
-                            viewModel.send(.nameChanged(newValue))
                         }
                     }
                 if !name.isEmpty {
@@ -118,8 +127,6 @@ private extension UserProfileView {
                 .onChange(of: profileDescription) { _, newValue in
                     if newValue.count > 200 {
                         profileDescription = String(newValue.prefix(200))
-                    } else {
-                        viewModel.send(.descriptionChanged(newValue))
                     }
                 }
                 if !profileDescription.isEmpty {
@@ -149,8 +156,6 @@ private extension UserProfileView {
                 .onChange(of: extraInfo) { _, newValue in
                     if newValue.count > 500 {
                         extraInfo = String(newValue.prefix(500))
-                    } else {
-                        viewModel.send(.extraInfoChanged(newValue))
                     }
                 }
                 if !extraInfo.isEmpty {

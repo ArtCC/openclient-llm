@@ -166,7 +166,9 @@ private extension ChatViewModel {
             let pending = pendingConversation
             pendingConversation = nil
 
-            let chatModels = models.filter { [.chat, .completion, .unknown].contains($0.mode) }
+            let chatModels = models.filter {
+                [.chat, .completion, .unknown, .imageGeneration].contains($0.mode)
+            }
             let savedModelId = settingsManager.getSelectedModelId()
             let selectedModel: LLMModel?
 
@@ -182,11 +184,7 @@ private extension ChatViewModel {
 
             let ttsModelId = models.first(where: { $0.mode == .audioSpeech })?.id
             let imageModel = models.first(where: { $0.mode == .imageGeneration })
-            if let imageModel {
-                LogManager.info("fetchAndBuildInitialState imageModel=\(imageModel.id)")
-            } else {
-                LogManager.warning("fetchAndBuildInitialState no imageGeneration model found")
-            }
+            LogManager.info("fetchAndBuildInitialState imageModel=\(imageModel?.id ?? "none")")
             let starters = conversationStartersManager.randomStarters(count: 4)
             state = .loaded(LoadedState(
                 conversation: pending,

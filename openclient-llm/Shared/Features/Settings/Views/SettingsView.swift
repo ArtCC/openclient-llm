@@ -68,18 +68,20 @@ private extension SettingsView {
     }
 
     func loadedView(_ loadedState: SettingsViewModel.LoadedState) -> some View {
-        Form {
-            serverSection(loadedState)
-            cloudSyncSection(loadedState)
-            personalizationSection()
-            chatSection(loadedState)
-            feedbackSection()
-            legalSection()
+        VStack(spacing: 0) {
+            Form {
+                serverSection(loadedState)
+                cloudSyncSection(loadedState)
+                personalizationSection()
+                chatSection(loadedState)
+                feedbackSection()
+                legalSection()
+            }
+#if os(iOS)
+            .scrollDismissesKeyboard(.immediately)
+#endif
             appInfoSection()
         }
-#if os(iOS)
-        .scrollDismissesKeyboard(.immediately)
-#endif
     }
 
     func serverSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
@@ -306,14 +308,10 @@ private extension SettingsView {
     }
 
     func appInfoSection() -> some View {
-        Section {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(String(localized: "Version \(appVersion) (\(appBuild))"))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.vertical, 2)
-        }
+        Text(String(localized: "Version \(appVersion) (\(appBuild))"))
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .padding(.vertical, 12)
     }
 
     func requestAppReview() {
