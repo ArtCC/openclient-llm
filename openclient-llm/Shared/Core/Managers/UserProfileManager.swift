@@ -14,7 +14,6 @@ protocol UserProfileManagerProtocol: Sendable {
 }
 
 // Safety: NSUbiquitousKeyValueStore and UserDefaults are thread-safe per Apple documentation.
-// All stored properties are immutable (`let`).
 final class UserProfileManager: UserProfileManagerProtocol, @unchecked Sendable {
     // MARK: - Properties
 
@@ -24,12 +23,22 @@ final class UserProfileManager: UserProfileManagerProtocol, @unchecked Sendable 
         static let extraInfo = "userProfile_extraInfo"
     }
 
+    /// Notification posted on main thread when iCloud pushes external changes.
+    static let profileDidChangeExternallyNotification = Notification.Name(
+        "UserProfileManager.profileDidChangeExternally"
+    )
+
     private let defaults: UserDefaults
+    // Must be stored; the block-based addObserver returns a token that is immediately
+    // deallocated if discarded, making the observer a no-op.
+    private var cloudObserver: NSObjectProtocol?
 
     // MARK: - Init
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        // Pull iCloud values down on first access; required by Apple.
+        NSUbiquitousKeyValueStore.default.synchronize()
         setupCloudObserver()
     }
 
@@ -68,7 +77,7 @@ private extension UserProfileManager {
 
     func setupCloudObserver() {
         guard cloudStore != nil else { return }
-        NotificationCenter.default.addObserver(
+        cloudObserver = NotificationCenter.default.addObserver(
             forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
             object: NSUbiquitousKeyValueStore.default,
             queue: .main
@@ -85,6 +94,10 @@ private extension UserProfileManager {
                 self.defaults.set(cloud.string(forKey: Keys.name), forKey: Keys.name)
                 self.defaults.set(cloud.string(forKey: Keys.profileDescription), forKey: Keys.profileDescription)
                 self.defaults.set(cloud.string(forKey: Keys.extraInfo), forKey: Keys.extraInfo)
+                NotificationCenter.default.post(
+                    name: UserProfileManager.profileDidChangeExternallyNotification,
+                    object: nil
+                )
             }
         }
     }

@@ -384,10 +384,11 @@ private extension ChatView {
                 .isEmpty
             let hasModel = loadedState.selectedModel != nil
             let hasAttachments = !loadedState.pendingAttachments.isEmpty
+            let hasTranscriptionModel = loadedState.transcriptionModelId != nil
 
             if (hasText || hasAttachments) && hasModel {
                 sendButton
-            } else if hasModel {
+            } else if hasModel && hasTranscriptionModel {
                 micButton
             }
         }
