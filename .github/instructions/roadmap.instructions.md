@@ -62,25 +62,25 @@ Goal: Power user features.
 - [x] **Audio transcription (Speech-to-Text)**: Dictate messages in chat via microphone; audio transcribed via POST /v1/audio/transcriptions (Whisper, Groq, Deepgram, Gemini) and inserted into the chat input field
 - [x] **Text-to-Speech**: Read assistant responses aloud via POST /v1/audio/speech (OpenAI TTS, AWS Polly, ElevenLabs, Gemini TTS)
 
-## Phase 5 — Advanced Interactions
+## Phase 5 — Personalization
+
+Goal: User customization.
+
+- [ ] **Pinned conversations**: Pin important conversations to the top of the list
+- [ ] **Conversation folders/tags**: Organize chats into folders or with tags
+- [ ] **User profile (personal context)**: In Settings, allow the user to configure a display name (how models should address them), a personal description, and extra freeform context. Presented as a modal sheet with three text fields: Name (max 50 chars), Description (max 200 chars), Extra info (max 500 chars). Data saved to iCloud key-value store (`NSUbiquitousKeyValueStore`) when iCloud is available, falling back to `UserDefaults` when not. The stored values are injected into every system prompt so models can personalise their responses. Scroll in the modal dismisses the keyboard (`.scrollDismissesKeyboard(.interactively)`); the form uses `.ignoresSafeArea(.keyboard, edges: .bottom)` with keyboard-aware padding so no TextField is ever obscured.
+
+## Phase 6 — Advanced Interactions
 
 Goal: Web search, agentic capabilities, and enhanced chat workflows.
 
-- [ ] **Export**: Export conversations to JSON/Markdown
-- [ ] **Web browsing**: Enable models to search and retrieve web content via Brave Search API for grounded, up-to-date responses
+- [ ] **Export**: Export conversations to JSON
+- [ ] **Web browsing**: Enable models to search and retrieve web content via Brave Search API for grounded, up-to-date responses, configure in Settings with API key
 - [ ] **Agent mode (tool calling)**: Support LiteLLM function/tool calling loop — parse tool_calls from model responses, execute registered tools, send results back, and repeat until final answer
 - [ ] **Conversation branching**: Fork a conversation from any message to explore alternative responses (edit & resend)
 - [ ] **Prompt templates/library**: Library of predefined system prompts (coding assistant, translator, summarizer...) that users can save and reuse
 - [ ] **Message editing**: Edit an already sent user message and regenerate the assistant response
 - [ ] **Response regeneration**: "Regenerate" button to request a new response to the last message
-
-## Phase 6 — Personalization
-
-Goal: User customization.
-
-- [ ] **Custom themes**: Allow users to customize bubble colors, fonts, etc.
-- [ ] **Pinned conversations**: Pin important conversations to the top of the list
-- [ ] **Conversation folders/tags**: Organize chats into folders or with tags
 
 ## Phase 7 — Ecosystem
 
@@ -89,6 +89,6 @@ Goal: Deep OS integration.
 - [ ] **Shortcuts & Siri integration**: iOS/macOS Shortcuts to send quick prompts or start chats from Siri
 - [ ] **Share extension**: Share text/images/PDFs from other apps directly into an OpenClient chat
 
-## Current Phase: 5 — Advanced Interactions
+## Current Phase: 5 — Personalization
 
 Focus exclusively on Phase 5 features. Do not over-engineer for future phases.
