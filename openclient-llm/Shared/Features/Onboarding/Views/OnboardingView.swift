@@ -59,6 +59,7 @@ private extension OnboardingView {
         }
         .padding()
         .animation(.smooth, value: loadedState.currentStep)
+        .tint(.accentColor)
     }
 
     func topBar(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
@@ -73,7 +74,11 @@ private extension OnboardingView {
                         Image(systemName: "chevron.left")
                     }
                     .accessibilityLabel(String(localized: "Back"))
+                    #if os(macOS)
+                    .buttonStyle(.bordered)
+                    #else
                     .buttonStyle(.glass)
+                    #endif
                 } else {
                     Image(systemName: "chevron.left")
                         .hidden()
@@ -90,7 +95,11 @@ private extension OnboardingView {
                             .font(.caption2)
                     }
                 }
+                #if os(macOS)
+                .buttonStyle(.bordered)
+                #else
                 .buttonStyle(.glass)
+                #endif
             }
 
             HStack {
@@ -133,7 +142,11 @@ private extension OnboardingView {
                 .foregroundStyle(Color.accentColor)
                 .symbolEffect(.breathe)
                 .padding(28)
+                #if os(macOS)
+                .background(Color.accentColor.opacity(0.12), in: .circle)
+                #else
                 .glassEffect(.regular, in: .circle)
+                #endif
 
             VStack(spacing: 12) {
                 Text(String(localized: "Welcome to OpenClient"))
@@ -263,7 +276,11 @@ private extension OnboardingView {
                 .foregroundStyle(.green)
                 .symbolEffect(.bounce)
                 .padding(28)
+                #if os(macOS)
+                .background(Color.green.opacity(0.12), in: .circle)
+                #else
                 .glassEffect(.regular, in: .circle)
+                #endif
 
             VStack(spacing: 12) {
                 Text(String(localized: "All Set!"))
@@ -284,48 +301,64 @@ private extension OnboardingView {
     func bottomAction(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
         switch loadedState.currentStep {
         case .welcome:
-            Button {
-                withAnimation(.smooth) {
-                    viewModel.send(.getStartedTapped)
-                }
-            } label: {
-                Text(String(localized: "Get Started"))
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-            }
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
-
+            getStartedButton()
         case .serverConfiguration:
-            Button {
-                withAnimation(.smooth) {
-                    viewModel.send(.nextTapped)
-                }
-            } label: {
-                Text(String(localized: "Next"))
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-            }
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
-            .disabled(loadedState.connectionStatus != .success)
-
+            nextButton(loadedState)
         case .allSet:
-            Button {
-                withAnimation(.smooth) {
-                    viewModel.send(.startChattingTapped)
-                }
-            } label: {
-                Text(String(localized: "Start Chatting"))
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-            }
-            .buttonStyle(.glassProminent)
-            .controlSize(.large)
+            startChattingButton()
         }
+    }
+}
+
+// MARK: - Private
+
+private extension OnboardingView {
+    func prominentButton<Label: View>(
+        isDisabled: Bool = false,
+        @ViewBuilder label: () -> Label,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action, label: label)
+            #if os(macOS)
+            .buttonStyle(.borderedProminent)
+            #else
+            .buttonStyle(.glassProminent)
+            #endif
+            .controlSize(.large)
+            .disabled(isDisabled)
+    }
+
+    func getStartedButton() -> some View {
+        prominentButton(label: {
+            Text(String(localized: "Get Started"))
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        }, action: {
+            withAnimation(.smooth) { viewModel.send(.getStartedTapped) }
+        })
+    }
+
+    func nextButton(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
+        prominentButton(isDisabled: loadedState.connectionStatus != .success, label: {
+            Text(String(localized: "Next"))
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        }, action: {
+            withAnimation(.smooth) { viewModel.send(.nextTapped) }
+        })
+    }
+
+    func startChattingButton() -> some View {
+        prominentButton(label: {
+            Text(String(localized: "Start Chatting"))
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+        }, action: {
+            withAnimation(.smooth) { viewModel.send(.startChattingTapped) }
+        })
     }
 }
 
