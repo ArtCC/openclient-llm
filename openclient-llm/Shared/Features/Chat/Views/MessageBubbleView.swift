@@ -230,9 +230,16 @@ private extension MessageBubbleView {
     }
 
     func textBlockView(_ content: String, isLast: Bool) -> some View {
+        // Normalize single newlines to double newlines so CommonMark renders them
+        // as paragraph breaks instead of collapsing them into spaces.
+        let normalized = content.replacingOccurrences(
+            of: "(?<!\n)\n(?!\n)",
+            with: "\n\n",
+            options: .regularExpression
+        )
         let displayContent = isLast && isStreaming && cursorVisible
-            ? content + "█"
-            : content
+            ? normalized + "█"
+            : normalized
 
         let attributed: AttributedString = {
             if let result = try? AttributedString(

@@ -20,6 +20,10 @@ nonisolated struct ChatCompletionRequest: Encodable, Sendable {
 
     struct StreamOptions: Encodable, Sendable {
         let includeUsage: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case includeUsage = "include_usage"
+        }
     }
 
     enum CodingKeys: String, CodingKey {
@@ -93,6 +97,15 @@ nonisolated struct ContentPart: Encodable, Sendable {
         case type
         case text
         case imageUrl = "image_url"
+    }
+
+    // MARK: - Encodable
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(type, forKey: .type)
+        try container.encodeIfPresent(text, forKey: .text)
+        try container.encodeIfPresent(imageUrl, forKey: .imageUrl)
     }
 
     // MARK: - Factory
