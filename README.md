@@ -136,6 +136,13 @@ openclient-llm-test/               # Unit tests
 - iOS 26+ / macOS 26+
 - A running [LiteLLM](https://docs.litellm.ai/) server (local or remote), **or** a running [Ollama](https://ollama.com) instance (v0.1.24+ for OpenAI-compatible `/v1` endpoint)
 
+### Self-hosting guides
+
+If you need to set up the backend on your own server, these guides cover Docker Compose configurations, reference `.env` files, and common operational commands:
+
+- [Ollama.md](Ollama.md) — Run Ollama with Docker (CPU and NVIDIA GPU)
+- [LiteLLM.md](LiteLLM.md) — Run LiteLLM with Docker (Postgres, Traefik, local + cloud models)
+
 ## License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
@@ -145,3 +152,13 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 **Arturo Carretero Calvo**
 
 - [GitHub](https://github.com/ArtCC)
+
+---
+
+<p align="center">
+  <strong>Your AI. Your server. Your rules.</strong><br/><br/>
+  OpenClient LLM is built on the belief that generative AI should be something you control — not something that controls your data.<br/>
+  Run local models entirely on your own hardware, or route cloud providers through your own self-hosted proxy.<br/>
+  Either way, you decide what gets sent where — no vendor lock-in, no platform middleman, no data you didn't choose to share.<br/><br/>
+  Open source. No tracking. Full control.
+</p>
