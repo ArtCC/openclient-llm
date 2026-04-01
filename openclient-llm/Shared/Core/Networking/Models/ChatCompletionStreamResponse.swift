@@ -22,16 +22,16 @@ nonisolated struct ChatCompletionStreamResponse: Decodable, Sendable {
         let role: String?
         let content: String?
         let images: [ImageItem]?
+    }
 
-        struct ImageItem: Decodable, Sendable {
-            let imageUrl: ImageItemURL
-            let index: Int
-            let type: String
+    struct ImageItem: Decodable, Sendable {
+        let imageUrl: ImageItemURL
+        let index: Int
+        let type: String
+    }
 
-            struct ImageItemURL: Decodable, Sendable {
-                let url: String
-            }
-        }
+    struct ImageItemURL: Decodable, Sendable {
+        let url: String
     }
 
     struct Usage: Decodable, Sendable {

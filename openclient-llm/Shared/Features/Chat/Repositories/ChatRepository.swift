@@ -111,12 +111,8 @@ struct ChatRepository: ChatRepositoryProtocol {
                         }
                         if let images = chunk.choices.first?.delta.images {
                             for item in images {
-                                let urlString = item.imageUrl.url
-                                if let commaIndex = urlString.firstIndex(of: ",") {
-                                    let base64 = String(urlString[urlString.index(after: commaIndex)...])
-                                    if let imageData = Data(base64Encoded: base64) {
-                                        continuation.yield(.image(imageData))
-                                    }
+                                if let data = imageData(from: item.imageUrl.url) {
+                                    continuation.yield(.image(data))
                                 }
                             }
                         }
@@ -198,5 +194,11 @@ private extension ChatRepository {
             }
         }
         return fullText
+    }
+
+    func imageData(from dataURL: String) -> Data? {
+        guard let commaIndex = dataURL.firstIndex(of: ",") else { return nil }
+        let base64 = String(dataURL[dataURL.index(after: commaIndex)...])
+        return Data(base64Encoded: base64)
     }
 }
