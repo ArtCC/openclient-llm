@@ -75,6 +75,7 @@ private extension SettingsView {
             chatSection(loadedState)
             feedbackSection()
             legalSection()
+            appInfoSection()
         }
 #if os(iOS)
         .scrollDismissesKeyboard(.immediately)
@@ -293,6 +294,25 @@ private extension SettingsView {
             }
         } header: {
             Text(String(localized: "About"))
+        }
+    }
+
+    var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
+    }
+
+    var appBuild: String {
+        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—"
+    }
+
+    func appInfoSection() -> some View {
+        Section {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(String(localized: "Version \(appVersion) (\(appBuild))"))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 2)
         }
     }
 

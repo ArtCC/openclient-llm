@@ -54,6 +54,7 @@ final class ChatViewModel {
         var isGeneratingImage: Bool = false
         var showTokenUsage: Bool = true
         var scrollToBottomTrigger: Bool = false
+        var ttsModelId: String?
     }
 
     var state: State
@@ -175,6 +176,7 @@ private extension ChatViewModel {
                 selectedModel = chatModels.first(where: { $0.id == savedModelId }) ?? chatModels.first
             }
 
+            let ttsModelId = models.first(where: { $0.mode == .audioSpeech })?.id
             let starters = conversationStartersManager.randomStarters(count: 4)
             state = .loaded(LoadedState(
                 conversation: pending,
@@ -184,7 +186,8 @@ private extension ChatViewModel {
                 conversationStarters: (pending?.messages ?? []).isEmpty ? starters : [],
                 systemPrompt: pending?.systemPrompt ?? "",
                 modelParameters: pending?.modelParameters ?? .default,
-                showTokenUsage: settingsManager.getShowTokenUsage()
+                showTokenUsage: settingsManager.getShowTokenUsage(),
+                ttsModelId: ttsModelId
             ))
         } catch {
             let pending = pendingConversation
@@ -401,7 +404,7 @@ private extension ChatViewModel {
     func speakMessage(_ message: ChatMessage) {
         guard case .loaded(var loadedState) = state,
               !message.content.isEmpty else { return }
-        guard let selectedModel = loadedState.selectedModel else { return }
+        guard let ttsModelId = loadedState.ttsModelId else { return }
 
         loadedState.isSpeaking = true
         loadedState.speakingMessageId = message.id
@@ -410,7 +413,7 @@ private extension ChatViewModel {
             do {
                 let audioData = try await synthesizeSpeechUseCase.execute(
                     text: message.content,
-                    model: selectedModel.id,
+                    model: ttsModelId,
                     voice: "alloy"
                 )
                 audioPlayerManager.play(data: audioData, messageId: message.id)
