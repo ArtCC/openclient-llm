@@ -55,6 +55,7 @@ final class ChatViewModel {
         var showTokenUsage: Bool = true
         var scrollToBottomTrigger: Bool = false
         var ttsModelId: String?
+        var imageModel: LLMModel?
     }
 
     var state: State
@@ -63,7 +64,7 @@ final class ChatViewModel {
 
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     private let streamMessageUseCase: StreamMessageUseCaseProtocol
-    private let saveConversationUseCase: SaveConversationUseCaseProtocol
+    let saveConversationUseCase: SaveConversationUseCaseProtocol
     private let synthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol
     let transcribeAudioUseCase: TranscribeAudioUseCaseProtocol
     let generateImageUseCase: GenerateImageUseCaseProtocol
@@ -72,7 +73,7 @@ final class ChatViewModel {
     private let conversationStartersManager: ConversationStartersManagerProtocol
     private let audioPlayerManager: AudioPlayerManager
     private var streamTask: Task<Void, Never>?
-    private var errorDismissTask: Task<Void, Never>?
+    var errorDismissTask: Task<Void, Never>?
     private var pendingConversation: Conversation?
 
     // MARK: - Init
@@ -160,6 +161,7 @@ private extension ChatViewModel {
 
     func fetchAndBuildInitialState() async {
         do {
+            LogManager.debug("fetchAndBuildInitialState start")
             let models = try await fetchModelsUseCase.execute()
             let pending = pendingConversation
             pendingConversation = nil
@@ -175,8 +177,16 @@ private extension ChatViewModel {
             } else {
                 selectedModel = chatModels.first(where: { $0.id == savedModelId }) ?? chatModels.first
             }
+            let selectedId = selectedModel?.id ?? "-"
+            LogManager.success("fetchAndBuildInitialState models=\(chatModels.count) selected=\(selectedId)")
 
             let ttsModelId = models.first(where: { $0.mode == .audioSpeech })?.id
+            let imageModel = models.first(where: { $0.mode == .imageGeneration })
+            if let imageModel {
+                LogManager.info("fetchAndBuildInitialState imageModel=\(imageModel.id)")
+            } else {
+                LogManager.warning("fetchAndBuildInitialState no imageGeneration model found")
+            }
             let starters = conversationStartersManager.randomStarters(count: 4)
             state = .loaded(LoadedState(
                 conversation: pending,
@@ -187,9 +197,11 @@ private extension ChatViewModel {
                 systemPrompt: pending?.systemPrompt ?? "",
                 modelParameters: pending?.modelParameters ?? .default,
                 showTokenUsage: settingsManager.getShowTokenUsage(),
-                ttsModelId: ttsModelId
+                ttsModelId: ttsModelId,
+                imageModel: imageModel
             ))
         } catch {
+            LogManager.error("fetchAndBuildInitialState failed: \(error)")
             let pending = pendingConversation
             pendingConversation = nil
             state = .loaded(LoadedState(
@@ -232,6 +244,7 @@ private extension ChatViewModel {
 
     func selectModel(_ model: LLMModel) {
         guard case .loaded(var loadedState) = state else { return }
+        LogManager.info("selectModel id=\(model.id)")
         loadedState.selectedModel = model
         state = .loaded(loadedState)
         settingsManager.setSelectedModelId(model.id)
@@ -275,6 +288,7 @@ private extension ChatViewModel {
     }
 
     func stopStreaming() {
+        LogManager.debug("stopStreaming requested")
         streamTask?.cancel()
         streamTask = nil
         guard case .loaded(var loadedState) = state else { return }
@@ -292,6 +306,7 @@ private extension ChatViewModel {
         guard case .loaded(var loadedState) = state else { return }
         let text = loadedState.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, let model = loadedState.selectedModel, !loadedState.isStreaming else { return }
+        LogManager.info("sendMessage model=\(model.id) text=\"\(String(text.prefix(80)))\"")
 
         // Create or update conversation
         if loadedState.conversation == nil {
@@ -344,6 +359,7 @@ private extension ChatViewModel {
         systemPrompt: String,
         parameters: ModelParameters
     ) async {
+        LogManager.debug("performStreaming model=\(model) messages=\(messages.count)")
         // Build effective system prompt: user profile context + per-conversation system prompt
         let profileContext = userProfileManager.getProfile().systemPromptContext
         let effectiveSystemPrompt = buildEffectiveSystemPrompt(
@@ -369,9 +385,11 @@ private extension ChatViewModel {
             guard case .loaded(var currentState) = state else { return }
             currentState.isStreaming = false
             state = .loaded(currentState)
+            LogManager.success("performStreaming completed model=\(model)")
             persistConversation()
         } catch {
             guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+            LogManager.error("performStreaming error model=\(model): \(error)")
             if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }),
                currentState.messages[index].content.isEmpty {
                 currentState.messages.remove(at: index)
@@ -448,50 +466,5 @@ private extension ChatViewModel {
         loadedState.isSpeaking = false
         loadedState.speakingMessageId = nil
         state = .loaded(loadedState)
-    }
-}
-
-// MARK: - Internal helpers
-
-extension ChatViewModel {
-    func buildEffectiveSystemPrompt(profileContext: String, conversationSystemPrompt: String) -> String {
-        let profile = profileContext.trimmingCharacters(in: .whitespacesAndNewlines)
-        let conversation = conversationSystemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        switch (profile.isEmpty, conversation.isEmpty) {
-        case (true, true): return ""
-        case (false, true): return profile
-        case (true, false): return conversation
-        case (false, false): return "\(profile)\n\n\(conversation)"
-        }
-    }
-    func persistConversation() {
-        guard case .loaded(let loadedState) = state,
-              var conversation = loadedState.conversation else { return }
-
-        conversation.messages = loadedState.messages
-        conversation.systemPrompt = loadedState.systemPrompt
-        conversation.modelParameters = loadedState.modelParameters
-        conversation.updatedAt = Date()
-        if let model = loadedState.selectedModel {
-            conversation.modelId = model.id
-        }
-
-        do {
-            try saveConversationUseCase.execute(conversation)
-            onConversationUpdated?()
-        } catch {
-            // Silently fail — persistence is best-effort
-        }
-    }
-
-    func scheduleErrorDismiss() {
-        errorDismissTask?.cancel()
-        errorDismissTask = Task {
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
-            currentState.errorMessage = nil
-            state = .loaded(currentState)
-        }
     }
 }

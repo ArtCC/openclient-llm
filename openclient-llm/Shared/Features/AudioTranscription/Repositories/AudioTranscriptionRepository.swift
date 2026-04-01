@@ -26,6 +26,7 @@ struct AudioTranscriptionRepository: AudioTranscriptionRepositoryProtocol {
     // MARK: - Public
 
     func transcribe(audioData: Data, model: String, language: String?, fileName: String) async throws -> String {
+        LogManager.info("transcribe model=\(model) file=\(fileName) data=\(audioData.count) bytes")
         var fields: [String: String] = ["model": model]
         if let language, !language.isEmpty {
             fields["language"] = language
@@ -41,7 +42,7 @@ struct AudioTranscriptionRepository: AudioTranscriptionRepositoryProtocol {
                 mimeType: "audio/m4a"
             )
         )
-
+        LogManager.success("transcribe done chars=\(response.text.count)")
         return response.text
     }
 }

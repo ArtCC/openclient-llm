@@ -40,6 +40,7 @@ struct ConversationRepository: ConversationRepositoryProtocol {
     // MARK: - Public
 
     func loadAll() throws -> [Conversation] {
+        LogManager.debug("loadAll conversations")
         try ensureDirectoryExists()
 
         var localConversations = try loadLocalConversations()
@@ -54,10 +55,13 @@ struct ConversationRepository: ConversationRepositoryProtocol {
             }
         }
 
-        return localConversations.sorted { $0.updatedAt > $1.updatedAt }
+        let sorted = localConversations.sorted { $0.updatedAt > $1.updatedAt }
+        LogManager.success("loadAll returned \(sorted.count) conversations")
+        return sorted
     }
 
     func save(_ conversation: Conversation) throws {
+        LogManager.debug("save conversation id=\(conversation.id) title='\(conversation.title)'")
         try ensureDirectoryExists()
         try saveLocal(conversation)
 
@@ -67,9 +71,11 @@ struct ConversationRepository: ConversationRepositoryProtocol {
     }
 
     func delete(_ conversationId: UUID) throws {
+        LogManager.debug("delete conversation id=\(conversationId)")
         let fileURL = directoryURL.appendingPathComponent("\(conversationId.uuidString).json")
         guard fileManager.fileExists(atPath: fileURL.path) else { return }
         try fileManager.removeItem(at: fileURL)
+        LogManager.success("delete conversation id=\(conversationId) done")
 
         if settingsManager.getIsCloudSyncEnabled() {
             try? cloudSyncManager.deleteConversationFromCloud(conversationId)
@@ -77,9 +83,11 @@ struct ConversationRepository: ConversationRepositoryProtocol {
     }
 
     func deleteAll() throws {
+        LogManager.warning("deleteAll conversations")
         guard fileManager.fileExists(atPath: directoryURL.path) else { return }
         try fileManager.removeItem(at: directoryURL)
         try ensureDirectoryExists()
+        LogManager.success("deleteAll conversations done")
 
         if settingsManager.getIsCloudSyncEnabled() {
             try? cloudSyncManager.deleteAllFromCloud()
@@ -112,6 +120,7 @@ private extension ConversationRepository {
                 let conversation = try decoder.decode(Conversation.self, from: data)
                 conversations.append(conversation)
             } catch {
+                LogManager.error("Failed to decode conversation at \(url.lastPathComponent): \(error)")
                 continue
             }
         }

@@ -65,16 +65,29 @@ struct APIClient: APIClientProtocol, Sendable {
         body: (any Encodable & Sendable)? = nil
     ) async throws -> T {
         let urlRequest = try buildRequest(endpoint: endpoint, method: method, body: body)
-
-        let (data, response) = try await performRequest(urlRequest)
-        try validateResponse(response)
+        LogManager.network("→ \(method.rawValue) /\(endpoint)")
 
         do {
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            return try decoder.decode(T.self, from: data)
-        } catch {
-            throw APIError.decodingError
+            let (data, response) = try await performRequest(urlRequest)
+            if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                let body = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
+                LogManager.error("HTTP \(http.statusCode) /\(endpoint) body: \(String(body.prefix(500)))")
+            }
+            try validateResponse(response)
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            LogManager.network("← \(method.rawValue) /\(endpoint) [\(statusCode)] \(data.count) bytes")
+
+            do {
+                let decoder = JSONDecoder()
+                decoder.keyDecodingStrategy = .convertFromSnakeCase
+                return try decoder.decode(T.self, from: data)
+            } catch {
+                LogManager.error("Decoding failed for /\(endpoint): \(error)")
+                throw APIError.decodingError
+            }
+        } catch let error as APIError {
+            LogManager.error("Request failed /\(endpoint): \(error.localizedDescription)")
+            throw error
         }
     }
 
@@ -90,27 +103,38 @@ struct APIClient: APIClientProtocol, Sendable {
                         method: .post,
                         body: body
                     )
+                    LogManager.network("→ STREAM POST /\(endpoint)")
 
                     let (bytes, response) = try await session.bytes(for: urlRequest)
                     try validateResponse(response)
+                    let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+                    LogManager.network("← STREAM /\(endpoint) [\(statusCode)] opened")
 
+                    var chunkCount = 0
                     for try await line in bytes.lines {
-                        guard !Task.isCancelled else { break }
+                        guard !Task.isCancelled else {
+                            LogManager.debug("Stream cancelled /\(endpoint) after \(chunkCount) chunks")
+                            break
+                        }
 
                         guard line.hasPrefix("data: ") else { continue }
                         let payload = String(line.dropFirst(6))
 
                         if payload.trimmingCharacters(in: .whitespaces) == "[DONE]" {
+                            LogManager.network("← STREAM /\(endpoint) [DONE] — \(chunkCount) chunks received")
                             break
                         }
 
                         if let data = payload.data(using: .utf8) {
+                            chunkCount += 1
                             continuation.yield(data)
                         }
                     }
                     continuation.finish()
                 } catch {
-                    continuation.finish(throwing: mapError(error))
+                    let mapped = mapError(error)
+                    LogManager.error("Stream error /\(endpoint): \(mapped.localizedDescription)")
+                    continuation.finish(throwing: mapped)
                 }
             }
 
@@ -125,8 +149,10 @@ struct APIClient: APIClientProtocol, Sendable {
         fields: [String: String],
         file: MultipartFileData
     ) async throws -> T {
+        LogManager.network("→ MULTIPART POST /\(endpoint) file=\(file.fileName) (\(file.data.count) bytes)")
         let baseURL = settingsManager.getServerBaseURL()
         guard let url = URL(string: baseURL)?.appendingPathComponent(endpoint) else {
+            LogManager.error("Invalid URL for multipart /\(endpoint)")
             throw APIError.invalidURL
         }
 
@@ -159,15 +185,27 @@ struct APIClient: APIClientProtocol, Sendable {
 
         request.httpBody = body
 
-        let (data, response) = try await performRequest(request)
-        try validateResponse(response)
-
         do {
-            let decoder = JSONDecoder()
-            decoder.keyDecodingStrategy = .convertFromSnakeCase
-            return try decoder.decode(T.self, from: data)
-        } catch {
-            throw APIError.decodingError
+            let (data, response) = try await performRequest(request)
+            if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                let body = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
+                LogManager.error("HTTP \(http.statusCode) /\(endpoint) body: \(String(body.prefix(500)))")
+            }
+            try validateResponse(response)
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            LogManager.network("← MULTIPART /\(endpoint) [\(statusCode)] \(data.count) bytes")
+
+            do {
+                let decoder = JSONDecoder()
+                decoder.keyDecodingStrategy = .convertFromSnakeCase
+                return try decoder.decode(T.self, from: data)
+            } catch {
+                LogManager.error("Decoding failed for multipart /\(endpoint): \(error)")
+                throw APIError.decodingError
+            }
+        } catch let error as APIError {
+            LogManager.error("Multipart request failed /\(endpoint): \(error.localizedDescription)")
+            throw error
         }
     }
 
@@ -176,11 +214,22 @@ struct APIClient: APIClientProtocol, Sendable {
         body: any Encodable & Sendable
     ) async throws -> Data {
         let urlRequest = try buildRequest(endpoint: endpoint, method: .post, body: body)
+        LogManager.network("→ POST /\(endpoint) (raw data)")
 
-        let (data, response) = try await performRequest(urlRequest)
-        try validateResponse(response)
-
-        return data
+        do {
+            let (data, response) = try await performRequest(urlRequest)
+            if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                let body = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
+                LogManager.error("HTTP \(http.statusCode) /\(endpoint) body: \(String(body.prefix(500)))")
+            }
+            try validateResponse(response)
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            LogManager.network("← POST /\(endpoint) [\(statusCode)] \(data.count) bytes")
+            return data
+        } catch let error as APIError {
+            LogManager.error("Raw request failed /\(endpoint): \(error.localizedDescription)")
+            throw error
+        }
     }
 }
 
@@ -224,6 +273,7 @@ private extension APIClient {
 
     func validateResponse(_ response: URLResponse) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
+            LogManager.error("Invalid response — not an HTTPURLResponse")
             throw APIError.invalidResponse
         }
 
@@ -231,10 +281,13 @@ private extension APIClient {
         case 200...299:
             return
         case 401:
+            LogManager.warning("HTTP 401 Unauthorized")
             throw APIError.unauthorized
         case 429:
+            LogManager.warning("HTTP 429 Rate Limited")
             throw APIError.rateLimited
         default:
+            LogManager.error("HTTP \(httpResponse.statusCode) error")
             throw APIError.httpError(statusCode: httpResponse.statusCode)
         }
     }
@@ -250,26 +303,27 @@ private extension APIClient {
     }
 
     func mapURLError(_ error: URLError) -> APIError {
+        LogManager.error("URLError \(error.code.rawValue): \(error.localizedDescription)")
         switch error.code {
         case .cannotFindHost, .dnsLookupFailed:
-            .networkError(String(localized: "Could not find the server. Please check the URL."))
+            return .networkError(String(localized: "Could not find the server. Please check the URL."))
         case .cannotConnectToHost:
-            .networkError(String(localized: "Could not connect to the server."))
+            return .networkError(String(localized: "Could not connect to the server."))
         case .notConnectedToInternet:
-            .networkError(String(localized: "No internet connection. Please check your network."))
+            return .networkError(String(localized: "No internet connection. Please check your network."))
         case .timedOut:
-            .networkError(String(localized: "The request timed out. The server may be slow or unreachable."))
+            return .networkError(String(localized: "The request timed out. The server may be slow or unreachable."))
         case .networkConnectionLost:
-            .networkError(String(localized: "The network connection was lost."))
+            return .networkError(String(localized: "The network connection was lost."))
         case .secureConnectionFailed:
-            .networkError(String(localized: "Could not establish a secure connection to the server."))
+            return .networkError(String(localized: "Could not establish a secure connection to the server."))
         case .serverCertificateUntrusted, .serverCertificateHasBadDate,
             .serverCertificateNotYetValid, .serverCertificateHasUnknownRoot:
-            .networkError(String(localized: "The server certificate is not trusted."))
+            return .networkError(String(localized: "The server certificate is not trusted."))
         case .cancelled:
-            .networkError(String(localized: "The request was cancelled."))
+            return .networkError(String(localized: "The request was cancelled."))
         default:
-            .networkError(String(localized: "A network error occurred. Please try again."))
+            return .networkError(String(localized: "A network error occurred. Please try again."))
         }
     }
 }

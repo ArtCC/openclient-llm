@@ -26,15 +26,18 @@ struct TextToSpeechRepository: TextToSpeechRepositoryProtocol {
     // MARK: - Public
 
     func synthesize(text: String, model: String, voice: String) async throws -> Data {
+        LogManager.info("synthesize model=\(model) voice=\(voice) chars=\(text.count)")
         let request = TextToSpeechRequest(
             model: model,
             input: text,
             voice: voice
         )
 
-        return try await apiClient.rawDataRequest(
+        let data = try await apiClient.rawDataRequest(
             endpoint: "v1/audio/speech",
             body: request
         )
+        LogManager.success("synthesize done audioData=\(data.count) bytes")
+        return data
     }
 }

@@ -14,6 +14,8 @@ extension ChatViewModel {
     func transcribeAudio(data: Data, duration: TimeInterval) {
         guard case .loaded(var loadedState) = state else { return }
         guard let selectedModel = loadedState.selectedModel else { return }
+        let durationStr = String(format: "%.1f", duration)
+        LogManager.info("transcribeAudio model=\(selectedModel.id) data=\(data.count) bytes duration=\(durationStr)s")
         loadedState.isTranscribing = true
         state = .loaded(loadedState)
         Task { await performTranscription(data: data, duration: duration, model: selectedModel) }
@@ -21,6 +23,7 @@ extension ChatViewModel {
 
     func performTranscription(data: Data, duration: TimeInterval, model: LLMModel) async {
         do {
+            LogManager.debug("performTranscription model=\(model.id)")
             let text = try await transcribeAudioUseCase.execute(
                 audioData: data,
                 model: model.id,
@@ -31,7 +34,9 @@ extension ChatViewModel {
             currentState.inputText = text
             currentState.isTranscribing = false
             state = .loaded(currentState)
+            LogManager.success("performTranscription done chars=\(text.count)")
         } catch {
+            LogManager.error("performTranscription failed: \(error)")
             guard case .loaded(var currentState) = state else { return }
             currentState.isTranscribing = false
             currentState.errorMessage = error.localizedDescription

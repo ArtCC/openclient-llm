@@ -35,11 +35,13 @@ struct ImageGenerationRepository: ImageGenerationRepositoryProtocol {
         size: String,
         mode: LLMModel.Mode
     ) async throws -> GeneratedImage {
+        let shortPrompt = String(prompt.prefix(80))
+        LogManager.info("generateImage model=\(model) size=\(size) mode=\(mode) prompt=\"\(shortPrompt)\"")
         switch mode {
         case .imageGeneration:
-            try await generateViaImagesEndpoint(prompt: prompt, model: model, size: size)
+            return try await generateViaImagesEndpoint(prompt: prompt, model: model, size: size)
         default:
-            try await generateViaChatCompletions(prompt: prompt, model: model)
+            return try await generateViaChatCompletions(prompt: prompt, model: model)
         }
     }
 }
@@ -48,6 +50,7 @@ struct ImageGenerationRepository: ImageGenerationRepositoryProtocol {
 
 private extension ImageGenerationRepository {
     func generateViaImagesEndpoint(prompt: String, model: String, size: String) async throws -> GeneratedImage {
+        LogManager.debug("generateViaImagesEndpoint model=\(model)")
         let request = ImageGenerationRequest(
             model: model,
             prompt: prompt,
@@ -63,15 +66,20 @@ private extension ImageGenerationRepository {
         )
 
         guard let imageData = response.data.first else {
+            LogManager.error("generateViaImagesEndpoint: response.data is empty")
             throw APIError.invalidResponse
         }
 
         let data: Data
         if let b64Json = imageData.b64Json, let decoded = Data(base64Encoded: b64Json) {
+            LogManager.debug("generateViaImagesEndpoint: decoded b64_json \(decoded.count) bytes")
             data = decoded
         } else if let urlString = imageData.url, let url = URL(string: urlString) {
+            LogManager.debug("generateViaImagesEndpoint: downloading from url=\(urlString.prefix(100))")
             data = try await URLSession.shared.data(from: url).0
+            LogManager.debug("generateViaImagesEndpoint: downloaded \(data.count) bytes")
         } else {
+            LogManager.error("generateViaImagesEndpoint: no b64Json and no url in response")
             throw APIError.invalidResponse
         }
 
@@ -84,6 +92,7 @@ private extension ImageGenerationRepository {
     }
 
     func generateViaChatCompletions(prompt: String, model: String) async throws -> GeneratedImage {
+        LogManager.debug("generateViaChatCompletions model=\(model)")
         let request = ChatCompletionRequest(
             model: model,
             messages: [ChatCompletionMessage(role: "user", content: .text(prompt))],
@@ -102,8 +111,11 @@ private extension ImageGenerationRepository {
         )
 
         guard let content = response.choices.first?.message.content else {
+            LogManager.error("generateViaChatCompletions: no content in response choices")
             throw APIError.invalidResponse
         }
+        let preview = String(content.prefix(120))
+        LogManager.debug("generateViaChatCompletions: response content length=\(content.count) preview=\(preview)")
 
         let data = try extractImageData(from: content)
 
@@ -119,11 +131,15 @@ private extension ImageGenerationRepository {
         let dataURIPrefix = "data:image/"
 
         guard let dataURIRange = content.range(of: dataURIPrefix) else {
+            LogManager.error(
+                "extractImageData: data URI prefix not found in content. Preview: \(String(content.prefix(200)))"
+            )
             throw APIError.invalidResponse
         }
 
         let afterPrefix = content[dataURIRange.lowerBound...]
         guard let commaIndex = afterPrefix.firstIndex(of: ",") else {
+            LogManager.error("extractImageData: comma separator not found after data URI prefix")
             throw APIError.invalidResponse
         }
 
@@ -131,9 +147,10 @@ private extension ImageGenerationRepository {
             .trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard let data = Data(base64Encoded: base64String) else {
+            LogManager.error("extractImageData: Base64 decoding failed (length=\(base64String.count))")
             throw APIError.invalidResponse
         }
-
+        LogManager.debug("extractImageData: decoded \(data.count) bytes")
         return data
     }
 }

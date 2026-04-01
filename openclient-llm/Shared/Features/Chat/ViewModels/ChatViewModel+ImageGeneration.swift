@@ -15,7 +15,18 @@ extension ChatViewModel {
         guard case .loaded(var loadedState) = state else { return }
         let prompt = loadedState.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !prompt.isEmpty, !loadedState.isGeneratingImage else { return }
-        guard let imageModel = loadedState.selectedModel else { return }
+
+        guard let imageModel = loadedState.imageModel else {
+            LogManager.warning("generateImage: no imageGeneration model available")
+            let msg = String(
+                localized: "No image generation model available. Add an image model to your LiteLLM server."
+            )
+            loadedState.errorMessage = msg
+            state = .loaded(loadedState)
+            scheduleErrorDismiss()
+            return
+        }
+        LogManager.info("generateImage model=\(imageModel.id) prompt=\"\(String(prompt.prefix(80)))\"")
 
         if loadedState.conversation == nil {
             loadedState.conversation = Conversation(modelId: loadedState.selectedModel?.id ?? "", systemPrompt: "")
@@ -34,6 +45,7 @@ extension ChatViewModel {
 
     func performImageGeneration(prompt: String, model: LLMModel) async {
         do {
+            LogManager.debug("performImageGeneration model=\(model.id) mode=\(model.mode)")
             let generated = try await generateImageUseCase.execute(
                 prompt: prompt,
                 model: model.id,
@@ -50,8 +62,10 @@ extension ChatViewModel {
             currentState.messages.append(assistantMessage)
             currentState.isGeneratingImage = false
             state = .loaded(currentState)
+            LogManager.success("performImageGeneration done imageData=\(generated.imageData.count) bytes")
             persistConversation()
         } catch {
+            LogManager.error("performImageGeneration failed: \(error)")
             guard case .loaded(var currentState) = state else { return }
             currentState.isGeneratingImage = false
             currentState.errorMessage = error.localizedDescription

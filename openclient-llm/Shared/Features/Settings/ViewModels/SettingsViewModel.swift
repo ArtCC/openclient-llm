@@ -122,6 +122,7 @@ private extension SettingsViewModel {
 
     func testConnection() {
         guard case .loaded(var loadedState) = state else { return }
+        LogManager.info("testConnection url=\(loadedState.serverURL)")
         loadedState.connectionStatus = .testing
         state = .loaded(loadedState)
 
@@ -134,22 +135,26 @@ private extension SettingsViewModel {
                 guard case .loaded(var currentState) = state else { return }
                 currentState.connectionStatus = .success
                 state = .loaded(currentState)
+                LogManager.success("testConnection success url=\(loadedState.serverURL)")
             } catch {
                 guard case .loaded(var currentState) = state else { return }
                 currentState.connectionStatus = .failure(error.localizedDescription)
                 state = .loaded(currentState)
+                LogManager.error("testConnection failed url=\(loadedState.serverURL): \(error)")
             }
         }
     }
 
     func saveSettings() {
         guard case .loaded(var loadedState) = state else { return }
+        LogManager.info("saveSettings url=\(loadedState.serverURL)")
         saveServerConfigurationUseCase.execute(
             serverURL: loadedState.serverURL,
             apiKey: loadedState.apiKey
         )
         loadedState.isSaved = true
         state = .loaded(loadedState)
+        LogManager.success("saveSettings done")
     }
 
     func toggleCloudSync(_ enabled: Bool) {
