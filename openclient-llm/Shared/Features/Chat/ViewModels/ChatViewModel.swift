@@ -50,12 +50,10 @@ final class ChatViewModel {
         var modelParameters: ModelParameters = .default
         var isSpeaking: Bool = false
         var speakingMessageId: UUID?
-        var ttsModel: LLMModel?
-        var transcriptionModel: LLMModel?
         var isTranscribing: Bool = false
-        var imageModel: LLMModel?
         var isGeneratingImage: Bool = false
         var showTokenUsage: Bool = true
+        var scrollToBottomTrigger: Bool = false
     }
 
     var state: State
@@ -166,9 +164,6 @@ private extension ChatViewModel {
             pendingConversation = nil
 
             let chatModels = models.filter { [.chat, .completion, .unknown].contains($0.mode) }
-            let ttsModel = models.first { $0.mode == .audioSpeech }
-            let transcriptionModel = models.first { $0.mode == .audioTranscription }
-            let imageModel = models.first { $0.mode == .imageGeneration }
             let savedModelId = settingsManager.getSelectedModelId()
             let selectedModel: LLMModel?
 
@@ -189,9 +184,6 @@ private extension ChatViewModel {
                 conversationStarters: (pending?.messages ?? []).isEmpty ? starters : [],
                 systemPrompt: pending?.systemPrompt ?? "",
                 modelParameters: pending?.modelParameters ?? .default,
-                ttsModel: ttsModel,
-                transcriptionModel: transcriptionModel,
-                imageModel: imageModel,
                 showTokenUsage: settingsManager.getShowTokenUsage()
             ))
         } catch {
@@ -223,6 +215,9 @@ private extension ChatViewModel {
         loadedState.pendingAttachments = []
         loadedState.inputText = ""
         loadedState.errorMessage = nil
+        if !conversation.messages.isEmpty {
+            loadedState.scrollToBottomTrigger.toggle()
+        }
         state = .loaded(loadedState)
     }
 
@@ -406,14 +401,7 @@ private extension ChatViewModel {
     func speakMessage(_ message: ChatMessage) {
         guard case .loaded(var loadedState) = state,
               !message.content.isEmpty else { return }
-        guard let ttsModel = loadedState.ttsModel else {
-            loadedState.errorMessage = String(
-                localized: "No text-to-speech models available. Add a TTS model like tts-1 to your LiteLLM server."
-            )
-            state = .loaded(loadedState)
-            scheduleErrorDismiss()
-            return
-        }
+        guard let selectedModel = loadedState.selectedModel else { return }
 
         loadedState.isSpeaking = true
         loadedState.speakingMessageId = message.id
@@ -422,7 +410,7 @@ private extension ChatViewModel {
             do {
                 let audioData = try await synthesizeSpeechUseCase.execute(
                     text: message.content,
-                    model: ttsModel.id,
+                    model: selectedModel.id,
                     voice: "alloy"
                 )
                 audioPlayerManager.play(data: audioData, messageId: message.id)

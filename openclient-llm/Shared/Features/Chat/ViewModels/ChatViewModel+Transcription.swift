@@ -13,17 +13,10 @@ import Foundation
 extension ChatViewModel {
     func transcribeAudio(data: Data, duration: TimeInterval) {
         guard case .loaded(var loadedState) = state else { return }
-        guard let transcriptionModel = loadedState.transcriptionModel else {
-            loadedState.errorMessage = String(
-                localized: "No transcription models available. Add a model like whisper-1 to your LiteLLM server."
-            )
-            state = .loaded(loadedState)
-            scheduleErrorDismiss()
-            return
-        }
+        guard let selectedModel = loadedState.selectedModel else { return }
         loadedState.isTranscribing = true
         state = .loaded(loadedState)
-        Task { await performTranscription(data: data, duration: duration, model: transcriptionModel) }
+        Task { await performTranscription(data: data, duration: duration, model: selectedModel) }
     }
 
     func performTranscription(data: Data, duration: TimeInterval, model: LLMModel) async {

@@ -13,26 +13,6 @@ import XCTest
 
 @MainActor
 extension ChatViewModelTests {
-    func test_send_viewAppeared_detectsImageModel() async throws {
-        // Given
-        mockFetchModels.result = .success([
-            LLMModel(id: "gpt-4"),
-            LLMModel(id: "dall-e-3", mode: .imageGeneration)
-        ])
-
-        // When
-        sut.send(.viewAppeared)
-        try await Task.sleep(for: .milliseconds(100))
-
-        // Then
-        guard case .loaded(let loadedState) = sut.state else {
-            XCTFail("Expected loaded state")
-            return
-        }
-        XCTAssertEqual(loadedState.imageModel?.id, "dall-e-3")
-        XCTAssertEqual(loadedState.availableModels.count, 1, "Image model should not be in chat availableModels")
-    }
-
     func test_send_generateImageTapped_setsIsGeneratingImage() async throws {
         // Given
         let mockGenerateImage = MockGenerateImageUseCase()
@@ -174,23 +154,4 @@ extension ChatViewModelTests {
         XCTAssertNotNil(loadedState.errorMessage)
     }
 
-    func test_send_generateImageTapped_withoutImageModel_showsError() async throws {
-        // Given — no image generation model available
-        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
-
-        sut.send(.viewAppeared)
-        try await Task.sleep(for: .milliseconds(100))
-        sut.send(.inputChanged("A cat in space"))
-
-        // When
-        sut.send(.generateImageTapped)
-
-        // Then
-        guard case .loaded(let loadedState) = sut.state else {
-            XCTFail("Expected loaded state")
-            return
-        }
-        XCTAssertNotNil(loadedState.errorMessage)
-        XCTAssertFalse(loadedState.isGeneratingImage)
-    }
 }

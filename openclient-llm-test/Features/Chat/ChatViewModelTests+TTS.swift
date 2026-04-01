@@ -183,36 +183,4 @@ extension ChatViewModelTests {
         XCTAssertNil(loadedState.speakingMessageId)
     }
 
-    func test_send_speakMessageTapped_withoutTTSModel_showsError() async throws {
-        // Given
-        let mockSynthesize = MockSynthesizeSpeechUseCase()
-        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
-
-        sut = ChatViewModel(
-            fetchModelsUseCase: mockFetchModels,
-            streamMessageUseCase: mockStreamMessage,
-            saveConversationUseCase: mockSaveConversation,
-            synthesizeSpeechUseCase: mockSynthesize,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
-        )
-
-        sut.send(.viewAppeared)
-        try await Task.sleep(for: .milliseconds(100))
-
-        let message = ChatMessage(role: .assistant, content: "Hello")
-
-        // When
-        sut.send(.speakMessageTapped(message))
-        try await Task.sleep(for: .milliseconds(100))
-
-        // Then
-        guard case .loaded(let loadedState) = sut.state else {
-            XCTFail("Expected loaded state")
-            return
-        }
-        XCTAssertFalse(mockSynthesize.executeCalled)
-        XCTAssertNotNil(loadedState.errorMessage)
-        XCTAssertFalse(loadedState.isSpeaking)
-    }
 }

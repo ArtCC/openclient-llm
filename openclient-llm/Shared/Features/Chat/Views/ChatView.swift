@@ -140,6 +140,50 @@ private extension ChatView {
         _ loadedState: ChatViewModel.LoadedState,
         proxy: ScrollViewProxy
     ) -> some View {
+        scrollViewContent(loadedState)
+            .onScrollGeometryChange(for: Bool.self) { geo in
+                geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height < 80
+            } action: { _, newValue in
+                isNearBottom = newValue
+            }
+            .onScrollPhaseChange { oldPhase, newPhase in
+                if newPhase == .interacting {
+                    shouldAutoScroll = false
+                } else if newPhase == .idle, oldPhase != .animating {
+                    shouldAutoScroll = isNearBottom
+                }
+            }
+            .onChange(of: loadedState.messages.count) {
+                shouldAutoScroll = true
+                proxy.scrollTo("scroll-bottom")
+            }
+            .onChange(of: loadedState.messages.last?.content) {
+                guard shouldAutoScroll else { return }
+                proxy.scrollTo("scroll-bottom")
+            }
+            .onChange(of: loadedState.scrollToBottomTrigger) {
+                proxy.scrollTo("scroll-bottom")
+            }
+#if os(iOS)
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: UIResponder.keyboardWillShowNotification
+                )
+            ) { notification in
+                let duration = notification.userInfo?[
+                    UIResponder.keyboardAnimationDurationUserInfoKey
+                ] as? Double ?? 0.25
+                DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                    proxy.scrollTo("scroll-bottom")
+                    shouldAutoScroll = true
+                }
+            }
+#endif
+    }
+
+    func scrollViewContent(
+        _ loadedState: ChatViewModel.LoadedState
+    ) -> some View {
         ScrollView {
             if loadedState.messages.isEmpty {
                 ChatEmptyStateView(
@@ -154,41 +198,6 @@ private extension ChatView {
 #if os(iOS)
         .scrollDismissesKeyboard(.interactively)
 #endif
-        .onScrollGeometryChange(for: Bool.self) { geo in
-            geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height < 80
-        } action: { _, newValue in
-            isNearBottom = newValue
-        }
-        .onScrollPhaseChange { oldPhase, newPhase in
-            if newPhase == .interacting {
-                shouldAutoScroll = false
-            } else if newPhase == .idle, oldPhase != .animating {
-                shouldAutoScroll = isNearBottom
-            }
-        }
-        .onChange(of: loadedState.messages.count) {
-            shouldAutoScroll = true
-            proxy.scrollTo("scroll-bottom")
-        }
-        .onChange(of: loadedState.messages.last?.content) {
-            guard shouldAutoScroll else { return }
-            proxy.scrollTo("scroll-bottom")
-        }
-#if os(iOS)
-        .onReceive(
-            NotificationCenter.default.publisher(
-                for: UIResponder.keyboardWillShowNotification
-            )
-        ) { notification in
-            let duration = notification.userInfo?[
-                UIResponder.keyboardAnimationDurationUserInfoKey
-            ] as? Double ?? 0.25
-            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-                proxy.scrollTo("scroll-bottom")
-                shouldAutoScroll = true
-            }
-        }
-#endif
     }
 
     func messagesList(
@@ -202,7 +211,7 @@ private extension ChatView {
                     && message.id
                     == loadedState.messages.last?.id,
                     isSpeaking: loadedState.speakingMessageId == message.id,
-                    hasTTS: loadedState.ttsModel != nil,
+                    hasTTS: loadedState.selectedModel != nil,
                     showTokenUsage: loadedState.showTokenUsage,
                     onSpeakTapped: {
                         viewModel.send(.speakMessageTapped(message))
@@ -346,6 +355,14 @@ private extension ChatView {
             } label: {
                 Label(String(localized: "Photo Library"), systemImage: "photo.on.rectangle")
             }
+
+            if case .loaded(let loadedState) = viewModel.state, loadedState.selectedModel != nil {
+                Button {
+                    viewModel.send(.generateImageTapped)
+                } label: {
+                    Label(String(localized: "Generate Image"), systemImage: "wand.and.stars")
+                }
+            }
         } label: {
             Image(systemName: "plus.circle.fill")
                 .font(.title)
@@ -378,10 +395,8 @@ private extension ChatView {
 
             if (hasText || hasAttachments) && hasModel {
                 sendButton
-            } else if loadedState.transcriptionModel != nil && hasModel {
+            } else if hasModel {
                 micButton
-            } else if loadedState.imageModel != nil && hasModel {
-                imageButton
             }
         }
     }
@@ -474,16 +489,6 @@ private extension ChatView {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(String(localized: "Record Audio"))
-        .transition(.scale.combined(with: .opacity))
-    }
-
-    var imageButton: some View {
-        Button { viewModel.send(.generateImageTapped) } label: {
-            Image(systemName: "wand.and.stars").font(.title2).foregroundStyle(.secondary)
-                .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Generate Image"))
         .transition(.scale.combined(with: .opacity))
     }
 

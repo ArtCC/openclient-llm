@@ -143,13 +143,13 @@ private extension UserProfileView {
     }
 
     func usageSection() -> some View {
-        Section {
-            Label(
-                String(localized: "This information is added to every conversation so models can personalise their responses."),
-                systemImage: "info.circle"
-            )
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+        let info = String(
+            localized: "This information is added to every conversation so models can personalise their responses."
+        )
+        return Section {
+            Label(info, systemImage: "info.circle")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
     }
 

@@ -73,14 +73,19 @@ private extension UserProfileManager {
             object: NSUbiquitousKeyValueStore.default,
             queue: .main
         ) { [weak self] notification in
-            guard let self,
-                  let changedKeys = notification.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String],
+            guard let changedKeys = notification.userInfo?[
+                NSUbiquitousKeyValueStoreChangedKeysKey
+            ] as? [String],
                   changedKeys.contains(where: { $0.hasPrefix("userProfile_") }) else { return }
             // Mirror cloud values into UserDefaults so they survive iCloud sign-out.
-            let cloud = NSUbiquitousKeyValueStore.default
-            self.defaults.set(cloud.string(forKey: Keys.name), forKey: Keys.name)
-            self.defaults.set(cloud.string(forKey: Keys.profileDescription), forKey: Keys.profileDescription)
-            self.defaults.set(cloud.string(forKey: Keys.extraInfo), forKey: Keys.extraInfo)
+            // queue: .main guarantees main-thread execution; assumeIsolated makes that explicit.
+            MainActor.assumeIsolated { [weak self] in
+                guard let self else { return }
+                let cloud = NSUbiquitousKeyValueStore.default
+                self.defaults.set(cloud.string(forKey: Keys.name), forKey: Keys.name)
+                self.defaults.set(cloud.string(forKey: Keys.profileDescription), forKey: Keys.profileDescription)
+                self.defaults.set(cloud.string(forKey: Keys.extraInfo), forKey: Keys.extraInfo)
+            }
         }
     }
 }

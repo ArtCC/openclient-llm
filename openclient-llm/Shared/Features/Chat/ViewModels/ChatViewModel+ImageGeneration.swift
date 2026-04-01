@@ -15,13 +15,7 @@ extension ChatViewModel {
         guard case .loaded(var loadedState) = state else { return }
         let prompt = loadedState.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !prompt.isEmpty, !loadedState.isGeneratingImage else { return }
-        guard let imageModel = loadedState.imageModel else {
-            // swiftlint:disable:next line_length
-            loadedState.errorMessage = String(localized: "No image generation models available. Add a model like DALL·E or gpt-image-1 to your LiteLLM server.")
-            state = .loaded(loadedState)
-            scheduleErrorDismiss()
-            return
-        }
+        guard let imageModel = loadedState.selectedModel else { return }
 
         if loadedState.conversation == nil {
             loadedState.conversation = Conversation(modelId: loadedState.selectedModel?.id ?? "", systemPrompt: "")
