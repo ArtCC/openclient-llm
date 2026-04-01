@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-03-31
+## [1.0.0] - 2026-04-01
 
 ### Added
 
@@ -86,18 +86,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generated images displayed in a gallery grid with context menu actions (share, copy)
 - `ImageGenerationRepository`, `GenerateImageUseCase`, `ImageGenerationViewModel` with Event/State pattern
 - `ImageGenerationRequest`/`ImageGenerationResponse` API models for `POST /v1/images/generations`
-- Audio transcription (Speech-to-Text): `AudioTranscriptionView` with record button, file picker, model and language selection
+- Audio transcription (Speech-to-Text) integrated as voice dictation in the chat input bar; microphone button appears automatically when a Whisper-compatible model is detected on the server; tap to record, tap again to stop and transcribe; transcribed text populates the input field ready to edit or send
 - `AudioRecorderManager` for platform audio recording with `AVAudioRecorder`
-- `AudioTranscriptionRepository`, `TranscribeAudioUseCase`, `AudioTranscriptionViewModel` with Event/State pattern
+- `AudioTranscriptionRepository`, `TranscribeAudioUseCase` for `POST /v1/audio/transcriptions`
 - `AudioTranscriptionRequest`/`AudioTranscriptionResponse` API models for `POST /v1/audio/transcriptions`
+- Chat model selector now only shows chat/completion models, excluding TTS and transcription models
 - Multipart form data upload support in `APIClient` for audio file uploads
 - Raw data request support in `APIClient` for binary audio responses
 - Text-to-Speech: "Read Aloud" button on assistant messages with play/stop toggle
 - `TextToSpeechRepository`, `SynthesizeSpeechUseCase` for `POST /v1/audio/speech`
 - `AudioPlayerManager` for playback of TTS audio data with `AVAudioPlayer`
 - `TextToSpeechRequest` API model with voice and speed parameters
-- Image Generation and Audio Transcription tabs in HomeView (iOS TabView, macOS sidebar)
-- Unit tests for ImageGenerationViewModel, AudioTranscriptionViewModel, and TTS integration in ChatViewModel
+- Image Generation tab in HomeView (iOS TabView, macOS sidebar)
+- Unit tests for ImageGenerationViewModel and TTS integration in ChatViewModel
 - Mock test doubles for GenerateImageUseCase, TranscribeAudioUseCase, SynthesizeSpeechUseCase, CloudSyncManager
 
 ### Changed
@@ -127,6 +128,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SettingsView` includes iCloud Sync section with toggle control
 - `APIClient` protocol extended with `multipartRequest` and `rawDataRequest` methods
 - HomeView updated with Image Generation and Audio Transcription tabs for iOS and macOS
+- Audio transcription (Speech-to-Text) redesigned from a standalone tab into a voice dictation feature integrated directly in the chat input bar; the microphone button appears automatically when the server exposes a Whisper-compatible model; removed file import and transcription history; transcribed text populates the input field ready to send
+- Chat model selector now excludes TTS and transcription models; only chat/completion models are shown
+
+### Removed
+
+- `AudioTranscriptionView` and `AudioTranscriptionViewModel` standalone screen
+- Transcription tab from iOS TabView and macOS sidebar
 
 ### Fixed
 

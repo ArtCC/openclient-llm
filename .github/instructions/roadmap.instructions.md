@@ -59,7 +59,7 @@ Goal: Power user features.
 - [x] **Search conversations**: Full-text search across conversations
 - [x] **iCloud sync**: Sync conversations across devices
 - [x] **Image generation**: Generate images from text prompts via POST /v1/images/generations (DALL-E, Stable Diffusion, Gemini, etc.)
-- [x] **Audio transcription (Speech-to-Text)**: Record or upload audio for transcription via POST /v1/audio/transcriptions (Whisper, Groq, Deepgram, Gemini)
+- [x] **Audio transcription (Speech-to-Text)**: Dictate messages in chat via microphone; audio transcribed via POST /v1/audio/transcriptions (Whisper, Groq, Deepgram, Gemini) and inserted into the chat input field
 - [x] **Text-to-Speech**: Read assistant responses aloud via POST /v1/audio/speech (OpenAI TTS, AWS Polly, ElevenLabs, Gemini TTS)
 
 ## Phase 5 — Advanced Interactions

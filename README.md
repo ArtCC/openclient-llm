@@ -37,13 +37,11 @@ openclient-llm/                    # iOS target
 │   └── OpenClientApp.swift
 ├── Shared/                        # Shared code (iOS + macOS)
 │   ├── Features/                  # Feature modules
-│   │   ├── AudioTranscription/    # Speech-to-Text
-│   │   │   ├── Views/             # AudioTranscriptionView
-│   │   │   ├── ViewModels/        # AudioTranscriptionViewModel
+│   │   ├── AudioTranscription/    # Speech-to-Text (integrated in chat input)
 │   │   │   ├── UseCases/          # TranscribeAudioUseCase
 │   │   │   ├── Repositories/      # AudioTranscriptionRepository
 │   │   │   └── Models/            # Transcription
-│   │   ├── Chat/                  # Chat with SSE streaming
+│   │   ├── Chat/                  # Chat with SSE streaming + voice dictation
 │   │   │   ├── Views/             # ChatView, MessageBubbleView, CodeBlockView,
 │   │   │   │                      # ConversationListView, AttachmentPickerView,
 │   │   │   │                      # ChatModelParametersView, ChatSystemPromptView
@@ -107,7 +105,6 @@ openclient-llm-test/               # Unit tests
 ├── Core/
 │   └── Managers/                  # KeychainManager tests
 ├── Features/
-│   ├── AudioTranscription/        # AudioTranscriptionViewModel tests
 │   ├── Chat/                      # ChatViewModel, ConversationListViewModel tests
 │   ├── ImageGeneration/           # ImageGenerationViewModel tests
 │   ├── Launch/                    # LaunchViewModel, UseCase tests
