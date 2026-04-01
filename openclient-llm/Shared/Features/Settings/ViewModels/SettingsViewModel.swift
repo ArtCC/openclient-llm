@@ -20,6 +20,7 @@ final class SettingsViewModel {
         case testConnectionTapped
         case saveTapped
         case cloudSyncToggled(Bool)
+        case showTokenUsageToggled(Bool)
     }
 
     enum State: Equatable {
@@ -34,6 +35,7 @@ final class SettingsViewModel {
         var isSaved: Bool = false
         var isCloudSyncEnabled: Bool = false
         var isCloudAvailable: Bool = false
+        var showTokenUsage: Bool = true
     }
 
     enum ConnectionStatus: Equatable {
@@ -82,6 +84,8 @@ final class SettingsViewModel {
             saveSettings()
         case .cloudSyncToggled(let enabled):
             toggleCloudSync(enabled)
+        case .showTokenUsageToggled(let show):
+            toggleShowTokenUsage(show)
         }
     }
 }
@@ -94,7 +98,8 @@ private extension SettingsViewModel {
             serverURL: settingsManager.getServerBaseURL(),
             apiKey: settingsManager.getAPIKey(),
             isCloudSyncEnabled: settingsManager.getIsCloudSyncEnabled(),
-            isCloudAvailable: cloudSyncManager.isCloudAvailable()
+            isCloudAvailable: cloudSyncManager.isCloudAvailable(),
+            showTokenUsage: settingsManager.getShowTokenUsage()
         )
         state = .loaded(loadedState)
     }
@@ -151,6 +156,13 @@ private extension SettingsViewModel {
         guard case .loaded(var loadedState) = state else { return }
         settingsManager.setIsCloudSyncEnabled(enabled)
         loadedState.isCloudSyncEnabled = enabled
+        state = .loaded(loadedState)
+    }
+
+    func toggleShowTokenUsage(_ show: Bool) {
+        guard case .loaded(var loadedState) = state else { return }
+        settingsManager.setShowTokenUsage(show)
+        loadedState.showTokenUsage = show
         state = .loaded(loadedState)
     }
 }

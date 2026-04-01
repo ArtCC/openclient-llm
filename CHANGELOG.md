@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-03-31
+## [1.0.0] - 2026-04-01
 
 ### Added
 
@@ -86,18 +86,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generated images displayed in a gallery grid with context menu actions (share, copy)
 - `ImageGenerationRepository`, `GenerateImageUseCase`, `ImageGenerationViewModel` with Event/State pattern
 - `ImageGenerationRequest`/`ImageGenerationResponse` API models for `POST /v1/images/generations`
-- Audio transcription (Speech-to-Text): `AudioTranscriptionView` with record button, file picker, model and language selection
+- Audio transcription (Speech-to-Text) integrated as voice dictation in the chat input bar; microphone button appears automatically when a Whisper-compatible model is detected on the server; tap to record, tap again to stop and transcribe; transcribed text populates the input field ready to edit or send
 - `AudioRecorderManager` for platform audio recording with `AVAudioRecorder`
-- `AudioTranscriptionRepository`, `TranscribeAudioUseCase`, `AudioTranscriptionViewModel` with Event/State pattern
+- `AudioTranscriptionRepository`, `TranscribeAudioUseCase` for `POST /v1/audio/transcriptions`
 - `AudioTranscriptionRequest`/`AudioTranscriptionResponse` API models for `POST /v1/audio/transcriptions`
+- Chat model selector now only shows chat/completion models, excluding TTS and transcription models
 - Multipart form data upload support in `APIClient` for audio file uploads
 - Raw data request support in `APIClient` for binary audio responses
 - Text-to-Speech: "Read Aloud" button on assistant messages with play/stop toggle
 - `TextToSpeechRepository`, `SynthesizeSpeechUseCase` for `POST /v1/audio/speech`
 - `AudioPlayerManager` for playback of TTS audio data with `AVAudioPlayer`
 - `TextToSpeechRequest` API model with voice and speed parameters
-- Image Generation and Audio Transcription tabs in HomeView (iOS TabView, macOS sidebar)
-- Unit tests for ImageGenerationViewModel, AudioTranscriptionViewModel, and TTS integration in ChatViewModel
+- Image Generation tab in HomeView (iOS TabView, macOS sidebar)
+- Unit tests for ImageGenerationViewModel and TTS integration in ChatViewModel
 - Mock test doubles for GenerateImageUseCase, TranscribeAudioUseCase, SynthesizeSpeechUseCase, CloudSyncManager
 
 ### Changed
@@ -127,6 +128,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SettingsView` includes iCloud Sync section with toggle control
 - `APIClient` protocol extended with `multipartRequest` and `rawDataRequest` methods
 - HomeView updated with Image Generation and Audio Transcription tabs for iOS and macOS
+- Audio transcription (Speech-to-Text) redesigned from a standalone tab into a voice dictation feature integrated directly in the chat input bar; the microphone button appears automatically when the server exposes a Whisper-compatible model; removed file import and transcription history; transcribed text populates the input field ready to send
+- Chat model selector now excludes TTS and transcription models; only chat/completion models are shown
+- Image generation redesigned from a standalone tab into a chat action; a wand button (✦) appears in the input bar when the server exposes an image generation model (e.g. DALL·E, gpt-image-1); generated images appear as assistant message attachments inline in the conversation
+- `ChatViewModel` extended with `generateImage()` and `performImageGeneration()` (extracted to `ChatViewModel+ImageGeneration.swift`) to handle image generation events and state
+- `ChatViewModel` split into extension files: `ChatViewModel+ImageGeneration.swift` and `ChatViewModel+Transcription.swift` to keep the main file under 500 lines
+- `ImageGenerationRepository.generateViaImagesEndpoint` now supports `url` fallback when `b64_json` is nil, downloading image data from the response URL
+- Chat `LoadedState` includes `imageModel: LLMModel?` and `isGeneratingImage: Bool` for image generation coordination
+- `ChatViewModel` uses `persistConversation()` and `scheduleErrorDismiss()` as internal-scoped helpers shared across extension files
+
+### Removed
+
+- `AudioTranscriptionView` and `AudioTranscriptionViewModel` standalone screen
+- Transcription tab from iOS TabView and macOS sidebar
+- `ImageGenerationView` and `ImageGenerationViewModel` standalone screen
+- Images tab from iOS TabView and macOS sidebar
 
 ### Fixed
 
@@ -138,3 +154,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Server URL and API key are no longer stored in plain text in UserDefaults
 - Keychain items use `kSecAttrAccessibleAfterFirstUnlock` protection level
+
+### Bug Fixes (post-release)
+
+- `StreamOptions.includeUsage` was serialized as `"includeUsage"` (camelCase) instead of `"include_usage"` (snake_case), causing some cloud providers to reject streaming requests with 400/500 errors
+- `ContentPart` multimodal messages included `"text": null` and `"image_url": null` fields when not applicable; providers like Anthropic and Gemini rejected these with 400 errors; fields are now omitted when absent via `encodeIfPresent`
+- Assistant message text rendered without line breaks because `AttributedString(markdown:)` collapses single `\n` into spaces per CommonMark spec; single newlines are now normalized to double newlines before rendering so paragraph breaks display correctly
+
+### Improvements (post-release)
+
+- **Show Token Usage toggle**: New "Chat" section in Settings with a toggle to show or hide the token count displayed below each assistant response; preference stored in `UserDefaults` and respected in `MessageBubbleView`
+- **Conversation list redesign**: Conversations are now grouped into time sections (Today, Yesterday, This Week, Earlier); each row shows a Liquid Glass avatar icon, title + date on the same line, last message preview, and a model badge pill; selection highlighted with an accent-tinted glass background; list uses `.plain` style for a cleaner layout aligned with the rest of the app

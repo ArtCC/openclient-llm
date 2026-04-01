@@ -234,4 +234,55 @@ final class SettingsViewModelTests: XCTestCase {
         }
         XCTAssertFalse(loadedState.isCloudAvailable)
     }
+
+    // MARK: - Tests — showTokenUsageToggled
+
+    func test_send_showTokenUsageToggled_false_disablesTokenUsage() {
+        // Given
+        mockSettingsManager.showTokenUsage = true
+        sut.send(.viewAppeared)
+
+        // When
+        sut.send(.showTokenUsageToggled(false))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertFalse(loadedState.showTokenUsage)
+        XCTAssertFalse(mockSettingsManager.showTokenUsage)
+    }
+
+    func test_send_showTokenUsageToggled_true_enablesTokenUsage() {
+        // Given
+        mockSettingsManager.showTokenUsage = false
+        sut.send(.viewAppeared)
+
+        // When
+        sut.send(.showTokenUsageToggled(true))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertTrue(loadedState.showTokenUsage)
+        XCTAssertTrue(mockSettingsManager.showTokenUsage)
+    }
+
+    func test_send_viewAppeared_loadsShowTokenUsageFromManager() {
+        // Given
+        mockSettingsManager.showTokenUsage = false
+
+        // When
+        sut.send(.viewAppeared)
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertFalse(loadedState.showTokenUsage)
+    }
 }

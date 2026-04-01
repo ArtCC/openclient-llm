@@ -13,11 +13,13 @@ import XCTest
 final class ConversationListViewModelTests: XCTestCase {
     // MARK: - Properties
 
-    private var sut: ConversationListViewModel!
-    private var mockLoadConversations: MockLoadConversationsUseCase!
-    private var mockDeleteConversation: MockDeleteConversationUseCase!
-    private var mockFetchModels: MockFetchModelsUseCase!
-    private var mockSettingsManager: MockSettingsManager!
+    var sut: ConversationListViewModel!
+    var mockLoadConversations: MockLoadConversationsUseCase!
+    var mockDeleteConversation: MockDeleteConversationUseCase!
+    var mockPinConversation: MockPinConversationUseCase!
+    var mockUpdateTags: MockUpdateConversationTagsUseCase!
+    var mockFetchModels: MockFetchModelsUseCase!
+    var mockSettingsManager: MockSettingsManager!
 
     // MARK: - Setup
 
@@ -26,11 +28,15 @@ final class ConversationListViewModelTests: XCTestCase {
 
         mockLoadConversations = MockLoadConversationsUseCase()
         mockDeleteConversation = MockDeleteConversationUseCase()
+        mockPinConversation = MockPinConversationUseCase()
+        mockUpdateTags = MockUpdateConversationTagsUseCase()
         mockFetchModels = MockFetchModelsUseCase()
         mockSettingsManager = MockSettingsManager()
         sut = ConversationListViewModel(
             loadConversationsUseCase: mockLoadConversations,
             deleteConversationUseCase: mockDeleteConversation,
+            pinConversationUseCase: mockPinConversation,
+            updateConversationTagsUseCase: mockUpdateTags,
             fetchModelsUseCase: mockFetchModels,
             settingsManager: mockSettingsManager
         )
@@ -40,6 +46,8 @@ final class ConversationListViewModelTests: XCTestCase {
         sut = nil
         mockLoadConversations = nil
         mockDeleteConversation = nil
+        mockPinConversation = nil
+        mockUpdateTags = nil
         mockFetchModels = nil
         mockSettingsManager = nil
 

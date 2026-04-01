@@ -17,6 +17,8 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
     var systemPrompt: String
     var messages: [ChatMessage]
     var modelParameters: ModelParameters
+    var isPinned: Bool
+    var tags: [String]
     let createdAt: Date
     var updatedAt: Date
 
@@ -29,6 +31,8 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         systemPrompt: String = "",
         messages: [ChatMessage] = [],
         modelParameters: ModelParameters = .default,
+        isPinned: Bool = false,
+        tags: [String] = [],
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -38,6 +42,8 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         self.systemPrompt = systemPrompt
         self.messages = messages
         self.modelParameters = modelParameters
+        self.isPinned = isPinned
+        self.tags = tags
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -50,6 +56,8 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         systemPrompt = try container.decode(String.self, forKey: .systemPrompt)
         messages = try container.decode([ChatMessage].self, forKey: .messages)
         modelParameters = try container.decodeIfPresent(ModelParameters.self, forKey: .modelParameters) ?? .default
+        isPinned = try container.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
+        tags = try container.decodeIfPresent([String].self, forKey: .tags) ?? []
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }

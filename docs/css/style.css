@@ -149,11 +149,15 @@ h1 {
   font-weight: 500;
 }
 
-.cta {
+.cta-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
   margin-bottom: 48px;
 }
 
-.cta a {
+.cta-group a {
   display: inline-block;
   padding: 14px 32px;
   background: var(--accent);
@@ -165,23 +169,123 @@ h1 {
   transition: opacity 0.2s;
 }
 
-.cta a:hover {
+.cta-group a:hover {
   opacity: 0.85;
 }
 
-.languages {
+.cta-secondary {
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 24px;
+  background: var(--card-bg);
+  color: var(--muted);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: default;
+  user-select: none;
+}
+
+.coming-soon {
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  padding: 2px 7px;
+  border-radius: 8px;
+  margin-left: 8px;
+}
+
+.getting-started {
   margin-bottom: 48px;
 }
 
-.languages h2 {
+.getting-started h2,
+.roadmap-section h2 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.steps {
+  list-style: none;
+  counter-reset: steps;
+  display: inline-block;
+  text-align: left;
+  margin-bottom: 16px;
+}
+
+.steps li {
+  counter-increment: steps;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.steps li::before {
+  content: counter(steps);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.steps a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.steps a:hover {
+  text-decoration: underline;
+}
+
+.req-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+  opacity: 0.8;
+}
+
+.github-section {
+  margin-bottom: 48px;
+}
+
+.github-section h2 {
   font-size: 1.3rem;
   font-weight: 600;
   margin-bottom: 12px;
 }
 
-.languages p {
+.github-section p {
   font-size: 0.9rem;
   color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.github-link {
+  display: inline-block;
+  padding: 12px 28px;
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: opacity 0.2s;
+}
+
+.github-link:hover {
+  opacity: 0.85;
 }
 
 footer {
@@ -216,6 +320,18 @@ footer a:hover {
 
 .footer-legal a:hover {
   text-decoration: underline;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .feature {
+    background: rgba(255, 255, 255, 0.95);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .feature {
+      background: rgba(28, 28, 30, 0.95);
+    }
+  }
 }
 
 .footer-legal span {

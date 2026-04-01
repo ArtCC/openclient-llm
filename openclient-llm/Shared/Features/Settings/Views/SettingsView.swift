@@ -10,6 +10,7 @@ import SwiftUI
 #if os(iOS)
 import StoreKit
 #endif
+import VoticeSDK
 
 struct SettingsView: View {
     // MARK: - Properties
@@ -18,6 +19,8 @@ struct SettingsView: View {
     @State private var serverURL: String = ""
     @State private var apiKey: String = ""
     @State private var isAPIKeyVisible = false
+    @State private var isShowingVotice = false
+    @State private var isShowingUserProfile = false
     @State private var presentedWebURL: WebDestination?
     @FocusState private var focusedField: Field?
 
@@ -38,6 +41,12 @@ struct SettingsView: View {
                 if let url = destination.url {
                     WebContentView(title: destination.title, url: url)
                 }
+            }
+            .sheet(isPresented: $isShowingVotice) {
+                Votice.feedbackView()
+            }
+            .sheet(isPresented: $isShowingUserProfile) {
+                UserProfileView()
             }
         }
         .task {
@@ -62,6 +71,8 @@ private extension SettingsView {
         Form {
             serverSection(loadedState)
             cloudSyncSection(loadedState)
+            personalizationSection()
+            chatSection(loadedState)
             feedbackSection()
             legalSection()
         }
@@ -86,8 +97,8 @@ private extension SettingsView {
                     }
                     Text(
                         loadedState.connectionStatus == .testing
-                            ? String(localized: "Testing...")
-                            : String(localized: "Test Connection")
+                        ? String(localized: "Testing...")
+                        : String(localized: "Test Connection")
                     )
                 }
             }
@@ -123,10 +134,10 @@ private extension SettingsView {
         .textSelection(.enabled)
         .textContentType(.URL)
         .autocorrectionDisabled()
-        #if os(iOS)
+#if os(iOS)
         .textInputAutocapitalization(.never)
         .keyboardType(.URL)
-        #endif
+#endif
         .onChange(of: serverURL) { _, newValue in
             viewModel.send(.serverURLChanged(newValue))
         }
@@ -160,8 +171,8 @@ private extension SettingsView {
             .buttonStyle(.plain)
             .accessibilityLabel(
                 isAPIKeyVisible
-                    ? String(localized: "Hide API Key")
-                    : String(localized: "Show API Key")
+                ? String(localized: "Hide API Key")
+                : String(localized: "Show API Key")
             )
         }
         .onChange(of: apiKey) { _, newValue in
@@ -192,8 +203,7 @@ private extension SettingsView {
             }
 
             Button {
-                // Placeholder: will integrate Votice SDK in the future
-                print("Suggest Features tapped")
+                isShowingVotice = true
             } label: {
                 Label(String(localized: "Suggest Features"), systemImage: "lightbulb")
             }
@@ -224,6 +234,35 @@ private extension SettingsView {
             Text(String(localized: "Sync"))
         } footer: {
             Text(String(localized: "Sync conversations across your devices via iCloud."))
+        }
+    }
+
+    func chatSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { loadedState.showTokenUsage },
+                set: { viewModel.send(.showTokenUsageToggled($0)) }
+            )) {
+                Label(String(localized: "Show Token Usage"), systemImage: "number")
+            }
+        } header: {
+            Text(String(localized: "Chat"))
+        } footer: {
+            Text(String(localized: "Show token count below each assistant response."))
+        }
+    }
+
+    func personalizationSection() -> some View {
+        Section {
+            Button {
+                isShowingUserProfile = true
+            } label: {
+                Label(String(localized: "Personal Context"), systemImage: "person.text.rectangle")
+            }
+        } header: {
+            Text(String(localized: "Personalization"))
+        } footer: {
+            Text(String(localized: "Configure your name and personal context to personalise model responses."))
         }
     }
 
@@ -258,14 +297,14 @@ private extension SettingsView {
     }
 
     func requestAppReview() {
-        #if os(iOS)
+#if os(iOS)
         guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
         AppStore.requestReview(in: windowScene)
-        #else
+#else
         if let url = URL(string: "macappstore://apps.apple.com/app/id\(Constants.App.appStoreId)?action=write-review") {
             NSWorkspace.shared.open(url)
         }
-        #endif
+#endif
     }
 }
 
