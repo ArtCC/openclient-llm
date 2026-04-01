@@ -28,7 +28,6 @@ final class ChatViewModel {
         case speakMessageTapped(ChatMessage)
         case stopSpeakingTapped
         case audioRecorded(Data, TimeInterval)
-        case generateImageTapped
     }
 
     enum State: Equatable {
@@ -51,11 +50,9 @@ final class ChatViewModel {
         var isSpeaking: Bool = false
         var speakingMessageId: UUID?
         var isTranscribing: Bool = false
-        var isGeneratingImage: Bool = false
         var showTokenUsage: Bool = true
         var scrollToBottomTrigger: Bool = false
         var ttsModelId: String?
-        var imageModel: LLMModel?
     }
 
     var state: State
@@ -67,7 +64,6 @@ final class ChatViewModel {
     let saveConversationUseCase: SaveConversationUseCaseProtocol
     private let synthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol
     let transcribeAudioUseCase: TranscribeAudioUseCaseProtocol
-    let generateImageUseCase: GenerateImageUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
     private let userProfileManager: UserProfileManagerProtocol
     private let conversationStartersManager: ConversationStartersManagerProtocol
@@ -86,7 +82,6 @@ final class ChatViewModel {
         saveConversationUseCase: SaveConversationUseCaseProtocol = SaveConversationUseCase(),
         synthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol = SynthesizeSpeechUseCase(),
         transcribeAudioUseCase: TranscribeAudioUseCaseProtocol = TranscribeAudioUseCase(),
-        generateImageUseCase: GenerateImageUseCaseProtocol = GenerateImageUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
         conversationStartersManager: ConversationStartersManagerProtocol = ConversationStartersManager(),
@@ -99,7 +94,6 @@ final class ChatViewModel {
         self.saveConversationUseCase = saveConversationUseCase
         self.synthesizeSpeechUseCase = synthesizeSpeechUseCase
         self.transcribeAudioUseCase = transcribeAudioUseCase
-        self.generateImageUseCase = generateImageUseCase
         self.settingsManager = settingsManager
         self.userProfileManager = userProfileManager
         self.conversationStartersManager = conversationStartersManager
@@ -129,8 +123,7 @@ final class ChatViewModel {
              .modelParametersChanged,
              .speakMessageTapped,
              .stopSpeakingTapped,
-             .audioRecorded,
-             .generateImageTapped:
+             .audioRecorded:
             handleConfigurationEvent(event)
         }
     }
@@ -149,7 +142,6 @@ private extension ChatViewModel {
         case .speakMessageTapped(let message): speakMessage(message)
         case .stopSpeakingTapped: stopSpeaking()
         case .audioRecorded(let data, let duration): transcribeAudio(data: data, duration: duration)
-        case .generateImageTapped: generateImage()
         default: break
         }
     }
@@ -183,8 +175,6 @@ private extension ChatViewModel {
             LogManager.success("fetchAndBuildInitialState models=\(chatModels.count) selected=\(selectedId)")
 
             let ttsModelId = models.first(where: { $0.mode == .audioSpeech })?.id
-            let imageModel = models.first(where: { $0.mode == .imageGeneration })
-            LogManager.info("fetchAndBuildInitialState imageModel=\(imageModel?.id ?? "none")")
             let starters = conversationStartersManager.randomStarters(count: 4)
             state = .loaded(LoadedState(
                 conversation: pending,
@@ -195,8 +185,7 @@ private extension ChatViewModel {
                 systemPrompt: pending?.systemPrompt ?? "",
                 modelParameters: pending?.modelParameters ?? .default,
                 showTokenUsage: settingsManager.getShowTokenUsage(),
-                ttsModelId: ttsModelId,
-                imageModel: imageModel
+                ttsModelId: ttsModelId
             ))
         } catch {
             LogManager.error("fetchAndBuildInitialState failed: \(error)")

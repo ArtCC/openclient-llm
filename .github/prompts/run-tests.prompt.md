@@ -20,8 +20,18 @@ Run the full unit test suite for the project and report results.
 ```bash
 xcodebuild test \
   -scheme openclient-llm \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  -quiet 2>&1 | grep -E "error:|warning:|Test Case|passed|failed"
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \
+  2>&1 | tee /tmp/xcodebuild_test.txt | grep -E "Test Case.*failed|Executed [0-9]+ test|TEST SUCCEEDED|TEST FAILED|error:"
+```
+
+This single command:
+- Runs the full test suite without `-quiet` (so all output is available)
+- Streams a filtered summary live (failed tests, final count, overall result, and compiler errors)
+- Saves the full output to `/tmp/xcodebuild_test.txt` for inspection if needed
+
+To read failed test details after the run:
+```bash
+grep -A 5 "failed" /tmp/xcodebuild_test.txt
 ```
 
 ## Rules

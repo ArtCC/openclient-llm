@@ -80,7 +80,6 @@ private extension SettingsView {
 #if os(iOS)
             .scrollDismissesKeyboard(.immediately)
 #endif
-            appInfoSection()
         }
     }
 
@@ -294,6 +293,14 @@ private extension SettingsView {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            HStack {
+                Text(String(localized: "Version \(appVersion) (\(appBuild))"))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 5)
+                Spacer()
+            }
         } header: {
             Text(String(localized: "About"))
         }
@@ -305,13 +312,6 @@ private extension SettingsView {
 
     var appBuild: String {
         Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—"
-    }
-
-    func appInfoSection() -> some View {
-        Text(String(localized: "Version \(appVersion) (\(appBuild))"))
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-            .padding(.vertical, 12)
     }
 
     func requestAppReview() {

@@ -41,13 +41,13 @@ openclient-llm/                    # iOS target
 │   │   │   ├── UseCases/          # TranscribeAudioUseCase
 │   │   │   ├── Repositories/      # AudioTranscriptionRepository
 │   │   │   └── Models/            # Transcription
-│   │   ├── Chat/                  # Chat with SSE streaming, voice dictation + image generation
+│   │   ├── Chat/                  # Chat with SSE streaming and voice dictation
 │   │   │   ├── Views/             # ChatView, MessageBubbleView, CodeBlockView,
 │   │   │   │                      # ConversationListView, ConversationTagsView,
 │   │   │   │                      # AttachmentPickerView, CameraPickerView,
 │   │   │   │                      # ChatEmptyStateView, ChatModelParametersView,
 │   │   │   │                      # ChatSystemPromptView
-│   │   │   ├── ViewModels/        # ChatViewModel (+ ImageGeneration, + Transcription, + Helpers),
+│   │   │   ├── ViewModels/        # ChatViewModel (+ Transcription, + Helpers),
 │   │   │   │                      # ConversationListViewModel
 │   │   │   ├── UseCases/          # SendMessage, StreamMessage,
 │   │   │   │                      # LoadConversations, SaveConversation, DeleteConversation,
@@ -57,10 +57,6 @@ openclient-llm/                    # iOS target
 │   │   │                          # TokenUsage, ModelParameters
 │   │   ├── Home/                  # TabView (iOS) / SplitView (macOS)
 │   │   │   └── Views/             # HomeView
-│   │   ├── ImageGeneration/       # AI image generation (integrated in Chat)
-│   │   │   ├── UseCases/          # GenerateImageUseCase
-│   │   │   ├── Repositories/      # ImageGenerationRepository
-│   │   │   └── Models/            # GeneratedImage
 │   │   ├── Launch/                # Initial routing
 │   │   │   ├── Views/             # LaunchView
 │   │   │   ├── ViewModels/        # LaunchViewModel

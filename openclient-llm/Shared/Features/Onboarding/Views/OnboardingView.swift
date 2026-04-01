@@ -137,7 +137,7 @@ private extension OnboardingView {
 
             VStack(spacing: 12) {
                 Text(String(localized: "Welcome to OpenClient"))
-                    .font(.largeTitle)
+                    .font(.title)
                     .fontWeight(.bold)
                     .multilineTextAlignment(.center)
 

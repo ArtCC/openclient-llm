@@ -73,9 +73,13 @@ private extension MessageBubbleView {
                 .glassEffect(.regular, in: .circle)
 
             VStack(alignment: .leading, spacing: 8) {
+                if !message.attachments.isEmpty {
+                    attachmentsView
+                }
+
                 if message.content.isEmpty && isStreaming {
                     thinkingIndicator
-                } else {
+                } else if !message.content.isEmpty {
                     blocksView
                 }
 
