@@ -19,6 +19,9 @@ final class ConversationListViewModel {
         case conversationTapped(Conversation)
         case deleteConversation(UUID)
         case searchChanged(String)
+        case pinToggled(UUID)
+        case tagsUpdated(UUID, [String])
+        case tagFilterChanged(String?)
     }
 
     enum State: Equatable {
@@ -33,6 +36,12 @@ final class ConversationListViewModel {
         var errorMessage: String?
         var searchQuery: String = ""
         var filteredConversations: [Conversation] = []
+        var activeTagFilter: String?
+
+        var allTags: [String] {
+            let tagSet = conversations.flatMap(\.tags)
+            return Array(Set(tagSet)).sorted()
+        }
 
         var groupedConversations: [ConversationSection] {
             ConversationSection.group(filteredConversations)
@@ -43,6 +52,8 @@ final class ConversationListViewModel {
 
     private let loadConversationsUseCase: LoadConversationsUseCaseProtocol
     private let deleteConversationUseCase: DeleteConversationUseCaseProtocol
+    private let pinConversationUseCase: PinConversationUseCaseProtocol
+    private let updateConversationTagsUseCase: UpdateConversationTagsUseCaseProtocol
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
     private var errorDismissTask: Task<Void, Never>?
@@ -55,12 +66,16 @@ final class ConversationListViewModel {
         state: State = .loading,
         loadConversationsUseCase: LoadConversationsUseCaseProtocol = LoadConversationsUseCase(),
         deleteConversationUseCase: DeleteConversationUseCaseProtocol = DeleteConversationUseCase(),
+        pinConversationUseCase: PinConversationUseCaseProtocol = PinConversationUseCase(),
+        updateConversationTagsUseCase: UpdateConversationTagsUseCaseProtocol = UpdateConversationTagsUseCase(),
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager()
     ) {
         self.state = state
         self.loadConversationsUseCase = loadConversationsUseCase
         self.deleteConversationUseCase = deleteConversationUseCase
+        self.pinConversationUseCase = pinConversationUseCase
+        self.updateConversationTagsUseCase = updateConversationTagsUseCase
         self.fetchModelsUseCase = fetchModelsUseCase
         self.settingsManager = settingsManager
     }
@@ -79,6 +94,12 @@ final class ConversationListViewModel {
             deleteConversation(id)
         case .searchChanged(let query):
             updateSearch(query)
+        case .pinToggled(let id):
+            togglePin(id)
+        case .tagsUpdated(let id, let tags):
+            updateTags(id, tags: tags)
+        case .tagFilterChanged(let tag):
+            updateTagFilter(tag)
         }
     }
 
@@ -180,13 +201,19 @@ private extension ConversationListViewModel {
     }
 
     func applySearchFilter(_ loadedState: inout LoadedState) {
+        var base = loadedState.conversations
+
+        if let tag = loadedState.activeTagFilter {
+            base = base.filter { $0.tags.contains(tag) }
+        }
+
         let query = loadedState.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !query.isEmpty else {
-            loadedState.filteredConversations = loadedState.conversations
+            loadedState.filteredConversations = base
             return
         }
 
-        loadedState.filteredConversations = loadedState.conversations.filter { conversation in
+        loadedState.filteredConversations = base.filter { conversation in
             if conversation.title.lowercased().contains(query) {
                 return true
             }
@@ -194,6 +221,44 @@ private extension ConversationListViewModel {
                 message.content.lowercased().contains(query)
             }
         }
+    }
+
+    func togglePin(_ id: UUID) {
+        guard case .loaded(var loadedState) = state else { return }
+        guard let index = loadedState.conversations.firstIndex(where: { $0.id == id }) else { return }
+        let newValue = !loadedState.conversations[index].isPinned
+        do {
+            try pinConversationUseCase.execute(id, isPinned: newValue)
+            loadedState.conversations[index].isPinned = newValue
+            applySearchFilter(&loadedState)
+            state = .loaded(loadedState)
+        } catch {
+            loadedState.errorMessage = error.localizedDescription
+            state = .loaded(loadedState)
+            scheduleErrorDismiss()
+        }
+    }
+
+    func updateTags(_ id: UUID, tags: [String]) {
+        guard case .loaded(var loadedState) = state else { return }
+        guard let index = loadedState.conversations.firstIndex(where: { $0.id == id }) else { return }
+        do {
+            try updateConversationTagsUseCase.execute(id, tags: tags)
+            loadedState.conversations[index].tags = tags
+            applySearchFilter(&loadedState)
+            state = .loaded(loadedState)
+        } catch {
+            loadedState.errorMessage = error.localizedDescription
+            state = .loaded(loadedState)
+            scheduleErrorDismiss()
+        }
+    }
+
+    func updateTagFilter(_ tag: String?) {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.activeTagFilter = tag
+        applySearchFilter(&loadedState)
+        state = .loaded(loadedState)
     }
 
     func scheduleErrorDismiss() {

@@ -13,6 +13,7 @@ struct ConversationListView: View {
 
     @State private var viewModel = ConversationListViewModel()
     @State private var searchText: String = ""
+    @State private var editingTagsConversation: Conversation?
 
     let onConversationSelected: (Conversation?) -> Void
 
@@ -43,6 +44,14 @@ struct ConversationListView: View {
             viewModel.onConversationSelected = onConversationSelected
             viewModel.send(.viewAppeared)
         }
+        .sheet(item: $editingTagsConversation) { conversation in
+            ConversationTagsView(
+                conversationTitle: conversationTitle(conversation),
+                existingTags: conversation.tags
+            ) { tags in
+                viewModel.send(.tagsUpdated(conversation.id, tags))
+            }
+        }
     }
 }
 
@@ -72,10 +81,6 @@ private extension ConversationListView {
         }
     }
 
-    var noSearchResults: some View {
-        ContentUnavailableView.search(text: searchText)
-    }
-
     var emptyState: some View {
         ContentUnavailableView {
             Label(
@@ -94,34 +99,120 @@ private extension ConversationListView {
         }
     }
 
+    var noSearchResults: some View {
+        ContentUnavailableView.search(text: searchText)
+    }
+
     func conversationList(_ loadedState: ConversationListViewModel.LoadedState) -> some View {
-        List {
-            ForEach(loadedState.groupedConversations) { section in
-                Section {
-                    ForEach(section.conversations) { conversation in
-                        conversationRow(conversation, loadedState: loadedState)
-                            .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
-                    }
-                    .onDelete { indexSet in
-                        for index in indexSet {
-                            let conversation = section.conversations[index]
-                            viewModel.send(.deleteConversation(conversation.id))
+        VStack(spacing: 0) {
+            if !loadedState.allTags.isEmpty {
+                tagFilterBar(loadedState)
+                Divider()
+            }
+            List {
+                ForEach(loadedState.groupedConversations) { section in
+                    Section {
+                        ForEach(section.conversations) { conversation in
+                            conversationRow(conversation, loadedState: loadedState)
+                                .listRowBackground(Color.clear)
+                                .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                                .contextMenu {
+                                    conversationContextMenu(conversation)
+                                }
                         }
-                    }
-                } header: {
-                    Text(section.period.localizedTitle)
+                        .onDelete { indexSet in
+                            for index in indexSet {
+                                let conversation = section.conversations[index]
+                                viewModel.send(.deleteConversation(conversation.id))
+                            }
+                        }
+                    } header: {
+                        HStack(spacing: 4) {
+                            if section.period == .pinned {
+                                Image(systemName: "pin.fill")
+                                    .font(.caption2)
+                            }
+                            Text(section.period.localizedTitle)
+                        }
                         .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundStyle(.secondary)
                         .textCase(nil)
+                    }
                 }
             }
+            .listStyle(.plain)
+            .refreshable {
+                viewModel.refresh()
+            }
         }
-        .listStyle(.plain)
-        .refreshable {
-            viewModel.refresh()
+    }
+
+    @ViewBuilder
+    func conversationContextMenu(_ conversation: Conversation) -> some View {
+        Button {
+            viewModel.send(.pinToggled(conversation.id))
+        } label: {
+            Label(
+                conversation.isPinned ? String(localized: "Unpin") : String(localized: "Pin"),
+                systemImage: conversation.isPinned ? "pin.slash" : "pin"
+            )
         }
+
+        Button {
+            editingTagsConversation = conversation
+        } label: {
+            Label(String(localized: "Edit Tags"), systemImage: "tag")
+        }
+
+        Divider()
+
+        Button(role: .destructive) {
+            viewModel.send(.deleteConversation(conversation.id))
+        } label: {
+            Label(String(localized: "Delete"), systemImage: "trash")
+        }
+    }
+
+    func tagFilterBar(_ loadedState: ConversationListViewModel.LoadedState) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                tagChip(
+                    label: String(localized: "All"),
+                    systemImage: "tag",
+                    isSelected: loadedState.activeTagFilter == nil
+                ) {
+                    viewModel.send(.tagFilterChanged(nil))
+                }
+                ForEach(loadedState.allTags, id: \.self) { tag in
+                    tagChip(
+                        label: tag,
+                        systemImage: "tag.fill",
+                        isSelected: loadedState.activeTagFilter == tag
+                    ) {
+                        viewModel.send(.tagFilterChanged(loadedState.activeTagFilter == tag ? nil : tag))
+                    }
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+        }
+    }
+
+    func tagChip(label: String, systemImage: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(label, systemImage: systemImage)
+                .font(.caption)
+                .fontWeight(.medium)
+                .lineLimit(1)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .glassEffect(
+                    isSelected ? .regular.tint(Color.accentColor).interactive() : .regular.interactive(),
+                    in: .capsule
+                )
+        }
+        .buttonStyle(.plain)
     }
 
     func conversationRow(
@@ -134,9 +225,9 @@ private extension ConversationListView {
             viewModel.send(.conversationTapped(conversation))
         } label: {
             HStack(alignment: .top, spacing: 12) {
-                Image(systemName: "sparkles")
+                Image(systemName: conversation.isPinned ? "pin.fill" : "sparkles")
                     .font(.system(size: 14))
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(conversation.isPinned ? .orange : Color.accentColor)
                     .frame(width: 36, height: 36)
                     .glassEffect(
                         isSelected ? .regular.tint(Color.accentColor) : .regular,
@@ -162,8 +253,13 @@ private extension ConversationListView {
                             .lineLimit(2)
                     }
 
-                    modelBadge(conversation.modelId)
-                        .padding(.top, 2)
+                    HStack(spacing: 4) {
+                        modelBadge(conversation.modelId)
+                        ForEach(conversation.tags.prefix(3), id: \.self) { tag in
+                            tagBadge(tag)
+                        }
+                    }
+                    .padding(.top, 2)
                 }
             }
             .padding(.horizontal, 12)
@@ -189,6 +285,17 @@ private extension ConversationListView {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(.secondary.opacity(0.12), in: .capsule)
+    }
+
+    func tagBadge(_ tag: String) -> some View {
+        Text(tag)
+            .font(.caption2)
+            .fontWeight(.medium)
+            .foregroundStyle(.orange)
+            .lineLimit(1)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(.orange.opacity(0.12), in: .capsule)
     }
 
     func formattedDate(_ date: Date) -> String {

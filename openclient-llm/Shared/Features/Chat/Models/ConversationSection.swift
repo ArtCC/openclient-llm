@@ -12,6 +12,7 @@ struct ConversationSection: Equatable, Identifiable {
     // MARK: - Properties
 
     enum Period: String, Equatable {
+        case pinned
         case today
         case yesterday
         case thisWeek
@@ -19,6 +20,7 @@ struct ConversationSection: Equatable, Identifiable {
 
         var localizedTitle: String {
             switch self {
+            case .pinned: String(localized: "Pinned")
             case .today: String(localized: "Today")
             case .yesterday: String(localized: "Yesterday")
             case .thisWeek: String(localized: "This Week")
@@ -38,12 +40,15 @@ struct ConversationSection: Equatable, Identifiable {
         let calendar = Calendar.current
         let now = Date()
 
+        let pinned = conversations.filter(\.isPinned)
+        let unpinned = conversations.filter { !$0.isPinned }
+
         var today: [Conversation] = []
         var yesterday: [Conversation] = []
         var thisWeek: [Conversation] = []
         var earlier: [Conversation] = []
 
-        for conversation in conversations {
+        for conversation in unpinned {
             let date = conversation.updatedAt
             if calendar.isDateInToday(date) {
                 today.append(conversation)
@@ -57,6 +62,7 @@ struct ConversationSection: Equatable, Identifiable {
         }
 
         return [
+            ConversationSection(period: .pinned, conversations: pinned),
             ConversationSection(period: .today, conversations: today),
             ConversationSection(period: .yesterday, conversations: yesterday),
             ConversationSection(period: .thisWeek, conversations: thisWeek),

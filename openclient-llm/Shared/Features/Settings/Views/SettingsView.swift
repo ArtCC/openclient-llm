@@ -20,6 +20,7 @@ struct SettingsView: View {
     @State private var apiKey: String = ""
     @State private var isAPIKeyVisible = false
     @State private var isShowingVotice = false
+    @State private var isShowingUserProfile = false
     @State private var presentedWebURL: WebDestination?
     @FocusState private var focusedField: Field?
 
@@ -44,6 +45,9 @@ struct SettingsView: View {
             .sheet(isPresented: $isShowingVotice) {
                 Votice.feedbackView()
             }
+            .sheet(isPresented: $isShowingUserProfile) {
+                UserProfileView()
+            }
         }
         .task {
             viewModel.send(.viewAppeared)
@@ -67,6 +71,7 @@ private extension SettingsView {
         Form {
             serverSection(loadedState)
             cloudSyncSection(loadedState)
+            personalizationSection()
             chatSection(loadedState)
             feedbackSection()
             legalSection()
@@ -244,6 +249,20 @@ private extension SettingsView {
             Text(String(localized: "Chat"))
         } footer: {
             Text(String(localized: "Show token count below each assistant response."))
+        }
+    }
+
+    func personalizationSection() -> some View {
+        Section {
+            Button {
+                isShowingUserProfile = true
+            } label: {
+                Label(String(localized: "Personal Context"), systemImage: "person.text.rectangle")
+            }
+        } header: {
+            Text(String(localized: "Personalization"))
+        } footer: {
+            Text(String(localized: "Configure your name and personal context to personalise model responses."))
         }
     }
 

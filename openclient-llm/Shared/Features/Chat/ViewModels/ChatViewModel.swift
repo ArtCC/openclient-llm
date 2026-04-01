@@ -69,6 +69,7 @@ final class ChatViewModel {
     let transcribeAudioUseCase: TranscribeAudioUseCaseProtocol
     let generateImageUseCase: GenerateImageUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
+    private let userProfileManager: UserProfileManagerProtocol
     private let conversationStartersManager: ConversationStartersManagerProtocol
     private let audioPlayerManager: AudioPlayerManager
     private var streamTask: Task<Void, Never>?
@@ -87,6 +88,7 @@ final class ChatViewModel {
         transcribeAudioUseCase: TranscribeAudioUseCaseProtocol = TranscribeAudioUseCase(),
         generateImageUseCase: GenerateImageUseCaseProtocol = GenerateImageUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
+        userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
         conversationStartersManager: ConversationStartersManagerProtocol = ConversationStartersManager(),
         audioPlayerManager: AudioPlayerManager = AudioPlayerManager()
     ) {
@@ -99,6 +101,7 @@ final class ChatViewModel {
         self.transcribeAudioUseCase = transcribeAudioUseCase
         self.generateImageUseCase = generateImageUseCase
         self.settingsManager = settingsManager
+        self.userProfileManager = userProfileManager
         self.conversationStartersManager = conversationStartersManager
         self.audioPlayerManager = audioPlayerManager
     }
@@ -343,10 +346,17 @@ private extension ChatViewModel {
         systemPrompt: String,
         parameters: ModelParameters
     ) async {
+        // Build effective system prompt: user profile context + per-conversation system prompt
+        let profileContext = userProfileManager.getProfile().systemPromptContext
+        let effectiveSystemPrompt = buildEffectiveSystemPrompt(
+            profileContext: profileContext,
+            conversationSystemPrompt: systemPrompt
+        )
+
         // Build messages with system prompt prepended
         var allMessages = messages
-        if !systemPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            let systemMessage = ChatMessage(role: .system, content: systemPrompt)
+        if !effectiveSystemPrompt.isEmpty {
+            let systemMessage = ChatMessage(role: .system, content: effectiveSystemPrompt)
             allMessages.insert(systemMessage, at: 0)
         }
 
@@ -444,6 +454,17 @@ private extension ChatViewModel {
         state = .loaded(loadedState)
     }
 
+    func buildEffectiveSystemPrompt(profileContext: String, conversationSystemPrompt: String) -> String {
+        let profile = profileContext.trimmingCharacters(in: .whitespacesAndNewlines)
+        let conversation = conversationSystemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        switch (profile.isEmpty, conversation.isEmpty) {
+        case (true, true): return ""
+        case (false, true): return profile
+        case (true, false): return conversation
+        case (false, false): return "\(profile)\n\n\(conversation)"
+        }
+    }
 }
 
 // MARK: - Internal helpers
