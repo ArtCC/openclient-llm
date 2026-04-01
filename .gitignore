@@ -21,3 +21,6 @@ playground.xcworkspace
 
 # macOS
 .DS_Store
+
+# Secrets — never commit real credentials
+Secrets.xcconfig

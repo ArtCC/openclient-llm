@@ -15,6 +15,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Create Secrets.xcconfig
+        run: |
+          cat > Secrets.xcconfig << 'EOF'
+          VOTICE_API_KEY = 
+          VOTICE_API_SECRET = 
+          VOTICE_APP_ID = 
+          EOF
+
       - name: Resolve simulator
         id: sim
         run: |
@@ -67,6 +75,14 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Create Secrets.xcconfig
+        run: |
+          cat > Secrets.xcconfig << 'EOF'
+          VOTICE_API_KEY = 
+          VOTICE_API_SECRET = 
+          VOTICE_APP_ID = 
+          EOF
+
       - name: Build
         run: |
           xcodebuild build \
@@ -75,4 +91,5 @@ jobs:
             -destination 'platform=macOS' \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
             | xcpretty && exit ${PIPESTATUS[0]}

@@ -20,6 +20,7 @@ struct MessageBubbleView: View {
     var isStreaming: Bool = false
     var isSpeaking: Bool = false
     var hasTTS: Bool = false
+    var showTokenUsage: Bool = true
     var onSpeakTapped: (() -> Void)?
     var onStopSpeakingTapped: (() -> Void)?
     @State private var cursorVisible: Bool = false
@@ -78,7 +79,7 @@ private extension MessageBubbleView {
                     blocksView
                 }
 
-                if let usage = message.tokenUsage, !isStreaming {
+                if let usage = message.tokenUsage, !isStreaming, showTokenUsage {
                     tokenUsageLabel(usage)
                 }
 
@@ -230,9 +231,16 @@ private extension MessageBubbleView {
     }
 
     func textBlockView(_ content: String, isLast: Bool) -> some View {
+        // Normalize single newlines to double newlines so CommonMark renders them
+        // as paragraph breaks instead of collapsing them into spaces.
+        let normalized = content.replacingOccurrences(
+            of: "(?<!\n)\n(?!\n)",
+            with: "\n\n",
+            options: .regularExpression
+        )
         let displayContent = isLast && isStreaming && cursorVisible
-            ? content + "█"
-            : content
+            ? normalized + "█"
+            : normalized
 
         let attributed: AttributedString = {
             if let result = try? AttributedString(

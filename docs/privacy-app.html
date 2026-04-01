@@ -4,8 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy — OpenClient LLM</title>
-  <meta name="description" content="Privacy Policy for OpenClient LLM, a native Apple client for LiteLLM.">
+  <title>Privacy Policy — OpenClient</title>
+  <meta name="description"
+    content="Privacy Policy for OpenClient, a native Apple client for Ollama, LiteLLM, and any OpenAI-compatible server.">
   <link rel="icon" type="image/png" href="assets/icon_radius.png">
   <link rel="apple-touch-icon" href="assets/icon_radius.png">
   <link rel="stylesheet" href="css/style.css">
@@ -25,36 +26,41 @@
   <div class="container legal">
     <div class="legal-content">
       <h2>Summary</h2>
-      <p>OpenClient LLM does <strong>not collect, store, transmit, or share any personal data</strong>. The app runs
-        entirely on your device and communicates only with the server you configure.</p>
+      <p>OpenClient does <strong>not collect, store, transmit, or share any personal data</strong> to the developer.
+        The app runs entirely on your device and communicates only with the server you configure.</p>
 
       <h2>No Developer Backend</h2>
-      <p>OpenClient LLM has no developer-operated server, backend, analytics service, or cloud infrastructure of any
-        kind. There is no telemetry, no crash reporting, and no usage tracking. The developer never receives any data
-        from your use of the app.</p>
+      <p>OpenClient has no developer-operated server, backend, analytics service, or cloud infrastructure of any
+        kind. There is no telemetry, no usage tracking, and no crash reporting sent to the developer. The developer
+        never receives any data from your use of the app.</p>
 
       <h2>Local-Only Architecture</h2>
       <p>All app data — including your settings, conversation history, and preferences — is stored locally on your
-        device. Nothing leaves your device except the requests you explicitly send to the LiteLLM server you configure.
-      </p>
+        device. If you enable iCloud sync, your user profile and preferences are stored in your personal iCloud
+        Key-Value
+        store, which is private to your Apple ID and not accessible by the developer. Nothing leaves your device except
+        the requests you explicitly send to the server you configure.</p>
 
       <h2>Server Communication</h2>
-      <p>The app connects exclusively to the LiteLLM proxy server URL that you provide. All network requests are sent
-        directly from your device to your server. The developer has no access to, knowledge of, or involvement in this
-        communication.</p>
+      <p>The app connects exclusively to the server URL that you provide. This can be an Ollama instance, a LiteLLM
+        proxy, or any other OpenAI-compatible backend. All network requests are sent directly from your device to your
+        server. The developer has no access to, knowledge of, or involvement in this communication.</p>
 
       <h2>API Keys &amp; Credentials</h2>
-      <p>API keys are configured on your self-hosted LiteLLM server, not stored in the App. The management of API keys,
-        their associated costs, and the terms of service of any LLM provider (OpenAI, Anthropic, Ollama, etc.) are
-        entirely your responsibility as the server operator. OpenClient LLM and its developer are not affiliated with
-        any LLM provider.</p>
+      <p>Any API keys you configure in the App (for direct provider access) or on your self-hosted server are stored
+        securely in the device Keychain and never transmitted to the developer. The management of API keys, their
+        associated costs, and the terms of service of any LLM provider (OpenAI, Anthropic, Ollama, etc.) are entirely
+        your responsibility as the operator. OpenClient and its developer are not affiliated with any LLM provider.</p>
 
       <h2>Third-Party Services</h2>
-      <p>The app does not integrate any third-party SDKs, analytics frameworks, advertising networks, or tracking
-        services. The only external dependency is the LiteLLM server you choose to connect to.</p>
+      <p>The app integrates the <strong>Votice SDK</strong> (developed by the same author) to support voice-related
+        features such as audio transcription and text-to-speech. This SDK communicates only with the server you
+        configure and does not send data to any external service. No advertising networks, tracking frameworks, or
+        third-party analytics are used. iCloud Key-Value storage is used optionally for syncing your user profile
+        across your own Apple devices; this data is private to your Apple ID.</p>
 
       <h2>Open Source &amp; Auditable</h2>
-      <p>OpenClient LLM is fully open source under the Apache 2.0 license. You can inspect, audit, and verify every
+      <p>OpenClient is fully open source under the Apache 2.0 license. You can inspect, audit, and verify every
         line of code in the <a href="https://github.com/ArtCC/openclient-llm">GitHub repository</a>. This transparency
         ensures you can confirm that no data collection exists.</p>
 

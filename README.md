@@ -37,26 +37,23 @@ openclient-llm/                    # iOS target
 │   └── OpenClientApp.swift
 ├── Shared/                        # Shared code (iOS + macOS)
 │   ├── Features/                  # Feature modules
-│   │   ├── AudioTranscription/    # Speech-to-Text
-│   │   │   ├── Views/             # AudioTranscriptionView
-│   │   │   ├── ViewModels/        # AudioTranscriptionViewModel
+│   │   ├── AudioTranscription/    # Speech-to-Text (integrated in chat input)
 │   │   │   ├── UseCases/          # TranscribeAudioUseCase
 │   │   │   ├── Repositories/      # AudioTranscriptionRepository
 │   │   │   └── Models/            # Transcription
-│   │   ├── Chat/                  # Chat with SSE streaming
+│   │   ├── Chat/                  # Chat with SSE streaming, voice dictation + image generation
 │   │   │   ├── Views/             # ChatView, MessageBubbleView, CodeBlockView,
 │   │   │   │                      # ConversationListView, AttachmentPickerView,
 │   │   │   │                      # ChatModelParametersView, ChatSystemPromptView
-│   │   │   ├── ViewModels/        # ChatViewModel, ConversationListViewModel
+│   │   │   ├── ViewModels/        # ChatViewModel (+ ImageGeneration, + Transcription),
+│   │   │   │                      # ConversationListViewModel
 │   │   │   ├── UseCases/          # SendMessage, StreamMessage,
 │   │   │   │                      # LoadConversations, SaveConversation, DeleteConversation
 │   │   │   ├── Repositories/      # ChatRepository, ConversationRepository
 │   │   │   └── Models/            # ChatMessage, Conversation, TokenUsage, ModelParameters
 │   │   ├── Home/                  # TabView (iOS) / SplitView (macOS)
 │   │   │   └── Views/             # HomeView
-│   │   ├── ImageGeneration/       # AI image generation
-│   │   │   ├── Views/             # ImageGenerationView
-│   │   │   ├── ViewModels/        # ImageGenerationViewModel
+│   │   ├── ImageGeneration/       # AI image generation (integrated in Chat)
 │   │   │   ├── UseCases/          # GenerateImageUseCase
 │   │   │   ├── Repositories/      # ImageGenerationRepository
 │   │   │   └── Models/            # GeneratedImage
@@ -107,9 +104,9 @@ openclient-llm-test/               # Unit tests
 ├── Core/
 │   └── Managers/                  # KeychainManager tests
 ├── Features/
-│   ├── AudioTranscription/        # AudioTranscriptionViewModel tests
 │   ├── Chat/                      # ChatViewModel, ConversationListViewModel tests
-│   ├── ImageGeneration/           # ImageGenerationViewModel tests
+│   │                               # + image generation and transcription extension tests
+│   ├── ImageGeneration/           # GenerateImageUseCase, ImageGenerationRepository tests
 │   ├── Launch/                    # LaunchViewModel, UseCase tests
 │   ├── Models/                    # ModelsViewModel, UseCase tests
 │   ├── Onboarding/                # OnboardingViewModel, UseCase tests
@@ -139,6 +136,13 @@ openclient-llm-test/               # Unit tests
 - iOS 26+ / macOS 26+
 - A running [LiteLLM](https://docs.litellm.ai/) server (local or remote), **or** a running [Ollama](https://ollama.com) instance (v0.1.24+ for OpenAI-compatible `/v1` endpoint)
 
+### Self-hosting guides
+
+If you need to set up the backend on your own server, these guides cover Docker Compose configurations, reference `.env` files, and common operational commands:
+
+- [Ollama.md](Ollama.md) — Run Ollama with Docker (CPU and NVIDIA GPU)
+- [LiteLLM.md](LiteLLM.md) — Run LiteLLM with Docker (Postgres, Traefik, local + cloud models)
+
 ## License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
@@ -148,3 +152,13 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 **Arturo Carretero Calvo**
 
 - [GitHub](https://github.com/ArtCC)
+
+---
+
+<p align="center">
+  <strong>Your AI. Your server. Your rules.</strong><br/><br/>
+  OpenClient LLM is built on the belief that generative AI should be something you control — not something that controls your data.<br/>
+  Run local models entirely on your own hardware, or route cloud providers through your own self-hosted proxy.<br/>
+  Either way, you decide what gets sent where — no vendor lock-in, no platform middleman, no data you didn't choose to share.<br/><br/>
+  Open source. No tracking. Full control.
+</p>

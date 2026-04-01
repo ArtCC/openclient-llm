@@ -19,6 +19,8 @@ protocol SettingsManagerProtocol: Sendable {
     func setSelectedModelId(_ value: String?)
     func getIsCloudSyncEnabled() -> Bool
     func setIsCloudSyncEnabled(_ value: Bool)
+    func getShowTokenUsage() -> Bool
+    func setShowTokenUsage(_ value: Bool)
     func deleteAll()
 }
 
@@ -31,6 +33,7 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         static let isOnboardingCompleted = "isOnboardingCompleted"
         static let selectedModelId = "selectedModelId"
         static let isCloudSyncEnabled = "isCloudSyncEnabled"
+        static let showTokenUsage = "showTokenUsage"
     }
 
     private enum LegacyKeys {
@@ -95,10 +98,19 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         defaults.set(value, forKey: Keys.isCloudSyncEnabled)
     }
 
+    func getShowTokenUsage() -> Bool {
+        defaults.object(forKey: Keys.showTokenUsage) == nil ? true : defaults.bool(forKey: Keys.showTokenUsage)
+    }
+
+    func setShowTokenUsage(_ value: Bool) {
+        defaults.set(value, forKey: Keys.showTokenUsage)
+    }
+
     func deleteAll() {
         defaults.removeObject(forKey: Keys.isOnboardingCompleted)
         defaults.removeObject(forKey: Keys.selectedModelId)
         defaults.removeObject(forKey: Keys.isCloudSyncEnabled)
+        defaults.removeObject(forKey: Keys.showTokenUsage)
         defaults.removeObject(forKey: LegacyKeys.serverBaseURL)
         defaults.removeObject(forKey: LegacyKeys.apiKey)
         keychainManager.deleteAll()

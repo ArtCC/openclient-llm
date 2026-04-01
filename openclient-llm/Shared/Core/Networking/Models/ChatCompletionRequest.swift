@@ -8,6 +8,18 @@
 
 import Foundation
 
+// MARK: - ChatStreamOptions
+
+nonisolated struct ChatStreamOptions: Encodable, Sendable {
+    let includeUsage: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case includeUsage = "include_usage"
+    }
+}
+
+// MARK: - ChatCompletionRequest
+
 nonisolated struct ChatCompletionRequest: Encodable, Sendable {
     let model: String
     let messages: [ChatCompletionMessage]
@@ -15,12 +27,8 @@ nonisolated struct ChatCompletionRequest: Encodable, Sendable {
     let temperature: Double?
     let maxTokens: Int?
     let topP: Double?
-    let streamOptions: StreamOptions?
+    let streamOptions: ChatStreamOptions?
     let modalities: [String]?
-
-    struct StreamOptions: Encodable, Sendable {
-        let includeUsage: Bool
-    }
 
     enum CodingKeys: String, CodingKey {
         case model
@@ -93,6 +101,15 @@ nonisolated struct ContentPart: Encodable, Sendable {
         case type
         case text
         case imageUrl = "image_url"
+    }
+
+    // MARK: - Encodable
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(type, forKey: .type)
+        try container.encodeIfPresent(text, forKey: .text)
+        try container.encodeIfPresent(imageUrl, forKey: .imageUrl)
     }
 
     // MARK: - Factory
