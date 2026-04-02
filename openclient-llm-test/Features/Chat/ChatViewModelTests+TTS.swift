@@ -183,4 +183,77 @@ extension ChatViewModelTests {
         XCTAssertNil(loadedState.speakingMessageId)
     }
 
+    func test_speakMessage_usesVoiceFromSettings() async throws {
+        // Given
+        let mockSynthesize = MockSynthesizeSpeechUseCase()
+        mockSynthesize.result = .success(Data([1, 2, 3]))
+        mockFetchModels.result = .success([
+            LLMModel(id: "gpt-4"),
+            LLMModel(id: "tts-1", mode: .audioSpeech)
+        ])
+        mockSettingsManager.ttsVoices["tts-1"] = "nova"
+
+        sut = ChatViewModel(
+            fetchModelsUseCase: mockFetchModels,
+            streamMessageUseCase: mockStreamMessage,
+            saveConversationUseCase: mockSaveConversation,
+            synthesizeSpeechUseCase: mockSynthesize,
+            settingsManager: mockSettingsManager,
+            conversationStartersManager: mockConversationStarters
+        )
+
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        let message = ChatMessage(role: .assistant, content: "Test message")
+
+        // When
+        sut.send(.speakMessageTapped(message))
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Then
+        XCTAssertEqual(mockSynthesize.lastVoice, "nova")
+    }
+
+    func test_fetchAndBuildInitialState_usesSavedTTSModelId() async throws {
+        // Given
+        mockFetchModels.result = .success([
+            LLMModel(id: "gpt-4"),
+            LLMModel(id: "tts-1", mode: .audioSpeech),
+            LLMModel(id: "tts-2", mode: .audioSpeech)
+        ])
+        mockSettingsManager.selectedTTSModelId = "tts-2"
+
+        // When
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.ttsModelId, "tts-2")
+    }
+
+    func test_fetchAndBuildInitialState_fallsBackToFirstTTSModel_whenSavedIdUnavailable() async throws {
+        // Given
+        mockFetchModels.result = .success([
+            LLMModel(id: "gpt-4"),
+            LLMModel(id: "tts-1", mode: .audioSpeech)
+        ])
+        mockSettingsManager.selectedTTSModelId = "tts-nonexistent"
+
+        // When
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.ttsModelId, "tts-1")
+    }
+
 }

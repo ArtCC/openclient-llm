@@ -175,7 +175,9 @@ private extension ChatViewModel {
             let selectedId = selectedModel?.id ?? "-"
             LogManager.success("fetchAndBuildInitialState models=\(chatModels.count) selected=\(selectedId)")
 
-            let ttsModelId = models.first(where: { $0.mode == .audioSpeech })?.id
+            let savedTTSModelId = settingsManager.getSelectedTTSModelId()
+            let ttsModelId = models.first(where: { $0.id == savedTTSModelId && $0.mode == .audioSpeech })?.id
+                ?? models.first(where: { $0.mode == .audioSpeech })?.id
             let transcriptionModelId = models.first(where: { $0.mode == .audioTranscription })?.id
             let starters = conversationStartersManager.randomStarters(count: 4)
             state = .loaded(LoadedState(
@@ -427,7 +429,7 @@ private extension ChatViewModel {
                 let audioData = try await synthesizeSpeechUseCase.execute(
                     text: message.content,
                     model: ttsModelId,
-                    voice: "alloy"
+                    voice: settingsManager.getSelectedTTSVoice(forModelId: ttsModelId)
                 )
                 audioPlayerManager.play(data: audioData, messageId: message.id)
                 Task {

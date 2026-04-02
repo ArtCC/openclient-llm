@@ -12,6 +12,8 @@ struct ModelsView: View {
     // MARK: - Properties
 
     @State private var viewModel = ModelsViewModel()
+    @State private var ttsCustomVoiceTexts: [String: String] = [:]
+    @State private var ttsCustomModeActive: Set<String> = []
 
     // MARK: - View
 
@@ -73,8 +75,10 @@ private extension ModelsView {
     }
 
     func modelsList(_ loadedState: ModelsViewModel.LoadedState) -> some View {
-        let localModels = loadedState.models.filter { $0.provider == .local }
-        let cloudModels = loadedState.models.filter { $0.provider == .cloud }
+        let chatModels = loadedState.models.filter { $0.mode != .audioSpeech }
+        let ttsModels = loadedState.models.filter { $0.mode == .audioSpeech }
+        let localModels = chatModels.filter { $0.provider == .local }
+        let cloudModels = chatModels.filter { $0.provider == .cloud }
 
         return List {
             if !localModels.isEmpty {
@@ -88,6 +92,13 @@ private extension ModelsView {
                 Section(String(localized: "Cloud")) {
                     ForEach(cloudModels) { model in
                         modelRow(model, loadedState: loadedState)
+                    }
+                }
+            }
+            if !ttsModels.isEmpty {
+                Section(String(localized: "Text to Speech")) {
+                    ForEach(ttsModels) { model in
+                        ttsModelRow(model, loadedState: loadedState)
                     }
                 }
             }
@@ -168,6 +179,112 @@ private extension ModelsView {
                 .background(capability.color.opacity(0.12), in: .capsule)
             }
         }
+    }
+
+    func ttsModelRow(_ model: LLMModel, loadedState: ModelsViewModel.LoadedState) -> some View {
+        let isSelected = model.id == loadedState.selectedTTSModelId
+
+        return VStack(alignment: .leading, spacing: 0) {
+            Button {
+                viewModel.send(.ttsModelTapped(model))
+            } label: {
+                HStack(spacing: 12) {
+                    providerLogo(model)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(model.id)
+                            .font(.body)
+                        if !model.providerName.isEmpty {
+                            Text(model.providerName)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    Spacer()
+
+                    if isSelected {
+                        Image(systemName: "waveform.circle.fill")
+                            .foregroundStyle(Color.accentColor)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
+            if isSelected {
+                voicePicker(model: model, loadedState: loadedState)
+            }
+        }
+    }
+
+    func voicePicker(model: LLMModel, loadedState: ModelsViewModel.LoadedState) -> some View {
+        let voicePresets = TTSVoice.presets.map(\.rawValue)
+        let currentVoice = loadedState.selectedTTSVoices[model.id] ?? TTSVoice.alloy.rawValue
+        let isPresetVoice = voicePresets.contains(currentVoice)
+        let showCustomInput = ttsCustomModeActive.contains(model.id) || !isPresetVoice
+
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(String(localized: "Voice"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Menu {
+                    ForEach(voicePresets, id: \.self) { preset in
+                        Button {
+                            viewModel.send(.voiceSelected(preset, forModelId: model.id))
+                            ttsCustomVoiceTexts.removeValue(forKey: model.id)
+                            ttsCustomModeActive.remove(model.id)
+                        } label: {
+                            if currentVoice == preset {
+                                Label(preset.capitalized, systemImage: "checkmark")
+                            } else {
+                                Text(preset.capitalized)
+                            }
+                        }
+                    }
+                    Divider()
+                    Button(String(localized: "Custom…")) {
+                        ttsCustomModeActive.insert(model.id)
+                        if !isPresetVoice {
+                            ttsCustomVoiceTexts[model.id] = currentVoice
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(isPresetVoice && !ttsCustomModeActive.contains(model.id)
+                             ? currentVoice.capitalized
+                             : String(localized: "Custom…"))
+                            .font(.subheadline)
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.caption2)
+                    }
+                    .foregroundStyle(Color.accentColor)
+                }
+            }
+
+            if showCustomInput {
+                TextField(
+                    String(localized: "Voice ID"),
+                    text: Binding(
+                        get: { ttsCustomVoiceTexts[model.id] ?? (isPresetVoice ? "" : currentVoice) },
+                        set: { ttsCustomVoiceTexts[model.id] = $0 }
+                    )
+                )
+                .textFieldStyle(.roundedBorder)
+                .font(.subheadline)
+                .onSubmit {
+                    let text = ttsCustomVoiceTexts[model.id] ?? ""
+                    guard !text.isEmpty else { return }
+                    viewModel.send(.voiceSelected(text, forModelId: model.id))
+                    ttsCustomVoiceTexts.removeValue(forKey: model.id)
+                    ttsCustomModeActive.remove(model.id)
+                }
+            }
+        }
+        .padding(.top, 8)
+        .padding(.bottom, 4)
+        .padding(.leading, 44)
     }
 }
 
