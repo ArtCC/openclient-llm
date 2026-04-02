@@ -42,6 +42,7 @@ struct LLMModel: Identifiable, Equatable, Sendable {
         case "Anthropic": "anthropic"
         case "Ollama": "ollama"
         case "Google": "gemini"
+        case "DeepSeek": "deepseek"
         default: nil
         }
     }
