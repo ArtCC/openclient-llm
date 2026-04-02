@@ -88,18 +88,16 @@ private extension ModelsViewModel {
         state = .loaded(loadedState)
 
         Task {
-            do {
-                let models = try await fetchModelsUseCase.execute()
-                let selectedModelId = settingsManager.getSelectedModelId()
-                state = .loaded(LoadedState(models: models, selectedModelId: selectedModelId))
-            } catch {
-                guard case .loaded(var currentState) = state else { return }
-                currentState.isRefreshing = false
-                currentState.errorMessage = error.localizedDescription
-                state = .loaded(currentState)
-                scheduleErrorDismiss()
-            }
+            await performRefresh()
         }
+    }
+
+    func refreshAsync() async {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.isRefreshing = true
+        loadedState.errorMessage = nil
+        state = .loaded(loadedState)
+        await performRefresh()
     }
 
     func selectModel(_ model: LLMModel) {
@@ -107,6 +105,20 @@ private extension ModelsViewModel {
         loadedState.selectedModelId = model.id
         state = .loaded(loadedState)
         settingsManager.setSelectedModelId(model.id)
+    }
+
+    func performRefresh() async {
+        do {
+            let models = try await fetchModelsUseCase.execute()
+            let selectedModelId = settingsManager.getSelectedModelId()
+            state = .loaded(LoadedState(models: models, selectedModelId: selectedModelId))
+        } catch {
+            guard case .loaded(var currentState) = state else { return }
+            currentState.isRefreshing = false
+            currentState.errorMessage = error.localizedDescription
+            state = .loaded(currentState)
+            scheduleErrorDismiss()
+        }
     }
 
     func scheduleErrorDismiss() {

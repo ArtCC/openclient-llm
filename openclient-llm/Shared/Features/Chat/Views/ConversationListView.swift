@@ -107,6 +107,16 @@ private extension ConversationListView {
                 .accessibilityLabel(String(localized: "New Chat"))
                 .keyboardShortcut("n", modifiers: .command)
             }
+            #if os(macOS)
+            ToolbarItem(placement: .automatic) {
+                Button {
+                    viewModel.send(.refreshTapped)
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .accessibilityLabel(String(localized: "Refresh"))
+            }
+            #endif
         }
     }
 
@@ -148,12 +158,13 @@ private extension ConversationListView {
                                 .contextMenu {
                                     conversationContextMenu(conversation)
                                 }
-                        }
-                        .onDelete { indexSet in
-                            for index in indexSet {
-                                let conversation = section.conversations[index]
-                                conversationToDelete = conversation
-                            }
+                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                    Button(role: .destructive) {
+                                        conversationToDelete = conversation
+                                    } label: {
+                                        Label(String(localized: "Delete"), systemImage: "trash")
+                                    }
+                                }
                         }
                     } header: {
                         HStack(spacing: 4) {
@@ -175,7 +186,7 @@ private extension ConversationListView {
             #else
             .listStyle(.plain)
             .refreshable {
-                viewModel.refresh()
+                await viewModel.refreshAsync()
             }
             #endif
         }

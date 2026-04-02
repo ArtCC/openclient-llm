@@ -392,7 +392,7 @@ extension SettingsView {
             switch self {
             case .privacyPolicy: String(localized: "Privacy Policy")
             case .termsOfUse: String(localized: "Terms of Use")
-            case .authorGitHub: "Arturo Carretero Calvo"
+            case .authorGitHub: String(localized: "GitHub Profile")
             }
         }
 

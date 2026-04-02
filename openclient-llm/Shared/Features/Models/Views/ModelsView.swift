@@ -92,6 +92,11 @@ private extension ModelsView {
                 }
             }
         }
+        #if os(iOS)
+        .refreshable {
+            await viewModel.refreshAsync()
+        }
+        #endif
     }
 
     func modelRow(_ model: LLMModel, loadedState: ModelsViewModel.LoadedState) -> some View {
@@ -101,7 +106,9 @@ private extension ModelsView {
             viewModel.send(.modelTapped(model))
         } label: {
             VStack(alignment: .leading, spacing: 8) {
-                HStack {
+                HStack(spacing: 12) {
+                    providerLogo(model)
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text(model.id)
                             .font(.body)
@@ -117,9 +124,6 @@ private extension ModelsView {
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(Color.accentColor)
-                    } else {
-                        Image(systemName: model.provider.icon)
-                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -129,6 +133,24 @@ private extension ModelsView {
             }
             .padding(.vertical, 4)
         }
+    }
+
+    func providerLogo(_ model: LLMModel) -> some View {
+        Group {
+            if let imageName = model.logoImageName {
+                Image(imageName)
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                Image(systemName: model.provider.genericLogoSystemName)
+                    .resizable()
+                    .scaledToFit()
+                    .padding(6)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(width: 32, height: 32)
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     func capabilityTags(_ capabilities: [LLMModel.Capability]) -> some View {

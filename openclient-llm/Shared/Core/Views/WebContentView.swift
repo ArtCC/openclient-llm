@@ -34,14 +34,17 @@ private extension WebContentView {
     #if os(macOS)
     var macOSBody: some View {
         VStack(spacing: 0) {
-            HStack {
+            ZStack {
                 Text(title)
                     .font(.headline)
-                Spacer()
-                Button(String(localized: "Close")) {
-                    dismiss()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                HStack {
+                    Spacer()
+                    Button(String(localized: "Close")) {
+                        dismiss()
+                    }
+                    .keyboardShortcut(.cancelAction)
                 }
-                .keyboardShortcut(.cancelAction)
             }
             .padding()
             Divider()
@@ -56,6 +59,7 @@ private extension WebContentView {
             WebView(url: url)
                 .ignoresSafeArea(edges: .bottom)
                 .navigationTitle(title)
+                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button {

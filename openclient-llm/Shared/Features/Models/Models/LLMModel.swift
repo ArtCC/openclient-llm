@@ -60,6 +60,13 @@ extension LLMModel {
             }
         }
 
+        var genericLogoSystemName: String {
+            switch self {
+            case .local: "cpu.fill"
+            case .cloud: "sparkles"
+            }
+        }
+
         // MARK: - Static
 
         static func from(_ providerString: String?) -> Provider {

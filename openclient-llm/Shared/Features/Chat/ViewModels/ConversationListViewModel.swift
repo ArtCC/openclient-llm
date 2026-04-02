@@ -16,6 +16,7 @@ final class ConversationListViewModel {
     enum Event {
         case viewAppeared
         case newConversationTapped
+        case refreshTapped
         case conversationTapped(Conversation)
         case deleteConversation(UUID)
         case searchChanged(String)
@@ -88,6 +89,8 @@ final class ConversationListViewModel {
             loadData()
         case .newConversationTapped:
             createNewConversation()
+        case .refreshTapped:
+            refresh()
         case .conversationTapped(let conversation):
             selectConversation(conversation)
         case .deleteConversation(let id):
@@ -105,6 +108,11 @@ final class ConversationListViewModel {
 
     func refresh() {
         reloadConversations()
+    }
+
+    func refreshAsync() async {
+        reloadConversations()
+        await Task.yield()
     }
 }
 
