@@ -56,7 +56,6 @@ private extension WebContentView {
             WebView(url: url)
                 .ignoresSafeArea(edges: .bottom)
                 .navigationTitle(title)
-                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button {
