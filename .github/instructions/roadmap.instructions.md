@@ -77,12 +77,18 @@ Goal: User customization.
 Goal: Web search, agentic capabilities, and enhanced chat workflows.
 
 - [ ] **Export**: Export conversations to JSON
-- [ ] **Web browsing**: Enable models to search and retrieve web content via Brave Search API for grounded, up-to-date responses, configure in Settings with API key
+- [ ] **Web browsing**: Enable models to search and retrieve web content via LiteLLM's `/v1/search` endpoint (provider-agnostic: Brave, Tavily, Perplexity, etc. configured on the server). Two modes: (A) globe button in chat input bar for manual search on any model — app calls `/v1/search/{tool_name}`, injects results as context, then calls `/chat/completions`; (B) automatic interception for models with function calling — app includes `litellm_web_search` tool in every request and LiteLLM resolves the loop transparently. Settings: search tool name (default `brave-search`), interception toggle. No search API key in the app. See web-browsing.instructions.md.
 - [ ] **Agent mode (tool calling)**: Support LiteLLM function/tool calling loop — parse tool_calls from model responses, execute registered tools, send results back, and repeat until final answer
 - [ ] **Conversation branching**: Fork a conversation from any message to explore alternative responses (edit & resend)
 - [ ] **Prompt templates/library**: Library of predefined system prompts (coding assistant, translator, summarizer...) that users can save and reuse
 - [ ] **Message editing**: Edit an already sent user message and regenerate the assistant response
 - [ ] **Response regeneration**: "Regenerate" button to request a new response to the last message
+
+## Phase 7 — Voice & TTS Enhancements
+
+Goal: Richer audio experience with voice selection per TTS model.
+
+- [ ] **Voice selector for TTS models**: In the Models screen, TTS models (identified by `mode == "audio_speech"` from `/model/info`) show a voice picker. Displays the 6 canonical OpenAI voices (`alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`) as preset options plus a free-text field for custom voice IDs (ElevenLabs IDs, AWS Polly names, etc.). Selected voice saved in `SettingsManager` (UserDefaults) keyed by model name. Voice sent as the `voice` field in every `POST /v1/audio/speech` request. Note: LiteLLM does not expose a `supported_voices` field in `/model/info` — the canonical OpenAI voices are used as sensible defaults since LiteLLM maps them automatically across most providers (ElevenLabs, Gemini, Vertex AI, etc.).
 
 ## Current Phase: 6 — Advanced Interactions
 
