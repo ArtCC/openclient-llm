@@ -42,9 +42,10 @@ openclient-llm/                    # iOS target
 │   │   │   ├── Repositories/      # AudioTranscriptionRepository
 │   │   │   └── Models/            # Transcription
 │   │   ├── Chat/                  # Chat with SSE streaming and voice dictation
-│   │   │   ├── Views/             # ChatView, MessageBubbleView, CodeBlockView,
-│   │   │   │                      # ConversationListView, ConversationTagsView,
-│   │   │   │                      # AttachmentPickerView, CameraPickerView,
+│   │   │   ├── Views/             # ChatView, ChatInputBarView, MessageBubbleView,
+│   │   │   │                      # CodeBlockView, ConversationListView,
+│   │   │   │                      # ConversationTagsView, AttachmentPickerView,
+│   │   │   │                      # CameraPickerView, ImagePreviewView,
 │   │   │   │                      # ChatEmptyStateView, ChatModelParametersView,
 │   │   │   │                      # ChatSystemPromptView
 │   │   │   ├── ViewModels/        # ChatViewModel (+ Transcription, + Helpers),
