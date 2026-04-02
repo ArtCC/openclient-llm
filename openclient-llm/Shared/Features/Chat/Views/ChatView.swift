@@ -281,6 +281,8 @@ private extension ChatView {
         }
 #if os(iOS)
         .scrollDismissesKeyboard(.interactively)
+#elseif os(macOS)
+        .contentMargins(.top, 16, for: .scrollContent)
 #endif
     }
 
