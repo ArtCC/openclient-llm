@@ -82,6 +82,45 @@ struct DocumentPickerModifier: ViewModifier {
     }
 }
 
+#if os(macOS)
+struct ImageFilePickerModifier: ViewModifier {
+    // MARK: - Properties
+
+    @Binding var isPresented: Bool
+    let onAttachment: (ChatMessage.Attachment) -> Void
+
+    // MARK: - View
+
+    func body(content: Content) -> some View {
+        content
+            .fileImporter(
+                isPresented: $isPresented,
+                allowedContentTypes: [.image],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let urls):
+                    guard let url = urls.first else { return }
+                    let gotAccess = url.startAccessingSecurityScopedResource()
+                    defer {
+                        if gotAccess { url.stopAccessingSecurityScopedResource() }
+                    }
+                    if let data = try? Data(contentsOf: url) {
+                        let attachment = ChatMessage.Attachment(
+                            type: .image,
+                            fileName: url.lastPathComponent,
+                            data: data
+                        )
+                        onAttachment(attachment)
+                    }
+                case .failure:
+                    break
+                }
+            }
+    }
+}
+#endif
+
 extension View {
     func imagePicker(
         isPresented: Binding<Bool>,
@@ -96,4 +135,13 @@ extension View {
     ) -> some View {
         modifier(DocumentPickerModifier(isPresented: isPresented, onAttachment: onAttachment))
     }
+
+#if os(macOS)
+    func imageFilePicker(
+        isPresented: Binding<Bool>,
+        onAttachment: @escaping (ChatMessage.Attachment) -> Void
+    ) -> some View {
+        modifier(ImageFilePickerModifier(isPresented: isPresented, onAttachment: onAttachment))
+    }
+#endif
 }

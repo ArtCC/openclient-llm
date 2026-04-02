@@ -27,28 +27,60 @@ struct SettingsView: View {
     // MARK: - View
 
     var body: some View {
+        #if os(iOS)
         NavigationStack {
-            Group {
-                switch viewModel.state {
-                case .loading:
-                    ProgressView()
-                case .loaded(let loadedState):
-                    loadedView(loadedState)
-                }
-            }
-            .navigationTitle(String(localized: "Settings"))
-            .sheet(item: $presentedWebURL) { destination in
-                if let url = destination.url {
-                    WebContentView(title: destination.title, url: url)
-                }
-            }
-            .sheet(isPresented: $isShowingVotice) {
-                Votice.feedbackView()
-            }
-            .sheet(isPresented: $isShowingUserProfile) {
-                UserProfileView()
+            settingsContent
+        }
+        #else
+        settingsContent
+        #endif
+    }
+}
+
+// MARK: - Private
+
+private extension SettingsView {
+    var settingsContent: some View {
+        Group {
+            switch viewModel.state {
+            case .loading:
+                ProgressView()
+            case .loaded(let loadedState):
+                loadedView(loadedState)
             }
         }
+        .navigationTitle(String(localized: "Settings"))
+        .sheet(item: $presentedWebURL) { destination in
+            if let url = destination.url {
+                WebContentView(title: destination.title, url: url)
+            }
+        }
+        .sheet(isPresented: $isShowingVotice) {
+            Votice.feedbackView()
+        }
+        .sheet(isPresented: $isShowingUserProfile) {
+            UserProfileView()
+        }
+        .alert(
+            String(localized: "iCloud Sync Conflict"),
+            isPresented: cloudSyncConflictBinding,
+            actions: {
+                Button(String(localized: "Use Local Data")) {
+                    viewModel.send(.cloudSyncConflictResolved(keepLocal: true))
+                }
+                Button(String(localized: "Use iCloud Data")) {
+                    viewModel.send(.cloudSyncConflictResolved(keepLocal: false))
+                }
+                Button(String(localized: "Cancel"), role: .cancel) {
+                    viewModel.send(.cloudSyncConflictCancelled)
+                }
+            },
+            message: {
+                Text(String(
+                    localized: "Your local personal context differs from iCloud. Which version would you like to keep?"
+                ))
+            }
+        )
         .task {
             viewModel.send(.viewAppeared)
             if case .loaded(let initialState) = viewModel.state {
@@ -57,14 +89,24 @@ struct SettingsView: View {
             }
         }
     }
-}
 
-// MARK: - Private
-
-private extension SettingsView {
     enum Field {
         case serverURL
         case apiKey
+    }
+
+    var cloudSyncConflictBinding: Binding<Bool> {
+        Binding(
+            get: {
+                guard case .loaded(let loadedState) = viewModel.state else { return false }
+                return loadedState.showCloudSyncConflictAlert
+            },
+            set: { newValue in
+                if !newValue {
+                    viewModel.send(.cloudSyncConflictCancelled)
+                }
+            }
+        )
     }
 
     func loadedView(_ loadedState: SettingsViewModel.LoadedState) -> some View {
@@ -79,6 +121,8 @@ private extension SettingsView {
             }
 #if os(iOS)
             .scrollDismissesKeyboard(.immediately)
+#elseif os(macOS)
+            .formStyle(.grouped)
 #endif
         }
     }

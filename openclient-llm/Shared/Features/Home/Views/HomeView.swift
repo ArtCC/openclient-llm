@@ -115,10 +115,11 @@ private extension HomeView {
     var macOSLayout: some View {
         NavigationSplitView {
             sidebar
-        } content: {
-            sidebarContent
         } detail: {
             detailContent
+        }
+        .onChange(of: sidebarDestination) { _, _ in
+            selectedConversation = nil
         }
     }
 
@@ -141,45 +142,28 @@ private extension HomeView {
     }
 
     @ViewBuilder
-    var sidebarContent: some View {
+    var detailContent: some View {
         switch sidebarDestination {
         case .chats:
-            ConversationListView { conversation in
-                selectedConversation = conversation
+            NavigationStack {
+                ConversationListView { conversation in
+                    selectedConversation = conversation
+                }
+                .id(conversationListId)
+                .navigationTitle(String(localized: "Chats"))
+                .navigationDestination(item: $selectedConversation) { conversation in
+                    ChatView(
+                        conversation: conversation,
+                        onConversationUpdated: {
+                            conversationListId = UUID()
+                        }
+                    )
+                }
             }
-            .id(conversationListId)
-            .navigationTitle(String(localized: "Chats"))
         case .models:
             ModelsView()
         case .settings:
             SettingsView()
-        }
-    }
-
-    @ViewBuilder
-    var detailContent: some View {
-        switch sidebarDestination {
-        case .chats:
-            if let selectedConversation {
-                ChatView(
-                    conversation: selectedConversation,
-                    onConversationUpdated: {
-                        conversationListId = UUID()
-                    }
-                )
-            } else {
-                ContentUnavailableView(
-                    String(localized: "No Conversation Selected"),
-                    systemImage: "bubble.left.and.bubble.right",
-                    description: Text(String(localized: "Select or create a conversation to start chatting"))
-                )
-            }
-        case .models, .settings:
-            ContentUnavailableView(
-                String(localized: "Select a Section"),
-                systemImage: "sidebar.left",
-                description: Text(String(localized: "Choose an option from the sidebar"))
-            )
         }
     }
     #endif

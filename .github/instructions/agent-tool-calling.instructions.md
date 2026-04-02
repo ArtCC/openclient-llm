@@ -266,7 +266,7 @@ struct ToolFunctionDefinition: Codable, Sendable {
 ```
 
 Built-in tools to implement:
-- **`web_search`**: Brave Search API integration (see brave-web-browsing.instructions.md)
+- **`web_search`**: Web search integration via LiteLLM (see web-browsing.instructions.md)
 - Future: calculator, code execution, file operations, etc.
 
 ### Agentic UseCase

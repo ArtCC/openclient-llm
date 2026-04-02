@@ -24,29 +24,33 @@ struct ChatModelParametersView: View {
     // MARK: - View
 
     var body: some View {
-        NavigationStack {
-            form
-                .navigationTitle(String(localized: "Model Parameters"))
-#if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-#endif
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(String(localized: "Done")) {
-                            applyParameters()
-                            isPresented = false
+        Group {
+            #if os(macOS)
+            macOSBody
+            #else
+            NavigationStack {
+                form
+                    .navigationTitle(String(localized: "Model Parameters"))
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button(String(localized: "Done")) {
+                                applyParameters()
+                                isPresented = false
+                            }
+                        }
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(String(localized: "Reset")) {
+                                resetParameters()
+                            }
                         }
                     }
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(String(localized: "Reset")) {
-                            resetParameters()
-                        }
-                    }
-                }
+            }
+            #endif
         }
-#if os(macOS)
-        .frame(width: 450, height: 380)
-#endif
+        #if os(macOS)
+        .frame(width: 500, height: 460)
+        #endif
         .task {
             loadCurrentParameters()
         }
@@ -56,6 +60,40 @@ struct ChatModelParametersView: View {
 // MARK: - Private
 
 private extension ChatModelParametersView {
+    #if os(macOS)
+    var macOSBody: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Button(String(localized: "Reset")) {
+                    resetParameters()
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Text(String(localized: "Model Parameters"))
+                    .font(.headline)
+
+                Spacer()
+
+                Button(String(localized: "Done")) {
+                    applyParameters()
+                    isPresented = false
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+
+            Divider()
+
+            form
+        }
+    }
+    #endif
+
     var form: some View {
         Form {
             Section {
@@ -115,6 +153,9 @@ private extension ChatModelParametersView {
                 Text(String(localized: "Nucleus sampling. Lower values make output more focused."))
             }
         }
+#if os(macOS)
+        .formStyle(.grouped)
+#endif
     }
 
     var temperatureDescription: String {

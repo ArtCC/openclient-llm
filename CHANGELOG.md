@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
 ## [1.0.0] - 2026-04-01
 
 ### Added
@@ -27,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - FocusedValues integration for menu bar ↔ view communication
 - Local network access support (NSBonjourServices + NSLocalNetworkUsageDescription)
 - Localization for 10 languages: English, Spanish, French, Italian, German, Portuguese (PT), Japanese, Dutch, Greek, Swedish
-- Unit tests for all ViewModels, UseCases, and Repositories (60 tests)
+- Unit tests for all ViewModels, UseCases, and Repositories
 - SwiftLint integration via SPM
 - Dark Mode support with semantic colors and CodeBlockBackground asset
 - ChatGPT-inspired visual redesign: assistant messages with sparkles avatar, user messages with glass accent bubbles, empty state with centered icon and suggestion chips
@@ -35,21 +37,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Thinking..." indicator with pulse animation below assistant messages while waiting for first token
 - Streaming cursor (█) inline at the end of the last text block during response generation
 - Glass effect input bar with capsule shape and animated send/stop buttons
-- Chat visual style instruction document for agent context
-- Refactored instruction documents with generic/app-specific separation
 - KeychainManager for secure storage of server URL and API key using iOS/macOS Keychain Services
 - ResetAppDataUseCase to clear all persisted data (Keychain + UserDefaults) on first launch
 - Automatic migration from UserDefaults to Keychain for existing users
 - `deleteAll()` method on SettingsManager for full data cleanup
-- Unit tests for KeychainManager and ResetAppDataUseCase
-- MockKeychainManager and MockResetAppDataUseCase test doubles
 - MarkdownParser utility that splits assistant message content into typed blocks (`.text`, `.codeBlock`)
 - CodeBlockView with monospaced font, horizontal scroll, language label, and one-tap copy button (UIPasteboard / NSPasteboard)
 - Full Markdown block rendering in assistant messages: headings (H1–H3), lists, blockquotes, bold, italic, inline code, and links via `AttributedString` with `.full` syntax
 - `LLMModel.Provider` enum (`.local` / `.cloud`) with classification logic based on `litellm_provider` from `/model/info`
 - Local vs Cloud sections in Models screen, each sorted alphabetically
 - Dynamic model icon: `desktopcomputer` for local models, `cloud` for cloud models
-- Selected model highlighted with a 1.5pt accent-color border instead of a tinted background
 - Smart auto-scroll in chat: follows new content only when the user is at the bottom; pauses when user scrolls up and resumes when they reach the bottom again
 - Chat message area capped at 760pt max width, centered horizontally (better iPad/Mac layout)
 - Conversation persistence: save/load conversations locally using Codable + FileManager (Documents/Conversations/)
@@ -66,11 +63,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Attachment model on ChatMessage (type, fileName, data) with Codable support
 - Pending attachments bar in chat input area with remove capability
 - Attachment thumbnails: image attachments shown as 120pt rounded previews inline in chat messages; PDF attachments shown as icon + filename cards with glass effect
-- LogManager debug logging system with emoji-differentiated log levels (🔍 DEBUG, ℹ️ INFO, ⚠️ WARNING, ❌ ERROR, 🌐 NETWORK, ✅ SUCCESS) — only active in DEBUG builds, includes timestamp, file, function, and line number
+- LogManager debug logging system with emoji-differentiated log levels — only active in DEBUG builds
 - Auto-generated conversation titles from the first user message
 - Auto-persistence of conversations after streaming completes
-- Unit tests for ConversationListViewModel, conversation persistence, system prompt, and attachment handling
-- Mock test doubles for ConversationRepository, LoadConversationsUseCase, SaveConversationUseCase, DeleteConversationUseCase
 - Token usage display: prompt, completion, and total token counts shown below assistant messages after streaming completes
 - `TokenUsage` model on `ChatMessage` with automatic accumulation from streamed chunks
 - `totalTokens` property on `Conversation` for usage tracking across all messages
@@ -79,92 +74,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Model parameters passed to `ChatCompletionRequest` on every message send
 - Search conversations: `.searchable()` modifier on `ConversationListView` with real-time filtering by title
 - `filteredConversations` in `ConversationListViewModel` with case-insensitive search
-- iCloud sync via `CloudSyncManager` using iCloud Documents container (`NSUbiquitousKeyValueStore`-backed)
-- `CloudSyncManager` syncs conversations on save and merges remote changes on load (newer-wins strategy)
+- iCloud sync via `CloudSyncManager` using `NSUbiquitousKeyValueStore`-backed iCloud Documents container; newer-wins merge strategy on load
 - iCloud sync toggle in Settings with `isCloudSyncEnabled` on `SettingsManager`
-- Image generation feature: `ImageGenerationView` with prompt input, model picker, size selector, and image count
-- Generated images displayed in a gallery grid with context menu actions (share, copy)
-- `ImageGenerationRepository`, `GenerateImageUseCase`, `ImageGenerationViewModel` with Event/State pattern
-- `ImageGenerationRequest`/`ImageGenerationResponse` API models for `POST /v1/images/generations`
-- Audio transcription (Speech-to-Text) integrated as voice dictation in the chat input bar; microphone button appears automatically when a Whisper-compatible model is detected on the server; tap to record, tap again to stop and transcribe; transcribed text populates the input field ready to edit or send
+- Audio transcription (Speech-to-Text) as voice dictation in the chat input bar; microphone button appears automatically when a Whisper-compatible model is detected; tap to record, tap again to stop and transcribe; transcribed text populates the input field
 - `AudioRecorderManager` for platform audio recording with `AVAudioRecorder`
 - `AudioTranscriptionRepository`, `TranscribeAudioUseCase` for `POST /v1/audio/transcriptions`
-- `AudioTranscriptionRequest`/`AudioTranscriptionResponse` API models for `POST /v1/audio/transcriptions`
-- Chat model selector now only shows chat/completion models, excluding TTS and transcription models
 - Multipart form data upload support in `APIClient` for audio file uploads
 - Raw data request support in `APIClient` for binary audio responses
 - Text-to-Speech: "Read Aloud" button on assistant messages with play/stop toggle
 - `TextToSpeechRepository`, `SynthesizeSpeechUseCase` for `POST /v1/audio/speech`
 - `AudioPlayerManager` for playback of TTS audio data with `AVAudioPlayer`
-- `TextToSpeechRequest` API model with voice and speed parameters
-- Image Generation tab in HomeView (iOS TabView, macOS sidebar)
-- Unit tests for ImageGenerationViewModel and TTS integration in ChatViewModel
-- Mock test doubles for GenerateImageUseCase, TranscribeAudioUseCase, SynthesizeSpeechUseCase, CloudSyncManager
+- Show Token Usage toggle: new "Chat" section in Settings to show or hide the token count below each assistant response; stored in `UserDefaults`
+- Pinned conversations: pin/unpin via context menu; pinned conversations appear in a dedicated "Pinned" section at the top of the list; `isPinned: Bool` on `Conversation`; `PinConversationUseCase`; `ConversationSection` extended with `.pinned` period
+- Conversation tags: free-text tags via `ConversationTagsView` sheet; `tags: [String]` on `Conversation`; `UpdateConversationTagsUseCase`; horizontal filter-chips bar above the list with one-tap tag filtering
+- Personal Context (User Profile): name, description, and extra context configured in a "Personal Context" sheet in Settings; `UserProfile` model persisted by `UserProfileManager` via `NSUbiquitousKeyValueStore` with `UserDefaults` fallback; profile injected into every conversation's effective system prompt via `ChatViewModel.buildEffectiveSystemPrompt()`
+- `ChatInputBarView`: dedicated file for the chat input bar (text field, attachment menu, send/stop/mic/recording buttons, `AudioRecorderManager`), extracted from `ChatView` to keep both files under the 500-line SwiftLint limit
+- Mock test doubles for all UseCases, Repositories, and Managers (164 unit tests total)
 
 ### Changed
 
-- Settings screen: merged Connection and Save sections into a single Server section for a cleaner layout
+- Settings screen: merged Connection and Save sections into a single Server section
 - SettingsManager now delegates server URL and API key storage to KeychainManager instead of UserDefaults
 - LaunchViewModel resets all app data when onboarding has not been completed (first launch / reinstall)
 - `FetchModelsUseCase` now propagates `provider` from `/model/info`, with `owned_by` as fallback
 - `ModelsRepository.fetchModelInfo()` maps `litellm_provider` to `LLMModel.Provider`
-- `LazyVStack` in chat uses `.padding(.horizontal, 16)` only (removed unneeded vertical padding)
-- Assistant message spacing increased to 8pt between blocks for readability
 - ChatViewModel rewritten to support conversation lifecycle (create, load, persist, auto-title)
 - ChatView updated with system prompt sheet, attachment pickers, and conversation loading
-- HomeView refactored: iOS uses TabView with NavigationStack (iPhone) / NavigationSplitView (iPad); macOS uses 3-column NavigationSplitView with sidebar selection
-- MessageBubbleView attachments: replaced text badges with image thumbnails (120pt rounded) and document cards (icon + filename + type label)
-- MessageBubbleView enhanced with context menu actions and attachment display
+- HomeView: iOS uses TabView with NavigationStack (iPhone) / NavigationSplitView (iPad); macOS uses 3-column NavigationSplitView; `ModelsView` and `SettingsView` render in the `detail` column with `columnVisibility` switching to `.doubleColumn`
+- MessageBubbleView: replaced text badges with image thumbnails (120pt rounded) and document cards; added context menu actions and TTS speak/stop button on assistant messages
 - ChatCompletionRequest.content now supports multimodal encoding (text string or array of content parts)
 - ChatRepository builds multimodal messages with base64 image and PDF text extraction
-- macOS app entry point includes `.commands {}` and `.frame(minWidth:minHeight:)` for native window behavior
 - `ChatRepository` returns `StreamChunk` (text + optional `TokenUsage`) instead of plain `String` tokens
 - `StreamMessageUseCase` accepts optional `ModelParameters` for per-request parameter customization
-- `ChatViewModel` tracks `isSpeaking` and `speakingMessageId` state for TTS playback coordination
-- `MessageBubbleView` receives TTS action closures and displays speak/stop button on assistant messages
-- `ConversationListView` iterates over `filteredConversations` instead of raw `conversations` for search support
 - `ConversationRepository` integrates `CloudSyncManager` for automatic upload/download on save/load
-- `SettingsViewModel` handles `cloudSyncToggled` event to persist iCloud sync preference
-- `SettingsView` includes iCloud Sync section with toggle control
+- `SettingsViewModel` handles `cloudSyncToggled` event; `SettingsView` includes iCloud Sync section
 - `APIClient` protocol extended with `multipartRequest` and `rawDataRequest` methods
-- HomeView updated with Image Generation and Audio Transcription tabs for iOS and macOS
-- Audio transcription (Speech-to-Text) redesigned from a standalone tab into a voice dictation feature integrated directly in the chat input bar; the microphone button appears automatically when the server exposes a Whisper-compatible model; removed file import and transcription history; transcribed text populates the input field ready to send
-- Chat model selector now excludes TTS and transcription models; only chat/completion models are shown
-- Image generation redesigned from a standalone tab into a chat action; a wand button (✦) appears in the input bar when the server exposes an image generation model (e.g. DALL·E, gpt-image-1); generated images appear as assistant message attachments inline in the conversation
-- `ChatViewModel` extended with `generateImage()` and `performImageGeneration()` (extracted to `ChatViewModel+ImageGeneration.swift`) to handle image generation events and state
-- `ChatViewModel` split into extension files: `ChatViewModel+ImageGeneration.swift` and `ChatViewModel+Transcription.swift` to keep the main file under 500 lines
-- `ImageGenerationRepository.generateViaImagesEndpoint` now supports `url` fallback when `b64_json` is nil, downloading image data from the response URL
-- Chat `LoadedState` includes `imageModel: LLMModel?` and `isGeneratingImage: Bool` for image generation coordination
-- `ChatViewModel` uses `persistConversation()` and `scheduleErrorDismiss()` as internal-scoped helpers shared across extension files
+- Audio transcription redesigned from a standalone tab into voice dictation in the chat input bar
+- Chat model selector excludes TTS and transcription models; only chat/completion models shown
+- Image generation integrated into chat flow: generated images appear as assistant message attachments in the conversation
+- `ChatViewModel` split into extension files (`+ImageGeneration`, `+Transcription`) to stay under 500 lines; uses `persistConversation()` and `scheduleErrorDismiss()` shared across extensions
+- Conversation list redesign: grouped into time sections (Today, Yesterday, This Week, Earlier); each row shows a Liquid Glass avatar, title + date, last message preview, and model badge pill; selection highlighted with accent-tinted glass background
+- Model selector name truncated at 200pt in the middle (preserves provider prefix and model suffix)
+- macOS `ConversationListView` uses `.listStyle(.sidebar)`; `.refreshable {}` guarded to iOS/iPadOS only
 
 ### Removed
 
-- `AudioTranscriptionView` and `AudioTranscriptionViewModel` standalone screen
-- Transcription tab from iOS TabView and macOS sidebar
-- `ImageGenerationView` and `ImageGenerationViewModel` standalone screen
-- Images tab from iOS TabView and macOS sidebar
+- `AudioTranscriptionView` and `AudioTranscriptionViewModel` standalone screen and tab
+- `ImageGenerationView` and `ImageGenerationViewModel` standalone screen and tab
+- Dedicated "Generate Image" button from the chat input `+` menu; along with `GenerateImageUseCase`, `ImageGenerationRepository`, `GeneratedImage`, `ImageGenerationRequest`, `ImageGenerationResponse`, and related tests/mocks
 
 ### Fixed
 
 - Chat screen turning black during streaming due to cascading `.smooth` animations on every token; token updates now use no animation, only message count changes animate
 - Message entry transition simplified to `.opacity` to prevent layout thrashing during streaming
 - Keyboard opening on top of chat messages without scrolling to the last message
+- `StreamOptions.includeUsage` serialized as `"includeUsage"` (camelCase) instead of `"include_usage"` (snake_case), causing some cloud providers to reject streaming requests
+- `ContentPart` multimodal messages included `"text": null` and `"image_url": null` when not applicable; providers like Anthropic and Gemini rejected these with 400 errors; fields now omitted via `encodeIfPresent`
+- Assistant message text rendered without line breaks; single `\n` now normalized to `\n\n` before `AttributedString` rendering so paragraph breaks display correctly
+- Generated images from chat completions now display correctly as inline attachments; previously stored but never rendered due to missing `attachmentsView` in `assistantMessageLayout`
+- macOS: removed nested `NavigationStack` from `ChatView`, `ModelsView`, and `SettingsView`; `.navigationTitle` and `.toolbar` now propagate correctly to the `NSWindow` title bar, eliminating text-overflow and column-compression artefacts
+- macOS `WebContentView`: replaced `NavigationStack`-wrapped layout with a native VStack + `WKWebView` with `WKNavigationDelegate`; Privacy Policy, Terms of Use, and Author links now load correctly
 
 ### Security
 
 - Server URL and API key are no longer stored in plain text in UserDefaults
 - Keychain items use `kSecAttrAccessibleAfterFirstUnlock` protection level
-
-### Bug Fixes (post-release)
-
-- `StreamOptions.includeUsage` was serialized as `"includeUsage"` (camelCase) instead of `"include_usage"` (snake_case), causing some cloud providers to reject streaming requests with 400/500 errors
-- `ContentPart` multimodal messages included `"text": null` and `"image_url": null` fields when not applicable; providers like Anthropic and Gemini rejected these with 400 errors; fields are now omitted when absent via `encodeIfPresent`
-- Assistant message text rendered without line breaks because `AttributedString(markdown:)` collapses single `\n` into spaces per CommonMark spec; single newlines are now normalized to double newlines before rendering so paragraph breaks display correctly
-
-### Improvements (post-release)
-
-- **Show Token Usage toggle**: New "Chat" section in Settings with a toggle to show or hide the token count displayed below each assistant response; preference stored in `UserDefaults` and respected in `MessageBubbleView`
-- **Conversation list redesign**: Conversations are now grouped into time sections (Today, Yesterday, This Week, Earlier); each row shows a Liquid Glass avatar icon, title + date on the same line, last message preview, and a model badge pill; selection highlighted with an accent-tinted glass background; list uses `.plain` style for a cleaner layout aligned with the rest of the app
-- **Model selector truncation**: Selected model name in the chat toolbar is now capped at 200pt and truncated in the middle, preserving both provider prefix and model suffix (e.g. `openai/gpt-4-…preview`) when the model ID is long
-- **Assistant image rendering**: Generated images (from chat completions with `modalities: ["image", "text"]`) now display correctly as inline attachments in assistant messages; previously the image data was stored but never rendered because `assistantMessageLayout` didn't include `attachmentsView`
-- **Removed dedicated image generation action**: The "Generate Image" button from the chat input `+` menu (which called `POST /v1/images/generations` and returned HTTP 400 on most LiteLLM configurations) has been removed; image generation now works exclusively through the standard chat completions flow by selecting a capable model and describing the image in the message; this also removes `GenerateImageUseCase`, `ImageGenerationRepository`, `GeneratedImage`, `ImageGenerationRequest`, `ImageGenerationResponse`, and all related tests/mocks

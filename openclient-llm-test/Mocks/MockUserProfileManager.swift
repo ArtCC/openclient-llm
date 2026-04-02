@@ -16,6 +16,9 @@ final class MockUserProfileManager: UserProfileManagerProtocol, @unchecked Senda
 
     var profile: UserProfile = UserProfile()
     var savedProfile: UserProfile?
+    var localProfile: UserProfile = UserProfile()
+    var cloudProfile: UserProfile?
+    var resolvedKeepLocal: Bool?
 
     // MARK: - Public
 
@@ -26,5 +29,17 @@ final class MockUserProfileManager: UserProfileManagerProtocol, @unchecked Senda
     func saveProfile(_ profile: UserProfile) {
         savedProfile = profile
         self.profile = profile
+    }
+
+    func getLocalProfile() -> UserProfile {
+        localProfile
+    }
+
+    func getCloudProfile() -> UserProfile? {
+        cloudProfile
+    }
+
+    func resolveCloudSyncConflict(keepLocal: Bool) {
+        resolvedKeepLocal = keepLocal
     }
 }

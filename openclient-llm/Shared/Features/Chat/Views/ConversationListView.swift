@@ -11,9 +11,12 @@ import SwiftUI
 struct ConversationListView: View {
     // MARK: - Properties
 
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var viewModel = ConversationListViewModel()
     @State private var searchText: String = ""
     @State private var editingTagsConversation: Conversation?
+    @State private var conversationToDelete: Conversation?
 
     let onConversationSelected: (Conversation?) -> Void
 
@@ -44,6 +47,13 @@ struct ConversationListView: View {
             viewModel.onConversationSelected = onConversationSelected
             viewModel.send(.viewAppeared)
         }
+        .onChange(of: scenePhase) { _, newPhase in
+            // Reload when the app comes back to the foreground so iCloud-synced
+            // conversations from other devices are picked up automatically.
+            if newPhase == .active {
+                viewModel.refresh()
+            }
+        }
         .sheet(item: $editingTagsConversation) { conversation in
             ConversationTagsView(
                 conversationTitle: conversationTitle(conversation),
@@ -51,6 +61,25 @@ struct ConversationListView: View {
             ) { tags in
                 viewModel.send(.tagsUpdated(conversation.id, tags))
             }
+        }
+        .alert(
+            String(localized: "Delete Conversation"),
+            isPresented: Binding(
+                get: { conversationToDelete != nil },
+                set: { if !$0 { conversationToDelete = nil } }
+            )
+        ) {
+            Button(String(localized: "Cancel"), role: .cancel) {
+                conversationToDelete = nil
+            }
+            Button(String(localized: "Delete"), role: .destructive) {
+                if let conversation = conversationToDelete {
+                    viewModel.send(.deleteConversation(conversation.id))
+                    conversationToDelete = nil
+                }
+            }
+        } message: {
+            Text(String(localized: "Are you sure you want to delete this conversation? This action cannot be undone."))
         }
     }
 }
@@ -123,7 +152,7 @@ private extension ConversationListView {
                         .onDelete { indexSet in
                             for index in indexSet {
                                 let conversation = section.conversations[index]
-                                viewModel.send(.deleteConversation(conversation.id))
+                                conversationToDelete = conversation
                             }
                         }
                     } header: {
@@ -141,10 +170,14 @@ private extension ConversationListView {
                     }
                 }
             }
+            #if os(macOS)
+            .listStyle(.plain)
+            #else
             .listStyle(.plain)
             .refreshable {
                 viewModel.refresh()
             }
+            #endif
         }
     }
 
@@ -168,7 +201,7 @@ private extension ConversationListView {
         Divider()
 
         Button(role: .destructive) {
-            viewModel.send(.deleteConversation(conversation.id))
+            conversationToDelete = conversation
         } label: {
             Label(String(localized: "Delete"), systemImage: "trash")
         }
@@ -227,7 +260,7 @@ private extension ConversationListView {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: conversation.isPinned ? "pin.fill" : "sparkles")
                     .font(.system(size: 14))
-                    .foregroundStyle(conversation.isPinned ? .orange : Color.accentColor)
+                    .foregroundStyle(isSelected ? .white : (conversation.isPinned ? .orange : Color.accentColor))
                     .frame(width: 36, height: 36)
                     .glassEffect(
                         isSelected ? .regular.tint(Color.accentColor) : .regular,

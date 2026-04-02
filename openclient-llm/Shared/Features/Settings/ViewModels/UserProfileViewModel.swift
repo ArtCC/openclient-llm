@@ -35,6 +35,7 @@ final class UserProfileViewModel {
     private(set) var state: State
 
     private let userProfileManager: UserProfileManagerProtocol
+    private var cloudSyncTask: Task<Void, Never>?
 
     // MARK: - Init
 
@@ -52,6 +53,7 @@ final class UserProfileViewModel {
         switch event {
         case .viewAppeared:
             loadProfile()
+            startObservingCloudChanges()
         case .save(let name, let description, let extraInfo):
             saveProfile(name: name, description: description, extraInfo: extraInfo)
         }
@@ -61,6 +63,18 @@ final class UserProfileViewModel {
 // MARK: - Private
 
 private extension UserProfileViewModel {
+    func startObservingCloudChanges() {
+        cloudSyncTask?.cancel()
+        cloudSyncTask = Task { [weak self] in
+            for await _ in NotificationCenter.default.notifications(
+                named: UserProfileManager.profileDidChangeExternallyNotification
+            ) {
+                guard let self, !Task.isCancelled else { break }
+                self.loadProfile()
+            }
+        }
+    }
+
     func loadProfile() {
         let profile = userProfileManager.getProfile()
         state = .loaded(LoadedState(

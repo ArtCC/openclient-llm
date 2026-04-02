@@ -136,7 +136,7 @@ private extension MessageBubbleView {
             Image(uiImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(width: 120, height: 120)
+                .frame(width: 175, height: 175)
                 .clipShape(.rect(cornerRadius: 12))
                 .contentShape(.rect(cornerRadius: 12))
                 .onTapGesture { expandedImageData = attachment.data }
@@ -151,7 +151,7 @@ private extension MessageBubbleView {
             Image(nsImage: image)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(width: 120, height: 120)
+                .frame(width: 175, height: 175)
                 .clipShape(.rect(cornerRadius: 12))
                 .contentShape(.rect(cornerRadius: 12))
                 .onTapGesture { expandedImageData = attachment.data }

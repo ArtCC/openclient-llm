@@ -73,6 +73,9 @@ struct ConversationTagsView: View {
                     }
                 }
             }
+#if os(macOS)
+            .formStyle(.grouped)
+#endif
             .navigationTitle(conversationTitle.isEmpty ? String(localized: "Tags") : conversationTitle)
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -91,6 +94,9 @@ struct ConversationTagsView: View {
                 }
             }
         }
+#if os(macOS)
+        .frame(width: 480, height: 400)
+#endif
     }
 }
 
