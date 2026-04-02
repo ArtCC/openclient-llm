@@ -20,6 +20,8 @@ final class SettingsViewModel {
         case testConnectionTapped
         case saveTapped
         case cloudSyncToggled(Bool)
+        case cloudSyncConflictResolved(keepLocal: Bool)
+        case cloudSyncConflictCancelled
         case showTokenUsageToggled(Bool)
     }
 
@@ -36,6 +38,7 @@ final class SettingsViewModel {
         var isCloudSyncEnabled: Bool = false
         var isCloudAvailable: Bool = false
         var showTokenUsage: Bool = true
+        var showCloudSyncConflictAlert: Bool = false
     }
 
     enum ConnectionStatus: Equatable {
@@ -51,6 +54,7 @@ final class SettingsViewModel {
     private let testServerConnectionUseCase: TestServerConnectionUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
     private let cloudSyncManager: CloudSyncManagerProtocol
+    private let userProfileManager: UserProfileManagerProtocol
 
     // MARK: - Init
 
@@ -59,13 +63,15 @@ final class SettingsViewModel {
         saveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol = SaveServerConfigurationUseCase(),
         testServerConnectionUseCase: TestServerConnectionUseCaseProtocol = TestServerConnectionUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
-        cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager()
+        cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
+        userProfileManager: UserProfileManagerProtocol = UserProfileManager()
     ) {
         self.state = state
         self.saveServerConfigurationUseCase = saveServerConfigurationUseCase
         self.testServerConnectionUseCase = testServerConnectionUseCase
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
+        self.userProfileManager = userProfileManager
     }
 
     // MARK: - Input functions
@@ -84,6 +90,10 @@ final class SettingsViewModel {
             saveSettings()
         case .cloudSyncToggled(let enabled):
             toggleCloudSync(enabled)
+        case .cloudSyncConflictResolved(let keepLocal):
+            resolveCloudSyncConflict(keepLocal: keepLocal)
+        case .cloudSyncConflictCancelled:
+            cancelCloudSyncToggle()
         case .showTokenUsageToggled(let show):
             toggleShowTokenUsage(show)
         }
@@ -159,8 +169,45 @@ private extension SettingsViewModel {
 
     func toggleCloudSync(_ enabled: Bool) {
         guard case .loaded(var loadedState) = state else { return }
-        settingsManager.setIsCloudSyncEnabled(enabled)
-        loadedState.isCloudSyncEnabled = enabled
+
+        if enabled {
+            let localProfile = userProfileManager.getLocalProfile()
+            let cloudProfile = userProfileManager.getCloudProfile()
+
+            // Both local and cloud have non-empty profiles → ask user which to keep.
+            if !localProfile.isEmpty, let cloud = cloudProfile, !cloud.isEmpty, localProfile != cloud {
+                loadedState.showCloudSyncConflictAlert = true
+                state = .loaded(loadedState)
+                return
+            }
+
+            // Only local has data → push to cloud.
+            settingsManager.setIsCloudSyncEnabled(true)
+            loadedState.isCloudSyncEnabled = true
+            state = .loaded(loadedState)
+
+            if !localProfile.isEmpty && (cloudProfile?.isEmpty ?? true) {
+                userProfileManager.resolveCloudSyncConflict(keepLocal: true)
+            }
+        } else {
+            settingsManager.setIsCloudSyncEnabled(false)
+            loadedState.isCloudSyncEnabled = false
+            state = .loaded(loadedState)
+        }
+    }
+
+    func resolveCloudSyncConflict(keepLocal: Bool) {
+        guard case .loaded(var loadedState) = state else { return }
+        settingsManager.setIsCloudSyncEnabled(true)
+        userProfileManager.resolveCloudSyncConflict(keepLocal: keepLocal)
+        loadedState.isCloudSyncEnabled = true
+        loadedState.showCloudSyncConflictAlert = false
+        state = .loaded(loadedState)
+    }
+
+    func cancelCloudSyncToggle() {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.showCloudSyncConflictAlert = false
         state = .loaded(loadedState)
     }
 

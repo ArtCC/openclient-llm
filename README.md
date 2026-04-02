@@ -81,7 +81,7 @@ Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 ---
 
 <p align="left">
-  This project was developed entirely with <strong>Claude Sonnet 4.6</strong>, <strong>Visual Studio Code</strong> and <strong>Xcode</strong>.
+  This project was developed entirely with <strong>Claude Opus 4.6</strong>, <strong>Visual Studio Code</strong> and <strong>Xcode</strong>.
 </p>
 
 ---

@@ -21,6 +21,9 @@ final class MockCloudSyncManager: CloudSyncManagerProtocol, @unchecked Sendable 
     var deleteAllCalled: Bool = false
     var syncError: Error?
     var loadError: Error?
+    var cloudProfile: UserProfile?
+    var savedProfile: UserProfile?
+    var deleteProfileCalled: Bool = false
 
     // MARK: - Public
 
@@ -48,5 +51,18 @@ final class MockCloudSyncManager: CloudSyncManagerProtocol, @unchecked Sendable 
 
     func deleteAllFromCloud() throws {
         deleteAllCalled = true
+    }
+
+    func saveProfileToCloud(_ profile: UserProfile) throws {
+        savedProfile = profile
+    }
+
+    func loadProfileFromCloud() throws -> UserProfile? {
+        cloudProfile
+    }
+
+    func deleteProfileFromCloud() throws {
+        deleteProfileCalled = true
+        cloudProfile = nil
     }
 }

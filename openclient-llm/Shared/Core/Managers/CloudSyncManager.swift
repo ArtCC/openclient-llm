@@ -15,6 +15,9 @@ protocol CloudSyncManagerProtocol: Sendable {
     func allCloudConversationIds() -> Set<UUID>?
     func deleteConversationFromCloud(_ conversationId: UUID) throws
     func deleteAllFromCloud() throws
+    func saveProfileToCloud(_ profile: UserProfile) throws
+    func loadProfileFromCloud() throws -> UserProfile?
+    func deleteProfileFromCloud() throws
 }
 
 struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
@@ -124,15 +127,64 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
         guard fileManager.fileExists(atPath: cloudURL.path) else { return }
         try fileManager.removeItem(at: cloudURL)
     }
+
+    func saveProfileToCloud(_ profile: UserProfile) throws {
+        guard let fileURL = cloudProfileFileURL() else { return }
+
+        let directory = fileURL.deletingLastPathComponent()
+        try ensureDirectoryExists(at: directory)
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        let data = try encoder.encode(profile)
+        try data.write(to: fileURL, options: .atomic)
+    }
+
+    func loadProfileFromCloud() throws -> UserProfile? {
+        guard let fileURL = cloudProfileFileURL() else { return nil }
+
+        // Trigger download of iCloud placeholder if needed.
+        let directory = fileURL.deletingLastPathComponent()
+        if fileManager.fileExists(atPath: directory.path) {
+            let files = try? fileManager.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.ubiquitousItemDownloadingStatusKey],
+                options: []
+            )
+            for url in files ?? [] where url.lastPathComponent.hasPrefix(".") && url.pathExtension == "icloud" {
+                try? fileManager.startDownloadingUbiquitousItem(at: url)
+            }
+        }
+
+        guard fileManager.fileExists(atPath: fileURL.path) else { return nil }
+
+        let data = try Data(contentsOf: fileURL)
+        return try JSONDecoder().decode(UserProfile.self, from: data)
+    }
+
+    func deleteProfileFromCloud() throws {
+        guard let fileURL = cloudProfileFileURL() else { return }
+        guard fileManager.fileExists(atPath: fileURL.path) else { return }
+        try fileManager.removeItem(at: fileURL)
+    }
 }
 
 // MARK: - Private
 
 private extension CloudSyncManager {
     func cloudConversationsDirectory() -> URL? {
+        cloudDocumentsDirectory()?
+            .appendingPathComponent("Conversations", isDirectory: true)
+    }
+
+    func cloudProfileFileURL() -> URL? {
+        cloudDocumentsDirectory()?
+            .appendingPathComponent("UserProfile.json")
+    }
+
+    func cloudDocumentsDirectory() -> URL? {
         fileManager.url(forUbiquityContainerIdentifier: nil)?
             .appendingPathComponent("Documents", isDirectory: true)
-            .appendingPathComponent("Conversations", isDirectory: true)
     }
 
     func ensureDirectoryExists(at url: URL) throws {

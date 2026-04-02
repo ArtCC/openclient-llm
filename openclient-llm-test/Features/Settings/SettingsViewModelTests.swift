@@ -18,6 +18,7 @@ final class SettingsViewModelTests: XCTestCase {
     private var mockTestConnection: MockTestServerConnectionUseCase!
     private var mockSettingsManager: MockSettingsManager!
     private var mockCloudSyncManager: MockCloudSyncManager!
+    private var mockUserProfileManager: MockUserProfileManager!
 
     // MARK: - Setup
 
@@ -28,11 +29,13 @@ final class SettingsViewModelTests: XCTestCase {
         mockTestConnection = MockTestServerConnectionUseCase()
         mockSettingsManager = MockSettingsManager()
         mockCloudSyncManager = MockCloudSyncManager()
+        mockUserProfileManager = MockUserProfileManager()
         sut = SettingsViewModel(
             saveServerConfigurationUseCase: mockSaveServerConfig,
             testServerConnectionUseCase: mockTestConnection,
             settingsManager: mockSettingsManager,
-            cloudSyncManager: mockCloudSyncManager
+            cloudSyncManager: mockCloudSyncManager,
+            userProfileManager: mockUserProfileManager
         )
     }
 
@@ -42,6 +45,7 @@ final class SettingsViewModelTests: XCTestCase {
         mockTestConnection = nil
         mockSettingsManager = nil
         mockCloudSyncManager = nil
+        mockUserProfileManager = nil
 
         try await super.tearDown()
     }
@@ -284,5 +288,136 @@ final class SettingsViewModelTests: XCTestCase {
             return
         }
         XCTAssertFalse(loadedState.showTokenUsage)
+    }
+
+    // MARK: - Tests — cloudSyncToggled conflict
+
+    func test_send_cloudSyncToggled_true_showsConflictAlert_whenBothHaveData() {
+        // Given
+        mockUserProfileManager.localProfile = UserProfile(name: "Local", profileDescription: "", extraInfo: "")
+        mockUserProfileManager.cloudProfile = UserProfile(name: "Cloud", profileDescription: "", extraInfo: "")
+        sut.send(.viewAppeared)
+
+        // When
+        sut.send(.cloudSyncToggled(true))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertTrue(loadedState.showCloudSyncConflictAlert)
+        XCTAssertFalse(loadedState.isCloudSyncEnabled)
+    }
+
+    func test_send_cloudSyncToggled_true_enablesDirectly_whenNoConflict() {
+        // Given
+        mockUserProfileManager.localProfile = UserProfile(name: "Local", profileDescription: "", extraInfo: "")
+        mockUserProfileManager.cloudProfile = nil
+        sut.send(.viewAppeared)
+
+        // When
+        sut.send(.cloudSyncToggled(true))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertFalse(loadedState.showCloudSyncConflictAlert)
+        XCTAssertTrue(loadedState.isCloudSyncEnabled)
+        XCTAssertTrue(mockSettingsManager.isCloudSyncEnabled)
+    }
+
+    func test_send_cloudSyncToggled_true_pushesLocalToCloud_whenCloudEmpty() {
+        // Given
+        mockUserProfileManager.localProfile = UserProfile(name: "Local", profileDescription: "", extraInfo: "")
+        mockUserProfileManager.cloudProfile = nil
+        sut.send(.viewAppeared)
+
+        // When
+        sut.send(.cloudSyncToggled(true))
+
+        // Then
+        XCTAssertEqual(mockUserProfileManager.resolvedKeepLocal, true)
+    }
+
+    func test_send_cloudSyncConflictResolved_keepLocal_enablesSyncAndResolvesConflict() {
+        // Given
+        mockUserProfileManager.localProfile = UserProfile(name: "Local", profileDescription: "", extraInfo: "")
+        mockUserProfileManager.cloudProfile = UserProfile(name: "Cloud", profileDescription: "", extraInfo: "")
+        sut.send(.viewAppeared)
+        sut.send(.cloudSyncToggled(true))
+
+        // When
+        sut.send(.cloudSyncConflictResolved(keepLocal: true))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertTrue(loadedState.isCloudSyncEnabled)
+        XCTAssertFalse(loadedState.showCloudSyncConflictAlert)
+        XCTAssertTrue(mockSettingsManager.isCloudSyncEnabled)
+        XCTAssertEqual(mockUserProfileManager.resolvedKeepLocal, true)
+    }
+
+    func test_send_cloudSyncConflictResolved_keepCloud_enablesSyncAndResolvesConflict() {
+        // Given
+        mockUserProfileManager.localProfile = UserProfile(name: "Local", profileDescription: "", extraInfo: "")
+        mockUserProfileManager.cloudProfile = UserProfile(name: "Cloud", profileDescription: "", extraInfo: "")
+        sut.send(.viewAppeared)
+        sut.send(.cloudSyncToggled(true))
+
+        // When
+        sut.send(.cloudSyncConflictResolved(keepLocal: false))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertTrue(loadedState.isCloudSyncEnabled)
+        XCTAssertFalse(loadedState.showCloudSyncConflictAlert)
+        XCTAssertEqual(mockUserProfileManager.resolvedKeepLocal, false)
+    }
+
+    func test_send_cloudSyncConflictCancelled_dismissesAlertWithoutEnablingSync() {
+        // Given
+        mockUserProfileManager.localProfile = UserProfile(name: "Local", profileDescription: "", extraInfo: "")
+        mockUserProfileManager.cloudProfile = UserProfile(name: "Cloud", profileDescription: "", extraInfo: "")
+        sut.send(.viewAppeared)
+        sut.send(.cloudSyncToggled(true))
+
+        // When
+        sut.send(.cloudSyncConflictCancelled)
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertFalse(loadedState.showCloudSyncConflictAlert)
+        XCTAssertFalse(loadedState.isCloudSyncEnabled)
+    }
+
+    func test_send_cloudSyncToggled_true_enablesDirectly_whenBothMatch() {
+        // Given
+        let sameProfile = UserProfile(name: "Same", profileDescription: "Desc", extraInfo: "Info")
+        mockUserProfileManager.localProfile = sameProfile
+        mockUserProfileManager.cloudProfile = sameProfile
+        sut.send(.viewAppeared)
+
+        // When
+        sut.send(.cloudSyncToggled(true))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertFalse(loadedState.showCloudSyncConflictAlert)
+        XCTAssertTrue(loadedState.isCloudSyncEnabled)
     }
 }
