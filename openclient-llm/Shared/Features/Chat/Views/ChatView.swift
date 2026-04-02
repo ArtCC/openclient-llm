@@ -23,7 +23,6 @@ struct ChatView: View {
     @State private var showImagePicker: Bool = false
     @State private var showDocumentPicker: Bool = false
     @State private var showCameraPicker: Bool = false
-    @State private var audioRecorder = AudioRecorderManager()
 
     var conversation: Conversation?
     var onConversationUpdated: (() -> Void)?
@@ -39,6 +38,81 @@ struct ChatView: View {
     // MARK: - View
 
     var body: some View {
+        #if os(macOS)
+        macOSBody
+        #else
+        iOSBody
+        #endif
+    }
+}
+
+// MARK: - Private
+
+private extension ChatView {
+    #if os(macOS)
+    var macOSBody: some View {
+        Group {
+            switch viewModel.state {
+            case .loading:
+                ProgressView()
+            case .loaded(let loadedState):
+                loadedView(loadedState)
+            }
+        }
+        .navigationTitle("")
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                modelSelector
+            }
+            ToolbarItem(placement: .primaryAction) {
+                HStack(spacing: 4) {
+                    Button {
+                        showModelParametersSheet = true
+                    } label: {
+                        Image(systemName: "slider.horizontal.3")
+                    }
+                    .accessibilityLabel(String(localized: "Model Parameters"))
+
+                    Button {
+                        showSystemPromptSheet = true
+                    } label: {
+                        Image(systemName: "text.bubble")
+                    }
+                    .accessibilityLabel(String(localized: "System Prompt"))
+                }
+            }
+        }
+        .sheet(isPresented: $showSystemPromptSheet) {
+            ChatSystemPromptView(
+                viewModel: viewModel,
+                isPresented: $showSystemPromptSheet
+            )
+        }
+        .sheet(isPresented: $showModelParametersSheet) {
+            ChatModelParametersView(
+                viewModel: viewModel,
+                isPresented: $showModelParametersSheet
+            )
+        }
+        .imagePicker(isPresented: $showImagePicker) { attachment in
+            viewModel.send(.attachmentAdded(attachment))
+        }
+        .documentPicker(isPresented: $showDocumentPicker) { attachment in
+            viewModel.send(.attachmentAdded(attachment))
+        }
+        .task {
+            viewModel.onConversationUpdated = onConversationUpdated
+            viewModel.send(.viewAppeared)
+        }
+        .onChange(of: conversation) { _, newConversation in
+            if let newConversation {
+                viewModel.send(.conversationLoaded(newConversation))
+            }
+        }
+    }
+    #endif
+
+    var iOSBody: some View {
         NavigationStack {
             Group {
                 switch viewModel.state {
@@ -108,11 +182,6 @@ struct ChatView: View {
         }
 #endif
     }
-}
-
-// MARK: - Private
-
-private extension ChatView {
     func loadedView(
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
@@ -121,7 +190,17 @@ private extension ChatView {
                 VStack(spacing: 0) {
                     errorBanner(loadedState.errorMessage)
                     attachmentPreview(loadedState)
-                    inputBar(loadedState)
+                    ChatInputBarView(
+                        inputText: $inputText,
+                        showImagePicker: $showImagePicker,
+                        showDocumentPicker: $showDocumentPicker,
+                        showCameraPicker: $showCameraPicker,
+                        loadedState: loadedState,
+                        onInputChanged: { viewModel.send(.inputChanged($0)) },
+                        onSend: { viewModel.send(.sendTapped) },
+                        onStopStreaming: { viewModel.send(.stopStreamingTapped) },
+                        onAudioRecorded: { data, duration in viewModel.send(.audioRecorded(data, duration)) }
+                    )
                 }
             }
     }
@@ -292,108 +371,6 @@ private extension ChatView {
         .glassEffect(.regular, in: .capsule)
     }
 
-    // MARK: - Input Bar
-
-    func inputBar(
-        _ loadedState: ChatViewModel.LoadedState
-    ) -> some View {
-        HStack(spacing: 8) {
-            attachmentButton(loadedState)
-
-            TextField(
-                String(localized: "Message..."),
-                text: $inputText,
-                axis: .vertical
-            )
-            .textFieldStyle(.plain)
-            .textSelection(.enabled)
-            .lineLimit(1...5)
-#if os(iOS)
-            .submitLabel(.send)
-#endif
-            .onSubmit {
-                inputText = ""
-                viewModel.send(.sendTapped)
-            }
-            .onChange(of: inputText) { _, newValue in
-                viewModel.send(.inputChanged(newValue))
-            }
-            .onChange(of: loadedState.inputText) { _, newValue in
-                if newValue != inputText {
-                    inputText = newValue
-                }
-            }
-
-            actionButton(loadedState)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .glassEffect(.regular, in: .capsule)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 8)
-    }
-
-    @ViewBuilder
-    func attachmentButton(_ loadedState: ChatViewModel.LoadedState) -> some View {
-        Menu {
-#if os(iOS)
-            Button {
-                showCameraPicker = true
-            } label: {
-                Label(String(localized: "Camera"), systemImage: "camera")
-            }
-#endif
-
-            Button {
-                showDocumentPicker = true
-            } label: {
-                Label(String(localized: "Document"), systemImage: "doc")
-            }
-
-            Button {
-                showImagePicker = true
-            } label: {
-                Label(String(localized: "Photo Library"), systemImage: "photo.on.rectangle")
-            }
-        } label: {
-            Image(systemName: "plus.circle.fill")
-                .font(.title)
-                .foregroundStyle(.secondary)
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    @ViewBuilder
-    func actionButton(
-        _ loadedState: ChatViewModel.LoadedState
-    ) -> some View {
-        if loadedState.isStreaming {
-            stopStreamingButton
-        } else if loadedState.isTranscribing {
-            ProgressView()
-                .controlSize(.small)
-                .frame(minWidth: 44, minHeight: 44)
-                .transition(.scale.combined(with: .opacity))
-        } else if audioRecorder.isRecording {
-            stopRecordingButton
-        } else {
-            let hasText = !loadedState.inputText
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .isEmpty
-            let hasModel = loadedState.selectedModel != nil
-            let hasAttachments = !loadedState.pendingAttachments.isEmpty
-            let hasTranscriptionModel = loadedState.transcriptionModelId != nil
-
-            if (hasText || hasAttachments) && hasModel {
-                sendButton
-            } else if hasModel && hasTranscriptionModel {
-                micButton
-            }
-        }
-    }
-
     // MARK: - Model Selector
 
     @ViewBuilder
@@ -430,61 +407,6 @@ private extension ChatView {
                 }
             }
         }
-    }
-
-    // MARK: - Recording helpers
-
-    func startRecording() {
-        audioRecorder.startRecording()
-    }
-
-    func stopRecording() {
-        audioRecorder.stopRecording { data, duration in
-            guard let data else { return }
-            viewModel.send(.audioRecorded(data, duration))
-        }
-    }
-
-    // MARK: - Action Buttons
-
-    var stopStreamingButton: some View {
-        Button { viewModel.send(.stopStreamingTapped) } label: {
-            Image(systemName: "stop.circle.fill").font(.title).foregroundStyle(.red)
-                .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Stop"))
-        .transition(.scale.combined(with: .opacity))
-    }
-
-    var stopRecordingButton: some View {
-        Button { stopRecording() } label: {
-            Image(systemName: "stop.circle.fill").font(.title).foregroundStyle(.red)
-                .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Stop Recording"))
-        .transition(.scale.combined(with: .opacity))
-    }
-
-    var sendButton: some View {
-        Button { inputText = ""; viewModel.send(.sendTapped) } label: {
-            Image(systemName: "arrow.up.circle.fill").font(.title).foregroundStyle(Color.accentColor)
-                .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Send"))
-        .transition(.scale.combined(with: .opacity))
-    }
-
-    var micButton: some View {
-        Button { startRecording() } label: {
-            Image(systemName: "mic.circle.fill").font(.title).foregroundStyle(.secondary)
-                .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Record Audio"))
-        .transition(.scale.combined(with: .opacity))
     }
 
 }

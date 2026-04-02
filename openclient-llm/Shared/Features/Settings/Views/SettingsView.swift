@@ -27,27 +27,25 @@ struct SettingsView: View {
     // MARK: - View
 
     var body: some View {
-        NavigationStack {
-            Group {
-                switch viewModel.state {
-                case .loading:
-                    ProgressView()
-                case .loaded(let loadedState):
-                    loadedView(loadedState)
-                }
+        Group {
+            switch viewModel.state {
+            case .loading:
+                ProgressView()
+            case .loaded(let loadedState):
+                loadedView(loadedState)
             }
-            .navigationTitle(String(localized: "Settings"))
-            .sheet(item: $presentedWebURL) { destination in
-                if let url = destination.url {
-                    WebContentView(title: destination.title, url: url)
-                }
+        }
+        .navigationTitle(String(localized: "Settings"))
+        .sheet(item: $presentedWebURL) { destination in
+            if let url = destination.url {
+                WebContentView(title: destination.title, url: url)
             }
-            .sheet(isPresented: $isShowingVotice) {
-                Votice.feedbackView()
-            }
-            .sheet(isPresented: $isShowingUserProfile) {
-                UserProfileView()
-            }
+        }
+        .sheet(isPresented: $isShowingVotice) {
+            Votice.feedbackView()
+        }
+        .sheet(isPresented: $isShowingUserProfile) {
+            UserProfileView()
         }
         .task {
             viewModel.send(.viewAppeared)

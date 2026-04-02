@@ -150,10 +150,14 @@ private extension ConversationListView {
                     }
                 }
             }
+            #if os(macOS)
+            .listStyle(.sidebar)
+            #else
             .listStyle(.plain)
             .refreshable {
                 viewModel.refresh()
             }
+            #endif
         }
     }
 

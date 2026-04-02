@@ -16,25 +16,23 @@ struct ModelsView: View {
     // MARK: - View
 
     var body: some View {
-        NavigationStack {
-            Group {
-                switch viewModel.state {
-                case .loading:
-                    ProgressView()
-                case .loaded(let loadedState):
-                    loadedView(loadedState)
-                }
+        Group {
+            switch viewModel.state {
+            case .loading:
+                ProgressView()
+            case .loaded(let loadedState):
+                loadedView(loadedState)
             }
-            .navigationTitle(String(localized: "Models"))
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    Button {
-                        viewModel.send(.refreshTapped)
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .accessibilityLabel(String(localized: "Refresh"))
+        }
+        .navigationTitle(String(localized: "Models"))
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                Button {
+                    viewModel.send(.refreshTapped)
+                } label: {
+                    Image(systemName: "arrow.clockwise")
                 }
+                .accessibilityLabel(String(localized: "Refresh"))
             }
         }
         .task {

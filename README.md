@@ -169,5 +169,5 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 ---
 
 <p align="left">
-  This project was developed entirely with <strong>Claude Opus and Sonnet 4.6</strong>, <strong>Visual Studio Code</strong> and <strong>Xcode</strong>.
+  This project was developed entirely with <strong>Claude Sonnet 4.6</strong>, <strong>Visual Studio Code</strong> and <strong>Xcode</strong>.
 </p>

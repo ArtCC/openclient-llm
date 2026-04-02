@@ -16,6 +16,7 @@ struct HomeView: View {
 
     #if os(macOS)
     @State private var sidebarDestination: SidebarDestination = .chats
+    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     #endif
 
     #if os(iOS)
@@ -113,12 +114,15 @@ private extension HomeView {
     }
 
     var macOSLayout: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             sidebar
         } content: {
             sidebarContent
         } detail: {
             detailContent
+        }
+        .onChange(of: sidebarDestination) { _, newValue in
+            columnVisibility = newValue == .chats ? .all : .doubleColumn
         }
     }
 
@@ -149,10 +153,10 @@ private extension HomeView {
             }
             .id(conversationListId)
             .navigationTitle(String(localized: "Chats"))
-        case .models:
-            ModelsView()
-        case .settings:
-            SettingsView()
+        case .models, .settings:
+            // These sections are rendered directly in the detail column;
+            // the content column is hidden via .doubleColumn visibility.
+            EmptyView()
         }
     }
 
@@ -168,19 +172,21 @@ private extension HomeView {
                     }
                 )
             } else {
-                ContentUnavailableView(
-                    String(localized: "No Conversation Selected"),
-                    systemImage: "bubble.left.and.bubble.right",
-                    description: Text(String(localized: "Select or create a conversation to start chatting"))
-                )
+                chatEmptyDetail
             }
-        case .models, .settings:
-            ContentUnavailableView(
-                String(localized: "Select a Section"),
-                systemImage: "sidebar.left",
-                description: Text(String(localized: "Choose an option from the sidebar"))
-            )
+        case .models:
+            ModelsView()
+        case .settings:
+            SettingsView()
         }
+    }
+
+    var chatEmptyDetail: some View {
+        ContentUnavailableView(
+            String(localized: "No Conversation Selected"),
+            systemImage: "bubble.left.and.bubble.right",
+            description: Text(String(localized: "Select or create a conversation to start chatting"))
+        )
     }
     #endif
 }
