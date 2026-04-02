@@ -16,6 +16,20 @@ struct ModelsView: View {
     // MARK: - View
 
     var body: some View {
+        #if os(iOS)
+        NavigationStack {
+            content
+        }
+        #else
+        content
+        #endif
+    }
+}
+
+// MARK: - Private
+
+private extension ModelsView {
+    var content: some View {
         Group {
             switch viewModel.state {
             case .loading:
@@ -39,11 +53,7 @@ struct ModelsView: View {
             viewModel.send(.viewAppeared)
         }
     }
-}
 
-// MARK: - Private
-
-private extension ModelsView {
     func loadedView(_ loadedState: ModelsViewModel.LoadedState) -> some View {
         Group {
             if let errorMessage = loadedState.errorMessage, loadedState.models.isEmpty {

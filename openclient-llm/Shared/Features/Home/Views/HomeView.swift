@@ -16,7 +16,6 @@ struct HomeView: View {
 
     #if os(macOS)
     @State private var sidebarDestination: SidebarDestination = .chats
-    @State private var columnVisibility: NavigationSplitViewVisibility = .all
     #endif
 
     #if os(iOS)
@@ -114,15 +113,13 @@ private extension HomeView {
     }
 
     var macOSLayout: some View {
-        NavigationSplitView(columnVisibility: $columnVisibility) {
+        NavigationSplitView {
             sidebar
-        } content: {
-            sidebarContent
         } detail: {
             detailContent
         }
-        .onChange(of: sidebarDestination) { _, newValue in
-            columnVisibility = newValue == .chats ? .all : .doubleColumn
+        .onChange(of: sidebarDestination) { _, _ in
+            selectedConversation = nil
         }
     }
 
@@ -145,48 +142,29 @@ private extension HomeView {
     }
 
     @ViewBuilder
-    var sidebarContent: some View {
-        switch sidebarDestination {
-        case .chats:
-            ConversationListView { conversation in
-                selectedConversation = conversation
-            }
-            .id(conversationListId)
-            .navigationTitle(String(localized: "Chats"))
-        case .models, .settings:
-            // These sections are rendered directly in the detail column;
-            // the content column is hidden via .doubleColumn visibility.
-            EmptyView()
-        }
-    }
-
-    @ViewBuilder
     var detailContent: some View {
         switch sidebarDestination {
         case .chats:
-            if let selectedConversation {
-                ChatView(
-                    conversation: selectedConversation,
-                    onConversationUpdated: {
-                        conversationListId = UUID()
-                    }
-                )
-            } else {
-                chatEmptyDetail
+            NavigationStack {
+                ConversationListView { conversation in
+                    selectedConversation = conversation
+                }
+                .id(conversationListId)
+                .navigationTitle(String(localized: "Chats"))
+                .navigationDestination(item: $selectedConversation) { conversation in
+                    ChatView(
+                        conversation: conversation,
+                        onConversationUpdated: {
+                            conversationListId = UUID()
+                        }
+                    )
+                }
             }
         case .models:
             ModelsView()
         case .settings:
             SettingsView()
         }
-    }
-
-    var chatEmptyDetail: some View {
-        ContentUnavailableView(
-            String(localized: "No Conversation Selected"),
-            systemImage: "bubble.left.and.bubble.right",
-            description: Text(String(localized: "Select or create a conversation to start chatting"))
-        )
     }
     #endif
 }

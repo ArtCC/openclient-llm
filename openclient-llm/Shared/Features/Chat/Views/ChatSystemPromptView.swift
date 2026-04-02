@@ -17,29 +17,60 @@ struct ChatSystemPromptView: View {
     // MARK: - View
 
     var body: some View {
-        NavigationStack {
-            editor
-                .navigationTitle(String(localized: "System Prompt"))
-#if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-#endif
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button(String(localized: "Done")) {
-                            isPresented = false
+        Group {
+            #if os(macOS)
+            macOSBody
+            #else
+            NavigationStack {
+                editor
+                    .navigationTitle(String(localized: "System Prompt"))
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button(String(localized: "Done")) {
+                                isPresented = false
+                            }
                         }
                     }
-                }
+            }
+            #endif
         }
-#if os(macOS)
-        .frame(width: 500, height: 400)
-#endif
+        #if os(macOS)
+        .frame(width: 500, height: 420)
+        #endif
     }
 }
 
 // MARK: - Private
 
 private extension ChatSystemPromptView {
+    #if os(macOS)
+    var macOSBody: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Spacer()
+
+                Text(String(localized: "System Prompt"))
+                    .font(.headline)
+
+                Spacer()
+
+                Button(String(localized: "Done")) {
+                    isPresented = false
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+
+            Divider()
+
+            editor
+        }
+    }
+    #endif
+
     @ViewBuilder
     var editor: some View {
         if case .loaded(let loadedState) = viewModel.state {

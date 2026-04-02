@@ -59,7 +59,7 @@ private extension ChatView {
                 loadedView(loadedState)
             }
         }
-        .navigationTitle("")
+        .navigationTitle(conversation?.title ?? "")
         .toolbar {
             ToolbarItem(placement: .principal) {
                 modelSelector
@@ -199,7 +199,8 @@ private extension ChatView {
                         onInputChanged: { viewModel.send(.inputChanged($0)) },
                         onSend: { viewModel.send(.sendTapped) },
                         onStopStreaming: { viewModel.send(.stopStreamingTapped) },
-                        onAudioRecorded: { data, duration in viewModel.send(.audioRecorded(data, duration)) }
+                        onAudioRecorded: { data, duration in viewModel.send(.audioRecorded(data, duration)) },
+                        onImageFileAttached: { attachment in viewModel.send(.attachmentAdded(attachment)) }
                     )
                 }
             }

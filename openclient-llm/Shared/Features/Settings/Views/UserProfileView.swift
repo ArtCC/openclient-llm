@@ -75,6 +75,56 @@ struct UserProfileView: View {
 // MARK: - Private
 
 private extension UserProfileView {
+    var loadedGroup: some View {
+        Group {
+            switch viewModel.state {
+            case .loading:
+                ProgressView()
+            case .loaded:
+                loadedView()
+            }
+        }
+    }
+
+    #if os(macOS)
+    var macOSBody: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Button(String(localized: "Cancel")) {
+                    dismiss()
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Text(String(localized: "Personal Context"))
+                    .font(.headline)
+
+                Spacer()
+
+                Button(String(localized: "Save")) {
+                    viewModel.send(.save(
+                        name: name,
+                        description: profileDescription,
+                        extraInfo: extraInfo
+                    ))
+                    dismiss()
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .disabled(!hasChanges)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+
+            Divider()
+
+            loadedGroup
+        }
+    }
+    #endif
+
     var hasChanges: Bool {
         guard case .loaded(let loadedState) = viewModel.state else { return false }
         return name != loadedState.originalName
@@ -89,10 +139,12 @@ private extension UserProfileView {
             extraInfoSection()
             usageSection()
         }
-#if os(iOS)
+        #if os(iOS)
         .scrollDismissesKeyboard(.interactively)
         .ignoresSafeArea(.keyboard, edges: .bottom)
-#endif
+        #elseif os(macOS)
+        .formStyle(.grouped)
+        #endif
     }
 
     func nameSection() -> some View {

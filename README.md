@@ -34,88 +34,65 @@ Native Apple client for OpenAI-compatible LLM servers. Works out of the box with
 ```
 openclient-llm/                    # iOS target
 ├── App/                           # iOS app entry point
-│   └── OpenClientApp.swift
 ├── Shared/                        # Shared code (iOS + macOS)
 │   ├── Features/                  # Feature modules
 │   │   ├── AudioTranscription/    # Speech-to-Text (integrated in chat input)
 │   │   │   ├── UseCases/          # TranscribeAudioUseCase
 │   │   │   ├── Repositories/      # AudioTranscriptionRepository
-│   │   │   └── Models/            # Transcription
+│   │   │   └── Models/            # Transcription domain model
 │   │   ├── Chat/                  # Chat with SSE streaming and voice dictation
-│   │   │   ├── Views/             # ChatView, ChatInputBarView, MessageBubbleView,
-│   │   │   │                      # CodeBlockView, ConversationListView,
-│   │   │   │                      # ConversationTagsView, AttachmentPickerView,
-│   │   │   │                      # CameraPickerView, ImagePreviewView,
-│   │   │   │                      # ChatEmptyStateView, ChatModelParametersView,
-│   │   │   │                      # ChatSystemPromptView
-│   │   │   ├── ViewModels/        # ChatViewModel (+ Transcription, + Helpers),
-│   │   │   │                      # ConversationListViewModel
-│   │   │   ├── UseCases/          # SendMessage, StreamMessage,
-│   │   │   │                      # LoadConversations, SaveConversation, DeleteConversation,
-│   │   │   │                      # PinConversation, UpdateConversationTags
+│   │   │   ├── Views/             # ChatView, ConversationListView, input bar, bubbles, pickers
+│   │   │   ├── ViewModels/        # ChatViewModel, ConversationListViewModel
+│   │   │   ├── UseCases/          # StreamMessage, Save/Load/Delete/Pin conversation, Tags
 │   │   │   ├── Repositories/      # ChatRepository, ConversationRepository
-│   │   │   └── Models/            # ChatMessage, Conversation, ConversationSection,
-│   │   │                          # TokenUsage, ModelParameters
-│   │   ├── Home/                  # TabView (iOS) / SplitView (macOS)
-│   │   │   └── Views/             # HomeView
-│   │   ├── Launch/                # Initial routing
+│   │   │   └── Models/            # ChatMessage, Conversation, TokenUsage, ModelParameters
+│   │   ├── Home/                  # TabView (iOS) / NavigationSplitView (macOS)
+│   │   │   └── Views/             # HomeView — root layout for both platforms
+│   │   ├── Launch/                # Initial routing (onboarding check)
 │   │   │   ├── Views/             # LaunchView
 │   │   │   ├── ViewModels/        # LaunchViewModel
 │   │   │   └── UseCases/          # CheckOnboarding, ResetAppData, ConfigureVotice
 │   │   ├── Models/                # LLM model listing
-│   │   │   ├── Views/             # ModelsView (Local/Cloud sections)
+│   │   │   ├── Views/             # ModelsView (Local / Cloud sections)
 │   │   │   ├── ViewModels/        # ModelsViewModel
 │   │   │   ├── UseCases/          # FetchModelsUseCase
 │   │   │   ├── Repositories/      # ModelsRepository
-│   │   │   └── Models/            # LLMModel (Provider, Capability)
+│   │   │   └── Models/            # LLMModel (Provider, Mode, Capability)
 │   │   ├── Onboarding/            # Server setup wizard
 │   │   │   ├── Views/             # OnboardingView
 │   │   │   ├── ViewModels/        # OnboardingViewModel
-│   │   │   ├── UseCases/          # TestConnection, SaveConfig, Complete
+│   │   │   ├── UseCases/          # TestConnection, SaveServerConfig, CompleteOnboarding
 │   │   │   ├── Repositories/      # OnboardingRepository
 │   │   │   └── Models/            # OnboardingStep
-│   │   ├── Settings/              # Server configuration + personal context
+│   │   ├── Settings/              # Server config, preferences, personal context
 │   │   │   ├── Views/             # SettingsView, UserProfileView
 │   │   │   ├── ViewModels/        # SettingsViewModel, UserProfileViewModel
 │   │   │   └── Models/            # UserProfile
-│   │   └── TextToSpeech/          # Text-to-Speech
+│   │   └── TextToSpeech/          # Text-to-Speech playback
 │   │       ├── UseCases/          # SynthesizeSpeechUseCase
 │   │       └── Repositories/      # TextToSpeechRepository
 │   ├── Core/
-│   │   ├── Networking/            # API client, SSE streaming, multipart upload
-│   │   │   └── Models/            # Request/response DTOs
-│   │   ├── Managers/              # Settings, Keychain, Log, CloudSync,
-│   │   │                          # AudioPlayer, AudioRecorder, ConversationStarters,
-│   │   │                          # UserProfile, Votice
-│   │   ├── Views/                 # Reusable views
+│   │   ├── Networking/            # APIClient, SSE streaming, multipart upload, DTOs
+│   │   ├── Managers/              # Settings, Keychain, CloudSync, AudioPlayer,
+│   │   │                          # AudioRecorder, ConversationStarters, UserProfile, Log
+│   │   ├── Views/                 # Reusable cross-feature views
 │   │   ├── Extensions/            # Swift/SwiftUI extensions
 │   │   └── Utils/                 # Constants, MarkdownParser
 │   └── Resources/
-│       └── Localizable.xcstrings  # Localization
+│       └── Localizable.xcstrings  # String catalog (all localized strings)
 └── Resources/
-    └── Assets.xcassets/           # iOS assets, accent color, app icon
+    └── Assets.xcassets/           # iOS app icon, accent color, semantic colors
 
 openclient-llm-macOS/              # macOS target
 ├── App/                           # macOS app entry point
-│   └── OpenClientApp.swift
-├── Views/                         # macOS-only views
-│   └── AppCommands.swift          # Menu bar commands (⌘N New Chat)
+├── Views/                         # macOS-only views (AppCommands — ⌘N New Chat)
 └── Resources/
-    └── Assets.xcassets/           # macOS assets, accent color, app icon
+    └── Assets.xcassets/           # macOS app icon, accent color
 
 openclient-llm-test/               # Unit tests
-├── Core/
-│   └── Managers/                  # KeychainManager tests
-├── Features/
-│   ├── Chat/                      # ChatViewModel, ConversationListViewModel,
-│   │                               # ConversationSection tests
-│   │                               # + image generation, transcription, TTS,
-│   │                               # persistence, user profile, pinning, tags extensions
-│   ├── Launch/                    # LaunchViewModel, UseCase tests
-│   ├── Models/                    # ModelsViewModel, UseCase tests
-│   ├── Onboarding/                # OnboardingViewModel, UseCase tests
-│   └── Settings/                  # SettingsViewModel, UserProfile, UserProfileViewModel tests
-└── Mocks/                         # Mock implementations
+├── Core/                          # Manager tests (Keychain, etc.)
+├── Features/                      # ViewModel, UseCase, Repository tests per feature
+└── Mocks/                         # Protocol-based mock implementations
 ```
 
 ## Usage
@@ -150,6 +127,10 @@ If you need to set up the backend on your own server, these guides cover Docker 
 ## License
 
 This project is licensed under the [Apache License 2.0](LICENSE).
+
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to report issues, propose features, and submit pull requests.
 
 ## Author
 

@@ -27,6 +27,20 @@ struct SettingsView: View {
     // MARK: - View
 
     var body: some View {
+        #if os(iOS)
+        NavigationStack {
+            settingsContent
+        }
+        #else
+        settingsContent
+        #endif
+    }
+}
+
+// MARK: - Private
+
+private extension SettingsView {
+    var settingsContent: some View {
         Group {
             switch viewModel.state {
             case .loading:
@@ -55,11 +69,7 @@ struct SettingsView: View {
             }
         }
     }
-}
 
-// MARK: - Private
-
-private extension SettingsView {
     enum Field {
         case serverURL
         case apiKey
@@ -77,6 +87,8 @@ private extension SettingsView {
             }
 #if os(iOS)
             .scrollDismissesKeyboard(.immediately)
+#elseif os(macOS)
+            .formStyle(.grouped)
 #endif
         }
     }
