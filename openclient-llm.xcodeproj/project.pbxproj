@@ -35,7 +35,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				App/OpenClientApp.swift,
-				Resources/Assets.xcassets,
 				Resources/Info.plist,
 			);
 			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
