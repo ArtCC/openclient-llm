@@ -30,6 +30,7 @@ struct UpdateConversationTagsUseCase: UpdateConversationTagsUseCaseProtocol {
         guard let index = conversations.firstIndex(where: { $0.id == conversationId }) else { return }
         conversations[index].tags = tags.map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
+        conversations[index].updatedAt = Date()
         try repository.save(conversations[index])
     }
 }

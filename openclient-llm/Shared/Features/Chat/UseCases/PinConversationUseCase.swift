@@ -29,6 +29,7 @@ struct PinConversationUseCase: PinConversationUseCaseProtocol {
         var conversations = try repository.loadAll()
         guard let index = conversations.firstIndex(where: { $0.id == conversationId }) else { return }
         conversations[index].isPinned = isPinned
+        conversations[index].updatedAt = Date()
         try repository.save(conversations[index])
     }
 }

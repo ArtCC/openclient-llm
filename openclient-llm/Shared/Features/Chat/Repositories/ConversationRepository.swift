@@ -47,7 +47,19 @@ struct ConversationRepository: ConversationRepositoryProtocol {
 
         if settingsManager.getIsCloudSyncEnabled() {
             let cloudConversations = (try? cloudSyncManager.loadConversationsFromCloud()) ?? []
-            localConversations = mergeConversations(local: localConversations, cloud: cloudConversations)
+            let cloudIds = cloudSyncManager.allCloudConversationIds()
+
+            localConversations = mergeConversations(
+                local: localConversations,
+                cloud: cloudConversations,
+                cloudIds: cloudIds
+            )
+
+            // Clean up local files for conversations removed from cloud
+            if cloudIds != nil {
+                let mergedIds = Set(localConversations.map(\.id))
+                cleanupLocalFiles(keeping: mergedIds)
+            }
 
             // Persist merged result locally
             for conversation in localConversations {
@@ -137,10 +149,21 @@ private extension ConversationRepository {
         try data.write(to: fileURL, options: .atomic)
     }
 
-    func mergeConversations(local: [Conversation], cloud: [Conversation]) -> [Conversation] {
+    /// Merges local and cloud conversations.
+    /// When `cloudIds` is provided (cloud directory exists), only local conversations
+    /// whose ID appears in the cloud set are kept — the cloud is the source of truth.
+    /// When `cloudIds` is nil (cloud directory unreachable), all local conversations are kept.
+    func mergeConversations(
+        local: [Conversation],
+        cloud: [Conversation],
+        cloudIds: Set<UUID>?
+    ) -> [Conversation] {
         var merged: [UUID: Conversation] = [:]
 
         for conversation in local {
+            if let cloudIds {
+                guard cloudIds.contains(conversation.id) else { continue }
+            }
             merged[conversation.id] = conversation
         }
 
@@ -156,5 +179,21 @@ private extension ConversationRepository {
         }
 
         return Array(merged.values)
+    }
+
+    func cleanupLocalFiles(keeping ids: Set<UUID>) {
+        guard let fileURLs = try? fileManager.contentsOfDirectory(
+            at: directoryURL,
+            includingPropertiesForKeys: nil,
+            options: .skipsHiddenFiles
+        ) else { return }
+
+        for url in fileURLs where url.pathExtension == "json" {
+            if let uuid = UUID(uuidString: url.deletingPathExtension().lastPathComponent),
+               !ids.contains(uuid) {
+                try? fileManager.removeItem(at: url)
+                LogManager.debug("Cleaned up local conversation file: \(uuid)")
+            }
+        }
     }
 }

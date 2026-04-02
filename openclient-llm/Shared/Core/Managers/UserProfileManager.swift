@@ -11,120 +11,176 @@ import Foundation
 protocol UserProfileManagerProtocol: Sendable {
     func getProfile() -> UserProfile
     func saveProfile(_ profile: UserProfile)
+    func getLocalProfile() -> UserProfile
+    func getCloudProfile() -> UserProfile?
+    func resolveCloudSyncConflict(keepLocal: Bool)
 }
 
-// Safety: NSUbiquitousKeyValueStore and UserDefaults are thread-safe per Apple documentation.
-// All stored properties are immutable (`let`).
+/// Manages the user's personal context with optional iCloud file-based sync.
+///
+/// When iCloud sync is enabled the cloud `UserProfile.json` is the single source of truth.
+/// Local UserDefaults acts as a cache and is used when sync is disabled.
+///
+/// Safety: UserDefaults is thread-safe per Apple documentation. CloudSyncManager
+/// operations are file-based and called synchronously. The NSMetadataQuery is
+/// created and stopped on the main thread; the class is not Sendable-safe for
+/// mutable fields but those are only touched during init/deinit on main.
 final class UserProfileManager: UserProfileManagerProtocol, @unchecked Sendable {
     // MARK: - Properties
 
     private enum Keys {
-        static let name = "userProfile_name"
-        static let profileDescription = "userProfile_description"
-        static let extraInfo = "userProfile_extraInfo"
+        static let profileData = "userProfile_data"
     }
 
+    /// Notification posted when iCloud pushes an external profile change.
+    nonisolated static let profileDidChangeExternallyNotification = Notification.Name(
+        "UserProfileManager.profileDidChangeExternally"
+    )
+
     private let defaults: UserDefaults
+    private let settingsManager: SettingsManagerProtocol
+    private let cloudSyncManager: CloudSyncManagerProtocol
+    private nonisolated(unsafe) var metadataQuery: NSMetadataQuery?
+    // Must be stored to keep the observer alive.
+    private nonisolated(unsafe) var queryObserver: NSObjectProtocol?
 
     // MARK: - Init
 
-    init(defaults: UserDefaults = .standard) {
+    init(
+        defaults: UserDefaults = .standard,
+        settingsManager: SettingsManagerProtocol = SettingsManager(),
+        cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager()
+    ) {
         self.defaults = defaults
-        setupCloudObserver()
+        self.settingsManager = settingsManager
+        self.cloudSyncManager = cloudSyncManager
+        startMonitoringCloudFile()
+    }
+
+    deinit {
+        metadataQuery?.stop()
+        if let queryObserver {
+            NotificationCenter.default.removeObserver(queryObserver)
+        }
     }
 
     // MARK: - Public
 
     func getProfile() -> UserProfile {
-        UserProfile(
-            name: store.string(forKey: Keys.name) ?? "",
-            profileDescription: store.string(forKey: Keys.profileDescription) ?? "",
-            extraInfo: store.string(forKey: Keys.extraInfo) ?? ""
-        )
+        if settingsManager.getIsCloudSyncEnabled() {
+            if let cloud = try? cloudSyncManager.loadProfileFromCloud() {
+                // Keep local cache up to date.
+                saveToLocal(cloud)
+                return cloud
+            }
+        }
+        return getLocalProfile()
     }
 
     func saveProfile(_ profile: UserProfile) {
-        store.set(profile.name, forKey: Keys.name)
-        store.set(profile.profileDescription, forKey: Keys.profileDescription)
-        store.set(profile.extraInfo, forKey: Keys.extraInfo)
-        cloudStore?.synchronize()
+        saveToLocal(profile)
+        if settingsManager.getIsCloudSyncEnabled() {
+            try? cloudSyncManager.saveProfileToCloud(profile)
+        }
+    }
+
+    func getLocalProfile() -> UserProfile {
+        guard let data = defaults.data(forKey: Keys.profileData),
+              let profile = try? JSONDecoder().decode(UserProfile.self, from: data) else {
+            return migrateLegacyKeysIfNeeded()
+        }
+        return profile
+    }
+
+    func getCloudProfile() -> UserProfile? {
+        try? cloudSyncManager.loadProfileFromCloud()
+    }
+
+    func resolveCloudSyncConflict(keepLocal: Bool) {
+        if keepLocal {
+            let local = getLocalProfile()
+            try? cloudSyncManager.saveProfileToCloud(local)
+        } else {
+            if let cloud = try? cloudSyncManager.loadProfileFromCloud() {
+                saveToLocal(cloud)
+            }
+        }
     }
 }
 
 // MARK: - Private
 
 private extension UserProfileManager {
-    var cloudStore: NSUbiquitousKeyValueStore? {
-        NSUbiquitousKeyValueStore.isCloudAvailable ? NSUbiquitousKeyValueStore.default : nil
+    func saveToLocal(_ profile: UserProfile) {
+        guard let data = try? JSONEncoder().encode(profile) else { return }
+        defaults.set(data, forKey: Keys.profileData)
     }
 
-    /// Returns the iCloud KV store when available, falling back to UserDefaults.
-    var store: KeyValueStore {
-        if let cloud = cloudStore {
-            return CloudKeyValueStore(cloud)
-        }
-        return defaults
-    }
+    /// One-time migration from the legacy per-key NSUbiquitousKeyValueStore / UserDefaults
+    /// storage to the new single JSON format in UserDefaults.
+    func migrateLegacyKeysIfNeeded() -> UserProfile {
+        let legacyName = defaults.string(forKey: "userProfile_name")
+        let legacyDescription = defaults.string(forKey: "userProfile_description")
+        let legacyExtraInfo = defaults.string(forKey: "userProfile_extraInfo")
 
-    func setupCloudObserver() {
-        guard cloudStore != nil else { return }
-        NotificationCenter.default.addObserver(
-            forName: NSUbiquitousKeyValueStore.didChangeExternallyNotification,
-            object: NSUbiquitousKeyValueStore.default,
-            queue: .main
-        ) { [weak self] notification in
-            guard let changedKeys = notification.userInfo?[
-                NSUbiquitousKeyValueStoreChangedKeysKey
-            ] as? [String],
-                  changedKeys.contains(where: { $0.hasPrefix("userProfile_") }) else { return }
-            // Mirror cloud values into UserDefaults so they survive iCloud sign-out.
-            // queue: .main guarantees main-thread execution; assumeIsolated makes that explicit.
-            MainActor.assumeIsolated { [weak self] in
-                guard let self else { return }
-                let cloud = NSUbiquitousKeyValueStore.default
-                self.defaults.set(cloud.string(forKey: Keys.name), forKey: Keys.name)
-                self.defaults.set(cloud.string(forKey: Keys.profileDescription), forKey: Keys.profileDescription)
-                self.defaults.set(cloud.string(forKey: Keys.extraInfo), forKey: Keys.extraInfo)
+        // Also check NSUbiquitousKeyValueStore for any data stored there.
+        let cloud = NSUbiquitousKeyValueStore.default
+        let cloudName = cloud.string(forKey: "userProfile_name")
+        let cloudDescription = cloud.string(forKey: "userProfile_description")
+        let cloudExtraInfo = cloud.string(forKey: "userProfile_extraInfo")
+
+        let name = legacyName ?? cloudName ?? ""
+        let description = legacyDescription ?? cloudDescription ?? ""
+        let extraInfo = legacyExtraInfo ?? cloudExtraInfo ?? ""
+
+        let profile = UserProfile(name: name, profileDescription: description, extraInfo: extraInfo)
+
+        if !profile.isEmpty {
+            saveToLocal(profile)
+            // Clean up legacy keys.
+            defaults.removeObject(forKey: "userProfile_name")
+            defaults.removeObject(forKey: "userProfile_description")
+            defaults.removeObject(forKey: "userProfile_extraInfo")
+            cloud.removeObject(forKey: "userProfile_name")
+            cloud.removeObject(forKey: "userProfile_description")
+            cloud.removeObject(forKey: "userProfile_extraInfo")
+            cloud.synchronize()
+
+            // If cloud sync is enabled, push the migrated profile to the new file-based store.
+            if settingsManager.getIsCloudSyncEnabled() {
+                try? cloudSyncManager.saveProfileToCloud(profile)
             }
         }
-    }
-}
 
-// MARK: - KeyValueStore
-
-private protocol KeyValueStore {
-    func string(forKey key: String) -> String?
-    func set(_ value: Any?, forKey key: String)
-}
-
-extension UserDefaults: KeyValueStore {}
-
-private struct CloudKeyValueStore: KeyValueStore {
-    private let store: NSUbiquitousKeyValueStore
-
-    init(_ store: NSUbiquitousKeyValueStore) {
-        self.store = store
+        return profile
     }
 
-    func string(forKey key: String) -> String? {
-        store.string(forKey: key) ?? UserDefaults.standard.string(forKey: key)
-    }
+    // MARK: - iCloud file monitoring
 
-    func set(_ value: Any?, forKey key: String) {
-        if let str = value as? String {
-            store.set(str, forKey: key)
-        } else {
-            store.removeObject(forKey: key)
+    func startMonitoringCloudFile() {
+        guard cloudSyncManager.isCloudAvailable() else { return }
+
+        let query = NSMetadataQuery()
+        query.predicate = NSPredicate(format: "%K == %@", NSMetadataItemFSNameKey, "UserProfile.json")
+        query.searchScopes = [NSMetadataQueryUbiquitousDocumentsScope]
+
+        let settingsManager = self.settingsManager
+        queryObserver = NotificationCenter.default.addObserver(
+            forName: .NSMetadataQueryDidUpdate,
+            object: query,
+            queue: .main
+        ) { _ in
+            // queue: .main guarantees main-thread execution.
+            MainActor.assumeIsolated {
+                guard settingsManager.getIsCloudSyncEnabled() else { return }
+                NotificationCenter.default.post(
+                    name: UserProfileManager.profileDidChangeExternallyNotification,
+                    object: nil
+                )
+            }
         }
-        // Mirror to UserDefaults as fallback.
-        UserDefaults.standard.set(value, forKey: key)
-    }
-}
 
-// MARK: - NSUbiquitousKeyValueStore availability
-
-private extension NSUbiquitousKeyValueStore {
-    static var isCloudAvailable: Bool {
-        FileManager.default.ubiquityIdentityToken != nil
+        metadataQuery = query
+        query.start()
     }
 }

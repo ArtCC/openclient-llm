@@ -15,6 +15,11 @@ extension ChatViewModel {
         guard case .loaded(var loadedState) = state else { return }
         guard let transcriptionModelId = loadedState.transcriptionModelId else {
             LogManager.warning("transcribeAudio: no audioTranscription model available")
+            loadedState.errorMessage = String(
+                localized: "No speech-to-text model available. Configure a Whisper model in LiteLLM."
+            )
+            state = .loaded(loadedState)
+            scheduleErrorDismiss()
             return
         }
         let durationStr = String(format: "%.1f", duration)

@@ -16,36 +16,44 @@ struct ModelsView: View {
     // MARK: - View
 
     var body: some View {
+        #if os(iOS)
         NavigationStack {
-            Group {
-                switch viewModel.state {
-                case .loading:
-                    ProgressView()
-                case .loaded(let loadedState):
-                    loadedView(loadedState)
-                }
-            }
-            .navigationTitle(String(localized: "Models"))
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    Button {
-                        viewModel.send(.refreshTapped)
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .accessibilityLabel(String(localized: "Refresh"))
-                }
-            }
+            content
         }
-        .task {
-            viewModel.send(.viewAppeared)
-        }
+        #else
+        content
+        #endif
     }
 }
 
 // MARK: - Private
 
 private extension ModelsView {
+    var content: some View {
+        Group {
+            switch viewModel.state {
+            case .loading:
+                ProgressView()
+            case .loaded(let loadedState):
+                loadedView(loadedState)
+            }
+        }
+        .navigationTitle(String(localized: "Models"))
+        .toolbar {
+            ToolbarItem(placement: .automatic) {
+                Button {
+                    viewModel.send(.refreshTapped)
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .accessibilityLabel(String(localized: "Refresh"))
+            }
+        }
+        .task {
+            viewModel.send(.viewAppeared)
+        }
+    }
+
     func loadedView(_ loadedState: ModelsViewModel.LoadedState) -> some View {
         Group {
             if let errorMessage = loadedState.errorMessage, loadedState.models.isEmpty {
@@ -119,6 +127,7 @@ private extension ModelsView {
                     capabilityTags(model.capabilities)
                 }
             }
+            .padding(.vertical, 4)
         }
     }
 

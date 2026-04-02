@@ -158,8 +158,9 @@ h1 {
 }
 
 .cta-group a {
-  display: inline-block;
-  padding: 14px 32px;
+  display: inline-flex;
+  align-items: center;
+  padding: 14px 28px;
   background: var(--accent);
   color: #fff;
   text-decoration: none;
@@ -171,6 +172,18 @@ h1 {
 
 .cta-group a:hover {
   opacity: 0.85;
+}
+
+.cta-github {
+  background: #24292e !important;
+  color: #fff !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cta-github {
+    background: #f0f6fc !important;
+    color: #24292e !important;
+  }
 }
 
 .cta-secondary {
@@ -195,6 +208,45 @@ h1 {
   padding: 2px 7px;
   border-radius: 8px;
   margin-left: 8px;
+}
+
+.cta-appstore-wrap {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 24px;
+  background: #000 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 600;
+  opacity: 0.45;
+  pointer-events: none;
+  cursor: default;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.cta-appstore-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.cta-appstore-sub {
+  font-size: 0.65rem;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.cta-testflight {
+  background: linear-gradient(135deg, #7AC5FF 0%, #3A8FE8 100%) !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+.cta-testflight:hover {
+  opacity: 0.88;
 }
 
 .getting-started {

@@ -20,12 +20,42 @@ struct WebContentView: View {
     // MARK: - View
 
     var body: some View {
+        #if os(macOS)
+        macOSBody
+        #else
+        iOSBody
+        #endif
+    }
+}
+
+// MARK: - Private
+
+private extension WebContentView {
+    #if os(macOS)
+    var macOSBody: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text(title)
+                    .font(.headline)
+                Spacer()
+                Button(String(localized: "Close")) {
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+            }
+            .padding()
+            Divider()
+            MacWebView(url: url)
+        }
+        .frame(minWidth: 700, minHeight: 500)
+    }
+    #endif
+
+    var iOSBody: some View {
         NavigationStack {
             WebView(url: url)
                 .ignoresSafeArea(edges: .bottom)
                 .navigationTitle(title)
-                #if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button {
@@ -36,20 +66,11 @@ struct WebContentView: View {
                         .buttonStyle(.plain)
                     }
                 }
-                #else
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(String(localized: "Close")) {
-                            dismiss()
-                        }
-                    }
-                }
-                #endif
         }
     }
 }
 
-// MARK: - WebView
+// MARK: - WebView (iOS)
 
 #if os(iOS)
 private struct WebView: UIViewRepresentable {
@@ -63,17 +84,42 @@ private struct WebView: UIViewRepresentable {
 
     func updateUIView(_ uiView: WKWebView, context: Context) {}
 }
+
+// MARK: - MacWebView (macOS)
+
 #else
-private struct WebView: NSViewRepresentable {
+private struct MacWebView: NSViewRepresentable {
     let url: URL
 
     func makeNSView(context: Context) -> WKWebView {
-        let webView = WKWebView()
+        let configuration = WKWebViewConfiguration()
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = context.coordinator
+        webView.allowsBackForwardNavigationGestures = true
         webView.load(URLRequest(url: url))
         return webView
     }
 
     func updateNSView(_ nsView: WKWebView, context: Context) {}
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    @MainActor
+    final class Coordinator: NSObject, WKNavigationDelegate {
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            // Silent — the WKWebView shows its own error page
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            didFailProvisionalNavigation navigation: WKNavigation!,
+            withError error: Error
+        ) {
+            // Silent — the WKWebView shows its own error page
+        }
+    }
 }
 #endif
 

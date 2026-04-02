@@ -31,91 +31,9 @@ Native Apple client for OpenAI-compatible LLM servers. Works out of the box with
 
 ## Architecture
 
-```
-openclient-llm/                    # iOS target
-├── App/                           # iOS app entry point
-│   └── OpenClientApp.swift
-├── Shared/                        # Shared code (iOS + macOS)
-│   ├── Features/                  # Feature modules
-│   │   ├── AudioTranscription/    # Speech-to-Text (integrated in chat input)
-│   │   │   ├── UseCases/          # TranscribeAudioUseCase
-│   │   │   ├── Repositories/      # AudioTranscriptionRepository
-│   │   │   └── Models/            # Transcription
-│   │   ├── Chat/                  # Chat with SSE streaming and voice dictation
-│   │   │   ├── Views/             # ChatView, MessageBubbleView, CodeBlockView,
-│   │   │   │                      # ConversationListView, ConversationTagsView,
-│   │   │   │                      # AttachmentPickerView, CameraPickerView,
-│   │   │   │                      # ChatEmptyStateView, ChatModelParametersView,
-│   │   │   │                      # ChatSystemPromptView
-│   │   │   ├── ViewModels/        # ChatViewModel (+ Transcription, + Helpers),
-│   │   │   │                      # ConversationListViewModel
-│   │   │   ├── UseCases/          # SendMessage, StreamMessage,
-│   │   │   │                      # LoadConversations, SaveConversation, DeleteConversation,
-│   │   │   │                      # PinConversation, UpdateConversationTags
-│   │   │   ├── Repositories/      # ChatRepository, ConversationRepository
-│   │   │   └── Models/            # ChatMessage, Conversation, ConversationSection,
-│   │   │                          # TokenUsage, ModelParameters
-│   │   ├── Home/                  # TabView (iOS) / SplitView (macOS)
-│   │   │   └── Views/             # HomeView
-│   │   ├── Launch/                # Initial routing
-│   │   │   ├── Views/             # LaunchView
-│   │   │   ├── ViewModels/        # LaunchViewModel
-│   │   │   └── UseCases/          # CheckOnboarding, ResetAppData, ConfigureVotice
-│   │   ├── Models/                # LLM model listing
-│   │   │   ├── Views/             # ModelsView (Local/Cloud sections)
-│   │   │   ├── ViewModels/        # ModelsViewModel
-│   │   │   ├── UseCases/          # FetchModelsUseCase
-│   │   │   ├── Repositories/      # ModelsRepository
-│   │   │   └── Models/            # LLMModel (Provider, Capability)
-│   │   ├── Onboarding/            # Server setup wizard
-│   │   │   ├── Views/             # OnboardingView
-│   │   │   ├── ViewModels/        # OnboardingViewModel
-│   │   │   ├── UseCases/          # TestConnection, SaveConfig, Complete
-│   │   │   ├── Repositories/      # OnboardingRepository
-│   │   │   └── Models/            # OnboardingStep
-│   │   ├── Settings/              # Server configuration + personal context
-│   │   │   ├── Views/             # SettingsView, UserProfileView
-│   │   │   ├── ViewModels/        # SettingsViewModel, UserProfileViewModel
-│   │   │   └── Models/            # UserProfile
-│   │   └── TextToSpeech/          # Text-to-Speech
-│   │       ├── UseCases/          # SynthesizeSpeechUseCase
-│   │       └── Repositories/      # TextToSpeechRepository
-│   ├── Core/
-│   │   ├── Networking/            # API client, SSE streaming, multipart upload
-│   │   │   └── Models/            # Request/response DTOs
-│   │   ├── Managers/              # Settings, Keychain, Log, CloudSync,
-│   │   │                          # AudioPlayer, AudioRecorder, ConversationStarters,
-│   │   │                          # UserProfile, Votice
-│   │   ├── Views/                 # Reusable views
-│   │   ├── Extensions/            # Swift/SwiftUI extensions
-│   │   └── Utils/                 # Constants, MarkdownParser
-│   └── Resources/
-│       └── Localizable.xcstrings  # Localization
-└── Resources/
-    └── Assets.xcassets/           # iOS assets, accent color, app icon
+The project follows **MVVM + UseCase + Repository + Manager** with Swift strict concurrency and `async/await`. Code is organized by feature under `Shared/`, shared across iOS and macOS targets. Platform-specific UI lives in each target's own folder.
 
-openclient-llm-macOS/              # macOS target
-├── App/                           # macOS app entry point
-│   └── OpenClientApp.swift
-├── Views/                         # macOS-only views
-│   └── AppCommands.swift          # Menu bar commands (⌘N New Chat)
-└── Resources/
-    └── Assets.xcassets/           # macOS assets, accent color, app icon
-
-openclient-llm-test/               # Unit tests
-├── Core/
-│   └── Managers/                  # KeychainManager tests
-├── Features/
-│   ├── Chat/                      # ChatViewModel, ConversationListViewModel,
-│   │                               # ConversationSection tests
-│   │                               # + image generation, transcription, TTS,
-│   │                               # persistence, user profile, pinning, tags extensions
-│   ├── Launch/                    # LaunchViewModel, UseCase tests
-│   ├── Models/                    # ModelsViewModel, UseCase tests
-│   ├── Onboarding/                # OnboardingViewModel, UseCase tests
-│   └── Settings/                  # SettingsViewModel, UserProfile, UserProfileViewModel tests
-└── Mocks/                         # Mock implementations
-```
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full project tree and layer responsibilities.
 
 ## Usage
 
@@ -150,6 +68,10 @@ If you need to set up the backend on your own server, these guides cover Docker 
 
 This project is licensed under the [Apache License 2.0](LICENSE).
 
+## Contributing
+
+Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to report issues, propose features, and submit pull requests.
+
 ## Author
 
 **Arturo Carretero Calvo**
@@ -158,7 +80,13 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 
 ---
 
-<p align="center">
+<p align="left">
+  This project was developed entirely with <strong>Claude Opus 4.6</strong>, <strong>Visual Studio Code</strong> and <strong>Xcode</strong>.
+</p>
+
+---
+
+<p align="left">
   <strong>Your AI. Your server. Your rules.</strong><br/><br/>
   OpenClient is built on the belief that generative AI should be something you control — not something that controls your data.<br/>
   Run local models entirely on your own hardware, or route cloud providers through your own self-hosted proxy.<br/>
