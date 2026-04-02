@@ -150,8 +150,7 @@ private extension OnboardingView {
 
             VStack(spacing: 12) {
                 Text(String(localized: "Welcome to OpenClient"))
-                    .font(.title)
-                    .fontWeight(.bold)
+                    .font(.poppins(.semiBold, size: 28, relativeTo: .title))
                     .multilineTextAlignment(.center)
 
                 // swiftlint:disable:next line_length
@@ -166,8 +165,7 @@ private extension OnboardingView {
     func serverConfigurationStep(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
         VStack(spacing: 20) {
             Text(String(localized: "Server Configuration"))
-                .font(.title)
-                .fontWeight(.bold)
+                .font(.poppins(.semiBold, size: 28, relativeTo: .title))
 
             Text(String(localized: "Enter your LiteLLM server details to connect."))
                 .font(.body)
@@ -284,8 +282,7 @@ private extension OnboardingView {
 
             VStack(spacing: 12) {
                 Text(String(localized: "All Set!"))
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+                    .font(.poppins(.bold, size: 34, relativeTo: .largeTitle))
                     .multilineTextAlignment(.center)
 
                 // swiftlint:disable:next line_length
@@ -331,7 +328,7 @@ private extension OnboardingView {
     func getStartedButton() -> some View {
         prominentButton(label: {
             Text(String(localized: "Get Started"))
-                .font(.headline)
+                .font(.poppins(.semiBold, size: 17, relativeTo: .headline))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
         }, action: {
@@ -342,7 +339,7 @@ private extension OnboardingView {
     func nextButton(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
         prominentButton(isDisabled: loadedState.connectionStatus != .success, label: {
             Text(String(localized: "Next"))
-                .font(.headline)
+                .font(.poppins(.semiBold, size: 17, relativeTo: .headline))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
         }, action: {
@@ -353,7 +350,7 @@ private extension OnboardingView {
     func startChattingButton() -> some View {
         prominentButton(label: {
             Text(String(localized: "Start Chatting"))
-                .font(.headline)
+                .font(.poppins(.semiBold, size: 17, relativeTo: .headline))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
         }, action: {

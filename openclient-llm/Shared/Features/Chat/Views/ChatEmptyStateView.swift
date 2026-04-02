@@ -31,8 +31,7 @@ struct ChatEmptyStateView: View {
                 Text(
                     String(localized: "How can I help you?")
                 )
-                .font(.title2)
-                .fontWeight(.semibold)
+                .font(.poppins(.semiBold, size: 22, relativeTo: .title2))
 
                 if selectedModel == nil {
                     Text(

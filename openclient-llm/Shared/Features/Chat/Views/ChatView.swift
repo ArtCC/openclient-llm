@@ -403,7 +403,7 @@ private extension ChatView {
                         loadedState.selectedModel?.id
                         ?? String(localized: "No Model")
                     )
-                    .font(.headline)
+                    .font(.poppins(.semiBold, size: 17, relativeTo: .headline))
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .frame(maxWidth: 200)
@@ -415,7 +415,6 @@ private extension ChatView {
             }
         }
     }
-
 }
 
 #Preview {

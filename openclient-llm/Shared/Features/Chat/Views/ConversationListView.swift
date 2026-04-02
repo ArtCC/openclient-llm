@@ -173,9 +173,8 @@ private extension ConversationListView {
                                     .font(.caption2)
                             }
                             Text(section.period.localizedTitle)
+                                .font(.poppins(.semiBold, size: 11, relativeTo: .caption2))
                         }
-                        .font(.caption)
-                        .fontWeight(.semibold)
                         .foregroundStyle(.secondary)
                         .textCase(nil)
                     }

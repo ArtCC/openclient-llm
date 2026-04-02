@@ -9,7 +9,7 @@
 import SwiftUI
 
 extension Font {
-    static func poppins(_ style: PoppinsFont, size: CGFloat) -> Font {
-        Font.custom(style.rawValue, size: size)
+    static func poppins(_ style: PoppinsFont, size: CGFloat, relativeTo textStyle: Font.TextStyle = .body) -> Font {
+        Font.custom(style.rawValue, size: size, relativeTo: textStyle)
     }
 }
