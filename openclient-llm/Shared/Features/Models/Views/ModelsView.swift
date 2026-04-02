@@ -188,31 +188,32 @@ private extension ModelsView {
             Button {
                 viewModel.send(.ttsModelTapped(model))
             } label: {
-                HStack(spacing: 12) {
-                    providerLogo(model)
+                VStack(spacing: 0) {
+                    HStack(spacing: 12) {
+                        providerLogo(model)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(model.id)
-                            .font(.body)
-                        if !model.providerName.isEmpty {
-                            Text(model.providerName)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(model.id)
+                                .font(.body)
+                            if !model.providerName.isEmpty {
+                                Text(model.providerName)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        Spacer()
+
+                        if isSelected {
+                            Image(systemName: "waveform.circle.fill")
+                                .foregroundStyle(Color.accentColor)
                         }
                     }
-
-                    Spacer()
-
                     if isSelected {
-                        Image(systemName: "waveform.circle.fill")
-                            .foregroundStyle(Color.accentColor)
+                        voicePicker(model: model, loadedState: loadedState)
                     }
                 }
                 .padding(.vertical, 4)
-            }
-
-            if isSelected {
-                voicePicker(model: model, loadedState: loadedState)
             }
         }
     }
@@ -229,62 +230,80 @@ private extension ModelsView {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Spacer()
-                Menu {
-                    ForEach(voicePresets, id: \.self) { preset in
-                        Button {
-                            viewModel.send(.voiceSelected(preset, forModelId: model.id))
-                            ttsCustomVoiceTexts.removeValue(forKey: model.id)
-                            ttsCustomModeActive.remove(model.id)
-                        } label: {
-                            if currentVoice == preset {
-                                Label(preset.capitalized, systemImage: "checkmark")
-                            } else {
-                                Text(preset.capitalized)
-                            }
-                        }
-                    }
-                    Divider()
-                    Button(String(localized: "Custom…")) {
-                        ttsCustomModeActive.insert(model.id)
-                        if !isPresetVoice {
-                            ttsCustomVoiceTexts[model.id] = currentVoice
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(isPresetVoice && !ttsCustomModeActive.contains(model.id)
-                             ? currentVoice.capitalized
-                             : String(localized: "Custom…"))
-                            .font(.subheadline)
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.caption2)
-                    }
-                    .foregroundStyle(Color.accentColor)
-                }
+                voiceMenu(
+                    model: model,
+                    voicePresets: voicePresets,
+                    currentVoice: currentVoice,
+                    isPresetVoice: isPresetVoice
+                )
             }
 
             if showCustomInput {
-                TextField(
-                    String(localized: "Voice ID"),
-                    text: Binding(
-                        get: { ttsCustomVoiceTexts[model.id] ?? (isPresetVoice ? "" : currentVoice) },
-                        set: { ttsCustomVoiceTexts[model.id] = $0 }
-                    )
-                )
-                .textFieldStyle(.roundedBorder)
-                .font(.subheadline)
-                .onSubmit {
-                    let text = ttsCustomVoiceTexts[model.id] ?? ""
-                    guard !text.isEmpty else { return }
-                    viewModel.send(.voiceSelected(text, forModelId: model.id))
-                    ttsCustomVoiceTexts.removeValue(forKey: model.id)
-                    ttsCustomModeActive.remove(model.id)
-                }
+                voiceCustomField(model: model, currentVoice: currentVoice, isPresetVoice: isPresetVoice)
             }
         }
         .padding(.top, 8)
         .padding(.bottom, 4)
         .padding(.leading, 44)
+    }
+
+    func voiceMenu(
+        model: LLMModel,
+        voicePresets: [String],
+        currentVoice: String,
+        isPresetVoice: Bool
+    ) -> some View {
+        Menu {
+            ForEach(voicePresets, id: \.self) { preset in
+                Button {
+                    viewModel.send(.voiceSelected(preset, forModelId: model.id))
+                    ttsCustomVoiceTexts.removeValue(forKey: model.id)
+                    ttsCustomModeActive.remove(model.id)
+                } label: {
+                    if currentVoice == preset {
+                        Label(preset.capitalized, systemImage: "checkmark")
+                    } else {
+                        Text(preset.capitalized)
+                    }
+                }
+            }
+            Divider()
+            Button(String(localized: "Custom…")) {
+                ttsCustomModeActive.insert(model.id)
+                if !isPresetVoice {
+                    ttsCustomVoiceTexts[model.id] = currentVoice
+                }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(isPresetVoice && !ttsCustomModeActive.contains(model.id)
+                     ? currentVoice.capitalized
+                     : String(localized: "Custom…"))
+                    .font(.subheadline)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption2)
+            }
+            .foregroundStyle(Color.accentColor)
+        }
+    }
+
+    func voiceCustomField(model: LLMModel, currentVoice: String, isPresetVoice: Bool) -> some View {
+        TextField(
+            String(localized: "Voice ID"),
+            text: Binding(
+                get: { ttsCustomVoiceTexts[model.id] ?? (isPresetVoice ? "" : currentVoice) },
+                set: { ttsCustomVoiceTexts[model.id] = $0 }
+            )
+        )
+        .textFieldStyle(.roundedBorder)
+        .font(.subheadline)
+        .onSubmit {
+            let text = ttsCustomVoiceTexts[model.id] ?? ""
+            guard !text.isEmpty else { return }
+            viewModel.send(.voiceSelected(text, forModelId: model.id))
+            ttsCustomVoiceTexts.removeValue(forKey: model.id)
+            ttsCustomModeActive.remove(model.id)
+        }
     }
 }
 

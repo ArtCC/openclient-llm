@@ -21,10 +21,4 @@ struct TTSVoice: RawRepresentable, Equatable, Hashable, Sendable {
     static let shimmer = TTSVoice(rawValue: "shimmer")
 
     static let presets: [TTSVoice] = [.alloy, .echo, .fable, .onyx, .nova, .shimmer]
-
-    // MARK: - Init
-
-    init(rawValue: String) {
-        self.rawValue = rawValue
-    }
 }
