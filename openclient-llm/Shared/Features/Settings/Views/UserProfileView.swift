@@ -60,6 +60,15 @@ struct UserProfileView: View {
                 extraInfo = loadedState.extraInfo
             }
         }
+        .onChange(of: viewModel.state) { _, newState in
+            guard case .loaded(let loadedState) = newState else { return }
+            // iCloud pushed external changes — refresh local fields only if the user
+            // hasn't started editing (local values still match the previous originals).
+            guard !hasChanges else { return }
+            name = loadedState.name
+            profileDescription = loadedState.profileDescription
+            extraInfo = loadedState.extraInfo
+        }
     }
 }
 

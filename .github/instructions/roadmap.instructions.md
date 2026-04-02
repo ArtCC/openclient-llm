@@ -69,7 +69,7 @@ Goal: User customization.
 - [x] **Pinned conversations**: Pin important conversations to the top of the list
 - [x] **Conversation folders/tags**: Organize chats into folders or with tags
 - [x] **User profile (personal context)**: In Settings, allow the user to configure a display name (how models should address them), a personal description, and extra freeform context. Presented as a modal sheet with three text fields: Name (max 50 chars), Description (max 200 chars), Extra info (max 500 chars). Data saved to iCloud key-value store (`NSUbiquitousKeyValueStore`) when iCloud is available, falling back to `UserDefaults` when not. The stored values are injected into every system prompt so models can personalise their responses. Scroll in the modal dismisses the keyboard (`.scrollDismissesKeyboard(.interactively)`); the form uses `.ignoresSafeArea(.keyboard, edges: .bottom)` with keyboard-aware padding so no TextField is ever obscured.
-- [ ] **iPadOS layout redesign**: Full review and fix of the iPadOS UI — layouts, navigation, split view, and all interactions — so the app works flawlessly on iPad
+- [x] **iPadOS layout redesign**: Full review and fix of the iPadOS UI — layouts, navigation, split view, and all interactions — so the app works flawlessly on iPad
 - [ ] **macOS layout redesign**: Full review and fix of the macOS UI — sidebar, toolbar, window sizing, keyboard navigation, and all platform-specific interactions — so the app works flawlessly on Mac
 
 ## Phase 6 — Advanced Interactions
