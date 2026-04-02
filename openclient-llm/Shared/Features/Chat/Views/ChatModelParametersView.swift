@@ -49,7 +49,7 @@ struct ChatModelParametersView: View {
             #endif
         }
         #if os(macOS)
-        .frame(width: 450, height: 440)
+        .frame(width: 500, height: 460)
         #endif
         .task {
             loadCurrentParameters()
@@ -153,6 +153,9 @@ private extension ChatModelParametersView {
                 Text(String(localized: "Nucleus sampling. Lower values make output more focused."))
             }
         }
+#if os(macOS)
+        .formStyle(.grouped)
+#endif
     }
 
     var temperatureDescription: String {

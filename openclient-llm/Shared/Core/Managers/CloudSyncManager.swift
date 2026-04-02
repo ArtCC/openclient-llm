@@ -12,6 +12,7 @@ protocol CloudSyncManagerProtocol: Sendable {
     func isCloudAvailable() -> Bool
     func syncConversationsToCloud(_ conversations: [Conversation]) throws
     func loadConversationsFromCloud() throws -> [Conversation]
+    func allCloudConversationIds() -> Set<UUID>?
     func deleteConversationFromCloud(_ conversationId: UUID) throws
     func deleteAllFromCloud() throws
 }
@@ -82,6 +83,33 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
         }
 
         return conversations.sorted { $0.updatedAt > $1.updatedAt }
+    }
+
+    func allCloudConversationIds() -> Set<UUID>? {
+        guard let cloudURL = cloudConversationsDirectory() else { return nil }
+        guard fileManager.fileExists(atPath: cloudURL.path) else { return nil }
+
+        guard let fileURLs = try? fileManager.contentsOfDirectory(
+            at: cloudURL,
+            includingPropertiesForKeys: nil,
+            options: []
+        ) else { return nil }
+
+        var ids = Set<UUID>()
+        for url in fileURLs {
+            let name = url.lastPathComponent
+            if url.pathExtension == "json",
+               let uuid = UUID(uuidString: url.deletingPathExtension().lastPathComponent) {
+                ids.insert(uuid)
+            } else if name.hasPrefix(".") && name.hasSuffix(".json.icloud") {
+                let stripped = String(name.dropFirst())
+                let uuidString = stripped.replacingOccurrences(of: ".json.icloud", with: "")
+                if let uuid = UUID(uuidString: uuidString) {
+                    ids.insert(uuid)
+                }
+            }
+        }
+        return ids
     }
 
     func deleteConversationFromCloud(_ conversationId: UUID) throws {

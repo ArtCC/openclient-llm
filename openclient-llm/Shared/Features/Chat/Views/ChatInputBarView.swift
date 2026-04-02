@@ -21,12 +21,9 @@ struct ChatInputBarView: View {
     let onSend: () -> Void
     let onStopStreaming: () -> Void
     let onAudioRecorded: (Data, TimeInterval) -> Void
-    var onImageFileAttached: ((ChatMessage.Attachment) -> Void)?
 
     @State private var audioRecorder = AudioRecorderManager()
-    #if os(macOS)
-    @State private var showImageFilePicker = false
-    #endif
+    @Binding var showImageFilePicker: Bool
 
     // MARK: - View
 
@@ -65,11 +62,6 @@ struct ChatInputBarView: View {
         .glassEffect(.regular, in: .capsule)
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
-        #if os(macOS)
-        .imageFilePicker(isPresented: $showImageFilePicker) { attachment in
-            onImageFileAttached?(attachment)
-        }
-        #endif
     }
 }
 

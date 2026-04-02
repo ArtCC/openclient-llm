@@ -127,6 +127,7 @@ private extension ModelsView {
                     capabilityTags(model.capabilities)
                 }
             }
+            .padding(.vertical, 4)
         }
     }
 

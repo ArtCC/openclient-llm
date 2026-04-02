@@ -23,6 +23,7 @@ struct ChatView: View {
     @State private var showImagePicker: Bool = false
     @State private var showDocumentPicker: Bool = false
     @State private var showCameraPicker: Bool = false
+    @State private var showImageFilePicker: Bool = false
 
     var conversation: Conversation?
     var onConversationUpdated: (() -> Void)?
@@ -98,6 +99,9 @@ private extension ChatView {
             viewModel.send(.attachmentAdded(attachment))
         }
         .documentPicker(isPresented: $showDocumentPicker) { attachment in
+            viewModel.send(.attachmentAdded(attachment))
+        }
+        .imageFilePicker(isPresented: $showImageFilePicker) { attachment in
             viewModel.send(.attachmentAdded(attachment))
         }
         .task {
@@ -200,7 +204,7 @@ private extension ChatView {
                         onSend: { viewModel.send(.sendTapped) },
                         onStopStreaming: { viewModel.send(.stopStreamingTapped) },
                         onAudioRecorded: { data, duration in viewModel.send(.audioRecorded(data, duration)) },
-                        onImageFileAttached: { attachment in viewModel.send(.attachmentAdded(attachment)) }
+                        showImageFilePicker: $showImageFilePicker
                     )
                 }
             }

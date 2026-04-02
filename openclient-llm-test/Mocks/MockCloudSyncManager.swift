@@ -15,6 +15,7 @@ final class MockCloudSyncManager: CloudSyncManagerProtocol, @unchecked Sendable 
 
     var cloudAvailable: Bool = true
     var cloudConversations: [Conversation] = []
+    var cloudIds: Set<UUID>?
     var syncedConversations: [Conversation] = []
     var deletedIds: [UUID] = []
     var deleteAllCalled: Bool = false
@@ -35,6 +36,10 @@ final class MockCloudSyncManager: CloudSyncManagerProtocol, @unchecked Sendable 
     func loadConversationsFromCloud() throws -> [Conversation] {
         if let loadError { throw loadError }
         return cloudConversations
+    }
+
+    func allCloudConversationIds() -> Set<UUID>? {
+        cloudIds
     }
 
     func deleteConversationFromCloud(_ conversationId: UUID) throws {
