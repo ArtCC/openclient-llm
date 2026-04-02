@@ -61,6 +61,14 @@ final class ModelsViewModel {
             selectModel(model)
         }
     }
+
+    func refreshAsync() async {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.isRefreshing = true
+        loadedState.errorMessage = nil
+        state = .loaded(loadedState)
+        await performRefresh()
+    }
 }
 
 // MARK: - Private
@@ -90,14 +98,6 @@ private extension ModelsViewModel {
         Task {
             await performRefresh()
         }
-    }
-
-    func refreshAsync() async {
-        guard case .loaded(var loadedState) = state else { return }
-        loadedState.isRefreshing = true
-        loadedState.errorMessage = nil
-        state = .loaded(loadedState)
-        await performRefresh()
     }
 
     func selectModel(_ model: LLMModel) {

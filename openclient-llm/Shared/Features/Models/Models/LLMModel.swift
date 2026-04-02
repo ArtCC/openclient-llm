@@ -35,6 +35,16 @@ struct LLMModel: Identifiable, Equatable, Sendable {
         self.mode = mode
         self.providerName = providerName
     }
+
+    var logoImageName: String? {
+        switch providerName {
+        case "OpenAI": "openai"
+        case "Anthropic": "anthropic"
+        case "Ollama": "ollama"
+        case "Google": "gemini"
+        default: nil
+        }
+    }
 }
 
 // MARK: - Provider
