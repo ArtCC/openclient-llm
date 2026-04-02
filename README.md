@@ -159,15 +159,15 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 ---
 
 <p align="left">
-  <strong>Your AI. Your server. Your rules.</strong><br/><br/>
-  OpenClient is built on the belief that generative AI should be something you control — not something that controls your data.<br/>
-  Run local models entirely on your own hardware, or route cloud providers through your own self-hosted proxy.<br/>
-  Either way, you decide what gets sent where — no vendor lock-in, no platform middleman, no data you didn't choose to share.<br/><br/>
-  Open source. No tracking. Full control.
+  This project was developed entirely with <strong>Claude Sonnet 4.6</strong>, <strong>Visual Studio Code</strong> and <strong>Xcode</strong>.
 </p>
 
 ---
 
 <p align="left">
-  This project was developed entirely with <strong>Claude Sonnet 4.6</strong>, <strong>Visual Studio Code</strong> and <strong>Xcode</strong>.
+  <strong>Your AI. Your server. Your rules.</strong><br/><br/>
+  OpenClient is built on the belief that generative AI should be something you control — not something that controls your data.<br/>
+  Run local models entirely on your own hardware, or route cloud providers through your own self-hosted proxy.<br/>
+  Either way, you decide what gets sent where — no vendor lock-in, no platform middleman, no data you didn't choose to share.<br/><br/>
+  Open source. No tracking. Full control.
 </p>
