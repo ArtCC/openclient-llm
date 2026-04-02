@@ -16,6 +16,7 @@ struct ConversationListView: View {
     @State private var viewModel = ConversationListViewModel()
     @State private var searchText: String = ""
     @State private var editingTagsConversation: Conversation?
+    @State private var conversationToDelete: Conversation?
 
     let onConversationSelected: (Conversation?) -> Void
 
@@ -60,6 +61,25 @@ struct ConversationListView: View {
             ) { tags in
                 viewModel.send(.tagsUpdated(conversation.id, tags))
             }
+        }
+        .alert(
+            String(localized: "Delete Conversation"),
+            isPresented: Binding(
+                get: { conversationToDelete != nil },
+                set: { if !$0 { conversationToDelete = nil } }
+            )
+        ) {
+            Button(String(localized: "Cancel"), role: .cancel) {
+                conversationToDelete = nil
+            }
+            Button(String(localized: "Delete"), role: .destructive) {
+                if let conversation = conversationToDelete {
+                    viewModel.send(.deleteConversation(conversation.id))
+                    conversationToDelete = nil
+                }
+            }
+        } message: {
+            Text(String(localized: "Are you sure you want to delete this conversation? This action cannot be undone."))
         }
     }
 }
@@ -132,7 +152,7 @@ private extension ConversationListView {
                         .onDelete { indexSet in
                             for index in indexSet {
                                 let conversation = section.conversations[index]
-                                viewModel.send(.deleteConversation(conversation.id))
+                                conversationToDelete = conversation
                             }
                         }
                     } header: {
@@ -181,7 +201,7 @@ private extension ConversationListView {
         Divider()
 
         Button(role: .destructive) {
-            viewModel.send(.deleteConversation(conversation.id))
+            conversationToDelete = conversation
         } label: {
             Label(String(localized: "Delete"), systemImage: "trash")
         }

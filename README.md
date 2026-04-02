@@ -31,69 +31,9 @@ Native Apple client for OpenAI-compatible LLM servers. Works out of the box with
 
 ## Architecture
 
-```
-openclient-llm/                    # iOS target
-├── App/                           # iOS app entry point
-├── Shared/                        # Shared code (iOS + macOS)
-│   ├── Features/                  # Feature modules
-│   │   ├── AudioTranscription/    # Speech-to-Text (integrated in chat input)
-│   │   │   ├── UseCases/          # TranscribeAudioUseCase
-│   │   │   ├── Repositories/      # AudioTranscriptionRepository
-│   │   │   └── Models/            # Transcription domain model
-│   │   ├── Chat/                  # Chat with SSE streaming and voice dictation
-│   │   │   ├── Views/             # ChatView, ConversationListView, input bar, bubbles, pickers
-│   │   │   ├── ViewModels/        # ChatViewModel, ConversationListViewModel
-│   │   │   ├── UseCases/          # StreamMessage, Save/Load/Delete/Pin conversation, Tags
-│   │   │   ├── Repositories/      # ChatRepository, ConversationRepository
-│   │   │   └── Models/            # ChatMessage, Conversation, TokenUsage, ModelParameters
-│   │   ├── Home/                  # TabView (iOS) / NavigationSplitView (macOS)
-│   │   │   └── Views/             # HomeView — root layout for both platforms
-│   │   ├── Launch/                # Initial routing (onboarding check)
-│   │   │   ├── Views/             # LaunchView
-│   │   │   ├── ViewModels/        # LaunchViewModel
-│   │   │   └── UseCases/          # CheckOnboarding, ResetAppData, ConfigureVotice
-│   │   ├── Models/                # LLM model listing
-│   │   │   ├── Views/             # ModelsView (Local / Cloud sections)
-│   │   │   ├── ViewModels/        # ModelsViewModel
-│   │   │   ├── UseCases/          # FetchModelsUseCase
-│   │   │   ├── Repositories/      # ModelsRepository
-│   │   │   └── Models/            # LLMModel (Provider, Mode, Capability)
-│   │   ├── Onboarding/            # Server setup wizard
-│   │   │   ├── Views/             # OnboardingView
-│   │   │   ├── ViewModels/        # OnboardingViewModel
-│   │   │   ├── UseCases/          # TestConnection, SaveServerConfig, CompleteOnboarding
-│   │   │   ├── Repositories/      # OnboardingRepository
-│   │   │   └── Models/            # OnboardingStep
-│   │   ├── Settings/              # Server config, preferences, personal context
-│   │   │   ├── Views/             # SettingsView, UserProfileView
-│   │   │   ├── ViewModels/        # SettingsViewModel, UserProfileViewModel
-│   │   │   └── Models/            # UserProfile
-│   │   └── TextToSpeech/          # Text-to-Speech playback
-│   │       ├── UseCases/          # SynthesizeSpeechUseCase
-│   │       └── Repositories/      # TextToSpeechRepository
-│   ├── Core/
-│   │   ├── Networking/            # APIClient, SSE streaming, multipart upload, DTOs
-│   │   ├── Managers/              # Settings, Keychain, CloudSync, AudioPlayer,
-│   │   │                          # AudioRecorder, ConversationStarters, UserProfile, Log
-│   │   ├── Views/                 # Reusable cross-feature views
-│   │   ├── Extensions/            # Swift/SwiftUI extensions
-│   │   └── Utils/                 # Constants, MarkdownParser
-│   └── Resources/
-│       └── Localizable.xcstrings  # String catalog (all localized strings)
-└── Resources/
-    └── Assets.xcassets/           # iOS app icon, accent color, semantic colors
+The project follows **MVVM + UseCase + Repository + Manager** with Swift strict concurrency and `async/await`. Code is organized by feature under `Shared/`, shared across iOS and macOS targets. Platform-specific UI lives in each target's own folder.
 
-openclient-llm-macOS/              # macOS target
-├── App/                           # macOS app entry point
-├── Views/                         # macOS-only views (AppCommands — ⌘N New Chat)
-└── Resources/
-    └── Assets.xcassets/           # macOS app icon, accent color
-
-openclient-llm-test/               # Unit tests
-├── Core/                          # Manager tests (Keychain, etc.)
-├── Features/                      # ViewModel, UseCase, Repository tests per feature
-└── Mocks/                         # Protocol-based mock implementations
-```
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full project tree and layer responsibilities.
 
 ## Usage
 
