@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [0.0.2] - 2026-04-02
+
+### Added
+
+- Reload button in the chat list toolbar (macOS only), between the New Chat button and the search bar, matching the existing Models reload button design
+- Pull-to-refresh in the Models screen (iOS/iPadOS), matching the existing pull-to-refresh in the chat list
+- Provider logo images (OpenAI, Anthropic, Ollama, Gemini) shown on each model row in the Models list; models without a recognised logo fall back to a SF Symbol generic icon (`cpu.fill` for local, `sparkles` for cloud)
+- `logoImageName` computed property on `LLMModel` mapping `providerName` to asset image names
+- `genericLogoSystemName` property on `LLMModel.Provider` for fallback icons
+- Poppins custom font family (9 weights) registered in iOS and macOS targets via `UIAppFonts` and `ATSApplicationFontsPath`
+- `Font.poppins(_:size:relativeTo:)` extension wrapping `Font.custom(_:size:relativeTo:)` for Dynamic-Type-aware usage
+- `PoppinsFont` enum with 9 cases matching font file names
+- Poppins applied selectively to key UI elements: onboarding titles and primary action buttons, "How can I help you?" heading in chat empty state, conversation list section headers, model selector label in chat toolbar
+- `CFBundleDisplayName = "OpenClient"` in macOS `Info.plist` so the app shows the correct name in Finder, Launchpad, and TestFlight installations
+- `.xcodebuildmcp/config.yaml` project configuration for XcodeBuildMCP (simulator + macOS + ui-automation workflows, session defaults, telemetry disabled)
+
+### Changed
+
+- `WebContentView` macOS header redesigned: title is now centred using `ZStack`, Close button anchored to the trailing edge
+- `WebContentView` iOS navigation bar uses `.navigationBarTitleDisplayMode(.inline)` so the title stays fixed alongside the close button rather than disappearing during page load
+- `WebDestination.authorGitHub` title changed from the author's name to `"GitHub Profile"` (localized)
+- Swipe-to-delete in the conversation list replaced `.onDelete` with `.swipeActions(edge: .trailing, allowsFullSwipe: false)` so the row does not animate away before the user confirms the delete alert
+- `ConversationListViewModel.refresh()` now exposes an async `refreshAsync()` variant awaited by `.refreshable` to keep the spinner duration in sync with the actual reload
+- `ModelsViewModel.refreshModels()` extracted shared network logic into `performRefresh() async`; `refreshAsync()` awaits it directly so the pull-to-refresh spinner lasts exactly as long as the network call
+- Settings navigation-style buttons (Personal Context, Rate the App, Suggest Features, Privacy Policy, Terms of Use) now show a `chevron.right` indicator on macOS to match platform conventions
+- Save button in Settings Server section uses `.buttonStyle(.bordered)` on macOS, matching the Test Connection button
+- Chat messages scroll view gains `.contentMargins(.top, 16, for: .scrollContent)` on macOS to avoid content starting flush against the toolbar
+- Keychain queries updated to include `kSecUseDataProtectionKeychain: true` on all operations (get, set, delete) to use the modern Data Protection Keychain on macOS, which never prompts the user for a password
+- `.gitignore` updated to exclude `.vscode/` directory
+
+### Fixed
+
+- macOS app name showing as the Xcode target name (`openclient-llm-macOS`) instead of `OpenClient` in Finder and TestFlight installations
+- macOS Keychain access prompting for the user's login password on first launch; now uses Data Protection Keychain silently
+
 ## [0.0.1] - 2026-04-02
 
 ### Added
