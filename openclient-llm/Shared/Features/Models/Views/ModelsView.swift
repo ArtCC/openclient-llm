@@ -134,7 +134,7 @@ private extension ModelsView {
 
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(Color.appAccent)
                     }
                 }
 
@@ -206,7 +206,7 @@ private extension ModelsView {
 
                         if isSelected {
                             Image(systemName: "waveform.circle.fill")
-                                .foregroundStyle(Color.accentColor)
+                                .foregroundStyle(Color.appAccent)
                         }
                     }
                     if isSelected {
@@ -283,7 +283,7 @@ private extension ModelsView {
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption2)
             }
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(Color.appAccent)
         }
     }
 

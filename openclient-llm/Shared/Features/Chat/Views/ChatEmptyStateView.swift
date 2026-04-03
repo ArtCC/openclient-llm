@@ -23,7 +23,7 @@ struct ChatEmptyStateView: View {
 
             Image(systemName: "sparkles")
                 .font(.system(size: 44))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccent)
                 .frame(width: 80, height: 80)
                 .glassEffect(.regular, in: .circle)
 

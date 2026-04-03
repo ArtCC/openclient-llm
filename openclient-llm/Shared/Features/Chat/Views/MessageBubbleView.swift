@@ -55,7 +55,7 @@ private extension MessageBubbleView {
                     .padding(.vertical, 12)
                     .foregroundStyle(.white)
                     .glassEffect(
-                        .regular.tint(Color.accentColor),
+                        .regular.tint(Color.appAccent),
                         in: .rect(cornerRadius: 18)
                     )
             }
@@ -69,7 +69,7 @@ private extension MessageBubbleView {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "sparkles")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccent)
                 .frame(width: 28, height: 28)
                 .glassEffect(.regular, in: .circle)
 

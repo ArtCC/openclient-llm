@@ -249,10 +249,14 @@ private extension ConversationListView {
                 .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
+                #if os(macOS)
+                .background(isSelected ? Color.appAccent : Color.primary.opacity(0.08), in: .capsule)
+                #else
                 .glassEffect(
-                    isSelected ? .regular.tint(Color.accentColor).interactive() : .regular.interactive(),
+                    isSelected ? .regular.tint(Color.appAccent).interactive() : .regular.interactive(),
                     in: .capsule
                 )
+                #endif
         }
         .buttonStyle(.plain)
     }
@@ -269,10 +273,10 @@ private extension ConversationListView {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: conversation.isPinned ? "pin.fill" : "sparkles")
                     .font(.system(size: 14))
-                    .foregroundStyle(isSelected ? .white : (conversation.isPinned ? .orange : Color.accentColor))
+                    .foregroundStyle(isSelected ? .white : (conversation.isPinned ? .orange : Color.appAccent))
                     .frame(width: 36, height: 36)
                     .glassEffect(
-                        isSelected ? .regular.tint(Color.accentColor) : .regular,
+                        isSelected ? .regular.tint(Color.appAccent) : .regular,
                         in: .circle
                     )
 
@@ -309,7 +313,7 @@ private extension ConversationListView {
             .background {
                 if isSelected {
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.accentColor.opacity(0.12))
+                        .fill(Color.appAccent.opacity(0.12))
                 }
             }
             .contentShape(RoundedRectangle(cornerRadius: 14))

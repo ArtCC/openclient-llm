@@ -112,7 +112,7 @@ private extension SearchConversationsView {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: conversation.isPinned ? "pin.fill" : "sparkles")
                 .font(.system(size: 14))
-                .foregroundStyle(conversation.isPinned ? .orange : Color.accentColor)
+                .foregroundStyle(conversation.isPinned ? .orange : Color.appAccent)
                 .frame(width: 36, height: 36)
                 .glassEffect(.regular, in: .circle)
 

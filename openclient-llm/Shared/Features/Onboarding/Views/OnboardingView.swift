@@ -116,7 +116,7 @@ private extension OnboardingView {
         HStack(spacing: 8) {
             ForEach(OnboardingStep.allCases, id: \.self) { step in
                 Circle()
-                    .fill(step == currentStep ? Color.accentColor : Color.secondary.opacity(0.3))
+                    .fill(step == currentStep ? Color.appAccent : Color.secondary.opacity(0.3))
                     .frame(width: 8, height: 8)
             }
         }        .padding(.horizontal, 16)
@@ -139,11 +139,11 @@ private extension OnboardingView {
         VStack(spacing: 24) {
             Image(systemName: "bubble.left.and.bubble.right.fill")
                 .font(.system(size: 80))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccent)
                 .symbolEffect(.breathe)
                 .padding(28)
                 #if os(macOS)
-                .background(Color.accentColor.opacity(0.12), in: .circle)
+                .background(Color.appAccent.opacity(0.12), in: .circle)
                 #else
                 .glassEffect(.regular, in: .circle)
                 #endif
