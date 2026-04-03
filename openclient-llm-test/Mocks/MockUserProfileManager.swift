@@ -42,4 +42,9 @@ final class MockUserProfileManager: UserProfileManagerProtocol, @unchecked Senda
     func resolveCloudSyncConflict(keepLocal: Bool) {
         resolvedKeepLocal = keepLocal
     }
+
+    func deleteLocalProfile() {
+        profile = UserProfile()
+        localProfile = UserProfile()
+    }
 }

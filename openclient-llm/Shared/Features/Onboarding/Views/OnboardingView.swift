@@ -47,13 +47,15 @@ private extension OnboardingView {
         VStack(spacing: 0) {
             topBar(loadedState)
 
-            Spacer()
-
-            stepContent(loadedState)
-                .frame(maxWidth: 520)
-                .padding(.horizontal, 24)
-
-            Spacer()
+            GeometryReader { proxy in
+                ScrollView {
+                    stepContent(loadedState)
+                        .frame(maxWidth: 520)
+                        .padding(.horizontal, 24)
+                        .frame(minHeight: proxy.size.height, alignment: .center)
+                }
+                .scrollBounceBehavior(.basedOnSize)
+            }
 
             bottomAction(loadedState)
                 .frame(maxWidth: 520)
