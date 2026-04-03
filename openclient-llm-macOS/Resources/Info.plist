@@ -6,6 +6,8 @@
         <string>OpenClient</string>
         <key>CFBundleName</key>
         <string>OpenClient</string>
+        <key>NSAccentColorName</key>
+        <string>AccentColor</string>
         <key>NSAppTransportSecurity</key>
         <dict>
             <key>NSAllowsArbitraryLoads</key>

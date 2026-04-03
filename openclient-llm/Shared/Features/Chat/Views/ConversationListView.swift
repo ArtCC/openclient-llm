@@ -246,6 +246,7 @@ private extension ConversationListView {
                 .font(.caption)
                 .fontWeight(.medium)
                 .lineLimit(1)
+                .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
                 .glassEffect(
