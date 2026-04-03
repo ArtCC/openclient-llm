@@ -70,8 +70,10 @@ private extension HomeView {
                         .symbolEffect(.rotate, value: selectedTab == .settings)
                 }
             }
-            Tab(role: .search) {
+            Tab(value: AppTab.search, role: .search) {
                 SearchConversationsView()
+            } label: {
+                Label(String(localized: "Search"), systemImage: "magnifyingglass")
             }
         }
     }
@@ -135,6 +137,7 @@ private extension HomeView {
         case chats
         case models
         case settings
+        case search
     }
     #endif
 
