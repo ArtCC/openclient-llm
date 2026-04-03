@@ -421,6 +421,7 @@ private extension SettingsView {
             } label: {
                 Label(String(localized: "Reset App Data"), systemImage: "trash")
             }
+            .tint(.red)
         } header: {
             Text(String(localized: "App Data"))
         } footer: {

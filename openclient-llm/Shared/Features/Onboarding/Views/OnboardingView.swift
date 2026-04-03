@@ -52,7 +52,7 @@ private extension OnboardingView {
                     stepContent(loadedState)
                         .frame(maxWidth: 520)
                         .padding(.horizontal, 24)
-                        .frame(minHeight: proxy.size.height, alignment: .center)
+                        .frame(maxWidth: .infinity, minHeight: proxy.size.height, alignment: .center)
                 }
                 .scrollBounceBehavior(.basedOnSize)
             }
