@@ -227,5 +227,6 @@ private extension SettingsViewModel {
     func resetApp() {
         resetAppUseCase.execute()
         loadSettings()
+        NotificationCenter.default.post(name: .appDataDidReset, object: nil)
     }
 }

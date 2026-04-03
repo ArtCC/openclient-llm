@@ -102,6 +102,12 @@ private extension SettingsView {
                 apiKey = initialState.apiKey
             }
         }
+        .onChange(of: viewModel.state) { _, newState in
+            if case .loaded(let loadedState) = newState {
+                serverURL = loadedState.serverURL
+                apiKey = loadedState.apiKey
+            }
+        }
     }
 
     enum Field {

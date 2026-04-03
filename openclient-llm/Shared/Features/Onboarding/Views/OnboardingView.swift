@@ -177,10 +177,10 @@ private extension OnboardingView {
                     subtitle: String(localized: "Your data stays on your own server — no telemetry")
                 )
                 featureRow(
-                    icon: "apple.logo",
-                    tint: .primary,
-                    title: String(localized: "Native Apple"),
-                    subtitle: String(localized: "Built for iOS, iPadOS and macOS with SwiftUI")
+                    icon: "chevron.left.forwardslash.chevron.right",
+                    tint: .purple,
+                    title: String(localized: "Open Source"),
+                    subtitle: String(localized: "Fully open source on GitHub — inspect or contribute")
                 )
             }
         }
@@ -192,11 +192,7 @@ private extension OnboardingView {
                 .font(.system(size: 18, weight: .semibold))
                 .foregroundStyle(tint)
                 .frame(width: 44, height: 44)
-                #if os(macOS)
                 .background(tint.opacity(0.12), in: .circle)
-                #else
-                .glassEffect(.regular.tint(tint), in: .circle)
-                #endif
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -211,11 +207,7 @@ private extension OnboardingView {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        #if os(macOS)
         .background(.primary.opacity(0.04), in: .rect(cornerRadius: 14))
-        #else
-        .glassEffect(.regular, in: .rect(cornerRadius: 14))
-        #endif
     }
 
     func serverConfigurationStep(_ loadedState: OnboardingViewModel.LoadedState) -> some View {

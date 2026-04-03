@@ -99,6 +99,7 @@ final class ChatViewModel {
         self.userProfileManager = userProfileManager
         self.conversationStartersManager = conversationStartersManager
         self.audioPlayerManager = audioPlayerManager
+        observeAppDataReset()
     }
 
     // MARK: - Input functions
@@ -458,5 +459,16 @@ private extension ChatViewModel {
         loadedState.isSpeaking = false
         loadedState.speakingMessageId = nil
         state = .loaded(loadedState)
+    }
+
+    func observeAppDataReset() {
+        Task { [weak self] in
+            let notifications = NotificationCenter.default
+                .notifications(named: .appDataDidReset)
+            for await _ in notifications {
+                guard let self else { return }
+                await MainActor.run { self.loadInitialData() }
+            }
+        }
     }
 }

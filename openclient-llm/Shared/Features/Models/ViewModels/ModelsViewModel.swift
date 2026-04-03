@@ -51,6 +51,7 @@ final class ModelsViewModel {
         self.state = state
         self.fetchModelsUseCase = fetchModelsUseCase
         self.settingsManager = settingsManager
+        observeAppDataReset()
     }
 
     // MARK: - Input functions
@@ -172,6 +173,17 @@ private extension ModelsViewModel {
             guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
             currentState.errorMessage = nil
             state = .loaded(currentState)
+        }
+    }
+
+    func observeAppDataReset() {
+        Task { [weak self] in
+            let notifications = NotificationCenter.default
+                .notifications(named: .appDataDidReset)
+            for await _ in notifications {
+                guard let self else { return }
+                await MainActor.run { self.loadModels() }
+            }
         }
     }
 }
