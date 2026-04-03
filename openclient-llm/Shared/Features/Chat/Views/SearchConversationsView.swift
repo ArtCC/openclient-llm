@@ -36,11 +36,18 @@ struct SearchConversationsView: View {
                 }
             }
         }
+        #if os(iOS)
         .searchable(
             text: $searchText,
             placement: .navigationBarDrawer(displayMode: .always),
             prompt: String(localized: "Search conversations...")
         )
+        #else
+        .searchable(
+            text: $searchText,
+            prompt: String(localized: "Search conversations...")
+        )
+        #endif
         .onChange(of: searchText) { _, newValue in
             viewModel.send(.searchChanged(newValue))
         }
