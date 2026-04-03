@@ -1,0 +1,160 @@
+//
+//  ChatViewModel+EditExport.swift
+//  openclient-llm
+//
+//  Created by Arturo Carretero Calvo on 03/04/2026.
+//  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
+//
+
+import Foundation
+
+// MARK: - Phase 6: Export, Regenerate, Edit, Branch
+
+extension ChatViewModel {
+    func exportConversation() {
+        guard case .loaded(var loadedState) = state,
+              let conversation = loadedState.conversation else { return }
+
+        do {
+            let data = try exportConversationUseCase.execute(conversation)
+            loadedState.exportedData = data
+            state = .loaded(loadedState)
+            LogManager.success("exportConversation id=\(conversation.id)")
+        } catch {
+            loadedState.errorMessage = error.localizedDescription
+            state = .loaded(loadedState)
+            LogManager.error("exportConversation failed: \(error)")
+            scheduleErrorDismiss()
+        }
+    }
+
+    func clearExportedData() {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.exportedData = nil
+        state = .loaded(loadedState)
+    }
+
+    func regenerateLastResponse() {
+        guard case .loaded(var loadedState) = state,
+              !loadedState.isStreaming,
+              let model = loadedState.selectedModel else { return }
+
+        // Remove last assistant message if present
+        if loadedState.messages.last?.role == .assistant {
+            loadedState.messages.removeLast()
+        }
+
+        guard !loadedState.messages.isEmpty else { return }
+
+        loadedState.isStreaming = true
+        loadedState.errorMessage = nil
+
+        let assistantMessage = ChatMessage(role: .assistant, content: "")
+        loadedState.messages.append(assistantMessage)
+        state = .loaded(loadedState)
+
+        let assistantMessageId = assistantMessage.id
+        let currentMessages = loadedState.messages.filter { $0.id != assistantMessageId }
+        let systemPrompt = loadedState.systemPrompt
+        let parameters = loadedState.modelParameters
+
+        LogManager.info("regenerateLastResponse model=\(model.id) messages=\(currentMessages.count)")
+        streamTask?.cancel()
+        streamTask = Task {
+            await performStreaming(
+                messages: currentMessages,
+                model: model.id,
+                assistantMessageId: assistantMessageId,
+                systemPrompt: systemPrompt,
+                parameters: parameters
+            )
+        }
+    }
+
+    func editAndResend(id: UUID, newContent: String) {
+        guard case .loaded(var loadedState) = state,
+              !loadedState.isStreaming,
+              let model = loadedState.selectedModel else { return }
+
+        let trimmed = newContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        // Find the message index
+        guard let messageIndex = loadedState.messages.firstIndex(where: { $0.id == id }),
+              loadedState.messages[messageIndex].role == .user else { return }
+
+        // Update content and remove all messages after it (including previous assistant response)
+        loadedState.messages[messageIndex].content = trimmed
+        loadedState.messages = Array(loadedState.messages.prefix(messageIndex + 1))
+
+        loadedState.isStreaming = true
+        loadedState.errorMessage = nil
+
+        let assistantMessage = ChatMessage(role: .assistant, content: "")
+        loadedState.messages.append(assistantMessage)
+        state = .loaded(loadedState)
+
+        let assistantMessageId = assistantMessage.id
+        let currentMessages = loadedState.messages.filter { $0.id != assistantMessageId }
+        let systemPrompt = loadedState.systemPrompt
+        let parameters = loadedState.modelParameters
+
+        LogManager.info("editAndResend id=\(id) model=\(model.id)")
+        streamTask?.cancel()
+        streamTask = Task {
+            await performStreaming(
+                messages: currentMessages,
+                model: model.id,
+                assistantMessageId: assistantMessageId,
+                systemPrompt: systemPrompt,
+                parameters: parameters
+            )
+        }
+    }
+
+    func forkConversation(fromMessage messageId: UUID) {
+        guard case .loaded(var loadedState) = state,
+              let conversation = loadedState.conversation else { return }
+
+        do {
+            let fork = try branchConversationUseCase.execute(
+                conversation: conversation,
+                fromMessageId: messageId
+            )
+            loadedState.branchedConversation = fork
+            state = .loaded(loadedState)
+            onForkCreated?(fork)
+            LogManager.success("forkConversation fromMessage=\(messageId) newId=\(fork.id)")
+        } catch {
+            loadedState.errorMessage = error.localizedDescription
+            state = .loaded(loadedState)
+            LogManager.error("forkConversation failed: \(error)")
+            scheduleErrorDismiss()
+        }
+    }
+
+    func clearBranchedConversation() {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.branchedConversation = nil
+        state = .loaded(loadedState)
+    }
+
+    func handlePhase6Event(_ event: Event) {
+        switch event {
+        case .exportConversation:
+            exportConversation()
+        case .exportDataConsumed:
+            clearExportedData()
+        case .regenerateLastResponse:
+            regenerateLastResponse()
+        case .editMessage(let id, let newContent):
+            editAndResend(id: id, newContent: newContent)
+        case .forkFromMessage(let messageId):
+            forkConversation(fromMessage: messageId)
+        case .branchedConversationConsumed:
+            clearBranchedConversation()
+        default:
+            break
+        }
+    }
+}

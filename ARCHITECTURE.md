@@ -34,7 +34,9 @@ openclient-llm/                              # iOS target
 │   │   │   │   ├── ChatRepository.swift
 │   │   │   │   └── ConversationRepository.swift
 │   │   │   ├── UseCases/
+│   │   │   │   ├── BranchConversationUseCase.swift
 │   │   │   │   ├── DeleteConversationUseCase.swift
+│   │   │   │   ├── ExportConversationUseCase.swift
 │   │   │   │   ├── LoadConversationsUseCase.swift
 │   │   │   │   ├── PinConversationUseCase.swift
 │   │   │   │   ├── SaveConversationUseCase.swift
@@ -43,6 +45,7 @@ openclient-llm/                              # iOS target
 │   │   │   │   └── UpdateConversationTagsUseCase.swift
 │   │   │   ├── ViewModels/
 │   │   │   │   ├── ChatViewModel.swift
+│   │   │   │   ├── ChatViewModel+EditExport.swift
 │   │   │   │   ├── ChatViewModel+Helpers.swift
 │   │   │   │   ├── ChatViewModel+Transcription.swift
 │   │   │   │   └── ConversationListViewModel.swift
@@ -54,6 +57,8 @@ openclient-llm/                              # iOS target
 │   │   │       ├── ChatModelParametersView.swift
 │   │   │       ├── ChatSystemPromptView.swift
 │   │   │       ├── ChatView.swift
+│   │   │       ├── ChatView+EditExport.swift
+│   │   │       ├── ChatView+ModelSelector.swift
 │   │   │       ├── CodeBlockView.swift
 │   │   │       ├── ConversationListView.swift
 │   │   │       ├── ConversationTagsView.swift
@@ -164,14 +169,20 @@ openclient-llm-test/                         # Unit tests
 ├── Features/
 │   ├── Chat/
 │   │   ├── ChatViewModelTests.swift
+│   │   ├── ChatViewModelTests+Branching.swift
+│   │   ├── ChatViewModelTests+Editing.swift
+│   │   ├── ChatViewModelTests+Export.swift
 │   │   ├── ChatViewModelTests+Persistence.swift
+│   │   ├── ChatViewModelTests+Regenerate.swift
 │   │   ├── ChatViewModelTests+TTS.swift
 │   │   ├── ChatViewModelTests+Transcription.swift
 │   │   ├── ChatViewModelTests+UserProfile.swift
+│   │   ├── BranchConversationUseCaseTests.swift
 │   │   ├── ConversationListViewModelTests.swift
 │   │   ├── ConversationListViewModelTests+Pinning.swift
 │   │   ├── ConversationListViewModelTests+Tags.swift
 │   │   ├── ConversationSectionTests.swift
+│   │   ├── ExportConversationUseCaseTests.swift
 │   │   ├── SendMessageUseCaseTests.swift
 │   │   └── StreamMessageUseCaseTests.swift
 │   ├── Launch/
@@ -192,6 +203,7 @@ openclient-llm-test/                         # Unit tests
 │       └── UserProfileViewModelTests.swift
 └── Mocks/
     ├── MockAPIClient.swift
+    ├── MockBranchConversationUseCase.swift
     ├── MockChatRepository.swift
     ├── MockCheckOnboardingUseCase.swift
     ├── MockCloudSyncManager.swift
@@ -199,6 +211,7 @@ openclient-llm-test/                         # Unit tests
     ├── MockConversationRepository.swift
     ├── MockConversationStartersManager.swift
     ├── MockDeleteConversationUseCase.swift
+    ├── MockExportConversationUseCase.swift
     ├── MockFetchModelsUseCase.swift
     ├── MockKeychainManager.swift
     ├── MockLoadConversationsUseCase.swift

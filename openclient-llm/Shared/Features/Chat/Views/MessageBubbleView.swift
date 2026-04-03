@@ -21,8 +21,12 @@ struct MessageBubbleView: View {
     var isSpeaking: Bool = false
     var hasTTS: Bool = false
     var showTokenUsage: Bool = true
+    var isLastMessage: Bool = false
     var onSpeakTapped: (() -> Void)?
     var onStopSpeakingTapped: (() -> Void)?
+    var onEditTapped: (() -> Void)?
+    var onRegenerateTapped: (() -> Void)?
+    var onForkTapped: (() -> Void)?
     @State private var cursorVisible: Bool = false
     @State private var expandedImageData: Data?
 
@@ -216,6 +220,32 @@ private extension MessageBubbleView {
             message: Text(content)
         ) {
             Label(String(localized: "Share"), systemImage: "square.and.arrow.up")
+        }
+
+        if message.role == .user, let onEditTapped {
+            Divider()
+            Button {
+                onEditTapped()
+            } label: {
+                Label(String(localized: "Edit & Resend"), systemImage: "pencil")
+            }
+        }
+
+        if message.role == .assistant, isLastMessage, !isStreaming, let onRegenerateTapped {
+            Divider()
+            Button {
+                onRegenerateTapped()
+            } label: {
+                Label(String(localized: "Regenerate Response"), systemImage: "arrow.clockwise")
+            }
+        }
+
+        if let onForkTapped {
+            Button {
+                onForkTapped()
+            } label: {
+                Label(String(localized: "Fork from here"), systemImage: "arrow.branch")
+            }
         }
     }
 

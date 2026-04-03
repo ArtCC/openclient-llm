@@ -11,6 +11,18 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 ### Added
 
+- Export conversations to JSON via share sheet — available from the chat toolbar (context menu in conversation list on macOS, share button in toolbar on iOS/macOS)
+- Message editing — long-press any sent user message to edit its content and resend; all subsequent messages are removed and the conversation continues from the edited point
+- Response regeneration — "Regenerate Response" button appears above the input bar after every complete assistant reply, allowing the user to request a new response to the same message
+- Conversation branching — long-press any message (user or assistant) to fork the conversation from that point; the fork is a fully independent conversation with its own history up to the selected message; branch indicator (`arrow.branch`) shown on forked conversations in the list
+- `ExportConversationUseCase` — encodes a `Conversation` to pretty-printed ISO 8601 JSON using `JSONEncoder`
+- `BranchConversationUseCase` — forks a conversation at a given message, copying all preceding messages and saving the new conversation via `SaveConversationUseCase`
+- `parentConversationId` and `branchedFromMessageId` fields on `Conversation` (optional, backward-compatible)
+- `ChatView+ModelSelector.swift` and `ChatView+EditExport.swift` extensions to keep `ChatView.swift` under the 500-line SwiftLint limit
+- `ChatViewModel+EditExport.swift` extension grouping all export, regenerate, edit, and branch logic
+- `MockExportConversationUseCase` and `MockBranchConversationUseCase` test doubles
+- 29 new ViewModel unit tests across `ChatViewModelTests+Export`, `+Regenerate`, `+Editing`, `+Branching`
+- 14 new use-case unit tests across `ExportConversationUseCaseTests` and `BranchConversationUseCaseTests`
 - Reload button in the chat list toolbar (macOS only), between the New Chat button and the search bar, matching the existing Models reload button design
 - Pull-to-refresh in the Models screen (iOS/iPadOS), matching the existing pull-to-refresh in the chat list
 - Provider logo images (OpenAI, Anthropic, Ollama, Gemini) shown on each model row in the Models list; models without a recognised logo fall back to a SF Symbol generic icon (`cpu.fill` for local, `sparkles` for cloud)

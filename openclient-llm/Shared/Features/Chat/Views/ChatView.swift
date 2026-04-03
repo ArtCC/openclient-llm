@@ -26,6 +26,8 @@ struct ChatView: View {
     @State private var showDocumentPicker: Bool = false
     @State private var showCameraPicker: Bool = false
     @State private var showImageFilePicker: Bool = false
+    @State private var editingMessage: ChatMessage?
+    @State private var editingMessageText: String = ""
 
     var conversation: Conversation?
     var onConversationUpdated: (() -> Void)?
@@ -65,10 +67,19 @@ private extension ChatView {
         .navigationTitle(conversation?.title ?? "")
         .toolbar {
             ToolbarItem(placement: .principal) {
-                modelSelector
+                modelSelector(using: viewModel)
             }
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: 4) {
+                    if case .loaded(let loadedSt) = viewModel.state,
+                       loadedSt.conversation != nil, !loadedSt.messages.isEmpty,
+                       let url = makeExportURL(loadedSt) {
+                        ShareLink(item: url) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        .accessibilityLabel(String(localized: "Export Conversation"))
+                    }
+
                     Button {
                         showModelParametersSheet = true
                     } label: {
@@ -95,6 +106,14 @@ private extension ChatView {
             ChatModelParametersView(
                 viewModel: viewModel,
                 isPresented: $showModelParametersSheet
+            )
+        }
+        .sheet(item: $editingMessage) { message in
+            editMessageSheet(
+                message,
+                viewModel: viewModel,
+                editingMessage: $editingMessage,
+                editingMessageText: $editingMessageText
             )
         }
         .imagePicker(isPresented: $showImagePicker) { attachment in
@@ -134,10 +153,19 @@ private extension ChatView {
 #endif
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    modelSelector
+                    modelSelector(using: viewModel)
                 }
                 ToolbarItem(placement: .primaryAction) {
                     HStack(spacing: 4) {
+                        if case .loaded(let loadedSt) = viewModel.state,
+                           loadedSt.conversation != nil, !loadedSt.messages.isEmpty,
+                           let url = makeExportURL(loadedSt) {
+                            ShareLink(item: url) {
+                                Image(systemName: "square.and.arrow.up")
+                            }
+                            .accessibilityLabel(String(localized: "Export Conversation"))
+                        }
+
                         Button {
                             showModelParametersSheet = true
                         } label: {
@@ -164,6 +192,14 @@ private extension ChatView {
                 ChatModelParametersView(
                     viewModel: viewModel,
                     isPresented: $showModelParametersSheet
+                )
+            }
+            .sheet(item: $editingMessage) { message in
+                editMessageSheet(
+                    message,
+                    viewModel: viewModel,
+                    editingMessage: $editingMessage,
+                    editingMessageText: $editingMessageText
                 )
             }
         }
@@ -195,6 +231,7 @@ private extension ChatView {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 VStack(spacing: 0) {
                     errorBanner(loadedState.errorMessage)
+                    regenerateBar(loadedState, viewModel: viewModel)
                     attachmentPreview(loadedState)
                     ChatInputBarView(
                         inputText: $inputText,
@@ -323,20 +360,30 @@ private extension ChatView {
                 .frame(height: 1)
                 .id("scroll-top")
             ForEach(loadedState.messages) { message in
+                let isLast = message.id == loadedState.messages.last?.id
                 MessageBubbleView(
                     message: message,
-                    isStreaming: loadedState.isStreaming
-                    && message.id
-                    == loadedState.messages.last?.id,
+                    isStreaming: loadedState.isStreaming && isLast,
                     isSpeaking: loadedState.speakingMessageId == message.id,
                     hasTTS: loadedState.ttsModelId != nil,
                     showTokenUsage: loadedState.showTokenUsage,
+                    isLastMessage: isLast,
                     onSpeakTapped: {
                         viewModel.send(.speakMessageTapped(message))
                     },
                     onStopSpeakingTapped: {
                         viewModel.send(.stopSpeakingTapped)
-                    }
+                    },
+                    onEditTapped: message.role == .user ? {
+                        editingMessage = message
+                        editingMessageText = message.content
+                    } : nil,
+                    onRegenerateTapped: (message.role == .assistant && isLast) ? {
+                        viewModel.send(.regenerateLastResponse)
+                    } : nil,
+                    onForkTapped: loadedState.conversation != nil ? {
+                        viewModel.send(.forkFromMessage(message.id))
+                    } : nil
                 )
                 .id(message.id)
                 .transition(.opacity)
@@ -424,44 +471,6 @@ private extension ChatView {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .glassEffect(.regular, in: .capsule)
-    }
-
-    // MARK: - Model Selector
-
-    @ViewBuilder
-    var modelSelector: some View {
-        if case .loaded(let loadedState) = viewModel.state,
-           !loadedState.availableModels.isEmpty {
-            Menu {
-                ForEach(loadedState.availableModels) { model in
-                    Button {
-                        viewModel.send(.modelSelected(model))
-                    } label: {
-                        HStack {
-                            Text(model.id)
-                            if model == loadedState.selectedModel {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(
-                        loadedState.selectedModel?.id
-                        ?? String(localized: "No Model")
-                    )
-                    .font(.poppins(.semiBold, size: 17, relativeTo: .headline))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(maxWidth: 200)
-
-                    Image(systemName: "chevron.down")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
     }
 }
 

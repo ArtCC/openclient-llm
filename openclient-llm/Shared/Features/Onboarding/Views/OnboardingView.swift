@@ -170,7 +170,7 @@ private extension OnboardingView {
                     icon: "server.rack",
                     tint: Color.appAccent,
                     title: String(localized: "Any Model"),
-                    subtitle: String(localized: "GPT, Claude, Gemini, Llama and more via LiteLLM")
+                    subtitle: String(localized: "GPT, Claude, Gemini, Llama and more via LiteLLM, Ollama, LM Studio...")
                 )
                 featureRow(
                     icon: "lock.shield.fill",

@@ -77,17 +77,18 @@ Goal: User customization.
 
 Goal: Conversation editing, content management, and productivity tools.
 
-- [ ] **Export**: Export conversations to JSON
-- [ ] **Conversation branching**: Fork a conversation from any message to explore alternative responses (edit & resend)
-- [ ] **Message editing**: Edit an already sent user message and regenerate the assistant response
-- [ ] **Response regeneration**: "Regenerate" button to request a new response to the last message
+- [x] **Export**: Export conversations to JSON
+- [x] **Conversation branching**: Fork a conversation from any message to explore alternative responses (edit & resend)
+- [x] **Message editing**: Edit an already sent user message and regenerate the assistant response
+- [x] **Response regeneration**: "Regenerate" button to request a new response to the last message
 
 ## Phase 7 — Web, Agents & Prompt Library
 
 Goal: Prompt templates, web search, and agentic tool-calling loop.
 
+- [ ] **Thinking / Reasoning disclosure**: Collapsible "Thinking…" block shown above the assistant reply for models that return reasoning content. LiteLLM ≥ v1.63.0 exposes a standardised `reasoning_content` field in `message` (and `delta.reasoning_content` in SSE chunks) for all supported reasoning providers (Anthropic, Deepseek, OpenAI Responses API, Gemini, Groq, Mistral, Perplexity, OpenRouter, XAI, Bedrock). Implementation: (A) extend `StreamChunk` with a `.reasoning(String)` case; (B) parse `delta.reasoning_content` in the SSE decoder and emit reasoning chunks separately from normal token chunks; (C) add a `reasoningContent: String?` field to `ChatMessage`; (D) in `MessageBubbleView`, show a tappable `DisclosureGroup` styled pill ("Thinking · chevron") that streams the reasoning text live — animated pulsing while still receiving chunks, static when complete; disclosure view has a fixed max height with internal scroll so it never dominates the screen; reasoning text styled in a dimmer secondary color with monospace font; the pill collapses by default after streaming finishes; (E) no setting required — the widget appears automatically when `reasoningContent` is non-nil.
 - [ ] **Prompt templates/library**: Library of predefined system prompts (coding assistant, translator, summarizer...) that users can save and reuse
-- [ ] **Web browsing**: Enable models to search and retrieve web content via LiteLLM's `/v1/search` endpoint (provider-agnostic: Brave, Tavily, Perplexity, etc. configured on the server). Two modes: (A) globe button in chat input bar for manual search on any model — app calls `/v1/search/{tool_name}`, injects results as context, then calls `/chat/completions`; (B) automatic interception for models with function calling — app includes `litellm_web_search` tool in every request and LiteLLM resolves the loop transparently. Settings: search tool name (default `brave-search`), interception toggle. No search API key in the app. See web-browsing.instructions.md.
+- [ ] **Web browsing**: Enable models to search and retrieve web content using **exclusively** the LiteLLM Search API (≥ v1.78.7). The app never calls any search provider directly — it delegates all search to the user's LiteLLM proxy via `POST /v1/search/{search_tool_name}`. Flow: (1) user taps the globe button in the chat input bar; (2) app calls `/v1/search/{search_tool_name}` with the user query; (3) results are injected as context into the next `/chat/completions` request; (4) model responds with inline citations. Provider-agnostic: Brave, Tavily, Perplexity, Exa AI, DuckDuckGo, SearXNG, etc. are all configured server-side — no API key lives in the app. Settings: search tool name (default `"brave-search"`, must match `search_tool_name` in the server's `config.yaml`). Requires LiteLLM ≥ v1.78.7. See web-browsing.instructions.md.
 - [ ] **Agent mode (tool calling)**: Support LiteLLM function/tool calling loop — parse tool_calls from model responses, execute registered tools, send results back, and repeat until final answer
 
 ## Current Phase: 6 — Productivity & Editing

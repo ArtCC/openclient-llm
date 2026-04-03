@@ -210,6 +210,12 @@ private extension ConversationListView {
             Label(String(localized: "Edit Tags"), systemImage: "tag")
         }
 
+        if let url = exportURL(for: conversation) {
+            ShareLink(item: url) {
+                Label(String(localized: "Export"), systemImage: "square.and.arrow.up")
+            }
+        }
+
         Divider()
 
         Button(role: .destructive) {
@@ -290,6 +296,8 @@ private extension ConversationListView {
                             .font(.headline)
                             .lineLimit(1)
                             .frame(maxWidth: .infinity, alignment: .leading)
+
+                        branchBadge(for: conversation)
 
                         Text(formattedDate(conversation.updatedAt))
                             .font(.caption2)
@@ -374,6 +382,28 @@ private extension ConversationListView {
         }
         return String(localized: "New Chat")
     }
+    func exportURL(for conversation: Conversation) -> URL? {
+        guard let data = try? ExportConversationUseCase().execute(conversation) else { return nil }
+        let raw = conversationTitle(conversation)
+        let sanitized = raw
+            .replacingOccurrences(of: "[\\\\/:*?\"<>|]", with: "_", options: .regularExpression)
+            .prefix(50)
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(String(sanitized))
+            .appendingPathExtension("json")
+        try? data.write(to: url)
+        return url
+    }
+
+    @ViewBuilder
+    func branchBadge(for conversation: Conversation) -> some View {
+        if conversation.parentConversationId != nil {
+            Image(systemName: "arrow.branch")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     #if os(macOS)
     @ToolbarContentBuilder
     var macToolbarItems: some ToolbarContent {
