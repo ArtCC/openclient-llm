@@ -47,7 +47,7 @@ private extension HomeView {
                     Text(String(localized: "Chats"))
                 } icon: {
                     Image(systemName: "bubble.left.and.bubble.right")
-                        .symbolEffect(.bounce, value: selectedTab == .chats)
+                        .symbolEffect(.bounce, value: selectedTab)
                 }
             }
             Tab(value: AppTab.models) {
@@ -57,7 +57,7 @@ private extension HomeView {
                     Text(String(localized: "Models"))
                 } icon: {
                     Image(systemName: "brain.head.profile")
-                        .symbolEffect(.pulse, value: selectedTab == .models)
+                        .symbolEffect(.bounce, value: selectedTab)
                 }
             }
             Tab(value: AppTab.settings) {
@@ -67,7 +67,7 @@ private extension HomeView {
                     Text(String(localized: "Settings"))
                 } icon: {
                     Image(systemName: "gearshape")
-                        .symbolEffect(.rotate, value: selectedTab == .settings)
+                        .symbolEffect(.rotate, value: selectedTab)
                 }
             }
             Tab(value: AppTab.search, role: .search) {
@@ -144,6 +144,7 @@ private extension HomeView {
     #if os(macOS)
     enum SidebarDestination: Hashable {
         case chats
+        case search
         case models
         case settings
     }
@@ -164,6 +165,9 @@ private extension HomeView {
             Section {
                 Label(String(localized: "Chats"), systemImage: "bubble.left.and.bubble.right")
                     .tag(SidebarDestination.chats)
+
+                Label(String(localized: "Search"), systemImage: "magnifyingglass")
+                    .tag(SidebarDestination.search)
             }
 
             Section {
@@ -196,6 +200,8 @@ private extension HomeView {
                     )
                 }
             }
+        case .search:
+            SearchConversationsView()
         case .models:
             ModelsView()
         case .settings:
