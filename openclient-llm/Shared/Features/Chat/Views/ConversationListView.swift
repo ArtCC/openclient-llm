@@ -175,6 +175,10 @@ private extension ConversationListView {
                         }
                         .foregroundStyle(.secondary)
                         .textCase(nil)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.background)
                     }
                 }
             }

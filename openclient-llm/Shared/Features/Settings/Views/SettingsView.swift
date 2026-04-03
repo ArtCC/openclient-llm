@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var isAPIKeyVisible = false
     @State private var isShowingVotice = false
     @State private var isShowingUserProfile = false
+    @State private var showResetAlert = false
     @State private var presentedWebURL: WebDestination?
     @FocusState private var focusedField: Field?
 
@@ -81,6 +82,19 @@ private extension SettingsView {
                 ))
             }
         )
+        .alert(
+            String(localized: "Reset App Data"),
+            isPresented: $showResetAlert
+        ) {
+            Button(String(localized: "Reset"), role: .destructive) {
+                viewModel.send(.resetConfirmed)
+            }
+            Button(String(localized: "Cancel"), role: .cancel) {}
+        } message: {
+            Text(String(
+                localized: "All local settings and credentials will be deleted. iCloud data will not be affected."
+            ))
+        }
         .task {
             viewModel.send(.viewAppeared)
             if case .loaded(let initialState) = viewModel.state {
@@ -118,6 +132,7 @@ private extension SettingsView {
                 chatSection(loadedState)
                 feedbackSection()
                 legalSection()
+                dangerSection()
             }
 #if os(iOS)
             .scrollDismissesKeyboard(.immediately)
@@ -390,6 +405,20 @@ private extension SettingsView {
             }
         } header: {
             Text(String(localized: "About"))
+        }
+    }
+
+    func dangerSection() -> some View {
+        Section {
+            Button(role: .destructive) {
+                showResetAlert = true
+            } label: {
+                Label(String(localized: "Reset App Data"), systemImage: "trash")
+            }
+        } header: {
+            Text(String(localized: "App Data"))
+        } footer: {
+            Text(String(localized: "Deletes all local settings and credentials. iCloud data will not be affected."))
         }
     }
 

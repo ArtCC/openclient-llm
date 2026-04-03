@@ -50,16 +50,20 @@ private extension OnboardingView {
             Spacer()
 
             stepContent(loadedState)
-                .frame(maxWidth: 500)
+                .frame(maxWidth: 520)
+                .padding(.horizontal, 24)
 
             Spacer()
 
             bottomAction(loadedState)
-                .frame(maxWidth: 500)
+                .frame(maxWidth: 520)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 8)
         }
-        .padding()
+        .padding(.horizontal, 8)
+        .padding(.vertical, 16)
         .animation(.smooth, value: loadedState.currentStep)
-        .tint(.accentColor)
+        .tint(Color.appAccent)
     }
 
     func topBar(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
@@ -80,8 +84,7 @@ private extension OnboardingView {
                     .buttonStyle(.glass)
                     #endif
                 } else {
-                    Image(systemName: "chevron.left")
-                        .hidden()
+                    Image(systemName: "chevron.left").hidden()
                 }
 
                 Spacer()
@@ -102,13 +105,7 @@ private extension OnboardingView {
                 #endif
             }
 
-            HStack {
-                Spacer()
-
-                stepIndicator(currentStep: loadedState.currentStep)
-
-                Spacer()
-            }
+            stepIndicator(currentStep: loadedState.currentStep)
         }
     }
 
@@ -118,10 +115,14 @@ private extension OnboardingView {
                 Circle()
                     .fill(step == currentStep ? Color.appAccent : Color.secondary.opacity(0.3))
                     .frame(width: 8, height: 8)
+                    .scaleEffect(step == currentStep ? 1.2 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentStep)
             }
-        }        .padding(.horizontal, 16)
+        }
+        .padding(.horizontal, 16)
         .padding(.vertical, 8)
-        .glassEffect(.regular, in: .capsule)    }
+        .glassEffect(.regular, in: .capsule)
+    }
 
     @ViewBuilder
     func stepContent(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
@@ -131,62 +132,141 @@ private extension OnboardingView {
         case .serverConfiguration:
             serverConfigurationStep(loadedState)
         case .allSet:
-            allSetStep()
+            allSetStep(loadedState)
         }
     }
 
     func welcomeStep() -> some View {
-        VStack(spacing: 24) {
-            Image(systemName: "bubble.left.and.bubble.right.fill")
-                .font(.system(size: 80))
-                .foregroundStyle(Color.appAccent)
-                .symbolEffect(.breathe)
-                .padding(28)
-                #if os(macOS)
-                .background(Color.appAccent.opacity(0.12), in: .circle)
-                #else
-                .glassEffect(.regular, in: .circle)
-                #endif
+        VStack(spacing: 32) {
+            ZStack {
+                Circle()
+                    .fill(Color.appAccent.opacity(0.15))
+                    .frame(width: 120, height: 120)
+                Circle()
+                    .fill(Color.appAccent.opacity(0.08))
+                    .frame(width: 160, height: 160)
+                Image(systemName: "bubble.left.and.bubble.right.fill")
+                    .font(.system(size: 56, weight: .medium))
+                    .foregroundStyle(Color.appAccent)
+                    .symbolEffect(.breathe)
+            }
 
-            VStack(spacing: 12) {
-                Text(String(localized: "Welcome to OpenClient"))
-                    .font(.poppins(.semiBold, size: 28, relativeTo: .title))
+            VStack(spacing: 10) {
+                Text(String(localized: "Your AI, Your Way"))
+                    .font(.poppins(.bold, size: 34, relativeTo: .largeTitle))
                     .multilineTextAlignment(.center)
 
-                // swiftlint:disable:next line_length
-                Text(String(localized: "Your gateway to any LLM through a unified interface. Connect to your LiteLLM server and start chatting."))
+                Text(String(localized: "OpenClient connects to your LiteLLM for privacy-first access to any AI."))
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .lineSpacing(3)
+            }
+
+            VStack(spacing: 10) {
+                featureRow(
+                    icon: "server.rack",
+                    tint: Color.appAccent,
+                    title: String(localized: "Any Model"),
+                    subtitle: String(localized: "GPT, Claude, Gemini, Llama and more via LiteLLM")
+                )
+                featureRow(
+                    icon: "lock.shield.fill",
+                    tint: .green,
+                    title: String(localized: "Privacy First"),
+                    subtitle: String(localized: "Your data stays on your own server — no telemetry")
+                )
+                featureRow(
+                    icon: "apple.logo",
+                    tint: .primary,
+                    title: String(localized: "Native Apple"),
+                    subtitle: String(localized: "Built for iOS, iPadOS and macOS with SwiftUI")
+                )
             }
         }
     }
 
-    func serverConfigurationStep(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
-        VStack(spacing: 20) {
-            Text(String(localized: "Server Configuration"))
-                .font(.poppins(.semiBold, size: 28, relativeTo: .title))
+    func featureRow(icon: String, tint: Color, title: String, subtitle: String) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(width: 44, height: 44)
+                #if os(macOS)
+                .background(tint.opacity(0.12), in: .circle)
+                #else
+                .glassEffect(.regular.tint(tint), in: .circle)
+                #endif
 
-            Text(String(localized: "Enter your LiteLLM server details to connect."))
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.poppins(.semiBold, size: 15, relativeTo: .subheadline))
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        #if os(macOS)
+        .background(.primary.opacity(0.04), in: .rect(cornerRadius: 14))
+        #else
+        .glassEffect(.regular, in: .rect(cornerRadius: 14))
+        #endif
+    }
+
+    func serverConfigurationStep(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
+        VStack(spacing: 28) {
+            VStack(spacing: 12) {
+                Image(systemName: "network")
+                    .font(.system(size: 44, weight: .medium))
+                    .foregroundStyle(Color.appAccent)
+                    .symbolEffect(.pulse)
+                    .frame(width: 80, height: 80)
+                    #if os(macOS)
+                    .background(Color.appAccent.opacity(0.12), in: .circle)
+                    #else
+                    .glassEffect(.regular.tint(Color.appAccent), in: .circle)
+                    #endif
+
+                VStack(spacing: 6) {
+                    Text(String(localized: "Connect Your Server"))
+                        .font(.poppins(.semiBold, size: 28, relativeTo: .title))
+                        .multilineTextAlignment(.center)
+
+                    Text(String(localized: "Enter your LiteLLM proxy URL, the gateway to any AI model."))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(2)
+                }
+            }
 
             VStack(spacing: 12) {
-                TextField(
-                    String(localized: "Server URL"),
-                    text: $serverURL
-                )
-                .textFieldStyle(.roundedBorder)
-                .textSelection(.enabled)
-                .textContentType(.URL)
-                .autocorrectionDisabled()
-                #if os(iOS)
-                .textInputAutocapitalization(.never)
-                .keyboardType(.URL)
-                #endif
-                .onChange(of: serverURL) { _, newValue in
-                    viewModel.send(.serverURLChanged(newValue))
+                VStack(alignment: .leading, spacing: 6) {
+                    Label(String(localized: "Server URL"), systemImage: "link")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundStyle(.secondary)
+
+                    TextField(
+                        "http://localhost:4000",
+                        text: $serverURL
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .textSelection(.enabled)
+                    .textContentType(.URL)
+                    .autocorrectionDisabled()
+                    #if os(iOS)
+                    .textInputAutocapitalization(.never)
+                    .keyboardType(.URL)
+                    #endif
+                    .onChange(of: serverURL) { _, newValue in
+                        viewModel.send(.serverURLChanged(newValue))
+                    }
                 }
 
                 apiKeyField
@@ -201,12 +281,12 @@ private extension OnboardingView {
             Group {
                 if isAPIKeyVisible {
                     TextField(
-                        String(localized: "API Key (Optional)"),
+                        String(localized: "sk-..."),
                         text: $apiKey
                     )
                 } else {
                     SecureField(
-                        String(localized: "API Key (Optional)"),
+                        String(localized: "sk-..."),
                         text: $apiKey
                     )
                 }
@@ -233,14 +313,15 @@ private extension OnboardingView {
     }
 
     func connectionSection(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 12) {
             Button {
                 viewModel.send(.testConnectionTapped)
             } label: {
                 HStack(spacing: 8) {
                     if loadedState.connectionStatus == .testing {
-                        ProgressView()
-                            .controlSize(.small)
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Image(systemName: "bolt.fill")
                     }
                     Text(
                         loadedState.connectionStatus == .testing
@@ -248,48 +329,87 @@ private extension OnboardingView {
                             : String(localized: "Test Connection")
                     )
                 }
+                .frame(maxWidth: .infinity)
             }
-#if os(macOS)
+            #if os(macOS)
             .buttonStyle(.bordered)
-#endif
+            .controlSize(.large)
+            #else
+            .buttonStyle(.glass)
+            .controlSize(.large)
+            #endif
             .disabled(loadedState.serverURL.isEmpty || loadedState.connectionStatus == .testing)
 
             switch loadedState.connectionStatus {
             case .idle, .testing:
                 EmptyView()
             case .success:
-                Label(String(localized: "Connection successful"), systemImage: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                    Text(String(localized: "Connection successful — ready to continue"))
+                }
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.green)
+                .transition(.scale(scale: 0.9).combined(with: .opacity))
             case .failure(let message):
-                Label(message, systemImage: "xmark.circle.fill")
-                    .foregroundStyle(.red)
+                HStack(spacing: 6) {
+                    Image(systemName: "xmark.circle.fill")
+                    Text(message)
+                        .lineLimit(2)
+                }
+                .font(.subheadline)
+                .foregroundStyle(.red)
+                .transition(.scale(scale: 0.9).combined(with: .opacity))
             }
         }
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: loadedState.connectionStatus)
     }
 
-    func allSetStep() -> some View {
-        VStack(spacing: 24) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 80))
-                .foregroundStyle(.green)
-                .symbolEffect(.bounce)
-                .padding(28)
-                #if os(macOS)
-                .background(Color.green.opacity(0.12), in: .circle)
-                #else
-                .glassEffect(.regular, in: .circle)
-                #endif
+    func allSetStep(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
+        VStack(spacing: 28) {
+            ZStack {
+                Circle()
+                    .fill(Color.green.opacity(0.15))
+                    .frame(width: 130, height: 130)
+                Circle()
+                    .fill(Color.green.opacity(0.08))
+                    .frame(width: 170, height: 170)
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(.green)
+                    .symbolEffect(.bounce)
+            }
 
-            VStack(spacing: 12) {
-                Text(String(localized: "All Set!"))
+            VStack(spacing: 10) {
+                Text(String(localized: "You're all set!"))
                     .font(.poppins(.bold, size: 34, relativeTo: .largeTitle))
                     .multilineTextAlignment(.center)
 
-                // swiftlint:disable:next line_length
-                Text(String(localized: "Your server is configured and ready to go. Start chatting with your AI models."))
+                Text(String(localized: "Your server is ready. Let's start a conversation."))
                     .font(.body)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+                    .lineSpacing(3)
+            }
+
+            if !loadedState.serverURL.isEmpty {
+                HStack(spacing: 8) {
+                    Image(systemName: "server.rack")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.appAccent)
+                    Text(loadedState.serverURL)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                #if os(macOS)
+                .background(Color.appAccent.opacity(0.08), in: .capsule)
+                #else
+                .glassEffect(.regular, in: .capsule)
+                #endif
             }
         }
     }
@@ -305,11 +425,7 @@ private extension OnboardingView {
             startChattingButton()
         }
     }
-}
 
-// MARK: - Private
-
-private extension OnboardingView {
     func prominentButton<Label: View>(
         isDisabled: Bool = false,
         @ViewBuilder label: () -> Label,
@@ -327,10 +443,14 @@ private extension OnboardingView {
 
     func getStartedButton() -> some View {
         prominentButton(label: {
-            Text(String(localized: "Get Started"))
-                .font(.poppins(.semiBold, size: 17, relativeTo: .headline))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+            HStack(spacing: 8) {
+                Text(String(localized: "Get Started"))
+                    .font(.poppins(.semiBold, size: 17, relativeTo: .headline))
+                Image(systemName: "arrow.right")
+                    .font(.headline.weight(.semibold))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
         }, action: {
             withAnimation(.smooth) { viewModel.send(.getStartedTapped) }
         })
@@ -338,10 +458,14 @@ private extension OnboardingView {
 
     func nextButton(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
         prominentButton(isDisabled: loadedState.connectionStatus != .success, label: {
-            Text(String(localized: "Next"))
-                .font(.poppins(.semiBold, size: 17, relativeTo: .headline))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+            HStack(spacing: 8) {
+                Text(String(localized: "Continue"))
+                    .font(.poppins(.semiBold, size: 17, relativeTo: .headline))
+                Image(systemName: "arrow.right")
+                    .font(.headline.weight(.semibold))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
         }, action: {
             withAnimation(.smooth) { viewModel.send(.nextTapped) }
         })
@@ -349,10 +473,14 @@ private extension OnboardingView {
 
     func startChattingButton() -> some View {
         prominentButton(label: {
-            Text(String(localized: "Start Chatting"))
-                .font(.poppins(.semiBold, size: 17, relativeTo: .headline))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
+            HStack(spacing: 8) {
+                Image(systemName: "bubble.left.and.bubble.right.fill")
+                    .font(.headline)
+                Text(String(localized: "Start Chatting"))
+                    .font(.poppins(.semiBold, size: 17, relativeTo: .headline))
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
         }, action: {
             withAnimation(.smooth) { viewModel.send(.startChattingTapped) }
         })

@@ -19,6 +19,7 @@ final class SettingsViewModelTests: XCTestCase {
     private var mockSettingsManager: MockSettingsManager!
     private var mockCloudSyncManager: MockCloudSyncManager!
     private var mockUserProfileManager: MockUserProfileManager!
+    private var mockResetUseCase: MockResetAppDataUseCase!
 
     // MARK: - Setup
 
@@ -30,12 +31,14 @@ final class SettingsViewModelTests: XCTestCase {
         mockSettingsManager = MockSettingsManager()
         mockCloudSyncManager = MockCloudSyncManager()
         mockUserProfileManager = MockUserProfileManager()
+        mockResetUseCase = MockResetAppDataUseCase()
         sut = SettingsViewModel(
             saveServerConfigurationUseCase: mockSaveServerConfig,
             testServerConnectionUseCase: mockTestConnection,
             settingsManager: mockSettingsManager,
             cloudSyncManager: mockCloudSyncManager,
-            userProfileManager: mockUserProfileManager
+            userProfileManager: mockUserProfileManager,
+            resetAppUseCase: mockResetUseCase
         )
     }
 
@@ -46,6 +49,7 @@ final class SettingsViewModelTests: XCTestCase {
         mockSettingsManager = nil
         mockCloudSyncManager = nil
         mockUserProfileManager = nil
+        mockResetUseCase = nil
 
         try await super.tearDown()
     }
@@ -401,6 +405,38 @@ final class SettingsViewModelTests: XCTestCase {
         XCTAssertFalse(loadedState.showCloudSyncConflictAlert)
         XCTAssertFalse(loadedState.isCloudSyncEnabled)
     }
+
+    // MARK: - Tests — resetConfirmed
+
+    func test_send_resetConfirmed_executesReset() {
+        // Given
+        sut.send(.viewAppeared)
+
+        // When
+        sut.send(.resetConfirmed)
+
+        // Then
+        XCTAssertTrue(mockResetUseCase.executeCalled)
+    }
+
+    func test_send_resetConfirmed_reloadsSettingsFromManager() {
+        // Given
+        mockSettingsManager.serverBaseURL = "https://example.com"
+        sut.send(.viewAppeared)
+        mockSettingsManager.serverBaseURL = ""
+
+        // When
+        sut.send(.resetConfirmed)
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.serverURL, "")
+    }
+
+    // MARK: - Tests — cloudSyncToggled both match
 
     func test_send_cloudSyncToggled_true_enablesDirectly_whenBothMatch() {
         // Given
