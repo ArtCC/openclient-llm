@@ -14,7 +14,6 @@ struct ConversationListView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var viewModel = ConversationListViewModel()
-    @State private var searchText: String = ""
     @State private var editingTagsConversation: Conversation?
     @State private var conversationToDelete: Conversation?
 
@@ -36,13 +35,6 @@ struct ConversationListView: View {
             viewModel.send(.newConversationTapped)
         }
         #endif
-        .searchable(
-            text: $searchText,
-            prompt: String(localized: "Search conversations...")
-        )
-        .onChange(of: searchText) { _, newValue in
-            viewModel.send(.searchChanged(newValue))
-        }
         .task {
             viewModel.onConversationSelected = onConversationSelected
             viewModel.send(.viewAppeared)
@@ -92,7 +84,7 @@ private extension ConversationListView {
             if loadedState.conversations.isEmpty {
                 emptyState
             } else if loadedState.filteredConversations.isEmpty {
-                noSearchResults
+                noTagResults
             } else {
                 conversationList(loadedState)
             }
@@ -138,8 +130,15 @@ private extension ConversationListView {
         }
     }
 
-    var noSearchResults: some View {
-        ContentUnavailableView.search(text: searchText)
+    var noTagResults: some View {
+        ContentUnavailableView {
+            Label(
+                String(localized: "No Conversations"),
+                systemImage: "tag.slash"
+            )
+        } description: {
+            Text(String(localized: "No conversations found with the selected tag"))
+        }
     }
 
     func conversationList(_ loadedState: ConversationListViewModel.LoadedState) -> some View {

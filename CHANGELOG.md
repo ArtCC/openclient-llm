@@ -22,6 +22,13 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - Poppins applied selectively to key UI elements: onboarding titles and primary action buttons, "How can I help you?" heading in chat empty state, conversation list section headers, model selector label in chat toolbar
 - `CFBundleDisplayName = "OpenClient"` in macOS `Info.plist` so the app shows the correct name in Finder, Launchpad, and TestFlight installations
 - `.xcodebuildmcp/config.yaml` project configuration for XcodeBuildMCP (simulator + macOS + ui-automation workflows, session defaults, telemetry disabled)
+- Scroll-to-top and scroll-to-bottom Liquid Glass buttons in the chat messages view — each button only appears when its direction makes sense (scroll-up hidden when already at the top, scroll-down hidden when already at the bottom or during streaming auto-scroll)
+- `"scroll-top"` anchor at the start of the messages `LazyVStack` to enable smooth animated scroll to the first message
+- `isNearTop` state tracking in `ChatView` using `onScrollGeometryChange` with an 80 pt threshold
+- Dedicated `SearchConversationsView` tab with `searchable(placement: .navigationBarDrawer(displayMode: .always))` — search bar is always visible when the tab is active; shows all conversations when no query is entered, filtered results otherwise
+- `Tab(role: .search)` in `HomeView` iOS layout — the system automatically places the search icon at the trailing end of the tab bar, separated from the main tabs (same pattern as Telegram and Apple Music)
+- `AppTab` enum (`chats`, `models`, `settings`) to track the selected tab and trigger SF Symbol animations
+- SF Symbol animations on tab bar icons on iOS: `.bounce` on Chats (`bubble.left.and.bubble.right`), `.pulse` on Models (`brain.head.profile`), `.rotate` on Settings (`gearshape`) — each animation fires once on selection
 
 ### Changed
 
@@ -36,11 +43,18 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - Chat messages scroll view gains `.contentMargins(.top, 16, for: .scrollContent)` on macOS to avoid content starting flush against the toolbar
 - Keychain queries updated to include `kSecUseDataProtectionKeychain: true` on all operations (get, set, delete) to use the modern Data Protection Keychain on macOS, which never prompts the user for a password
 - `.gitignore` updated to exclude `.vscode/` directory
+- `TabView` in `HomeView` switched from anonymous tabs to `Tab(value:)` with explicit selection binding to support per-tab symbol animations
+- Models tab icon changed from `cpu` to `brain.head.profile` to better reflect AI model selection
+- `ConversationListView` search bar removed; search is now handled exclusively by the dedicated search tab, fixing the bug where the search bar would disappear when editing conversation tags
+- `ConversationListView` empty-filtered state for tag filter replaced with a dedicated `noTagResults` view (`tag.slash` icon) instead of reusing `ContentUnavailableView.search`
+- Assistant message text blocks rendered using `interpretedSyntax: .inlineOnlyPreservingWhitespace` instead of `.full` — fixes all newlines and paragraph breaks being silently collapsed into spaces or removed, causing every response to appear as a single unformatted block of text regardless of model or provider
+- Normalization regex (`\n` → `\n\n`) removed from `textBlockView` as it was redundant and broke adjacent list items with the new rendering option
 
 ### Fixed
 
 - macOS app name showing as the Xcode target name (`openclient-llm-macOS`) instead of `OpenClient` in Finder and TestFlight installations
 - macOS Keychain access prompting for the user's login password on first launch; now uses Data Protection Keychain silently
+- Chat responses from all models (cloud and local) appearing as a single unformatted text block with no line breaks — root cause was `AttributedString(markdown:options:)` with `.full` syntax discarding all newline characters from the character string
 
 ## [0.0.1-build-11] - 2026-04-02
 

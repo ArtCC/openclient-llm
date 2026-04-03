@@ -20,6 +20,7 @@ struct HomeView: View {
 
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var selectedTab: AppTab = .chats
     #endif
 
     // MARK: - View
@@ -38,15 +39,39 @@ struct HomeView: View {
 private extension HomeView {
     #if os(iOS)
     var iOSLayout: some View {
-        TabView {
-            Tab(String(localized: "Chats"), systemImage: "bubble.left.and.bubble.right") {
+        TabView(selection: $selectedTab) {
+            Tab(value: AppTab.chats) {
                 chatsTab
+            } label: {
+                Label {
+                    Text(String(localized: "Chats"))
+                } icon: {
+                    Image(systemName: "bubble.left.and.bubble.right")
+                        .symbolEffect(.bounce, value: selectedTab == .chats)
+                }
             }
-            Tab(String(localized: "Models"), systemImage: "cpu") {
+            Tab(value: AppTab.models) {
                 ModelsView()
+            } label: {
+                Label {
+                    Text(String(localized: "Models"))
+                } icon: {
+                    Image(systemName: "brain.head.profile")
+                        .symbolEffect(.pulse, value: selectedTab == .models)
+                }
             }
-            Tab(String(localized: "Settings"), systemImage: "gearshape") {
+            Tab(value: AppTab.settings) {
                 SettingsView()
+            } label: {
+                Label {
+                    Text(String(localized: "Settings"))
+                } icon: {
+                    Image(systemName: "gearshape")
+                        .symbolEffect(.rotate, value: selectedTab == .settings)
+                }
+            }
+            Tab(role: .search) {
+                SearchConversationsView()
             }
         }
     }
@@ -103,6 +128,14 @@ private extension HomeView {
             }
         }
     }
+
+    // MARK: - AppTab
+
+    enum AppTab: Hashable {
+        case chats
+        case models
+        case settings
+    }
     #endif
 
     #if os(macOS)
@@ -131,7 +164,7 @@ private extension HomeView {
             }
 
             Section {
-                Label(String(localized: "Models"), systemImage: "cpu")
+                Label(String(localized: "Models"), systemImage: "brain.head.profile")
                     .tag(SidebarDestination.models)
 
                 Label(String(localized: "Settings"), systemImage: "gearshape")

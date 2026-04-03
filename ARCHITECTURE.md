@@ -58,10 +58,11 @@ openclient-llm/                              # iOS target
 │   │   │       ├── ConversationListView.swift
 │   │   │       ├── ConversationTagsView.swift
 │   │   │       ├── ImagePreviewView.swift
-│   │   │       └── MessageBubbleView.swift
+│   │   │       ├── MessageBubbleView.swift
+│   │   │       └── SearchConversationsView.swift
 │   │   ├── Home/
 │   │   │   └── Views/
-│   │   │       └── HomeView.swift
+│   │   │       └── HomeView.swift             # iOS TabView (AppTab enum + symbol animations) + macOS NavigationSplitView
 │   │   ├── Launch/
 │   │   │   ├── UseCases/
 │   │   │   │   ├── CheckOnboardingUseCase.swift

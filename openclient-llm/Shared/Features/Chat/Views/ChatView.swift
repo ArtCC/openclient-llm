@@ -18,6 +18,7 @@ struct ChatView: View {
     @State private var inputText: String = ""
     @State private var shouldAutoScroll: Bool = true
     @State private var isNearBottom: Bool = true
+    @State private var isNearTop: Bool = true
     @State private var showSystemPromptSheet: Bool = false
     @State private var showModelParametersSheet: Bool = false
     @State private var showImagePicker: Bool = false
@@ -217,6 +218,27 @@ private extension ChatView {
     ) -> some View {
         ScrollViewReader { proxy in
             scrollContent(loadedState, proxy: proxy)
+                .overlay(alignment: .topTrailing) {
+                    if !isNearTop && !loadedState.messages.isEmpty {
+                        scrollAnchorButton(isTop: true) {
+                            withAnimation(.easeInOut(duration: 0.35)) {
+                                proxy.scrollTo("scroll-top", anchor: .top)
+                            }
+                        }
+                    }
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    if !isNearBottom && !loadedState.messages.isEmpty {
+                        scrollAnchorButton(isTop: false) {
+                            withAnimation(.easeInOut(duration: 0.35)) {
+                                proxy.scrollTo("scroll-bottom")
+                            }
+                            shouldAutoScroll = true
+                        }
+                    }
+                }
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearTop)
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearBottom)
         }
     }
 
@@ -229,6 +251,11 @@ private extension ChatView {
                 geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height < 80
             } action: { _, newValue in
                 isNearBottom = newValue
+            }
+            .onScrollGeometryChange(for: Bool.self) { geo in
+                geo.contentOffset.y < 80
+            } action: { _, newValue in
+                isNearTop = newValue
             }
             .onScrollPhaseChange { oldPhase, newPhase in
                 if newPhase == .interacting {
@@ -290,6 +317,9 @@ private extension ChatView {
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
         LazyVStack(spacing: 16) {
+            Color.clear
+                .frame(height: 1)
+                .id("scroll-top")
             ForEach(loadedState.messages) { message in
                 MessageBubbleView(
                     message: message,
@@ -316,6 +346,22 @@ private extension ChatView {
         .padding(.horizontal, 16)
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Scroll Navigation
+
+    func scrollAnchorButton(isTop: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: isTop ? "chevron.up" : "chevron.down")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.primary)
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular, in: .circle)
+        .padding(.trailing, 16)
+        .padding(isTop ? .top : .bottom, 16)
+        .transition(.scale(scale: 0.8).combined(with: .opacity))
     }
 
     // MARK: - Error Banner
