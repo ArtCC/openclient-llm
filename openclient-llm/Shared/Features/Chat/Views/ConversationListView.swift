@@ -17,6 +17,12 @@ struct ConversationListView: View {
     @State private var editingTagsConversation: Conversation?
     @State private var conversationToDelete: Conversation?
 
+    #if os(macOS)
+    @State private var isMacSearchExpanded = false
+    @State private var macSearchText = ""
+    #endif
+
+    var activeConversationId: UUID?
     let onConversationSelected: (Conversation?) -> Void
 
     // MARK: - View
@@ -100,14 +106,7 @@ private extension ConversationListView {
                 .keyboardShortcut("n", modifiers: .command)
             }
             #if os(macOS)
-            ToolbarItem(placement: .automatic) {
-                Button {
-                    viewModel.send(.refreshTapped)
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .accessibilityLabel(String(localized: "Refresh"))
-            }
+            macToolbarItems
             #endif
         }
     }
@@ -261,7 +260,7 @@ private extension ConversationListView {
         _ conversation: Conversation,
         loadedState: ConversationListViewModel.LoadedState
     ) -> some View {
-        let isSelected = loadedState.selectedConversation?.id == conversation.id
+        let isSelected = activeConversationId == conversation.id
 
         return Button {
             viewModel.send(.conversationTapped(conversation))
@@ -366,6 +365,63 @@ private extension ConversationListView {
         }
         return String(localized: "New Chat")
     }
+    #if os(macOS)
+    @ToolbarContentBuilder
+    var macToolbarItems: some ToolbarContent {
+        ToolbarItem(placement: .automatic) {
+            macSearchToolbarItem
+        }
+        ToolbarItem(placement: .automatic) {
+            Button {
+                viewModel.send(.refreshTapped)
+            } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+            .accessibilityLabel(String(localized: "Refresh"))
+        }
+    }
+
+    var macSearchToolbarItem: some View {
+        HStack(spacing: 4) {
+            if isMacSearchExpanded {
+                TextField(String(localized: "Search conversations..."), text: $macSearchText)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 180)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .trailing).combined(with: .opacity)
+                    ))
+                    .onChange(of: macSearchText) { _, newValue in
+                        viewModel.send(.searchChanged(newValue))
+                    }
+                    .onSubmit {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            isMacSearchExpanded = false
+                        }
+                    }
+                    .onExitCommand {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            isMacSearchExpanded = false
+                            macSearchText = ""
+                            viewModel.send(.searchChanged(""))
+                        }
+                    }
+            }
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    isMacSearchExpanded.toggle()
+                    if !isMacSearchExpanded {
+                        macSearchText = ""
+                        viewModel.send(.searchChanged(""))
+                    }
+                }
+            } label: {
+                Image(systemName: isMacSearchExpanded ? "xmark.circle.fill" : "magnifyingglass")
+            }
+            .help(String(localized: "Search"))
+        }
+    }
+    #endif
 }
 
 #Preview {

@@ -90,7 +90,7 @@ private extension HomeView {
 
     var iPhoneChatsLayout: some View {
         NavigationStack {
-            ConversationListView { conversation in
+            ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
                 selectedConversation = conversation
             }
             .id(conversationListId)
@@ -108,7 +108,7 @@ private extension HomeView {
 
     var iPadChatsLayout: some View {
         NavigationSplitView {
-            ConversationListView { conversation in
+            ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
                 selectedConversation = conversation
             }
             .id(conversationListId)
@@ -144,7 +144,6 @@ private extension HomeView {
     #if os(macOS)
     enum SidebarDestination: Hashable {
         case chats
-        case search
         case models
         case settings
     }
@@ -165,9 +164,6 @@ private extension HomeView {
             Section {
                 Label(String(localized: "Chats"), systemImage: "bubble.left.and.bubble.right")
                     .tag(SidebarDestination.chats)
-
-                Label(String(localized: "Search"), systemImage: "magnifyingglass")
-                    .tag(SidebarDestination.search)
             }
 
             Section {
@@ -186,7 +182,7 @@ private extension HomeView {
         switch sidebarDestination {
         case .chats:
             NavigationStack {
-                ConversationListView { conversation in
+                ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
                     selectedConversation = conversation
                 }
                 .id(conversationListId)
@@ -200,8 +196,6 @@ private extension HomeView {
                     )
                 }
             }
-        case .search:
-            SearchConversationsView()
         case .models:
             ModelsView()
         case .settings:

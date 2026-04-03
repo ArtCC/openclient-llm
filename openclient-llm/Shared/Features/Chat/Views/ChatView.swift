@@ -19,6 +19,7 @@ struct ChatView: View {
     @State private var shouldAutoScroll: Bool = true
     @State private var isNearBottom: Bool = true
     @State private var isNearTop: Bool = true
+    @State private var scrollPosition = ScrollPosition(idType: String.self)
     @State private var showSystemPromptSheet: Bool = false
     @State private var showModelParametersSheet: Bool = false
     @State private var showImagePicker: Bool = false
@@ -222,7 +223,7 @@ private extension ChatView {
                     if !isNearTop && !loadedState.messages.isEmpty {
                         scrollAnchorButton(isTop: true) {
                             withAnimation(.easeInOut(duration: 0.35)) {
-                                proxy.scrollTo("scroll-top", anchor: .top)
+                                scrollPosition.scrollTo(edge: .top)
                             }
                         }
                     }
@@ -231,7 +232,7 @@ private extension ChatView {
                     if !isNearBottom && !loadedState.messages.isEmpty {
                         scrollAnchorButton(isTop: false) {
                             withAnimation(.easeInOut(duration: 0.35)) {
-                                proxy.scrollTo("scroll-bottom")
+                                scrollPosition.scrollTo(edge: .bottom)
                             }
                             shouldAutoScroll = true
                         }
@@ -248,12 +249,12 @@ private extension ChatView {
     ) -> some View {
         scrollViewContent(loadedState)
             .onScrollGeometryChange(for: Bool.self) { geo in
-                geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height < 80
+                geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height < 150
             } action: { _, newValue in
                 isNearBottom = newValue
             }
             .onScrollGeometryChange(for: Bool.self) { geo in
-                geo.contentOffset.y < 80
+                geo.contentOffset.y < 150
             } action: { _, newValue in
                 isNearTop = newValue
             }
@@ -306,6 +307,7 @@ private extension ChatView {
                 messagesList(loadedState)
             }
         }
+        .scrollPosition($scrollPosition)
 #if os(iOS)
         .scrollDismissesKeyboard(.interactively)
 #elseif os(macOS)
