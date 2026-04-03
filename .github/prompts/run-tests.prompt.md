@@ -5,17 +5,48 @@ agent: "agent"
 
 Run the full unit test suite for the project and report results.
 
-## Steps
+## MCP Detection
 
-1. **Run all tests** using `xcodebuild test` with the `openclient-llm` scheme targeting an iOS Simulator
-2. **Report results**: list every test case with pass/fail status
+Before running tests, check whether the **XcodeBuildMCP** MCP server is available by searching for its tools using `tool_search_tool_regex` with the pattern `mcp_xcodebuildmcp_test_sim`. Then follow the appropriate path below.
+
+---
+
+## Path A — XcodeBuildMCP available (preferred)
+
+1. **Resolve the absolute project path** by running:
+   ```bash
+   find "$(pwd)" -maxdepth 2 -name "openclient-llm.xcodeproj" | head -1
+   ```
+   Use the resulting absolute path for all subsequent MCP calls.
+
+2. **Verify session defaults** by calling `mcp_xcodebuildmcp_session_show_defaults`.
+   - Defaults are pre-configured in `.xcodebuildmcp/config.yaml` and loaded automatically at server startup:
+     - scheme: `openclient-llm`
+     - simulator: `iPhone 17 Pro Max`
+   - If `projectPath` is missing or resolves incorrectly (relative paths may fail), set it with `mcp_xcodebuildmcp_session_set_defaults` using the absolute path resolved in step 1.
+   - Only override other values if they are missing or wrong.
+
+3. **Run all tests** by calling `mcp_xcodebuildmcp_test_sim` (no extra arguments needed if defaults are set).
+4. **Report results**: list every test case with pass/fail status.
+5. **If any test fails**:
+   - Investigate the failure by reading the relevant test and source files.
+   - Fix the issue in the source code (not in the test, unless the test itself is wrong).
+   - Call `mcp_xcodebuildmcp_test_sim` again to confirm the fix.
+   - Repeat until all tests pass.
+6. **Report final count**: total tests, passed, failed.
+
+---
+
+## Path B — XcodeBuildMCP not available (fallback)
+
+1. **Run all tests** using the shell command below.
+2. **Report results**: list every test case with pass/fail status.
 3. **If any test fails**:
-   - Investigate the failure cause by reading the relevant test and source files
-   - Fix the issue in the source code (not in the test, unless the test itself is wrong)
-   - Re-run the tests to confirm the fix
-   - Repeat until all tests pass
-
-## Command
+   - Investigate the failure by reading the relevant test and source files.
+   - Fix the issue in the source code (not in the test, unless the test itself is wrong).
+   - Re-run the command to confirm the fix.
+   - Repeat until all tests pass.
+4. **Report final count**: total tests, passed, failed.
 
 ```bash
 xcodebuild test \
@@ -33,6 +64,8 @@ To read failed test details after the run:
 ```bash
 grep -A 5 "failed" /tmp/xcodebuild_test.txt
 ```
+
+---
 
 ## Rules
 
