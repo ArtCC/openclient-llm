@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [0.0.2] - 2026-04-02
+## [0.0.1-build-12] - 2026-04-03
 
 ### Added
 
@@ -42,7 +42,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - macOS app name showing as the Xcode target name (`openclient-llm-macOS`) instead of `OpenClient` in Finder and TestFlight installations
 - macOS Keychain access prompting for the user's login password on first launch; now uses Data Protection Keychain silently
 
-## [0.0.1] - 2026-04-02
+## [0.0.1-build-11] - 2026-04-02
 
 ### Added
 
