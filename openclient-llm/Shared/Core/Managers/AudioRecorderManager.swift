@@ -15,6 +15,7 @@ final class AudioRecorderManager {
     // MARK: - Properties
 
     private(set) var isRecording: Bool = false
+    private(set) var recordingDuration: TimeInterval = 0
 
     private var audioRecorder: AVAudioRecorder?
     private var recordingURL: URL?
@@ -43,6 +44,7 @@ final class AudioRecorderManager {
             recordingURL = url
             startTime = Date()
             isRecording = true
+            startDurationTracking()
         } catch {
             LogManager.error("Failed to start recording: \(error.localizedDescription)")
         }
@@ -56,6 +58,7 @@ final class AudioRecorderManager {
 
         recorder.stop()
         isRecording = false
+        recordingDuration = 0
 
         #if os(iOS)
         deactivateAudioSession()
@@ -76,11 +79,36 @@ final class AudioRecorderManager {
 
         completion(data, duration)
     }
+
+    func cancelRecording() {
+        guard let recorder = audioRecorder else { return }
+        recorder.stop()
+        isRecording = false
+        recordingDuration = 0
+        if let url = recordingURL {
+            try? FileManager.default.removeItem(at: url)
+        }
+        recordingURL = nil
+        audioRecorder = nil
+        startTime = nil
+        #if os(iOS)
+        deactivateAudioSession()
+        #endif
+    }
 }
 
 // MARK: - Private
 
 private extension AudioRecorderManager {
+    func startDurationTracking() {
+        Task {
+            while isRecording {
+                try? await Task.sleep(for: .milliseconds(500))
+                recordingDuration = startTime.map { Date().timeIntervalSince($0) } ?? 0
+            }
+        }
+    }
+
     #if os(iOS)
     func configureAudioSession() {
         let session = AVAudioSession.sharedInstance()

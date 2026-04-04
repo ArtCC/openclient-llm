@@ -23,11 +23,46 @@ struct ChatInputBarView: View {
     let onAudioRecorded: (Data, TimeInterval) -> Void
 
     @State private var audioRecorder = AudioRecorderManager()
+    @State private var isPulsing = false
     @Binding var showImageFilePicker: Bool
 
     // MARK: - View
 
     var body: some View {
+        ZStack {
+            if audioRecorder.isRecording {
+                recordingBar
+                    .transition(.asymmetric(
+                        insertion: .push(from: .trailing).combined(with: .opacity),
+                        removal: .push(from: .leading).combined(with: .opacity)
+                    ))
+            } else if loadedState.isTranscribing {
+                transcribingBar
+                    .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .center)))
+            } else {
+                normalBar
+                    .transition(.asymmetric(
+                        insertion: .push(from: .leading).combined(with: .opacity),
+                        removal: .push(from: .trailing).combined(with: .opacity)
+                    ))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .glassEffect(.regular, in: .capsule)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+        .animation(.spring(duration: 0.35), value: audioRecorder.isRecording)
+        .animation(.spring(duration: 0.35), value: loadedState.isTranscribing)
+    }
+}
+
+// MARK: - Private
+
+private extension ChatInputBarView {
+    // MARK: Bar states
+
+    var normalBar: some View {
         HStack(spacing: 8) {
             attachmentMenu
 
@@ -57,17 +92,83 @@ struct ChatInputBarView: View {
 
             actionButton
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .glassEffect(.regular, in: .capsule)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 8)
     }
-}
 
-// MARK: - Private
+    var recordingBar: some View {
+        HStack(spacing: 12) {
+            recordingIndicator
 
-private extension ChatInputBarView {
+            Text(timerText)
+                .font(.body.monospacedDigit())
+                .foregroundStyle(.primary)
+                .contentTransition(.numericText())
+
+            Spacer()
+
+            Button { cancelCurrentRecording() } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.title)
+                    .foregroundStyle(.secondary)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(String(localized: "Cancel Recording"))
+
+            Button { stopRecording() } label: {
+                Image(systemName: "stop.circle.fill")
+                    .font(.title)
+                    .foregroundStyle(.red)
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Circle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(String(localized: "Stop Recording"))
+        }
+        .onAppear { startPulse() }
+        .onDisappear { isPulsing = false }
+    }
+
+    var transcribingBar: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "waveform")
+                .foregroundStyle(.secondary)
+
+            Text(String(localized: "Transcribing..."))
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            ProgressView()
+                .controlSize(.small)
+        }
+        .frame(minHeight: 44)
+    }
+
+    // MARK: Recording indicator
+
+    var recordingIndicator: some View {
+        ZStack {
+            Circle()
+                .fill(.red.opacity(0.25))
+                .frame(width: 28, height: 28)
+                .scaleEffect(isPulsing ? 1.5 : 1.0)
+                .opacity(isPulsing ? 0.0 : 0.8)
+
+            Circle()
+                .fill(.red)
+                .frame(width: 10, height: 10)
+        }
+        .frame(width: 44, height: 44)
+    }
+
+    var timerText: String {
+        let total = Int(audioRecorder.recordingDuration)
+        return String(format: "%d:%02d", total / 60, total % 60)
+    }
+
+    // MARK: Normal bar subviews
+
     @ViewBuilder
     var attachmentMenu: some View {
         Menu {
@@ -110,13 +211,6 @@ private extension ChatInputBarView {
     var actionButton: some View {
         if loadedState.isStreaming {
             stopStreamingButton
-        } else if loadedState.isTranscribing {
-            ProgressView()
-                .controlSize(.small)
-                .frame(minWidth: 44, minHeight: 44)
-                .transition(.scale.combined(with: .opacity))
-        } else if audioRecorder.isRecording {
-            stopRecordingButton
         } else {
             let hasText = !loadedState.inputText
                 .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -143,16 +237,6 @@ private extension ChatInputBarView {
         .transition(.scale.combined(with: .opacity))
     }
 
-    var stopRecordingButton: some View {
-        Button { stopRecording() } label: {
-            Image(systemName: "stop.circle.fill").font(.title).foregroundStyle(.red)
-                .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(String(localized: "Stop Recording"))
-        .transition(.scale.combined(with: .opacity))
-    }
-
     var sendButton: some View {
         Button { inputText = ""; onSend() } label: {
             Image(systemName: "arrow.up.circle.fill").font(.title).foregroundStyle(Color.appAccent)
@@ -173,6 +257,8 @@ private extension ChatInputBarView {
         .transition(.scale.combined(with: .opacity))
     }
 
+    // MARK: Actions
+
     func startRecording() {
         audioRecorder.startRecording()
     }
@@ -181,6 +267,17 @@ private extension ChatInputBarView {
         audioRecorder.stopRecording { data, duration in
             guard let data else { return }
             onAudioRecorded(data, duration)
+        }
+    }
+
+    func cancelCurrentRecording() {
+        audioRecorder.cancelRecording()
+    }
+
+    func startPulse() {
+        isPulsing = false
+        withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: false)) {
+            isPulsing = true
         }
     }
 }
