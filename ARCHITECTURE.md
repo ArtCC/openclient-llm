@@ -125,6 +125,7 @@ openclient-llm/                              # iOS target
 │   │   │   ├── AudioRecorderManager.swift
 │   │   │   ├── CloudSyncManager.swift
 │   │   │   ├── ConversationStartersManager.swift
+│   │   │   ├── HapticsManager.swift
 │   │   │   ├── KeychainManager.swift
 │   │   │   ├── LogManager.swift
 │   │   │   ├── SettingsManager.swift

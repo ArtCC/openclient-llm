@@ -23,22 +23,32 @@ final class AppleSpeechRecognitionManager: AppleSpeechRecognitionManagerProtocol
             throw AppleSpeechError.notAuthorized
         }
 
-        guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else {
-            throw AppleSpeechError.recognizerUnavailable
-        }
-
-        let request = SFSpeechURLRecognitionRequest(url: audioFileURL)
-        request.requiresOnDeviceRecognition = true
-        request.shouldReportPartialResults = false
-
+        // SFSpeechRecognizer must be created and used from the main queue.
+        // hasResumed guards against the callback being invoked more than once,
+        // which would crash withCheckedThrowingContinuation.
         return try await withCheckedThrowingContinuation { continuation in
-            recognizer.recognitionTask(with: request) { result, error in
-                if let error {
-                    continuation.resume(throwing: error)
+            DispatchQueue.main.async {
+                guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else {
+                    continuation.resume(throwing: AppleSpeechError.recognizerUnavailable)
                     return
                 }
-                if let result, result.isFinal {
-                    continuation.resume(returning: result.bestTranscription.formattedString)
+
+                let request = SFSpeechURLRecognitionRequest(url: audioFileURL)
+                request.requiresOnDeviceRecognition = true
+                request.shouldReportPartialResults = false
+
+                var hasResumed = false
+                recognizer.recognitionTask(with: request) { result, error in
+                    DispatchQueue.main.async {
+                        guard !hasResumed else { return }
+                        if let error {
+                            hasResumed = true
+                            continuation.resume(throwing: error)
+                        } else if let result, result.isFinal {
+                            hasResumed = true
+                            continuation.resume(returning: result.bestTranscription.formattedString)
+                        }
+                    }
                 }
             }
         }
