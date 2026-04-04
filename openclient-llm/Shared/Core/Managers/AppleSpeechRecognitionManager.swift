@@ -10,11 +10,26 @@ import Foundation
 import Speech
 
 protocol AppleSpeechRecognitionManagerProtocol: Sendable {
+    @MainActor
     func transcribe(audioFileURL: URL) async throws -> String
 }
 
-// Safety: SFSpeechRecognizer is used from a single async context per call.
+/// Wraps SFSpeechRecognizer for file-based transcription.
+///
+/// The class is @MainActor because SFSpeechRecognizer must be created and driven
+/// from the main thread. Storing recognizer, task and continuation as retained
+/// properties prevents the three root causes of the previous crash:
+///   1. recognizer going out of scope before the callback fires (EXC_BAD_ACCESS)
+///   2. SFSpeechRecognitionTask being released before it delivers a result
+///   3. data-race on a captured `var` guard between concurrent callback invocations
+@MainActor
 final class AppleSpeechRecognitionManager: AppleSpeechRecognitionManagerProtocol, @unchecked Sendable {
+    // MARK: - Properties
+
+    private var recognizer: SFSpeechRecognizer?
+    private var currentTask: SFSpeechRecognitionTask?
+    private var pendingContinuation: CheckedContinuation<String, Error>?
+
     // MARK: - Public
 
     func transcribe(audioFileURL: URL) async throws -> String {
@@ -23,32 +38,26 @@ final class AppleSpeechRecognitionManager: AppleSpeechRecognitionManagerProtocol
             throw AppleSpeechError.notAuthorized
         }
 
-        // SFSpeechRecognizer must be created and used from the main queue.
-        // hasResumed guards against the callback being invoked more than once,
-        // which would crash withCheckedThrowingContinuation.
+        // Cancel any stale operation from a previous (unexpected) call.
+        resetState()
+
+        let rec = SFSpeechRecognizer()
+        guard let rec, rec.isAvailable else {
+            throw AppleSpeechError.recognizerUnavailable
+        }
+        recognizer = rec
+
+        let request = SFSpeechURLRecognitionRequest(url: audioFileURL)
+        request.shouldReportPartialResults = false
+
         return try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.main.async {
-                guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else {
-                    continuation.resume(throwing: AppleSpeechError.recognizerUnavailable)
-                    return
-                }
-
-                let request = SFSpeechURLRecognitionRequest(url: audioFileURL)
-                request.requiresOnDeviceRecognition = true
-                request.shouldReportPartialResults = false
-
-                var hasResumed = false
-                recognizer.recognitionTask(with: request) { result, error in
-                    DispatchQueue.main.async {
-                        guard !hasResumed else { return }
-                        if let error {
-                            hasResumed = true
-                            continuation.resume(throwing: error)
-                        } else if let result, result.isFinal {
-                            hasResumed = true
-                            continuation.resume(returning: result.bestTranscription.formattedString)
-                        }
-                    }
+            self.pendingContinuation = continuation
+            currentTask = rec.recognitionTask(with: request) { [weak self] result, error in
+                // Dispatch to @MainActor via a Task so the callback is always
+                // processed on the main actor regardless of which thread the
+                // Speech framework uses to deliver it.
+                Task { @MainActor [weak self] in
+                    self?.handleResult(result: result, error: error)
                 }
             }
         }
@@ -58,6 +67,30 @@ final class AppleSpeechRecognitionManager: AppleSpeechRecognitionManagerProtocol
 // MARK: - Private
 
 private extension AppleSpeechRecognitionManager {
+    func handleResult(result: SFSpeechRecognitionResult?, error: Error?) {
+        // Guard against the Speech framework calling the handler more than once.
+        // Setting pendingContinuation to nil before resuming prevents double-resume.
+        guard let cont = pendingContinuation else { return }
+        pendingContinuation = nil
+        resetState()
+
+        if let error {
+            cont.resume(throwing: error)
+        } else if let result, result.isFinal {
+            cont.resume(returning: result.bestTranscription.formattedString)
+        } else {
+            // Defensive: callback with no error and no final result is unexpected
+            // but must not leave the continuation suspended forever.
+            cont.resume(throwing: AppleSpeechError.recognizerUnavailable)
+        }
+    }
+
+    func resetState() {
+        currentTask?.cancel()
+        currentTask = nil
+        recognizer = nil
+    }
+
     func requestAuthorization() async -> SFSpeechRecognizerAuthorizationStatus {
         await withCheckedContinuation { continuation in
             SFSpeechRecognizer.requestAuthorization { status in

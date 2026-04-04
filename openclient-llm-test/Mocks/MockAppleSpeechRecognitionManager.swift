@@ -9,7 +9,7 @@
 import Foundation
 @testable import openclient_llm
 
-// Safety: Only used within serialized @MainActor test methods.
+@MainActor
 final class MockAppleSpeechRecognitionManager: AppleSpeechRecognitionManagerProtocol, @unchecked Sendable {
     // MARK: - Properties
 
