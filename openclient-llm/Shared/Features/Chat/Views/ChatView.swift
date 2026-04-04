@@ -31,13 +31,19 @@ struct ChatView: View {
 
     var conversation: Conversation?
     var onConversationUpdated: (() -> Void)?
+    var onForkCreated: ((Conversation) -> Void)?
 
     // MARK: - Init
 
-    init(conversation: Conversation? = nil, onConversationUpdated: (() -> Void)? = nil) {
+    init(
+        conversation: Conversation? = nil,
+        onConversationUpdated: (() -> Void)? = nil,
+        onForkCreated: ((Conversation) -> Void)? = nil
+    ) {
         _viewModel = State(initialValue: ChatViewModel(conversation: conversation))
         self.conversation = conversation
         self.onConversationUpdated = onConversationUpdated
+        self.onForkCreated = onForkCreated
     }
 
     // MARK: - View
@@ -205,6 +211,7 @@ private extension ChatView {
         }
         .task {
             viewModel.onConversationUpdated = onConversationUpdated
+            viewModel.onForkCreated = onForkCreated
             viewModel.send(.viewAppeared)
         }
         .onChange(of: conversation) { _, newConversation in
@@ -231,7 +238,6 @@ private extension ChatView {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 VStack(spacing: 0) {
                     errorBanner(loadedState.errorMessage)
-                    regenerateBar(loadedState, viewModel: viewModel)
                     attachmentPreview(loadedState)
                     ChatInputBarView(
                         inputText: $inputText,
@@ -285,16 +291,12 @@ private extension ChatView {
         proxy: ScrollViewProxy
     ) -> some View {
         scrollViewContent(loadedState)
-            .onScrollGeometryChange(for: Bool.self) { geo in
-                geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height < 150
-            } action: { _, newValue in
-                isNearBottom = newValue
-            }
-            .onScrollGeometryChange(for: Bool.self) { geo in
-                geo.contentOffset.y < 150
-            } action: { _, newValue in
-                isNearTop = newValue
-            }
+            .onScrollGeometryChange(for: Bool.self) {
+                $0.contentSize.height - $0.contentOffset.y - $0.containerSize.height < 150
+            } action: { _, new in isNearBottom = new }
+            .onScrollGeometryChange(for: Bool.self) {
+                $0.contentOffset.y < 150
+            } action: { _, new in isNearTop = new }
             .onScrollPhaseChange { oldPhase, newPhase in
                 if newPhase == .interacting {
                     shouldAutoScroll = false
@@ -312,6 +314,13 @@ private extension ChatView {
             }
             .onChange(of: loadedState.scrollToBottomTrigger) {
                 proxy.scrollTo("scroll-bottom")
+            }
+            .task(id: loadedState.messages.isEmpty) {
+                guard !loadedState.messages.isEmpty else { return }
+                try? await Task.sleep(for: .milliseconds(120))
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    proxy.scrollTo("scroll-bottom")
+                }
             }
 #if os(iOS)
             .onReceive(
@@ -405,9 +414,10 @@ private extension ChatView {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color.primary)
                 .frame(width: 44, height: 44)
+                .glassEffect(.regular, in: .circle)
+                .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .glassEffect(.regular, in: .circle)
         .padding(.trailing, 16)
         .padding(isTop ? .top : .bottom, 16)
         .transition(.scale(scale: 0.8).combined(with: .opacity))

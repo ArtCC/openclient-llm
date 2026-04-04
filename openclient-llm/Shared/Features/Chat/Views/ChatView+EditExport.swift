@@ -39,35 +39,37 @@ extension ChatView {
         editingMessageText: Binding<String>
     ) -> some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                TextEditor(text: editingMessageText)
-                    .font(.body)
-                    .padding(12)
-                    .glassEffect(.regular, in: .rect(cornerRadius: 14))
-                    .frame(minHeight: 120)
-            }
-            .padding()
-            .navigationTitle(String(localized: "Edit Message"))
+            TextEditor(text: editingMessageText)
+                .font(.body)
+                .scrollContentBackground(.hidden)
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                .navigationTitle(String(localized: "Edit Message"))
 #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+                .navigationBarTitleDisplayMode(.inline)
 #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(String(localized: "Cancel")) {
-                        editingMessage.wrappedValue = nil
-                        editingMessageText.wrappedValue = ""
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(String(localized: "Cancel")) {
+                            editingMessage.wrappedValue = nil
+                            editingMessageText.wrappedValue = ""
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button(String(localized: "Resend")) {
+                            let content = editingMessageText.wrappedValue
+                            viewModel.send(.editMessage(id: message.id, newContent: content))
+                            editingMessage.wrappedValue = nil
+                            editingMessageText.wrappedValue = ""
+                        }
+                        .disabled(
+                            editingMessageText.wrappedValue
+                                .trimmingCharacters(in: .whitespacesAndNewlines)
+                                .isEmpty
+                        )
                     }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(String(localized: "Resend")) {
-                        let content = editingMessageText.wrappedValue
-                        viewModel.send(.editMessage(id: message.id, newContent: content))
-                        editingMessage.wrappedValue = nil
-                        editingMessageText.wrappedValue = ""
-                    }
-                    .disabled(editingMessageText.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
         }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)

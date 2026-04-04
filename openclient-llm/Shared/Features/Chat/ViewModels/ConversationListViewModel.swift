@@ -41,7 +41,7 @@ final class ConversationListViewModel {
 
         var allTags: [String] {
             let tagSet = conversations.flatMap(\.tags)
-            return Array(Set(tagSet)).sorted()
+            return Array(Set(tagSet)).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
         }
 
         var groupedConversations: [ConversationSection] {

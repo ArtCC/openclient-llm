@@ -141,55 +141,45 @@ private extension ConversationListView {
     }
 
     func conversationList(_ loadedState: ConversationListViewModel.LoadedState) -> some View {
-        VStack(spacing: 0) {
-            if !loadedState.allTags.isEmpty {
-                tagFilterBar(loadedState)
-                Divider()
-            }
-            List {
-                ForEach(loadedState.groupedConversations) { section in
-                    Section {
-                        ForEach(section.conversations) { conversation in
-                            conversationRow(conversation, loadedState: loadedState)
-                                .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
-                                .contextMenu {
-                                    conversationContextMenu(conversation)
-                                }
-                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                    Button(role: .destructive) {
-                                        conversationToDelete = conversation
-                                    } label: {
-                                        Label(String(localized: "Delete"), systemImage: "trash")
-                                    }
-                                }
-                        }
-                    } header: {
-                        HStack(spacing: 4) {
-                            if section.period == .pinned {
-                                Image(systemName: "pin.fill")
-                                    .font(.caption2)
+        List {
+            ForEach(loadedState.groupedConversations) { section in
+                Section {
+                    ForEach(section.conversations) { conversation in
+                        conversationRow(conversation, loadedState: loadedState)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                            .contextMenu {
+                                conversationContextMenu(conversation)
                             }
-                            Text(section.period.localizedTitle)
-                                .font(.poppins(.semiBold, size: 11, relativeTo: .caption2))
-                        }
-                        .foregroundStyle(.secondary)
-                        .textCase(nil)
-                        .padding(.horizontal, 4)
-                        .padding(.vertical, 6)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(.background)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    conversationToDelete = conversation
+                                } label: {
+                                    Label(String(localized: "Delete"), systemImage: "trash")
+                                }
+                            }
                     }
+                } header: {
+                        sectionHeader(for: section)
+                    }
+            }
+        }
+        #if os(macOS)
+        .listStyle(.plain)
+        #else
+        .listStyle(.plain)
+        .refreshable {
+            await viewModel.refreshAsync()
+        }
+        #endif
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if !loadedState.allTags.isEmpty {
+                VStack(spacing: 0) {
+                    tagFilterBar(loadedState)
+                    Divider()
                 }
+                .background(.regularMaterial)
             }
-            #if os(macOS)
-            .listStyle(.plain)
-            #else
-            .listStyle(.plain)
-            .refreshable {
-                await viewModel.refreshAsync()
-            }
-            #endif
         }
     }
 
@@ -222,6 +212,28 @@ private extension ConversationListView {
             conversationToDelete = conversation
         } label: {
             Label(String(localized: "Delete"), systemImage: "trash")
+        }
+    }
+
+    @ViewBuilder
+    func sectionHeader(for section: ConversationSection) -> some View {
+        HStack(spacing: 4) {
+            if section.period == .pinned {
+                Image(systemName: "pin.fill")
+                    .font(.caption2)
+            }
+            Text(section.period.localizedTitle)
+                .font(.poppins(.semiBold, size: 11, relativeTo: .caption2))
+        }
+        .foregroundStyle(.secondary)
+        .textCase(nil)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            Rectangle()
+                .fill(.regularMaterial)
+                .ignoresSafeArea(.container, edges: .horizontal)
         }
     }
 

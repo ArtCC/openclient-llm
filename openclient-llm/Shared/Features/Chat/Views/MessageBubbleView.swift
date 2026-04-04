@@ -63,6 +63,7 @@ private extension MessageBubbleView {
                         in: .rect(cornerRadius: 18)
                     )
             }
+            .contentShape(Rectangle())
             .contextMenu {
                 messageContextMenu(message.content)
             }
@@ -95,8 +96,19 @@ private extension MessageBubbleView {
                 if !isStreaming && !message.content.isEmpty && message.role == .assistant && hasTTS {
                     speakButton
                 }
+
+                if !isStreaming, !message.content.isEmpty, isLastMessage, let onRegenerateTapped {
+                    Button(action: onRegenerateTapped) {
+                        Label(String(localized: "Regenerate Response"), systemImage: "arrow.clockwise")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 2)
+                }
             }
             .frame(minHeight: 28, alignment: .center)
+            .contentShape(Rectangle())
             .contextMenu {
                 if !message.content.isEmpty {
                     messageContextMenu(message.content)

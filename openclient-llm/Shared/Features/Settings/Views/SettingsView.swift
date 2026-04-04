@@ -416,12 +416,12 @@ private extension SettingsView {
 
     func dangerSection() -> some View {
         Section {
-            Button(role: .destructive) {
+            Button {
                 showResetAlert = true
             } label: {
                 Label(String(localized: "Reset App Data"), systemImage: "trash")
+                    .foregroundStyle(.red)
             }
-            .tint(.red)
         } header: {
             Text(String(localized: "App Data"))
         } footer: {

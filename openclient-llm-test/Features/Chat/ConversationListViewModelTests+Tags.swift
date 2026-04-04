@@ -49,8 +49,29 @@ extension ConversationListViewModelTests {
             XCTFail("Expected loaded state")
             return
         }
-        // allTags should be sorted and deduplicated
+        // allTags should be sorted alphabetically (case-insensitive) and deduplicated
         XCTAssertEqual(loadedState.allTags, ["ai", "coding", "swift"])
+    }
+
+    func test_allTags_sortedCaseInsensitively() async throws {
+        // Given — mixed-case tags to verify case-insensitive alphabetical ordering
+        let conv1 = Conversation(modelId: "gpt-4", tags: ["Swift", "AI"])
+        let conv2 = Conversation(modelId: "gpt-4", tags: ["coding", "Backend"])
+        mockLoadConversations.result = .success([conv1, conv2])
+        mockFetchModels.result = .success([])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        // "AI" < "Backend" < "coding" < "Swift" when sorted case-insensitively
+        let expectedOrder = ["AI", "Backend", "coding", "Swift"]
+        XCTAssertEqual(loadedState.allTags, expectedOrder)
+        // Verify the first tag is not affected by case — "All" chip is rendered before this list in the view
+        XCTAssertFalse(loadedState.allTags.isEmpty)
     }
 
     // MARK: - Tests — tagFilterChanged

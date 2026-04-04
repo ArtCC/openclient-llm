@@ -100,6 +100,10 @@ private extension HomeView {
                     conversation: conversation,
                     onConversationUpdated: {
                         conversationListId = UUID()
+                    },
+                    onForkCreated: { fork in
+                        selectedConversation = fork
+                        conversationListId = UUID()
                     }
                 )
             }
@@ -113,11 +117,16 @@ private extension HomeView {
             }
             .id(conversationListId)
             .navigationTitle(String(localized: "Chats"))
+            .navigationSplitViewColumnWidth(320)
         } detail: {
             if let selectedConversation {
                 ChatView(
                     conversation: selectedConversation,
                     onConversationUpdated: {
+                        conversationListId = UUID()
+                    },
+                    onForkCreated: { fork in
+                        self.selectedConversation = fork
                         conversationListId = UUID()
                     }
                 )
@@ -175,6 +184,7 @@ private extension HomeView {
             }
         }
         .navigationTitle(String(localized: "OpenClient"))
+        .navigationSplitViewColumnWidth(180)
     }
 
     @ViewBuilder
@@ -191,6 +201,10 @@ private extension HomeView {
                     ChatView(
                         conversation: conversation,
                         onConversationUpdated: {
+                            conversationListId = UUID()
+                        },
+                        onForkCreated: { fork in
+                            selectedConversation = fork
                             conversationListId = UUID()
                         }
                     )

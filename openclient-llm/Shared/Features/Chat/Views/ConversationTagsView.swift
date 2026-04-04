@@ -47,7 +47,7 @@ struct ConversationTagsView: View {
                         Button(String(localized: "Add")) {
                             addTag()
                         }
-                        .disabled(newTagText.trimmingCharacters(in: .whitespaces).isEmpty)
+                        .disabled(newTagText.trimmingCharacters(in: .whitespaces).isEmpty || tags.count >= 3)
                     }
                 } header: {
                     Text(String(localized: "New Tag"))
@@ -69,7 +69,9 @@ struct ConversationTagsView: View {
                     } header: {
                         Text(String(localized: "Tags"))
                     } footer: {
-                        Text(String(localized: "Swipe left to remove a tag."))
+                        Text(tags.count >= 3
+                            ? String(localized: "Maximum of 3 tags reached. Remove one to add another.")
+                            : String(localized: "Swipe left to remove a tag."))
                     }
                 }
             }
@@ -105,7 +107,7 @@ struct ConversationTagsView: View {
 private extension ConversationTagsView {
     func addTag() {
         let trimmed = newTagText.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, !tags.contains(trimmed) else { return }
+        guard !trimmed.isEmpty, !tags.contains(trimmed), tags.count < 3 else { return }
         tags.append(trimmed)
         newTagText = ""
     }
