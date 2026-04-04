@@ -16,6 +16,7 @@ final class ConversationListViewModel {
     enum Event {
         case viewAppeared
         case newConversationTapped
+        case refreshTapped
         case conversationTapped(Conversation)
         case deleteConversation(UUID)
         case searchChanged(String)
@@ -40,7 +41,7 @@ final class ConversationListViewModel {
 
         var allTags: [String] {
             let tagSet = conversations.flatMap(\.tags)
-            return Array(Set(tagSet)).sorted()
+            return Array(Set(tagSet)).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
         }
 
         var groupedConversations: [ConversationSection] {
@@ -78,6 +79,7 @@ final class ConversationListViewModel {
         self.updateConversationTagsUseCase = updateConversationTagsUseCase
         self.fetchModelsUseCase = fetchModelsUseCase
         self.settingsManager = settingsManager
+        observeAppDataReset()
     }
 
     // MARK: - Input functions
@@ -88,6 +90,8 @@ final class ConversationListViewModel {
             loadData()
         case .newConversationTapped:
             createNewConversation()
+        case .refreshTapped:
+            refresh()
         case .conversationTapped(let conversation):
             selectConversation(conversation)
         case .deleteConversation(let id):
@@ -105,6 +109,11 @@ final class ConversationListViewModel {
 
     func refresh() {
         reloadConversations()
+    }
+
+    func refreshAsync() async {
+        reloadConversations()
+        await Task.yield()
     }
 }
 
@@ -268,6 +277,17 @@ private extension ConversationListViewModel {
             guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
             currentState.errorMessage = nil
             state = .loaded(currentState)
+        }
+    }
+
+    func observeAppDataReset() {
+        Task { [weak self] in
+            let notifications = NotificationCenter.default
+                .notifications(named: .appDataDidReset)
+            for await _ in notifications {
+                guard let self else { return }
+                await MainActor.run { self.loadData() }
+            }
         }
     }
 }

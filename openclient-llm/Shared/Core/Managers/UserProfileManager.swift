@@ -14,6 +14,7 @@ protocol UserProfileManagerProtocol: Sendable {
     func getLocalProfile() -> UserProfile
     func getCloudProfile() -> UserProfile?
     func resolveCloudSyncConflict(keepLocal: Bool)
+    func deleteLocalProfile()
 }
 
 /// Manages the user's personal context with optional iCloud file-based sync.
@@ -105,6 +106,10 @@ final class UserProfileManager: UserProfileManagerProtocol, @unchecked Sendable 
                 saveToLocal(cloud)
             }
         }
+    }
+
+    func deleteLocalProfile() {
+        defaults.removeObject(forKey: Keys.profileData)
     }
 }
 

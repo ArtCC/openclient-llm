@@ -66,4 +66,30 @@ final class StreamMessageUseCaseTests: XCTestCase {
             // Expected
         }
     }
+
+    func test_execute_withReasoningChunks_streamsAllChunks() async throws {
+        // Given
+        mockRepository.streamChunks = [
+            .reasoning("Step 1: "),
+            .reasoning("Step 2"),
+            .token("Answer")
+        ]
+        let messages = [ChatMessage(role: .user, content: "Think step by step")]
+
+        // When
+        var receivedReasoning: [String] = []
+        var receivedTokens: [String] = []
+        let stream = sut.execute(messages: messages, model: "deepseek-r1", parameters: .default)
+        for try await chunk in stream {
+            switch chunk {
+            case .reasoning(let text): receivedReasoning.append(text)
+            case .token(let token): receivedTokens.append(token)
+            default: break
+            }
+        }
+
+        // Then
+        XCTAssertEqual(receivedReasoning, ["Step 1: ", "Step 2"])
+        XCTAssertEqual(receivedTokens, ["Answer"])
+    }
 }

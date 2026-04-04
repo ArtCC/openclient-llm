@@ -3,73 +3,32 @@ description: "Use when implementing web browsing or web search capabilities, int
 applyTo: "**/*.swift"
 ---
 
-# Web Search — Integration via LiteLLM
+# Web Search — Integration via LiteLLM Search API
 
 ## References
 
 - LiteLLM Search Overview: https://docs.litellm.ai/docs/search/
-- LiteLLM Brave Search: https://docs.litellm.ai/docs/search/brave
-- LiteLLM Web Search Interception: https://docs.litellm.ai/docs/integrations/websearch_interception
+- LiteLLM ≥ v1.78.7 required for the `/v1/search` endpoint
 
 ## Overview
 
-Web search is implemented **entirely through LiteLLM**. The app never calls any search provider API directly — it delegates all search requests to the user's LiteLLM proxy server, which handles the search provider configuration, API keys, and result fetching transparently.
-
-**Default provider**: Brave Search (configured in the user's LiteLLM server). Any LiteLLM-supported search provider works without changes to the app: Perplexity, Tavily, Exa AI, Google PSE, DuckDuckGo, SearXNG, etc. The app is agnostic to which provider the server uses.
+Web search is implemented **exclusively through the LiteLLM Search API**. The app never calls any search provider API directly and never uses function calling / tool interception for search. All search requests go to the user's LiteLLM proxy via `POST /v1/search/{search_tool_name}`. LiteLLM handles provider selection, API keys, and result fetching transparently on the server side.
 
 - **No search API keys in the app** — keys live in LiteLLM's server environment
-- **No direct calls to `api.search.brave.com`** or any other search API
+- **No direct calls to any search provider** (Brave, Perplexity, Tavily, etc.)
+- **No function calling / `litellm_web_search` tool** — the dedicated `/v1/search` endpoint is used instead
+- Works with **any model** — no function calling support required
 - The LiteLLM base URL is the same one already configured by the user for chat
 
-## Two Modes
-
-The app implements **both modes** simultaneously. They are complementary, not mutually exclusive.
-
-### Mode A — Manual Search (globe button, any model)
-
-The user activates a **globe button** in the chat input bar (inspired by LibreChat). When active:
-
-1. App calls `POST /v1/search/{search_tool_name}` on LiteLLM to fetch results
-2. Results are injected as context into the chat request
-3. App calls `POST /chat/completions` with the enriched context
+### Flow
 
 ```
-User taps 🌐  →  /v1/search  →  inject results  →  /chat/completions  →  response with citations
+User taps 🌐  →  POST /v1/search/{tool_name}  →  inject results as context  →  POST /chat/completions  →  response with citations
 ```
-
-**Works with any model** — no function calling required. The user controls web search explicitly.
-
-### Mode B — Automatic Interception (transparent, capable models)
-
-When the selected model supports function calling (`supports_function_calling: true` from `/model/info`), the app automatically includes the `litellm_web_search` tool in the `tools` array of every `POST /chat/completions` request. LiteLLM intercepts the tool call, executes the search, and returns the final answer — all transparently.
-
-```
-/chat/completions  →  LiteLLM detects tool call  →  executes search  →  follow-up completion  →  final answer
-```
-
-**Requires**: model supports function calling AND LiteLLM server has `websearch_interception` callback configured with a `search_tool_name`.
-
-**The user does nothing** — no globe button needed when this mode is active.
-
-### Decision logic
-
-```
-if model.supportsFunctionCalling && webSearchInterceptionEnabled {
-    // Mode B: include litellm_web_search in tools array automatically
-} else if userToggledWebSearch {
-    // Mode A: call /v1/search first, then inject context into /chat/completions
-}
-```
-
-`webSearchInterceptionEnabled` is a setting the user configures in the app (matches whether their LiteLLM server has the callback configured).
-
-Both modes can coexist: Mode B is transparent and automatic; Mode A is explicit and user-controlled as a fallback.
 
 ---
 
-## Mode A — Implementation Details
-
-### LiteLLM Search Endpoint
+## LiteLLM Search Endpoint
 
 ```
 POST {litellm_base_url}/v1/search/{search_tool_name}
@@ -113,6 +72,21 @@ Content-Type: application/json
 | `country` | String | No | Country code filter (e.g., `"US"`, `"ES"`) |
 | `max_tokens_per_page` | Int | No | Max tokens per result page (default: 1024) |
 
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `object` | String | Always `"search"` |
+| `results` | Array | List of search results |
+| `results[].title` | String | Title of the result |
+| `results[].url` | String | URL of the result |
+| `results[].snippet` | String | Text snippet |
+| `results[].date` | String? | Optional publication date |
+
+---
+
+## Implementation
+
 ### Models
 
 ```swift
@@ -148,14 +122,14 @@ protocol WebSearchUseCaseProtocol: Sendable {
 }
 ```
 
-- Calls `APIClient` with the LiteLLM base URL (already known)
+- Calls `APIClient` using the LiteLLM base URL already configured
 - The search tool name is read from `SettingsManager` (e.g. `"brave-search"`)
 - Uses the same `Authorization: Bearer` header as chat requests
 - **Never** constructs URLs to external search providers
 
 ### Context Injection
 
-Inject results as a system message before the user message:
+Inject results as a system message prepended before the user message:
 
 ```
 Based on the following web search results for "{query}":
@@ -174,43 +148,9 @@ Use these sources to answer the user's question. Cite sources using [Source Titl
 
 ---
 
-## Mode B — Implementation Details
-
-### Tool Definition
-
-When Mode B is active, include this entry in the `tools` array of every `/chat/completions` request:
-
-```json
-{
-  "type": "function",
-  "function": {
-    "name": "litellm_web_search",
-    "description": "Search the web for current information",
-    "parameters": {
-      "type": "object",
-      "properties": {
-        "query": { "type": "string", "description": "Search query" }
-      },
-      "required": ["query"]
-    }
-  }
-}
-```
-
-LiteLLM intercepts the `litellm_web_search` tool call automatically and returns the final grounded answer. The app does not need to handle the tool call response — LiteLLM resolves the full agentic loop on the server side.
-
-### When to inject
-
-- Read `model.supportsFunctionCalling` from the model info already fetched
-- Read `webSearchInterceptionEnabled` from `SettingsManager`
-- Only inject the tool if both are `true`
-- Do **not** show the globe button in the input bar when Mode B is active (it's invisible to the user)
-
----
-
 ## LiteLLM Server Configuration (reference for users)
 
-### For Mode A — `search_tools` in config.yaml
+Add `search_tools` to the LiteLLM proxy `config.yaml`. The `search_tool_name` value must match what is configured in the app's settings.
 
 ```yaml
 search_tools:
@@ -219,27 +159,6 @@ search_tools:
       search_provider: brave
       api_key: os.environ/BRAVE_API_KEY
 ```
-
-### For Mode B — `websearch_interception` callback in config.yaml
-
-```yaml
-litellm_settings:
-  callbacks:
-    - websearch_interception:
-        enabled_providers:
-          - openai
-          - anthropic
-          - ollama
-        search_tool_name: brave-search
-
-search_tools:
-  - search_tool_name: brave-search
-    litellm_params:
-      search_provider: brave
-      api_key: os.environ/BRAVE_API_KEY
-```
-
-Both modes share the same `search_tools` definition — only one `BRAVE_API_KEY` needed on the server.
 
 ### Supported providers (agnostic to the app)
 
@@ -252,14 +171,16 @@ Both modes share the same `search_tools` definition — only one `BRAVE_API_KEY`
 | DuckDuckGo | `duckduckgo` | `DUCKDUCKGO_API_BASE` |
 | SearXNG | `searxng` | `SEARXNG_API_BASE` |
 | Google PSE | `google_pse` | `GOOGLE_PSE_API_KEY` + `GOOGLE_PSE_ENGINE_ID` |
+| Firecrawl | `firecrawl` | `FIRECRAWL_API_KEY` |
+| Linkup | `linkup` | `LINKUP_API_KEY` |
+| Serper | `serper` | `SERPER_API_KEY` |
 
 ---
 
 ## Settings
 
-- **Search tool name**: Stored in `SettingsManager` (UserDefaults), default: `"brave-search"` — must match `search_tool_name` in the LiteLLM config
-- **Web Search Interception enabled**: Bool in `SettingsManager` — user enables this if their server has the `websearch_interception` callback configured (enables Mode B)
-- **Result count** (Mode A): Default 5, configurable (3–10)
+- **Search tool name**: Stored in `SettingsManager` (UserDefaults), default: `"brave-search"` — must match `search_tool_name` in the LiteLLM `config.yaml`
+- **Result count**: Default 5, configurable (3–10)
 - **No search API key in the app** — key management is the server's responsibility
 
 ---
@@ -268,18 +189,18 @@ Both modes share the same `search_tools` definition — only one `BRAVE_API_KEY`
 
 ### Globe button in chat input bar
 
-- **SF Symbol**: `globe` (inactive) / `globe.badge.chevron.backward` or filled variant (active)
+- **SF Symbol**: `globe` (inactive) / filled or tinted variant (active)
 - Placed in the input bar alongside the model selector and other action buttons
-- **Only visible when Mode B is NOT active** (i.e., the current model does not support function calling, or interception is disabled in settings)
+- Always visible — works with any model, no capability check required
 - When tapped: toggles `webSearchEnabled` on the current conversation
 - When active: show globe with accent color tint
-- During search (Mode A): show a brief "Searching the web..." inline status below the input bar
+- During search: show a brief "Searching the web…" inline status below the input bar while the `/v1/search` request is in flight
 
 ### Response rendering
 
 - Render citations as tappable `Link` views: `[Source Title](URL)`
-- Show a collapsible "Sources" section below the assistant response when Mode A results are available
-- Mode B citations appear inline in the LLM response text — no special handling needed
+- Show a collapsible "Sources" section below the assistant response when search results are available
+- Display result count (e.g. "3 sources") in the collapsed header
 
 ---
 
@@ -295,10 +216,9 @@ Both modes share the same `search_tools` definition — only one `BRAVE_API_KEY`
 
 ## Error Handling
 
-- Search tool not configured on server (Mode A 404) → Show: "Web search is not configured on your LiteLLM server. Add a `search_tools` entry to your config.yaml."
+- Search tool not configured on server (404) → Show: "Web search is not configured on your LiteLLM server. Add a `search_tools` entry to your config.yaml."
 - 401 → LiteLLM API key invalid or missing
-- 404 → `search_tool_name` in Settings does not match any tool on the server
-- 429 → Rate limited by the search provider, show "Try again later"
+- 404 → `search_tool_name` in Settings does not match any configured tool on the server
+- 429 → Rate limited by the search provider — show "Try again later"
 - Network error → Fall back gracefully: send the message without search context
 - Empty results → Inform user "No relevant web results found", proceed without context
-- Mode B: if LiteLLM returns a raw `tool_calls` response without resolving it (interception not configured on server) → log warning, do not show broken tool call to user, fall back to sending without tools

@@ -24,3 +24,6 @@ playground.xcworkspace
 
 # Secrets — never commit real credentials
 Secrets.xcconfig
+
+# VS Code
+.vscode/

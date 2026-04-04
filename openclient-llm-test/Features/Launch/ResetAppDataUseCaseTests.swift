@@ -15,6 +15,8 @@ final class ResetAppDataUseCaseTests: XCTestCase {
 
     private var sut: ResetAppDataUseCase!
     private var mockSettingsManager: MockSettingsManager!
+    private var mockConversationRepository: MockConversationRepository!
+    private var mockUserProfileManager: MockUserProfileManager!
 
     // MARK: - Setup
 
@@ -22,12 +24,20 @@ final class ResetAppDataUseCaseTests: XCTestCase {
         try await super.setUp()
 
         mockSettingsManager = MockSettingsManager()
-        sut = ResetAppDataUseCase(settingsManager: mockSettingsManager)
+        mockConversationRepository = MockConversationRepository()
+        mockUserProfileManager = MockUserProfileManager()
+        sut = ResetAppDataUseCase(
+            settingsManager: mockSettingsManager,
+            conversationRepository: mockConversationRepository,
+            userProfileManager: mockUserProfileManager
+        )
     }
 
     override func tearDown() async throws {
         sut = nil
         mockSettingsManager = nil
+        mockConversationRepository = nil
+        mockUserProfileManager = nil
 
         try await super.tearDown()
     }
@@ -44,5 +54,28 @@ final class ResetAppDataUseCaseTests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockSettingsManager.deleteAllCalled)
+    }
+
+    func test_execute_deletesAllConversations() {
+        // Given
+        let conversation = Conversation(modelId: "gpt-4")
+        mockConversationRepository.conversations = [conversation]
+
+        // When
+        sut.execute()
+
+        // Then
+        XCTAssertTrue(mockConversationRepository.conversations.isEmpty)
+    }
+
+    func test_execute_deletesLocalProfile() {
+        // Given
+        mockUserProfileManager.localProfile = UserProfile(name: "Test", profileDescription: "", extraInfo: "")
+
+        // When
+        sut.execute()
+
+        // Then
+        XCTAssertTrue(mockUserProfileManager.localProfile.isEmpty)
     }
 }

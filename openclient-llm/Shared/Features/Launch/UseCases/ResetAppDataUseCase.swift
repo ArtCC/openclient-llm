@@ -16,16 +16,27 @@ struct ResetAppDataUseCase: ResetAppDataUseCaseProtocol {
     // MARK: - Properties
 
     private let settingsManager: SettingsManagerProtocol
+    private let conversationRepository: ConversationRepositoryProtocol
+    private let userProfileManager: UserProfileManagerProtocol
 
     // MARK: - Init
 
-    init(settingsManager: SettingsManagerProtocol = SettingsManager()) {
+    init(
+        settingsManager: SettingsManagerProtocol = SettingsManager(),
+        conversationRepository: ConversationRepositoryProtocol = ConversationRepository(),
+        userProfileManager: UserProfileManagerProtocol = UserProfileManager()
+    ) {
         self.settingsManager = settingsManager
+        self.conversationRepository = conversationRepository
+        self.userProfileManager = userProfileManager
     }
 
     // MARK: - Execute
 
     func execute() {
+        // Disable cloud sync first so subsequent deletes do NOT touch iCloud.
         settingsManager.deleteAll()
+        try? conversationRepository.deleteAll()
+        userProfileManager.deleteLocalProfile()
     }
 }

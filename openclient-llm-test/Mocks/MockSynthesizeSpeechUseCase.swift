@@ -15,11 +15,15 @@ final class MockSynthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol, @unche
 
     var result: Result<Data, Error> = .success(Data())
     var executeCalled = false
+    var lastVoice: String?
+    var lastModel: String?
 
     // MARK: - Execute
 
     func execute(text: String, model: String, voice: String) async throws -> Data {
         executeCalled = true
+        lastVoice = voice
+        lastModel = model
         return try result.get()
     }
 }

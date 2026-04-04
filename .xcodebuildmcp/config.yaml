@@ -1,0 +1,19 @@
+schemaVersion: 1
+
+# Workflows enabled for this project
+enabledWorkflows:
+  - simulator
+  - macos
+  - ui-automation
+
+# Session defaults — loaded automatically at server startup
+sessionDefaults:
+  projectPath: "./openclient-llm.xcodeproj"
+  scheme: "openclient-llm"
+  simulatorName: "iPhone 17 Pro Max"
+  useLatestOS: true
+  suppressWarnings: true
+  bundleId: "com.artcc.openclient-llm"
+
+# Telemetry
+sentryDisabled: true

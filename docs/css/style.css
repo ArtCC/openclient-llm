@@ -85,15 +85,21 @@ h1 {
 
 .features {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 16px;
   margin-bottom: 48px;
   text-align: left;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 640px) {
   .features {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 800px) {
+  .features {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -160,7 +166,8 @@ h1 {
 .cta-group a {
   display: inline-flex;
   align-items: center;
-  padding: 14px 28px;
+  padding: 0 22px;
+  height: 52px;
   background: var(--accent);
   color: #fff;
   text-decoration: none;
@@ -210,43 +217,61 @@ h1 {
   margin-left: 8px;
 }
 
-.cta-appstore-wrap {
-  display: inline-flex;
-  align-items: center;
-  padding: 10px 24px;
-  background: #000 !important;
-  color: #fff !important;
-  border: none !important;
-  border-radius: 14px;
-  font-size: 1rem;
-  font-weight: 600;
-  opacity: 0.45;
-  pointer-events: none;
-  cursor: default;
-  text-decoration: none;
-  transition: opacity 0.2s;
+.cta-group a.cta-appstore-badge {
+  padding: 0;
+  height: auto;
+  background: none;
+  border-radius: 0;
+  line-height: 0;
 }
 
-.cta-appstore-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-
-.cta-appstore-sub {
-  font-size: 0.65rem;
-  font-weight: 400;
-  opacity: 0.85;
+.cta-appstore-badge img {
+  display: block;
+  height: 52px;
+  width: auto;
 }
 
 .cta-testflight {
-  background: linear-gradient(135deg, #7AC5FF 0%, #3A8FE8 100%) !important;
-  color: #fff !important;
-  border: none !important;
+  background: #fff !important;
+  color: #1a1a1a !important;
+  border: 2px solid #3A8FE8 !important;
+  gap: 10px;
+  padding: 0 20px !important;
 }
 
 .cta-testflight:hover {
-  opacity: 0.88;
+  opacity: 0.85;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cta-testflight {
+    background: #000 !important;
+    color: #fff !important;
+    border-color: #3A8FE8 !important;
+  }
+}
+
+.cta-testflight-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: block;
+  flex-shrink: 0;
+  object-fit: cover;
+}
+
+.cta-testflight-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.cta-testflight-sub {
+  font-size: 0.65rem;
+  font-weight: 400;
+  opacity: 0.75;
 }
 
 .getting-started {

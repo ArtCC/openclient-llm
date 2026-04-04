@@ -57,6 +57,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      FIRECRAWL_API_KEY: ${FIRECRAWL_API_KEY}
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -76,6 +77,7 @@ OPENAI_API_KEY=your-openai-api-key
 ANTHROPIC_API_KEY=your-anthropic-api-key
 GOOGLE_API_KEY=your-google-api-key
 DEEPSEEK_API_KEY=your-deepseek-api-key
+FIRECRAWL_API_KEY=your-firecrawl-api-key
 ```
 
 ## Reference config.yaml
@@ -84,10 +86,35 @@ Create at `/opt/docker/litellm/config.yaml`:
 
 ```yaml
 model_list:
-  # Ollama (local)
+  # Ollama — Google
+  - model_name: gemma4:e4b
+    litellm_params:
+      model: ollama/gemma4:e4b
+      api_base: http://host.docker.internal:11434
+    model_info:
+      supports_vision: true
+      supports_function_calling: false
+
+  - model_name: gemma3:12b
+    litellm_params:
+      model: ollama/gemma3:12b
+      api_base: http://host.docker.internal:11434
+    model_info:
+      supports_vision: true
+      supports_function_calling: false
+
+  # Ollama — Qwen (Alibaba)
   - model_name: qwen3:14b
     litellm_params:
       model: ollama/qwen3:14b
+      api_base: http://host.docker.internal:11434
+    model_info:
+      supports_vision: false
+      supports_function_calling: true
+
+  - model_name: qwen3.5:cloud
+    litellm_params:
+      model: ollama/qwen3.5:cloud
       api_base: http://host.docker.internal:11434
     model_info:
       supports_vision: false
@@ -101,34 +128,97 @@ model_list:
       supports_vision: false
       supports_function_calling: true
 
-  - model_name: gemma3:12b
+  - model_name: qwen3-coder:480b-cloud
     litellm_params:
-      model: ollama/gemma3:12b
+      model: ollama/qwen3-coder:480b-cloud
       api_base: http://host.docker.internal:11434
     model_info:
-      supports_vision: true
-      supports_function_calling: false
+      supports_vision: false
+      supports_function_calling: true
 
-  # Cloud APIs
+  - model_name: qwen3-coder-next:cloud
+    litellm_params:
+      model: ollama/qwen3-coder-next:cloud
+      api_base: http://host.docker.internal:11434
+    model_info:
+      supports_vision: false
+      supports_function_calling: true
+
+  # APIs cloud
+  # OpenAI
   - model_name: gpt-5.4
     litellm_params:
       model: openai/gpt-5.4
       api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-5.4-mini
+    litellm_params:
+      model: openai/gpt-5.4-mini
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-5.4-nano
+    litellm_params:
+      model: openai/gpt-5.4-nano
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-4o-mini-tts
+    litellm_params:
+      model: openai/gpt-4o-mini-tts
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-4o-mini-transcribe
+    litellm_params:
+      model: openai/gpt-4o-mini-transcribe
+      api_key: os.environ/OPENAI_API_KEY
+
+  # Anthropic
+  - model_name: claude-opus-4-6
+    litellm_params:
+      model: anthropic/claude-opus-4-6
+      api_key: os.environ/ANTHROPIC_API_KEY
 
   - model_name: claude-sonnet-4-6
     litellm_params:
       model: anthropic/claude-sonnet-4-6
       api_key: os.environ/ANTHROPIC_API_KEY
 
+  - model_name: claude-haiku-4-5
+    litellm_params:
+      model: anthropic/claude-haiku-4-5
+      api_key: os.environ/ANTHROPIC_API_KEY
+
+  # Google
+  - model_name: gemini-3.1-pro-preview
+    litellm_params:
+      model: gemini/gemini-3.1-pro-preview
+      api_key: os.environ/GOOGLE_API_KEY
+
+  - model_name: gemini-3-pro-image-preview
+    litellm_params:
+      model: gemini/gemini-3-pro-image-preview
+      api_key: os.environ/GOOGLE_API_KEY
+
   - model_name: gemini-2.5-pro
     litellm_params:
       model: gemini/gemini-2.5-pro
       api_key: os.environ/GOOGLE_API_KEY
 
+  # DeepSeek
   - model_name: deepseek-chat
     litellm_params:
       model: deepseek/deepseek-chat
       api_key: os.environ/DEEPSEEK_API_KEY
+
+  - model_name: deepseek-reasoner
+    litellm_params:
+      model: deepseek/deepseek-reasoner
+      api_key: os.environ/DEEPSEEK_API_KEY
+
+search_tools:
+  - search_tool_name: firecrawl-search
+    litellm_params:
+      search_provider: firecrawl
+      api_key: os.environ/FIRECRAWL_API_KEY
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY

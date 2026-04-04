@@ -6,15 +6,15 @@ Thank you for your interest in contributing! This guide will help you get starte
 
 1. **Fork** the repository
 2. **Clone** your fork locally
-3. **Open** the project in Xcode 16+ or VS Code
+3. **Open** the project in Xcode 26+ or VS Code
 4. **Create a branch** for your feature or fix
 
 ## Development Setup
 
 ### Requirements
 
-- Xcode 16+ (for building and running)
-- macOS 15+
+- Xcode 26+ (for building and running)
+- macOS 26+
 - A LiteLLM server for testing (optional — see [LiteLLM docs](https://docs.litellm.ai/))
 
 ### Build
@@ -22,8 +22,10 @@ Thank you for your interest in contributing! This guide will help you get starte
 ```bash
 open openclient-llm.xcodeproj
 # Or build from terminal:
-xcodebuild -scheme openclient-llm -destination 'platform=iOS Simulator,name=iPhone 16'
+xcodebuild build -scheme openclient-llm -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max'
 ```
+
+If you use VS Code with the **XcodeBuildMCP** extension, the `build-lint`, `run-app`, and `run-tests` agent prompts handle build, launch, and testing automatically — with or without MCP installed.
 
 ## How to Contribute
 

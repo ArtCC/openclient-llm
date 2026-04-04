@@ -20,28 +20,31 @@ struct WebContentView: View {
     // MARK: - View
 
     var body: some View {
-        #if os(macOS)
+#if os(macOS)
         macOSBody
-        #else
+#else
         iOSBody
-        #endif
+#endif
     }
 }
 
 // MARK: - Private
 
 private extension WebContentView {
-    #if os(macOS)
+#if os(macOS)
     var macOSBody: some View {
         VStack(spacing: 0) {
-            HStack {
+            ZStack {
                 Text(title)
                     .font(.headline)
-                Spacer()
-                Button(String(localized: "Close")) {
-                    dismiss()
+                    .frame(maxWidth: .infinity, alignment: .center)
+                HStack {
+                    Spacer()
+                    Button(String(localized: "Close")) {
+                        dismiss()
+                    }
+                    .keyboardShortcut(.cancelAction)
                 }
-                .keyboardShortcut(.cancelAction)
             }
             .padding()
             Divider()
@@ -49,13 +52,16 @@ private extension WebContentView {
         }
         .frame(minWidth: 700, minHeight: 500)
     }
-    #endif
+#endif
 
     var iOSBody: some View {
         NavigationStack {
             WebView(url: url)
                 .ignoresSafeArea(edges: .bottom)
                 .navigationTitle(title)
+#if os(iOS)
+                .navigationBarTitleDisplayMode(.inline)
+#endif
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button {

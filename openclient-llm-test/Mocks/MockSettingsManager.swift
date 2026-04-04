@@ -17,6 +17,9 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     var serverBaseURL: String = ""
     var apiKey: String = ""
     var selectedModelId: String?
+    var selectedTTSModelId: String?
+    var selectedSTTModelId: String?
+    var ttsVoices: [String: String] = [:]
     var isCloudSyncEnabled: Bool = false
     var showTokenUsage: Bool = true
     var deleteAllCalled: Bool = false
@@ -71,11 +74,38 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         showTokenUsage = value
     }
 
+    func getSelectedTTSModelId() -> String? {
+        selectedTTSModelId
+    }
+
+    func setSelectedTTSModelId(_ value: String?) {
+        selectedTTSModelId = value
+    }
+
+    func getSelectedTTSVoice(forModelId modelId: String) -> String {
+        ttsVoices[modelId] ?? TTSVoice.alloy.rawValue
+    }
+
+    func setSelectedTTSVoice(_ voice: String, forModelId modelId: String) {
+        ttsVoices[modelId] = voice
+    }
+
+    func getSelectedSTTModelId() -> String? {
+        selectedSTTModelId
+    }
+
+    func setSelectedSTTModelId(_ value: String?) {
+        selectedSTTModelId = value
+    }
+
     func deleteAll() {
         isOnboardingCompleted = false
         serverBaseURL = ""
         apiKey = ""
         selectedModelId = nil
+        selectedTTSModelId = nil
+        selectedSTTModelId = nil
+        ttsVoices = [:]
         deleteAllCalled = true
     }
 }

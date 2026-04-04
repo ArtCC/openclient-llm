@@ -21,9 +21,14 @@ struct MessageBubbleView: View {
     var isSpeaking: Bool = false
     var hasTTS: Bool = false
     var showTokenUsage: Bool = true
+    var isLastMessage: Bool = false
     var onSpeakTapped: (() -> Void)?
     var onStopSpeakingTapped: (() -> Void)?
+    var onEditTapped: (() -> Void)?
+    var onRegenerateTapped: (() -> Void)?
+    var onForkTapped: (() -> Void)?
     @State private var cursorVisible: Bool = false
+    @State private var isThinkingExpanded: Bool = true
     @State private var expandedImageData: Data?
 
     // MARK: - View
@@ -53,12 +58,13 @@ private extension MessageBubbleView {
                     .textSelection(.enabled)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                    .foregroundStyle(Color.primary)
+                    .foregroundStyle(.white)
                     .glassEffect(
-                        .regular.tint(Color.accentColor),
+                        .regular.tint(Color.appAccent),
                         in: .rect(cornerRadius: 18)
                     )
             }
+            .contentShape(Rectangle())
             .contextMenu {
                 messageContextMenu(message.content)
             }
@@ -69,7 +75,7 @@ private extension MessageBubbleView {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "sparkles")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccent)
                 .frame(width: 28, height: 28)
                 .glassEffect(.regular, in: .circle)
 
@@ -78,7 +84,11 @@ private extension MessageBubbleView {
                     attachmentsView
                 }
 
-                if message.content.isEmpty && isStreaming {
+                if let reasoning = message.reasoningContent, !reasoning.isEmpty {
+                    thinkingDisclosureView(reasoning)
+                }
+
+                if message.content.isEmpty && isStreaming && (message.reasoningContent ?? "").isEmpty {
                     thinkingIndicator
                 } else if !message.content.isEmpty {
                     blocksView
@@ -91,8 +101,19 @@ private extension MessageBubbleView {
                 if !isStreaming && !message.content.isEmpty && message.role == .assistant && hasTTS {
                     speakButton
                 }
+
+                if !isStreaming, !message.content.isEmpty, isLastMessage, let onRegenerateTapped {
+                    Button(action: onRegenerateTapped) {
+                        Label(String(localized: "Regenerate Response"), systemImage: "arrow.clockwise")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 2)
+                }
             }
             .frame(minHeight: 28, alignment: .center)
+            .contentShape(Rectangle())
             .contextMenu {
                 if !message.content.isEmpty {
                     messageContextMenu(message.content)
@@ -104,8 +125,14 @@ private extension MessageBubbleView {
         .task(id: isStreaming) {
             guard isStreaming else {
                 cursorVisible = false
+                if message.reasoningContent != nil {
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        isThinkingExpanded = false
+                    }
+                }
                 return
             }
+            isThinkingExpanded = true
             while !Task.isCancelled {
                 cursorVisible.toggle()
                 try? await Task.sleep(for: .milliseconds(500))
@@ -217,6 +244,32 @@ private extension MessageBubbleView {
         ) {
             Label(String(localized: "Share"), systemImage: "square.and.arrow.up")
         }
+
+        if message.role == .user, let onEditTapped {
+            Divider()
+            Button {
+                onEditTapped()
+            } label: {
+                Label(String(localized: "Edit & Resend"), systemImage: "pencil")
+            }
+        }
+
+        if message.role == .assistant, isLastMessage, !isStreaming, let onRegenerateTapped {
+            Divider()
+            Button {
+                onRegenerateTapped()
+            } label: {
+                Label(String(localized: "Regenerate Response"), systemImage: "arrow.clockwise")
+            }
+        }
+
+        if let onForkTapped {
+            Button {
+                onForkTapped()
+            } label: {
+                Label(String(localized: "Fork from here"), systemImage: "arrow.branch")
+            }
+        }
     }
 
     func copyToClipboard(_ text: String) {
@@ -254,21 +307,14 @@ private extension MessageBubbleView {
     }
 
     func textBlockView(_ content: String, isLast: Bool) -> some View {
-        // Normalize single newlines to double newlines so CommonMark renders them
-        // as paragraph breaks instead of collapsing them into spaces.
-        let normalized = content.replacingOccurrences(
-            of: "(?<!\n)\n(?!\n)",
-            with: "\n\n",
-            options: .regularExpression
-        )
         let displayContent = isLast && isStreaming && cursorVisible
-            ? normalized + "█"
-            : normalized
+            ? content + "█"
+            : content
 
         let attributed: AttributedString = {
             if let result = try? AttributedString(
                 markdown: displayContent,
-                options: .init(interpretedSyntax: .full)
+                options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
             ) {
                 return result
             }
@@ -290,6 +336,34 @@ private extension MessageBubbleView {
             } animation: { _ in
                 .easeInOut(duration: 0.8)
             }
+    }
+
+    func thinkingDisclosureView(_ reasoning: String) -> some View {
+        DisclosureGroup(isExpanded: $isThinkingExpanded) {
+            ScrollView {
+                Text(reasoning)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 6)
+            }
+            .frame(maxHeight: 200)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "brain")
+                    .font(.system(size: 11))
+                Text(String(localized: "Thinking"))
+                    .font(.caption)
+                    .fontWeight(.medium)
+            }
+            .foregroundStyle(isStreaming ? AnyShapeStyle(Color.appAccent) : AnyShapeStyle(.secondary))
+            .opacity(isStreaming ? (cursorVisible ? 1.0 : 0.5) : 0.7)
+        }
+        .animation(.easeInOut(duration: 0.5), value: cursorVisible)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
     }
 
     func tokenUsageLabel(_ usage: TokenUsage) -> some View {

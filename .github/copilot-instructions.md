@@ -314,8 +314,11 @@ The app communicates with a LiteLLM proxy server via its OpenAI-compatible REST 
 
 ## Build and Test
 
-- Build with Xcode 16+
-- Run tests: `⌘U` in Xcode or `xcodebuild test`
+- Build with Xcode 26+
+- **XcodeBuildMCP** is configured for this project via `.xcodebuildmcp/config.yaml` — use it when available (VS Code agent prompts handle detection automatically)
+- Run tests: `⌘U` in Xcode, `xcodebuild test` in terminal, or via the `run-tests` agent prompt
+- Build and lint: use the `build-lint` agent prompt (supports XcodeBuildMCP or `xcodebuild` fallback)
+- Run app on simulator: use the `run-app` agent prompt (supports XcodeBuildMCP or `xcodebuild` fallback)
 - **No external dependencies** except SwiftLint — networking, persistence, and all logic is custom
 - Use Swift Package Manager (SPM) via Xcode only for dev tools (SwiftLint)
 - Sensitive data (API keys) stored in **Keychain** via `KeychainManager`

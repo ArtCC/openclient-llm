@@ -20,6 +20,7 @@ struct HomeView: View {
 
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var selectedTab: AppTab = .chats
     #endif
 
     // MARK: - View
@@ -38,15 +39,41 @@ struct HomeView: View {
 private extension HomeView {
     #if os(iOS)
     var iOSLayout: some View {
-        TabView {
-            Tab(String(localized: "Chats"), systemImage: "bubble.left.and.bubble.right") {
+        TabView(selection: $selectedTab) {
+            Tab(value: AppTab.chats) {
                 chatsTab
+            } label: {
+                Label {
+                    Text(String(localized: "Chats"))
+                } icon: {
+                    Image(systemName: "bubble.left.and.bubble.right")
+                        .symbolEffect(.bounce, value: selectedTab)
+                }
             }
-            Tab(String(localized: "Models"), systemImage: "cpu") {
+            Tab(value: AppTab.models) {
                 ModelsView()
+            } label: {
+                Label {
+                    Text(String(localized: "Models"))
+                } icon: {
+                    Image(systemName: "brain.head.profile")
+                        .symbolEffect(.bounce, value: selectedTab)
+                }
             }
-            Tab(String(localized: "Settings"), systemImage: "gearshape") {
+            Tab(value: AppTab.settings) {
                 SettingsView()
+            } label: {
+                Label {
+                    Text(String(localized: "Settings"))
+                } icon: {
+                    Image(systemName: "gearshape")
+                        .symbolEffect(.rotate, value: selectedTab)
+                }
+            }
+            Tab(value: AppTab.search, role: .search) {
+                SearchConversationsView()
+            } label: {
+                Label(String(localized: "Search"), systemImage: "magnifyingglass")
             }
         }
     }
@@ -63,15 +90,18 @@ private extension HomeView {
 
     var iPhoneChatsLayout: some View {
         NavigationStack {
-            ConversationListView { conversation in
+            ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
                 selectedConversation = conversation
             }
             .id(conversationListId)
-            .navigationTitle(String(localized: "Chats"))
             .navigationDestination(item: $selectedConversation) { conversation in
                 ChatView(
                     conversation: conversation,
                     onConversationUpdated: {
+                        conversationListId = UUID()
+                    },
+                    onForkCreated: { fork in
+                        selectedConversation = fork
                         conversationListId = UUID()
                     }
                 )
@@ -81,16 +111,20 @@ private extension HomeView {
 
     var iPadChatsLayout: some View {
         NavigationSplitView {
-            ConversationListView { conversation in
+            ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
                 selectedConversation = conversation
             }
             .id(conversationListId)
-            .navigationTitle(String(localized: "Chats"))
+            .navigationSplitViewColumnWidth(320)
         } detail: {
             if let selectedConversation {
                 ChatView(
                     conversation: selectedConversation,
                     onConversationUpdated: {
+                        conversationListId = UUID()
+                    },
+                    onForkCreated: { fork in
+                        self.selectedConversation = fork
                         conversationListId = UUID()
                     }
                 )
@@ -102,6 +136,15 @@ private extension HomeView {
                 )
             }
         }
+    }
+
+    // MARK: - AppTab
+
+    enum AppTab: Hashable {
+        case chats
+        case models
+        case settings
+        case search
     }
     #endif
 
@@ -131,7 +174,7 @@ private extension HomeView {
             }
 
             Section {
-                Label(String(localized: "Models"), systemImage: "cpu")
+                Label(String(localized: "Models"), systemImage: "brain.head.profile")
                     .tag(SidebarDestination.models)
 
                 Label(String(localized: "Settings"), systemImage: "gearshape")
@@ -139,6 +182,7 @@ private extension HomeView {
             }
         }
         .navigationTitle(String(localized: "OpenClient"))
+        .navigationSplitViewColumnWidth(180)
     }
 
     @ViewBuilder
@@ -146,15 +190,18 @@ private extension HomeView {
         switch sidebarDestination {
         case .chats:
             NavigationStack {
-                ConversationListView { conversation in
+                ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
                     selectedConversation = conversation
                 }
                 .id(conversationListId)
-                .navigationTitle(String(localized: "Chats"))
                 .navigationDestination(item: $selectedConversation) { conversation in
                     ChatView(
                         conversation: conversation,
                         onConversationUpdated: {
+                            conversationListId = UUID()
+                        },
+                        onForkCreated: { fork in
+                            selectedConversation = fork
                             conversationListId = UUID()
                         }
                     )

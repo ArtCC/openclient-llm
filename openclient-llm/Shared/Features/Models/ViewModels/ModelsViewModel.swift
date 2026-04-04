@@ -17,6 +17,9 @@ final class ModelsViewModel {
         case viewAppeared
         case refreshTapped
         case modelTapped(LLMModel)
+        case ttsModelTapped(LLMModel)
+        case sttModelTapped(LLMModel)
+        case voiceSelected(String, forModelId: String)
     }
 
     enum State: Equatable {
@@ -27,6 +30,9 @@ final class ModelsViewModel {
     struct LoadedState: Equatable {
         var models: [LLMModel] = []
         var selectedModelId: String?
+        var selectedTTSModelId: String?
+        var selectedSTTModelId: String?
+        var selectedTTSVoices: [String: String] = [:]
         var errorMessage: String?
         var isRefreshing: Bool = false
     }
@@ -47,6 +53,7 @@ final class ModelsViewModel {
         self.state = state
         self.fetchModelsUseCase = fetchModelsUseCase
         self.settingsManager = settingsManager
+        observeAppDataReset()
     }
 
     // MARK: - Input functions
@@ -59,7 +66,21 @@ final class ModelsViewModel {
             refreshModels()
         case .modelTapped(let model):
             selectModel(model)
+        case .ttsModelTapped(let model):
+            selectTTSModel(model)
+        case .sttModelTapped(let model):
+            selectSTTModel(model)
+        case .voiceSelected(let voice, let modelId):
+            selectVoice(voice, forModelId: modelId)
         }
+    }
+
+    func refreshAsync() async {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.isRefreshing = true
+        loadedState.errorMessage = nil
+        state = .loaded(loadedState)
+        await performRefresh()
     }
 }
 
@@ -73,7 +94,16 @@ private extension ModelsViewModel {
             do {
                 let models = try await fetchModelsUseCase.execute()
                 let selectedModelId = settingsManager.getSelectedModelId()
-                state = .loaded(LoadedState(models: models, selectedModelId: selectedModelId))
+                let selectedTTSModelId = settingsManager.getSelectedTTSModelId()
+                let selectedSTTModelId = settingsManager.getSelectedSTTModelId()
+                let ttsVoices = buildTTSVoices(from: models)
+                state = .loaded(LoadedState(
+                    models: models,
+                    selectedModelId: selectedModelId,
+                    selectedTTSModelId: selectedTTSModelId,
+                    selectedSTTModelId: selectedSTTModelId,
+                    selectedTTSVoices: ttsVoices
+                ))
             } catch {
                 state = .loaded(LoadedState(errorMessage: error.localizedDescription))
                 scheduleErrorDismiss()
@@ -88,17 +118,7 @@ private extension ModelsViewModel {
         state = .loaded(loadedState)
 
         Task {
-            do {
-                let models = try await fetchModelsUseCase.execute()
-                let selectedModelId = settingsManager.getSelectedModelId()
-                state = .loaded(LoadedState(models: models, selectedModelId: selectedModelId))
-            } catch {
-                guard case .loaded(var currentState) = state else { return }
-                currentState.isRefreshing = false
-                currentState.errorMessage = error.localizedDescription
-                state = .loaded(currentState)
-                scheduleErrorDismiss()
-            }
+            await performRefresh()
         }
     }
 
@@ -109,6 +129,58 @@ private extension ModelsViewModel {
         settingsManager.setSelectedModelId(model.id)
     }
 
+    func selectTTSModel(_ model: LLMModel) {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.selectedTTSModelId = model.id
+        state = .loaded(loadedState)
+        settingsManager.setSelectedTTSModelId(model.id)
+    }
+
+    func selectSTTModel(_ model: LLMModel) {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.selectedSTTModelId = model.id
+        state = .loaded(loadedState)
+        settingsManager.setSelectedSTTModelId(model.id)
+    }
+
+    func selectVoice(_ voice: String, forModelId modelId: String) {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.selectedTTSVoices[modelId] = voice
+        state = .loaded(loadedState)
+        settingsManager.setSelectedTTSVoice(voice, forModelId: modelId)
+    }
+
+    func performRefresh() async {
+        do {
+            let models = try await fetchModelsUseCase.execute()
+            let selectedModelId = settingsManager.getSelectedModelId()
+            let selectedTTSModelId = settingsManager.getSelectedTTSModelId()
+            let selectedSTTModelId = settingsManager.getSelectedSTTModelId()
+            let ttsVoices = buildTTSVoices(from: models)
+            state = .loaded(LoadedState(
+                models: models,
+                selectedModelId: selectedModelId,
+                selectedTTSModelId: selectedTTSModelId,
+                selectedSTTModelId: selectedSTTModelId,
+                selectedTTSVoices: ttsVoices
+            ))
+        } catch {
+            guard case .loaded(var currentState) = state else { return }
+            currentState.isRefreshing = false
+            currentState.errorMessage = error.localizedDescription
+            state = .loaded(currentState)
+            scheduleErrorDismiss()
+        }
+    }
+
+    func buildTTSVoices(from models: [LLMModel]) -> [String: String] {
+        var voices: [String: String] = [:]
+        for model in models where model.mode == .audioSpeech {
+            voices[model.id] = settingsManager.getSelectedTTSVoice(forModelId: model.id)
+        }
+        return voices
+    }
+
     func scheduleErrorDismiss() {
         errorDismissTask?.cancel()
         errorDismissTask = Task {
@@ -116,6 +188,17 @@ private extension ModelsViewModel {
             guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
             currentState.errorMessage = nil
             state = .loaded(currentState)
+        }
+    }
+
+    func observeAppDataReset() {
+        Task { [weak self] in
+            let notifications = NotificationCenter.default
+                .notifications(named: .appDataDidReset)
+            for await _ in notifications {
+                guard let self else { return }
+                await MainActor.run { self.loadModels() }
+            }
         }
     }
 }

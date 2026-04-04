@@ -35,6 +35,17 @@ struct LLMModel: Identifiable, Equatable, Sendable {
         self.mode = mode
         self.providerName = providerName
     }
+
+    var logoImageName: String? {
+        switch providerName {
+        case "OpenAI": "openai"
+        case "Anthropic": "anthropic"
+        case "Ollama": "ollama"
+        case "Google": "gemini"
+        case "DeepSeek": "deepseek"
+        default: nil
+        }
+    }
 }
 
 // MARK: - Provider
@@ -57,6 +68,13 @@ extension LLMModel {
             switch self {
             case .local: "desktopcomputer"
             case .cloud: "cloud"
+            }
+        }
+
+        var genericLogoSystemName: String {
+            switch self {
+            case .local: "cpu.fill"
+            case .cloud: "sparkles"
             }
         }
 

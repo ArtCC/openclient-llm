@@ -23,7 +23,7 @@ struct ChatEmptyStateView: View {
 
             Image(systemName: "sparkles")
                 .font(.system(size: 44))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccent)
                 .frame(width: 80, height: 80)
                 .glassEffect(.regular, in: .circle)
 
@@ -31,8 +31,7 @@ struct ChatEmptyStateView: View {
                 Text(
                     String(localized: "How can I help you?")
                 )
-                .font(.title2)
-                .fontWeight(.semibold)
+                .font(.poppins(.semiBold, size: 22, relativeTo: .title2))
 
                 if selectedModel == nil {
                     Text(

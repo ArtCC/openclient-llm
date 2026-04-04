@@ -24,6 +24,10 @@ final class MockCloudSyncManager: CloudSyncManagerProtocol, @unchecked Sendable 
     var cloudProfile: UserProfile?
     var savedProfile: UserProfile?
     var deleteProfileCalled: Bool = false
+    var cloudTemplates: [PromptTemplate] = []
+    var cloudTemplateIds: Set<UUID>?
+    var syncedTemplates: [PromptTemplate] = []
+    var deletedTemplateIds: [UUID] = []
 
     // MARK: - Public
 
@@ -64,5 +68,23 @@ final class MockCloudSyncManager: CloudSyncManagerProtocol, @unchecked Sendable 
     func deleteProfileFromCloud() throws {
         deleteProfileCalled = true
         cloudProfile = nil
+    }
+
+    func syncTemplatesToCloud(_ templates: [PromptTemplate]) throws {
+        if let syncError { throw syncError }
+        syncedTemplates.append(contentsOf: templates)
+    }
+
+    func loadTemplatesFromCloud() throws -> [PromptTemplate] {
+        if let loadError { throw loadError }
+        return cloudTemplates
+    }
+
+    func allCloudTemplateIds() -> Set<UUID>? {
+        cloudTemplateIds
+    }
+
+    func deleteTemplateFromCloud(_ templateId: UUID) throws {
+        deletedTemplateIds.append(templateId)
     }
 }

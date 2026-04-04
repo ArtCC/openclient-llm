@@ -34,6 +34,17 @@ final class VoticeManager: VoticeManagerProtocol {
                 appId: appId
             )
 
+            let poppinsConfig = VoticeFontConfiguration(
+                fontFamily: "Poppins",
+                weights: [
+                    .light: "Poppins-Light",
+                    .regular: "Poppins-Regular",
+                    .medium: "Poppins-Medium",
+                    .semiBold: "Poppins-SemiBold",
+                    .bold: "Poppins-Bold"
+                ]
+            )
+            Votice.setFonts(poppinsConfig)
             Votice.setTexts(VoticeTexts())
             Votice.setDebugLogging(enabled: false)
             Votice.setCommentIsEnabled(enabled: true)

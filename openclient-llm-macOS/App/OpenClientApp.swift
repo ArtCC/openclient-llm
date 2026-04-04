@@ -17,7 +17,7 @@ struct OpenClientApp: App {
             LaunchView()
                 .frame(minWidth: 800, minHeight: 600)
         }
-        .defaultSize(width: 1000, height: 700)
+        .defaultSize(width: 800, height: 600)
         .commands {
             AppCommands()
         }
