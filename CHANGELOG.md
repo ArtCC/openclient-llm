@@ -7,22 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [0.0.1-build-13] - 2026-04-04
-
-### Added
-
-- Prompt Library — a curated collection of built-in system prompt templates (Coding Assistant, Translator, Summarizer, Creative Writer, Data Analyst, Email Composer) accessible directly from the System Prompt editor in any conversation
-- "Browse Library" button in `ChatSystemPromptView` — tapping it opens `PromptTemplatesView` as a sheet; selecting a template fills the system prompt field and closes the sheet automatically
-- `PromptTemplatesView` — list with two sections (Built-in / Custom); tap a template to apply it; swipe-to-delete and Edit action on custom templates; toolbar `+` button to create new ones
-- `PromptTemplateEditorView` — sheet for creating and editing custom templates with a title field and a full TextEditor for the prompt content; Save button disabled until both fields are non-empty
-- `PromptTemplate` model — `Identifiable`, `Equatable`, `Codable`, `Sendable`; `isBuiltIn` flag distinguishes system templates from user-created ones
-- `PromptTemplateRepository` — persists custom templates as individual JSON files in `DocumentDirectory/PromptTemplates/`; built-in templates are hardcoded with stable UUIDs and never written to disk
-- `LoadPromptTemplatesUseCase`, `SavePromptTemplateUseCase`, `DeletePromptTemplateUseCase` — single-responsibility use cases for the prompt library feature
-- `PromptTemplatesViewModel` — Event/State ViewModel coordinating load, save, and delete; built-in templates cannot be deleted (guard in `deleteTemplate`)
-- `MockPromptTemplateRepository`, `MockLoadPromptTemplatesUseCase`, `MockSavePromptTemplateUseCase`, `MockDeletePromptTemplateUseCase` test doubles
-- 11 unit tests in `PromptTemplatesViewModelTests` covering init state, load success/failure, create, edit (preserving id and createdAt), save failure, delete custom, guard against deleting built-ins, and delete failure
-
-## [0.0.1-build-12] - 2026-04-04
+## [1.0.0-build-15] - 2026-04-04
 
 ### Added
 
@@ -89,6 +74,16 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - Settings navigation buttons simplified to plain `Label` on macOS — chevron icon and explicit `.buttonStyle(.bordered)` modifiers removed
 - Assistant message text blocks rendered using `interpretedSyntax: .inlineOnlyPreservingWhitespace` instead of `.full` — fixes all newlines and paragraph breaks being silently collapsed into spaces or removed, causing every response to appear as a single unformatted block of text regardless of model or provider
 - Normalization regex (`\n` → `\n\n`) removed from `textBlockView` as it was redundant and broke adjacent list items with the new rendering option
+- Prompt Library — a curated collection of built-in system prompt templates (Coding Assistant, Translator, Summarizer, Creative Writer, Data Analyst, Email Composer) accessible directly from the System Prompt editor in any conversation
+- "Browse Library" button in `ChatSystemPromptView` — tapping it opens `PromptTemplatesView` as a sheet; selecting a template fills the system prompt field and closes the sheet automatically
+- `PromptTemplatesView` — list with two sections (Built-in / Custom); tap a template to apply it; swipe-to-delete and Edit action on custom templates; toolbar `+` button to create new ones
+- `PromptTemplateEditorView` — sheet for creating and editing custom templates with a title field and a full TextEditor for the prompt content; Save button disabled until both fields are non-empty
+- `PromptTemplate` model — `Identifiable`, `Equatable`, `Codable`, `Sendable`; `isBuiltIn` flag distinguishes system templates from user-created ones
+- `PromptTemplateRepository` — persists custom templates as individual JSON files in `DocumentDirectory/PromptTemplates/`; built-in templates are hardcoded with stable UUIDs and never written to disk
+- `LoadPromptTemplatesUseCase`, `SavePromptTemplateUseCase`, `DeletePromptTemplateUseCase` — single-responsibility use cases for the prompt library feature
+- `PromptTemplatesViewModel` — Event/State ViewModel coordinating load, save, and delete; built-in templates cannot be deleted (guard in `deleteTemplate`)
+- `MockPromptTemplateRepository`, `MockLoadPromptTemplatesUseCase`, `MockSavePromptTemplateUseCase`, `MockDeletePromptTemplateUseCase` test doubles
+- 11 unit tests in `PromptTemplatesViewModelTests` covering init state, load success/failure, create, edit (preserving id and createdAt), save failure, delete custom, guard against deleting built-ins, and delete failure
 
 ### Fixed
 
