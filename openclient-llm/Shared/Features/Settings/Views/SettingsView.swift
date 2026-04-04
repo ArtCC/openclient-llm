@@ -75,6 +75,7 @@ private extension SettingsView {
                 Button(String(localized: "Cancel"), role: .cancel) {
                     viewModel.send(.cloudSyncConflictCancelled)
                 }
+                .buttonStyle(.plain)
             },
             message: {
                 Text(String(
@@ -170,6 +171,7 @@ private extension SettingsView {
                 }
             }
             .disabled(loadedState.serverURL.isEmpty || loadedState.connectionStatus == .testing)
+            .buttonStyle(.plain)
 
             Button {
                 focusedField = nil
@@ -184,6 +186,7 @@ private extension SettingsView {
                     }
                 }
             }
+            .buttonStyle(.plain)
         } header: {
             Text(String(localized: "Server"))
         }
@@ -265,12 +268,14 @@ private extension SettingsView {
             } label: {
                 Label(String(localized: "Rate the App"), systemImage: "star")
             }
+            .buttonStyle(.plain)
 
             Button {
                 isShowingVotice = true
             } label: {
                 Label(String(localized: "Suggest Features"), systemImage: "lightbulb")
             }
+            .buttonStyle(.plain)
         } header: {
             Text(String(localized: "Feedback"))
         }
@@ -323,6 +328,7 @@ private extension SettingsView {
             } label: {
                 Label(String(localized: "Personal Context"), systemImage: "person.text.rectangle")
             }
+            .buttonStyle(.plain)
         } header: {
             Text(String(localized: "Personalization"))
         } footer: {
@@ -337,12 +343,14 @@ private extension SettingsView {
             } label: {
                 Label(String(localized: "Privacy Policy"), systemImage: "hand.raised")
             }
+            .buttonStyle(.plain)
 
             Button {
                 presentedWebURL = .termsOfUse
             } label: {
                 Label(String(localized: "Terms of Use"), systemImage: "doc.text")
             }
+            .buttonStyle(.plain)
 
             Button {
                 presentedWebURL = .authorGitHub
@@ -355,6 +363,7 @@ private extension SettingsView {
                         .foregroundStyle(.secondary)
                 }
             }
+            .buttonStyle(.plain)
 
             HStack {
                 Text(String(localized: "Version \(appVersion) (\(appBuild))"))
@@ -376,6 +385,7 @@ private extension SettingsView {
                 Label(String(localized: "Reset App Data"), systemImage: "trash")
                     .foregroundStyle(.red)
             }
+            .buttonStyle(.plain)
         } header: {
             Text(String(localized: "App Data"))
         } footer: {

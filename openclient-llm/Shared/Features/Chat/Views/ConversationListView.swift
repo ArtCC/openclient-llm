@@ -17,10 +17,10 @@ struct ConversationListView: View {
     @State private var editingTagsConversation: Conversation?
     @State private var conversationToDelete: Conversation?
 
-    #if os(macOS)
+#if os(macOS)
     @State private var isMacSearchExpanded = false
     @State private var macSearchText = ""
-    #endif
+#endif
 
     var activeConversationId: UUID?
     let onConversationSelected: (Conversation?) -> Void
@@ -36,11 +36,11 @@ struct ConversationListView: View {
                 loadedView(loadedState)
             }
         }
-        #if os(macOS)
+#if os(macOS)
         .focusedSceneValue(\.newChatAction) {
             viewModel.send(.newConversationTapped)
         }
-        #endif
+#endif
         .task {
             viewModel.onConversationSelected = onConversationSelected
             viewModel.send(.viewAppeared)
@@ -105,9 +105,9 @@ private extension ConversationListView {
                 .accessibilityLabel(String(localized: "New Chat"))
                 .keyboardShortcut("n", modifiers: .command)
             }
-            #if os(macOS)
+#if os(macOS)
             macToolbarItems
-            #endif
+#endif
         }
     }
 
@@ -147,7 +147,7 @@ private extension ConversationListView {
                     ForEach(section.conversations) { conversation in
                         conversationRow(conversation, loadedState: loadedState)
                             .listRowBackground(Color.clear)
-                            .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
+                            .listRowInsets(EdgeInsets(top: 4, leading: 2, bottom: 4, trailing: 2))
                             .contextMenu {
                                 conversationContextMenu(conversation)
                             }
@@ -160,18 +160,18 @@ private extension ConversationListView {
                             }
                     }
                 } header: {
-                        sectionHeader(for: section)
-                    }
+                    sectionHeader(for: section)
+                }
             }
         }
-        #if os(macOS)
+#if os(macOS)
         .listStyle(.plain)
-        #else
+#else
         .listStyle(.plain)
         .refreshable {
             await viewModel.refreshAsync()
         }
-        #endif
+#endif
         .safeAreaInset(edge: .top, spacing: 0) {
             if !loadedState.allTags.isEmpty {
                 VStack(spacing: 0) {
@@ -227,14 +227,11 @@ private extension ConversationListView {
         }
         .foregroundStyle(.secondary)
         .textCase(nil)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            Rectangle()
-                .fill(.regularMaterial)
-                .ignoresSafeArea(.container, edges: .horizontal)
-        }
+        .listRowInsets(EdgeInsets())
+        .background(.bar)
     }
 
     func tagFilterBar(_ loadedState: ConversationListViewModel.LoadedState) -> some View {
@@ -271,14 +268,14 @@ private extension ConversationListView {
                 .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                #if os(macOS)
+#if os(macOS)
                 .background(isSelected ? Color.appAccent : Color.primary.opacity(0.08), in: .capsule)
-                #else
+#else
                 .glassEffect(
                     isSelected ? .regular.tint(Color.appAccent).interactive() : .regular.interactive(),
                     in: .capsule
                 )
-                #endif
+#endif
         }
         .buttonStyle(.plain)
     }
@@ -389,8 +386,8 @@ private extension ConversationListView {
         if let firstUserMessage = conversation.messages.first(where: { $0.role == .user }) {
             let preview = firstUserMessage.content.prefix(50)
             return preview.count < firstUserMessage.content.count
-                ? "\(preview)…"
-                : String(preview)
+            ? "\(preview)…"
+            : String(preview)
         }
         return String(localized: "New Chat")
     }
@@ -416,7 +413,7 @@ private extension ConversationListView {
         }
     }
 
-    #if os(macOS)
+#if os(macOS)
     @ToolbarContentBuilder
     var macToolbarItems: some ToolbarContent {
         ToolbarItem(placement: .automatic) {
@@ -472,7 +469,7 @@ private extension ConversationListView {
             .help(String(localized: "Search"))
         }
     }
-    #endif
+#endif
 }
 
 #Preview {
