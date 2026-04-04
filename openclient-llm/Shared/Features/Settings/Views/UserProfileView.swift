@@ -86,7 +86,7 @@ private extension UserProfileView {
         }
     }
 
-    #if os(macOS)
+#if os(macOS)
     var macOSBody: some View {
         VStack(spacing: 0) {
             HStack {
@@ -123,13 +123,13 @@ private extension UserProfileView {
             loadedGroup
         }
     }
-    #endif
+#endif
 
     var hasChanges: Bool {
         guard case .loaded(let loadedState) = viewModel.state else { return false }
         return name != loadedState.originalName
-            || profileDescription != loadedState.originalDescription
-            || extraInfo != loadedState.originalExtraInfo
+        || profileDescription != loadedState.originalDescription
+        || extraInfo != loadedState.originalExtraInfo
     }
 
     func loadedView() -> some View {
@@ -139,18 +139,21 @@ private extension UserProfileView {
             extraInfoSection()
             usageSection()
         }
-        #if os(iOS)
+#if os(iOS)
         .scrollDismissesKeyboard(.interactively)
         .ignoresSafeArea(.keyboard, edges: .bottom)
-        #elseif os(macOS)
+#elseif os(macOS)
         .formStyle(.grouped)
-        #endif
+#endif
     }
 
     func nameSection() -> some View {
-        Section {
+        let placeholder = name.isEmpty ? String(localized: "Your name") : ""
+
+        return Section {
             VStack(alignment: .leading, spacing: 4) {
-                TextField(String(localized: "Your name"), text: $name, axis: .vertical)
+                TextField(placeholder, text: $name, axis: .vertical)
+                    .multilineTextAlignment(.leading)
                     .autocorrectionDisabled()
                     .lineLimit(2...)
 #if os(iOS)
@@ -173,23 +176,22 @@ private extension UserProfileView {
     }
 
     func descriptionSection() -> some View {
-        Section {
+        let placeholder = profileDescription.isEmpty ? String(localized: "A brief description about yourself") : ""
+
+        return Section {
             VStack(alignment: .leading, spacing: 4) {
-                TextField(
-                    String(localized: "A brief description about yourself"),
-                    text: $profileDescription,
-                    axis: .vertical
-                )
-                .autocorrectionDisabled()
-                .lineLimit(3...)
+                TextField(placeholder, text: $profileDescription, axis: .vertical)
+                    .multilineTextAlignment(.leading)
+                    .autocorrectionDisabled()
+                    .lineLimit(3...)
 #if os(iOS)
-                .textInputAutocapitalization(.sentences)
+                    .textInputAutocapitalization(.sentences)
 #endif
-                .onChange(of: profileDescription) { _, newValue in
-                    if newValue.count > 200 {
-                        profileDescription = String(newValue.prefix(200))
+                    .onChange(of: profileDescription) { _, newValue in
+                        if newValue.count > 200 {
+                            profileDescription = String(newValue.prefix(200))
+                        }
                     }
-                }
                 if !profileDescription.isEmpty {
                     characterCountLabel(count: profileDescription.count, max: 200)
                 }
@@ -202,23 +204,22 @@ private extension UserProfileView {
     }
 
     func extraInfoSection() -> some View {
-        Section {
+        let placeholder = extraInfo.isEmpty ? String(localized: "Any additional context for the assistant") : ""
+
+        return Section {
             VStack(alignment: .leading, spacing: 4) {
-                TextField(
-                    String(localized: "Any additional context for the assistant"),
-                    text: $extraInfo,
-                    axis: .vertical
-                )
-                .autocorrectionDisabled()
-                .lineLimit(4...)
+                TextField(placeholder, text: $extraInfo, axis: .vertical)
+                    .multilineTextAlignment(.leading)
+                    .autocorrectionDisabled()
+                    .lineLimit(4...)
 #if os(iOS)
-                .textInputAutocapitalization(.sentences)
+                    .textInputAutocapitalization(.sentences)
 #endif
-                .onChange(of: extraInfo) { _, newValue in
-                    if newValue.count > 500 {
-                        extraInfo = String(newValue.prefix(500))
+                    .onChange(of: extraInfo) { _, newValue in
+                        if newValue.count > 500 {
+                            extraInfo = String(newValue.prefix(500))
+                        }
                     }
-                }
                 if !extraInfo.isEmpty {
                     characterCountLabel(count: extraInfo.count, max: 500)
                 }

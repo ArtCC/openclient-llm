@@ -70,8 +70,8 @@ private extension PromptTemplatesViewModel {
     func loadTemplates() {
         do {
             let all = try loadTemplatesUseCase.execute()
-            let builtIns = all.filter(\.isBuiltIn)
-            let custom = all.filter { !$0.isBuiltIn }
+            let builtIns = all.filter(\.isBuiltIn).sorted { $0.title < $1.title }
+            let custom = all.filter { !$0.isBuiltIn }.sorted { $0.title < $1.title }
             state = .loaded(.init(builtInTemplates: builtIns, customTemplates: custom))
         } catch {
             state = .loaded(.init(builtInTemplates: [], customTemplates: [], errorMessage: error.localizedDescription))

@@ -30,13 +30,21 @@ struct PromptTemplateRepository: PromptTemplateRepositoryProtocol {
 
     private let fileManager: FileManager
     private let directoryURL: URL
+    private let settingsManager: SettingsManagerProtocol
+    private let cloudSyncManager: CloudSyncManagerProtocol
 
     // MARK: - Init
 
-    init(fileManager: FileManager = .default) {
+    init(
+        fileManager: FileManager = .default,
+        settingsManager: SettingsManagerProtocol = SettingsManager(),
+        cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager()
+    ) {
         self.fileManager = fileManager
         let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
         self.directoryURL = documentsURL.appendingPathComponent("PromptTemplates", isDirectory: true)
+        self.settingsManager = settingsManager
+        self.cloudSyncManager = cloudSyncManager
     }
 
     // MARK: - Public
@@ -44,8 +52,26 @@ struct PromptTemplateRepository: PromptTemplateRepositoryProtocol {
     func loadAll() throws -> [PromptTemplate] {
         LogManager.debug("loadAll prompt templates")
         try ensureDirectoryExists()
-        let custom = try loadCustomTemplates()
-        let all = builtIns() + custom.sorted { $0.createdAt < $1.createdAt }
+
+        var localCustom = try loadCustomTemplates()
+
+        if settingsManager.getIsCloudSyncEnabled() {
+            let cloudTemplates = (try? cloudSyncManager.loadTemplatesFromCloud()) ?? []
+            let cloudIds = cloudSyncManager.allCloudTemplateIds()
+
+            localCustom = mergeTemplates(local: localCustom, cloud: cloudTemplates, cloudIds: cloudIds)
+
+            if cloudIds != nil {
+                let mergedIds = Set(localCustom.map(\.id))
+                cleanupLocalFiles(keeping: mergedIds)
+            }
+
+            for template in localCustom {
+                try saveLocal(template)
+            }
+        }
+
+        let all = builtIns() + localCustom.sorted { $0.createdAt < $1.createdAt }
         LogManager.success("loadAll returned \(all.count) prompt templates")
         return all
     }
@@ -54,12 +80,12 @@ struct PromptTemplateRepository: PromptTemplateRepositoryProtocol {
         LogManager.debug("save prompt template id=\(template.id) title='\(template.title)'")
         guard !template.isBuiltIn else { return }
         try ensureDirectoryExists()
-        let fileURL = directoryURL.appendingPathComponent("\(template.id.uuidString).json")
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-        encoder.dateEncodingStrategy = .iso8601
-        let data = try encoder.encode(template)
-        try data.write(to: fileURL, options: .atomic)
+        try saveLocal(template)
+
+        if settingsManager.getIsCloudSyncEnabled() {
+            try? cloudSyncManager.syncTemplatesToCloud([template])
+        }
+
         LogManager.success("saved prompt template id=\(template.id)")
     }
 
@@ -69,6 +95,10 @@ struct PromptTemplateRepository: PromptTemplateRepositoryProtocol {
         guard fileManager.fileExists(atPath: fileURL.path) else { return }
         try fileManager.removeItem(at: fileURL)
         LogManager.success("deleted prompt template id=\(templateId)")
+
+        if settingsManager.getIsCloudSyncEnabled() {
+            try? cloudSyncManager.deleteTemplateFromCloud(templateId)
+        }
     }
 }
 
@@ -83,7 +113,8 @@ private extension PromptTemplateRepository {
     func loadCustomTemplates() throws -> [PromptTemplate] {
         let contents = try fileManager.contentsOfDirectory(
             at: directoryURL,
-            includingPropertiesForKeys: nil
+            includingPropertiesForKeys: nil,
+            options: .skipsHiddenFiles
         )
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -93,6 +124,53 @@ private extension PromptTemplateRepository {
                 guard let data = try? Data(contentsOf: url) else { return nil }
                 return try? decoder.decode(PromptTemplate.self, from: data)
             }
+    }
+
+    func saveLocal(_ template: PromptTemplate) throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        encoder.dateEncodingStrategy = .iso8601
+        let data = try encoder.encode(template)
+        let fileURL = directoryURL.appendingPathComponent("\(template.id.uuidString).json")
+        try data.write(to: fileURL, options: .atomic)
+    }
+
+    func mergeTemplates(
+        local: [PromptTemplate],
+        cloud: [PromptTemplate],
+        cloudIds: Set<UUID>?
+    ) -> [PromptTemplate] {
+        var merged: [UUID: PromptTemplate] = [:]
+
+        for template in local {
+            if let cloudIds {
+                guard cloudIds.contains(template.id) else { continue }
+            }
+            merged[template.id] = template
+        }
+
+        for cloudTemplate in cloud {
+            // Cloud wins on conflict (most recently created custom template takes precedence)
+            merged[cloudTemplate.id] = cloudTemplate
+        }
+
+        return Array(merged.values)
+    }
+
+    func cleanupLocalFiles(keeping ids: Set<UUID>) {
+        guard let fileURLs = try? fileManager.contentsOfDirectory(
+            at: directoryURL,
+            includingPropertiesForKeys: nil,
+            options: .skipsHiddenFiles
+        ) else { return }
+
+        for url in fileURLs where url.pathExtension == "json" {
+            if let uuid = UUID(uuidString: url.deletingPathExtension().lastPathComponent),
+               !ids.contains(uuid) {
+                try? fileManager.removeItem(at: url)
+                LogManager.debug("Cleaned up local template file: \(uuid)")
+            }
+        }
     }
 
     func builtIns() -> [PromptTemplate] {

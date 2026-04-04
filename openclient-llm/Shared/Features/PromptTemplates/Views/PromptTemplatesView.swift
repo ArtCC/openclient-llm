@@ -70,6 +70,14 @@ private extension PromptTemplatesView {
     var macOSBody: some View {
         VStack(spacing: 0) {
             HStack {
+                Button {
+                    editingTemplate = nil
+                    showEditor = true
+                } label: {
+                    Image(systemName: "plus")
+                        .imageScale(.medium)
+                }
+
                 Spacer()
 
                 Text(String(localized: "Prompt Library"))
@@ -89,16 +97,7 @@ private extension PromptTemplatesView {
             Divider()
 
             content
-                .toolbar {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            editingTemplate = nil
-                            showEditor = true
-                        } label: {
-                            Image(systemName: "plus")
-                        }
-                    }
-                }
+                .frame(maxHeight: .infinity)
         }
     }
 #endif
@@ -139,6 +138,20 @@ private extension PromptTemplatesView {
                 Section(String(localized: "Custom")) {
                     ForEach(loadedState.customTemplates) { template in
                         templateRow(template)
+                            .contextMenu {
+                                Button {
+                                    editingTemplate = template
+                                    showEditor = true
+                                } label: {
+                                    Label(String(localized: "Edit"), systemImage: "pencil")
+                                }
+                                Button(role: .destructive) {
+                                    viewModel.send(.deleteTapped(template))
+                                } label: {
+                                    Label(String(localized: "Delete"), systemImage: "trash")
+                                }
+                            }
+#if os(iOS)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     viewModel.send(.deleteTapped(template))
@@ -153,6 +166,7 @@ private extension PromptTemplatesView {
                                 }
                                 .tint(.orange)
                             }
+#endif
                     }
                 }
             }
@@ -168,17 +182,9 @@ private extension PromptTemplatesView {
             dismiss()
         } label: {
             VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Text(template.title)
-                        .font(.body)
-                        .foregroundStyle(.primary)
-                    if template.isBuiltIn {
-                        Spacer()
-                        Image(systemName: "star.fill")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                }
+                Text(template.title)
+                    .font(.body)
+                    .foregroundStyle(.primary)
                 Text(template.content)
                     .font(.caption)
                     .foregroundStyle(.secondary)
