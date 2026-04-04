@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [0.0.1-build-12] - 2026-04-03
+## [0.0.1-build-12] - 2026-04-04
 
 ### Added
 
@@ -41,6 +41,14 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - `Tab(role: .search)` in `HomeView` iOS layout — the system automatically places the search icon at the trailing end of the tab bar, separated from the main tabs (same pattern as Telegram and Apple Music)
 - `AppTab` enum (`chats`, `models`, `settings`) to track the selected tab and trigger SF Symbol animations
 - SF Symbol animations on tab bar icons on iOS: `.bounce` on Chats (`bubble.left.and.bubble.right`), `.pulse` on Models (`brain.head.profile`), `.rotate` on Settings (`gearshape`) — each animation fires once on selection
+- Speech-to-Text (STT) model selection in the Models screen — dedicated section listing STT-capable models; selection persisted via `selectedSTTModelId` in `SettingsManager`
+- `selectedSTTModelId` property and related persistence methods added to `SettingsManager` and `SettingsManagerProtocol`
+- `ChatViewModel` resolves the selected STT model ID alongside the TTS model ID when routing audio operations
+- Regenerate response button shown inline on the last assistant message bubble in `MessageBubbleView`, in addition to the existing toolbar button
+- `onForkCreated` callback on `ChatView` propagated through `HomeView` to navigate directly to the new conversation after branching
+- Maximum tag limit of 3 enforced in `ConversationTagsView`; add button disabled once the limit is reached
+- `Color.appAccent` extension returning `Color("AccentColor")` from the asset catalog — use instead of `Color.accentColor` for consistent branding on macOS regardless of the system accent setting
+- `Notification.Name.appDataDidReset` constant centralised in `Core/Extensions/Foundation/Notification.Name.swift`
 
 ### Changed
 
@@ -50,8 +58,6 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - Swipe-to-delete in the conversation list replaced `.onDelete` with `.swipeActions(edge: .trailing, allowsFullSwipe: false)` so the row does not animate away before the user confirms the delete alert
 - `ConversationListViewModel.refresh()` now exposes an async `refreshAsync()` variant awaited by `.refreshable` to keep the spinner duration in sync with the actual reload
 - `ModelsViewModel.refreshModels()` extracted shared network logic into `performRefresh() async`; `refreshAsync()` awaits it directly so the pull-to-refresh spinner lasts exactly as long as the network call
-- Settings navigation-style buttons (Personal Context, Rate the App, Suggest Features, Privacy Policy, Terms of Use) now show a `chevron.right` indicator on macOS to match platform conventions
-- Save button in Settings Server section uses `.buttonStyle(.bordered)` on macOS, matching the Test Connection button
 - Chat messages scroll view gains `.contentMargins(.top, 16, for: .scrollContent)` on macOS to avoid content starting flush against the toolbar
 - Keychain queries updated to include `kSecUseDataProtectionKeychain: true` on all operations (get, set, delete) to use the modern Data Protection Keychain on macOS, which never prompts the user for a password
 - `.gitignore` updated to exclude `.vscode/` directory
@@ -59,6 +65,13 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - Models tab icon changed from `cpu` to `brain.head.profile` to better reflect AI model selection
 - `ConversationListView` search bar removed; search is now handled exclusively by the dedicated search tab, fixing the bug where the search bar would disappear when editing conversation tags
 - `ConversationListView` empty-filtered state for tag filter replaced with a dedicated `noTagResults` view (`tag.slash` icon) instead of reusing `ContentUnavailableView.search`
+- Conversation tags sorted case-insensitively in `ConversationListViewModel`
+- Tag filter bar repositioned above the conversation list rows in `ConversationListView`
+- Resend button in the message edit sheet disabled when the edited text is empty
+- Chat toolbar buttons apply glass effect and `contentShape` modifier for consistent appearance and hit area
+- `ChatView` scrolls to the bottom automatically when a new message arrives
+- Reset App Data button in Settings uses `.foregroundStyle(.red)` instead of a tinted button style
+- Settings navigation buttons simplified to plain `Label` on macOS — chevron icon and explicit `.buttonStyle(.bordered)` modifiers removed
 - Assistant message text blocks rendered using `interpretedSyntax: .inlineOnlyPreservingWhitespace` instead of `.full` — fixes all newlines and paragraph breaks being silently collapsed into spaces or removed, causing every response to appear as a single unformatted block of text regardless of model or provider
 - Normalization regex (`\n` → `\n\n`) removed from `textBlockView` as it was redundant and broke adjacent list items with the new rendering option
 

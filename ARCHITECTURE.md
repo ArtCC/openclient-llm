@@ -111,6 +111,8 @@ openclient-llm/                              # iOS target
 │   │   │       ├── SettingsView.swift
 │   │   │       └── UserProfileView.swift
 │   │   └── TextToSpeech/
+│   │       ├── Models/
+│   │       │   └── TTSVoice.swift
 │   │       ├── Repositories/
 │   │       │   └── TextToSpeechRepository.swift
 │   │       └── UseCases/
@@ -165,7 +167,9 @@ openclient-llm-macOS/                        # macOS target
 openclient-llm-test/                         # Unit tests
 ├── Core/
 │   └── Managers/
-│       └── KeychainManagerTests.swift
+│       ├── KeychainManagerTests.swift
+│       ├── SettingsManagerSTTTests.swift
+│       └── SettingsManagerTTSTests.swift
 ├── Features/
 │   ├── Chat/
 │   │   ├── ChatViewModelTests.swift
@@ -191,6 +195,8 @@ openclient-llm-test/                         # Unit tests
 │   │   └── ResetAppDataUseCaseTests.swift
 │   ├── Models/
 │   │   ├── FetchModelsUseCaseTests.swift
+│   │   ├── ModelsViewModelSTTTests.swift
+│   │   ├── ModelsViewModelTTSTests.swift
 │   │   └── ModelsViewModelTests.swift
 │   ├── Onboarding/
 │   │   ├── CompleteOnboardingUseCaseTests.swift
