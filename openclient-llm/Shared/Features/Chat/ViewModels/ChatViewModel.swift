@@ -473,6 +473,10 @@ extension ChatViewModel {
             if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
                 state.messages[index].content += token
             }
+        case .reasoning(let text):
+            if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
+                state.messages[index].reasoningContent = (state.messages[index].reasoningContent ?? "") + text
+            }
         case .usage(let usage):
             if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
                 state.messages[index].tokenUsage = usage
