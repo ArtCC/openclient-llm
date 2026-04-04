@@ -11,6 +11,7 @@ import Foundation
 protocol ModelsRepositoryProtocol: Sendable {
     func fetchModels() async throws -> [LLMModel]
     func fetchModelInfo() async throws -> [LLMModel]
+    func fetchOllamaModelDetails(for modelId: String, rootURL: String) async -> OllamaShowResponse?
 }
 
 struct ModelsRepository: ModelsRepositoryProtocol {
@@ -78,5 +79,25 @@ struct ModelsRepository: ModelsRepositoryProtocol {
         }
         LogManager.success("fetchModelInfo returned \(result.count) models")
         return result
+    }
+
+    func fetchOllamaModelDetails(for modelId: String, rootURL: String) async -> OllamaShowResponse? {
+        guard let url = URL(string: rootURL)?.appendingPathComponent("api/show") else { return nil }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = HTTPMethod.post.rawValue
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 5
+
+        guard let body = try? JSONEncoder().encode(OllamaShowRequest(model: modelId)) else { return nil }
+        request.httpBody = body
+
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              let http = response as? HTTPURLResponse,
+              (200...299).contains(http.statusCode) else { return nil }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try? decoder.decode(OllamaShowResponse.self, from: data)
     }
 }

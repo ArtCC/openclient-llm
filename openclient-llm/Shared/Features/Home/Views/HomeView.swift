@@ -94,7 +94,6 @@ private extension HomeView {
                 selectedConversation = conversation
             }
             .id(conversationListId)
-            .navigationTitle(String(localized: "Chats"))
             .navigationDestination(item: $selectedConversation) { conversation in
                 ChatView(
                     conversation: conversation,
@@ -116,7 +115,6 @@ private extension HomeView {
                 selectedConversation = conversation
             }
             .id(conversationListId)
-            .navigationTitle(String(localized: "Chats"))
             .navigationSplitViewColumnWidth(320)
         } detail: {
             if let selectedConversation {
@@ -196,7 +194,6 @@ private extension HomeView {
                     selectedConversation = conversation
                 }
                 .id(conversationListId)
-                .navigationTitle(String(localized: "Chats"))
                 .navigationDestination(item: $selectedConversation) { conversation in
                     ChatView(
                         conversation: conversation,

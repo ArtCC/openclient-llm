@@ -214,6 +214,12 @@ model_list:
       model: deepseek/deepseek-reasoner
       api_key: os.environ/DEEPSEEK_API_KEY
 
+search_tools:
+  - search_tool_name: firecrawl-search
+    litellm_params:
+      search_provider: firecrawl
+      api_key: os.environ/FIRECRAWL_API_KEY
+
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   database_url: os.environ/DATABASE_URL
