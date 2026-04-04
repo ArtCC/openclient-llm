@@ -18,22 +18,32 @@ struct ChatView: View {
     @State private var inputText: String = ""
     @State private var shouldAutoScroll: Bool = true
     @State private var isNearBottom: Bool = true
+    @State private var isNearTop: Bool = true
+    @State private var scrollPosition = ScrollPosition(idType: String.self)
     @State private var showSystemPromptSheet: Bool = false
     @State private var showModelParametersSheet: Bool = false
     @State private var showImagePicker: Bool = false
     @State private var showDocumentPicker: Bool = false
     @State private var showCameraPicker: Bool = false
     @State private var showImageFilePicker: Bool = false
+    @State private var editingMessage: ChatMessage?
+    @State private var editingMessageText: String = ""
 
     var conversation: Conversation?
     var onConversationUpdated: (() -> Void)?
+    var onForkCreated: ((Conversation) -> Void)?
 
     // MARK: - Init
 
-    init(conversation: Conversation? = nil, onConversationUpdated: (() -> Void)? = nil) {
+    init(
+        conversation: Conversation? = nil,
+        onConversationUpdated: (() -> Void)? = nil,
+        onForkCreated: ((Conversation) -> Void)? = nil
+    ) {
         _viewModel = State(initialValue: ChatViewModel(conversation: conversation))
         self.conversation = conversation
         self.onConversationUpdated = onConversationUpdated
+        self.onForkCreated = onForkCreated
     }
 
     // MARK: - View
@@ -63,10 +73,19 @@ private extension ChatView {
         .navigationTitle(conversation?.title ?? "")
         .toolbar {
             ToolbarItem(placement: .principal) {
-                modelSelector
+                modelSelector(using: viewModel)
             }
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: 4) {
+                    if case .loaded(let loadedSt) = viewModel.state,
+                       loadedSt.conversation != nil, !loadedSt.messages.isEmpty,
+                       let url = makeExportURL(loadedSt) {
+                        ShareLink(item: url) {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        .accessibilityLabel(String(localized: "Export Conversation"))
+                    }
+
                     Button {
                         showModelParametersSheet = true
                     } label: {
@@ -93,6 +112,14 @@ private extension ChatView {
             ChatModelParametersView(
                 viewModel: viewModel,
                 isPresented: $showModelParametersSheet
+            )
+        }
+        .sheet(item: $editingMessage) { message in
+            editMessageSheet(
+                message,
+                viewModel: viewModel,
+                editingMessage: $editingMessage,
+                editingMessageText: $editingMessageText
             )
         }
         .imagePicker(isPresented: $showImagePicker) { attachment in
@@ -132,10 +159,19 @@ private extension ChatView {
 #endif
             .toolbar {
                 ToolbarItem(placement: .principal) {
-                    modelSelector
+                    modelSelector(using: viewModel)
                 }
                 ToolbarItem(placement: .primaryAction) {
                     HStack(spacing: 4) {
+                        if case .loaded(let loadedSt) = viewModel.state,
+                           loadedSt.conversation != nil, !loadedSt.messages.isEmpty,
+                           let url = makeExportURL(loadedSt) {
+                            ShareLink(item: url) {
+                                Image(systemName: "square.and.arrow.up")
+                            }
+                            .accessibilityLabel(String(localized: "Export Conversation"))
+                        }
+
                         Button {
                             showModelParametersSheet = true
                         } label: {
@@ -164,9 +200,18 @@ private extension ChatView {
                     isPresented: $showModelParametersSheet
                 )
             }
+            .sheet(item: $editingMessage) { message in
+                editMessageSheet(
+                    message,
+                    viewModel: viewModel,
+                    editingMessage: $editingMessage,
+                    editingMessageText: $editingMessageText
+                )
+            }
         }
         .task {
             viewModel.onConversationUpdated = onConversationUpdated
+            viewModel.onForkCreated = onForkCreated
             viewModel.send(.viewAppeared)
         }
         .onChange(of: conversation) { _, newConversation in
@@ -217,6 +262,27 @@ private extension ChatView {
     ) -> some View {
         ScrollViewReader { proxy in
             scrollContent(loadedState, proxy: proxy)
+                .overlay(alignment: .topTrailing) {
+                    if !isNearTop && !loadedState.messages.isEmpty {
+                        scrollAnchorButton(isTop: true) {
+                            withAnimation(.easeInOut(duration: 0.35)) {
+                                scrollPosition.scrollTo(edge: .top)
+                            }
+                        }
+                    }
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    if !isNearBottom && !loadedState.messages.isEmpty {
+                        scrollAnchorButton(isTop: false) {
+                            withAnimation(.easeInOut(duration: 0.35)) {
+                                scrollPosition.scrollTo(edge: .bottom)
+                            }
+                            shouldAutoScroll = true
+                        }
+                    }
+                }
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearTop)
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearBottom)
         }
     }
 
@@ -225,11 +291,12 @@ private extension ChatView {
         proxy: ScrollViewProxy
     ) -> some View {
         scrollViewContent(loadedState)
-            .onScrollGeometryChange(for: Bool.self) { geo in
-                geo.contentSize.height - geo.contentOffset.y - geo.containerSize.height < 80
-            } action: { _, newValue in
-                isNearBottom = newValue
-            }
+            .onScrollGeometryChange(for: Bool.self) {
+                $0.contentSize.height - $0.contentOffset.y - $0.containerSize.height < 150
+            } action: { _, new in isNearBottom = new }
+            .onScrollGeometryChange(for: Bool.self) {
+                $0.contentOffset.y < 150
+            } action: { _, new in isNearTop = new }
             .onScrollPhaseChange { oldPhase, newPhase in
                 if newPhase == .interacting {
                     shouldAutoScroll = false
@@ -247,6 +314,13 @@ private extension ChatView {
             }
             .onChange(of: loadedState.scrollToBottomTrigger) {
                 proxy.scrollTo("scroll-bottom")
+            }
+            .task(id: loadedState.messages.isEmpty) {
+                guard !loadedState.messages.isEmpty else { return }
+                try? await Task.sleep(for: .milliseconds(120))
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    proxy.scrollTo("scroll-bottom")
+                }
             }
 #if os(iOS)
             .onReceive(
@@ -279,6 +353,7 @@ private extension ChatView {
                 messagesList(loadedState)
             }
         }
+        .scrollPosition($scrollPosition)
 #if os(iOS)
         .scrollDismissesKeyboard(.interactively)
 #elseif os(macOS)
@@ -290,21 +365,34 @@ private extension ChatView {
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
         LazyVStack(spacing: 16) {
+            Color.clear
+                .frame(height: 1)
+                .id("scroll-top")
             ForEach(loadedState.messages) { message in
+                let isLast = message.id == loadedState.messages.last?.id
                 MessageBubbleView(
                     message: message,
-                    isStreaming: loadedState.isStreaming
-                    && message.id
-                    == loadedState.messages.last?.id,
+                    isStreaming: loadedState.isStreaming && isLast,
                     isSpeaking: loadedState.speakingMessageId == message.id,
                     hasTTS: loadedState.ttsModelId != nil,
                     showTokenUsage: loadedState.showTokenUsage,
+                    isLastMessage: isLast,
                     onSpeakTapped: {
                         viewModel.send(.speakMessageTapped(message))
                     },
                     onStopSpeakingTapped: {
                         viewModel.send(.stopSpeakingTapped)
-                    }
+                    },
+                    onEditTapped: message.role == .user ? {
+                        editingMessage = message
+                        editingMessageText = message.content
+                    } : nil,
+                    onRegenerateTapped: (message.role == .assistant && isLast) ? {
+                        viewModel.send(.regenerateLastResponse)
+                    } : nil,
+                    onForkTapped: loadedState.conversation != nil ? {
+                        viewModel.send(.forkFromMessage(message.id))
+                    } : nil
                 )
                 .id(message.id)
                 .transition(.opacity)
@@ -316,6 +404,23 @@ private extension ChatView {
         .padding(.horizontal, 16)
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Scroll Navigation
+
+    func scrollAnchorButton(isTop: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: isTop ? "chevron.up" : "chevron.down")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.primary)
+                .frame(width: 44, height: 44)
+                .glassEffect(.regular, in: .circle)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, 16)
+        .padding(isTop ? .top : .bottom, 16)
+        .transition(.scale(scale: 0.8).combined(with: .opacity))
     }
 
     // MARK: - Error Banner
@@ -376,44 +481,6 @@ private extension ChatView {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .glassEffect(.regular, in: .capsule)
-    }
-
-    // MARK: - Model Selector
-
-    @ViewBuilder
-    var modelSelector: some View {
-        if case .loaded(let loadedState) = viewModel.state,
-           !loadedState.availableModels.isEmpty {
-            Menu {
-                ForEach(loadedState.availableModels) { model in
-                    Button {
-                        viewModel.send(.modelSelected(model))
-                    } label: {
-                        HStack {
-                            Text(model.id)
-                            if model == loadedState.selectedModel {
-                                Image(systemName: "checkmark")
-                            }
-                        }
-                    }
-                }
-            } label: {
-                HStack(spacing: 4) {
-                    Text(
-                        loadedState.selectedModel?.id
-                        ?? String(localized: "No Model")
-                    )
-                    .font(.poppins(.semiBold, size: 17, relativeTo: .headline))
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .frame(maxWidth: 200)
-
-                    Image(systemName: "chevron.down")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
     }
 }
 

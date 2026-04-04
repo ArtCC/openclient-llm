@@ -14,10 +14,15 @@ struct ConversationListView: View {
     @Environment(\.scenePhase) private var scenePhase
 
     @State private var viewModel = ConversationListViewModel()
-    @State private var searchText: String = ""
     @State private var editingTagsConversation: Conversation?
     @State private var conversationToDelete: Conversation?
 
+#if os(macOS)
+    @State private var isMacSearchExpanded = false
+    @State private var macSearchText = ""
+#endif
+
+    var activeConversationId: UUID?
     let onConversationSelected: (Conversation?) -> Void
 
     // MARK: - View
@@ -31,18 +36,11 @@ struct ConversationListView: View {
                 loadedView(loadedState)
             }
         }
-        #if os(macOS)
+#if os(macOS)
         .focusedSceneValue(\.newChatAction) {
             viewModel.send(.newConversationTapped)
         }
-        #endif
-        .searchable(
-            text: $searchText,
-            prompt: String(localized: "Search conversations...")
-        )
-        .onChange(of: searchText) { _, newValue in
-            viewModel.send(.searchChanged(newValue))
-        }
+#endif
         .task {
             viewModel.onConversationSelected = onConversationSelected
             viewModel.send(.viewAppeared)
@@ -92,7 +90,7 @@ private extension ConversationListView {
             if loadedState.conversations.isEmpty {
                 emptyState
             } else if loadedState.filteredConversations.isEmpty {
-                noSearchResults
+                noTagResults
             } else {
                 conversationList(loadedState)
             }
@@ -107,16 +105,9 @@ private extension ConversationListView {
                 .accessibilityLabel(String(localized: "New Chat"))
                 .keyboardShortcut("n", modifiers: .command)
             }
-            #if os(macOS)
-            ToolbarItem(placement: .automatic) {
-                Button {
-                    viewModel.send(.refreshTapped)
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                }
-                .accessibilityLabel(String(localized: "Refresh"))
-            }
-            #endif
+#if os(macOS)
+            macToolbarItems
+#endif
         }
     }
 
@@ -138,56 +129,57 @@ private extension ConversationListView {
         }
     }
 
-    var noSearchResults: some View {
-        ContentUnavailableView.search(text: searchText)
+    var noTagResults: some View {
+        ContentUnavailableView {
+            Label(
+                String(localized: "No Conversations"),
+                systemImage: "tag.slash"
+            )
+        } description: {
+            Text(String(localized: "No conversations found with the selected tag"))
+        }
     }
 
     func conversationList(_ loadedState: ConversationListViewModel.LoadedState) -> some View {
-        VStack(spacing: 0) {
-            if !loadedState.allTags.isEmpty {
-                tagFilterBar(loadedState)
-                Divider()
-            }
-            List {
-                ForEach(loadedState.groupedConversations) { section in
-                    Section {
-                        ForEach(section.conversations) { conversation in
-                            conversationRow(conversation, loadedState: loadedState)
-                                .listRowBackground(Color.clear)
-                                .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 12))
-                                .contextMenu {
-                                    conversationContextMenu(conversation)
-                                }
-                                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                    Button(role: .destructive) {
-                                        conversationToDelete = conversation
-                                    } label: {
-                                        Label(String(localized: "Delete"), systemImage: "trash")
-                                    }
-                                }
-                        }
-                    } header: {
-                        HStack(spacing: 4) {
-                            if section.period == .pinned {
-                                Image(systemName: "pin.fill")
-                                    .font(.caption2)
+        List {
+            ForEach(loadedState.groupedConversations) { section in
+                Section {
+                    ForEach(section.conversations) { conversation in
+                        conversationRow(conversation, loadedState: loadedState)
+                            .listRowBackground(Color.clear)
+                            .listRowInsets(EdgeInsets(top: 4, leading: 2, bottom: 4, trailing: 2))
+                            .contextMenu {
+                                conversationContextMenu(conversation)
                             }
-                            Text(section.period.localizedTitle)
-                                .font(.poppins(.semiBold, size: 11, relativeTo: .caption2))
-                        }
-                        .foregroundStyle(.secondary)
-                        .textCase(nil)
+                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                Button(role: .destructive) {
+                                    conversationToDelete = conversation
+                                } label: {
+                                    Label(String(localized: "Delete"), systemImage: "trash")
+                                }
+                            }
                     }
+                } header: {
+                    sectionHeader(for: section)
                 }
             }
-            #if os(macOS)
-            .listStyle(.plain)
-            #else
-            .listStyle(.plain)
-            .refreshable {
-                await viewModel.refreshAsync()
+        }
+#if os(macOS)
+        .listStyle(.plain)
+#else
+        .listStyle(.plain)
+        .refreshable {
+            await viewModel.refreshAsync()
+        }
+#endif
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if !loadedState.allTags.isEmpty {
+                VStack(spacing: 0) {
+                    tagFilterBar(loadedState)
+                    Divider()
+                }
+                .background(.regularMaterial)
             }
-            #endif
         }
     }
 
@@ -208,6 +200,12 @@ private extension ConversationListView {
             Label(String(localized: "Edit Tags"), systemImage: "tag")
         }
 
+        if let url = exportURL(for: conversation) {
+            ShareLink(item: url) {
+                Label(String(localized: "Export"), systemImage: "square.and.arrow.up")
+            }
+        }
+
         Divider()
 
         Button(role: .destructive) {
@@ -215,6 +213,25 @@ private extension ConversationListView {
         } label: {
             Label(String(localized: "Delete"), systemImage: "trash")
         }
+    }
+
+    @ViewBuilder
+    func sectionHeader(for section: ConversationSection) -> some View {
+        HStack(spacing: 4) {
+            if section.period == .pinned {
+                Image(systemName: "pin.fill")
+                    .font(.caption2)
+            }
+            Text(section.period.localizedTitle)
+                .font(.poppins(.semiBold, size: 11, relativeTo: .caption2))
+        }
+        .foregroundStyle(.secondary)
+        .textCase(nil)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .listRowInsets(EdgeInsets())
+        .background(.bar)
     }
 
     func tagFilterBar(_ loadedState: ConversationListViewModel.LoadedState) -> some View {
@@ -248,12 +265,17 @@ private extension ConversationListView {
                 .font(.caption)
                 .fontWeight(.medium)
                 .lineLimit(1)
+                .foregroundStyle(isSelected ? .white : .primary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
+#if os(macOS)
+                .background(isSelected ? Color.appAccent : Color.primary.opacity(0.08), in: .capsule)
+#else
                 .glassEffect(
-                    isSelected ? .regular.tint(Color.accentColor).interactive() : .regular.interactive(),
+                    isSelected ? .regular.tint(Color.appAccent).interactive() : .regular.interactive(),
                     in: .capsule
                 )
+#endif
         }
         .buttonStyle(.plain)
     }
@@ -262,7 +284,7 @@ private extension ConversationListView {
         _ conversation: Conversation,
         loadedState: ConversationListViewModel.LoadedState
     ) -> some View {
-        let isSelected = loadedState.selectedConversation?.id == conversation.id
+        let isSelected = activeConversationId == conversation.id
 
         return Button {
             viewModel.send(.conversationTapped(conversation))
@@ -270,10 +292,10 @@ private extension ConversationListView {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: conversation.isPinned ? "pin.fill" : "sparkles")
                     .font(.system(size: 14))
-                    .foregroundStyle(isSelected ? .white : (conversation.isPinned ? .orange : Color.accentColor))
+                    .foregroundStyle(isSelected ? .white : (conversation.isPinned ? .orange : Color.appAccent))
                     .frame(width: 36, height: 36)
                     .glassEffect(
-                        isSelected ? .regular.tint(Color.accentColor) : .regular,
+                        isSelected ? .regular.tint(Color.appAccent) : .regular,
                         in: .circle
                     )
 
@@ -283,6 +305,8 @@ private extension ConversationListView {
                             .font(.headline)
                             .lineLimit(1)
                             .frame(maxWidth: .infinity, alignment: .leading)
+
+                        branchBadge(for: conversation)
 
                         Text(formattedDate(conversation.updatedAt))
                             .font(.caption2)
@@ -310,7 +334,7 @@ private extension ConversationListView {
             .background {
                 if isSelected {
                     RoundedRectangle(cornerRadius: 14)
-                        .fill(Color.accentColor.opacity(0.12))
+                        .fill(Color.appAccent.opacity(0.12))
                 }
             }
             .contentShape(RoundedRectangle(cornerRadius: 14))
@@ -362,11 +386,90 @@ private extension ConversationListView {
         if let firstUserMessage = conversation.messages.first(where: { $0.role == .user }) {
             let preview = firstUserMessage.content.prefix(50)
             return preview.count < firstUserMessage.content.count
-                ? "\(preview)…"
-                : String(preview)
+            ? "\(preview)…"
+            : String(preview)
         }
         return String(localized: "New Chat")
     }
+    func exportURL(for conversation: Conversation) -> URL? {
+        guard let data = try? ExportConversationUseCase().execute(conversation) else { return nil }
+        let raw = conversationTitle(conversation)
+        let sanitized = raw
+            .replacingOccurrences(of: "[\\\\/:*?\"<>|]", with: "_", options: .regularExpression)
+            .prefix(50)
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent(String(sanitized))
+            .appendingPathExtension("json")
+        try? data.write(to: url)
+        return url
+    }
+
+    @ViewBuilder
+    func branchBadge(for conversation: Conversation) -> some View {
+        if conversation.parentConversationId != nil {
+            Image(systemName: "arrow.branch")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+#if os(macOS)
+    @ToolbarContentBuilder
+    var macToolbarItems: some ToolbarContent {
+        ToolbarItem(placement: .automatic) {
+            macSearchToolbarItem
+        }
+        ToolbarItem(placement: .automatic) {
+            Button {
+                viewModel.send(.refreshTapped)
+            } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+            .accessibilityLabel(String(localized: "Refresh"))
+        }
+    }
+
+    var macSearchToolbarItem: some View {
+        HStack(spacing: 4) {
+            if isMacSearchExpanded {
+                TextField(String(localized: "Search conversations..."), text: $macSearchText)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 180)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .trailing).combined(with: .opacity)
+                    ))
+                    .onChange(of: macSearchText) { _, newValue in
+                        viewModel.send(.searchChanged(newValue))
+                    }
+                    .onSubmit {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            isMacSearchExpanded = false
+                        }
+                    }
+                    .onExitCommand {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            isMacSearchExpanded = false
+                            macSearchText = ""
+                            viewModel.send(.searchChanged(""))
+                        }
+                    }
+            }
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    isMacSearchExpanded.toggle()
+                    if !isMacSearchExpanded {
+                        macSearchText = ""
+                        viewModel.send(.searchChanged(""))
+                    }
+                }
+            } label: {
+                Image(systemName: isMacSearchExpanded ? "xmark.circle.fill" : "magnifyingglass")
+            }
+            .help(String(localized: "Search"))
+        }
+    }
+#endif
 }
 
 #Preview {

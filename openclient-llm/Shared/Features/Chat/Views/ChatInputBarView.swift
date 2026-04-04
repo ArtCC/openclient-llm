@@ -155,7 +155,7 @@ private extension ChatInputBarView {
 
     var sendButton: some View {
         Button { inputText = ""; onSend() } label: {
-            Image(systemName: "arrow.up.circle.fill").font(.title).foregroundStyle(Color.accentColor)
+            Image(systemName: "arrow.up.circle.fill").font(.title).foregroundStyle(Color.appAccent)
                 .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
         }
         .buttonStyle(.plain)

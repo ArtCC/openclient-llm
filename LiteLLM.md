@@ -57,6 +57,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      FIRECRAWL_API_KEY: ${FIRECRAWL_API_KEY}
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -76,6 +77,7 @@ OPENAI_API_KEY=your-openai-api-key
 ANTHROPIC_API_KEY=your-anthropic-api-key
 GOOGLE_API_KEY=your-google-api-key
 DEEPSEEK_API_KEY=your-deepseek-api-key
+FIRECRAWL_API_KEY=your-firecrawl-api-key
 ```
 
 ## Reference config.yaml
@@ -157,6 +159,16 @@ model_list:
   - model_name: gpt-5.4-nano
     litellm_params:
       model: openai/gpt-5.4-nano
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-4o-mini-tts
+    litellm_params:
+      model: openai/gpt-4o-mini-tts
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-4o-mini-transcribe
+    litellm_params:
+      model: openai/gpt-4o-mini-transcribe
       api_key: os.environ/OPENAI_API_KEY
 
   # Anthropic

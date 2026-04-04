@@ -7,10 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [0.0.1-build-12] - 2026-04-03
+## [0.0.1-build-12] - 2026-04-04
 
 ### Added
 
+- Export conversations to JSON via share sheet — available from the chat toolbar (context menu in conversation list on macOS, share button in toolbar on iOS/macOS)
+- Message editing — long-press any sent user message to edit its content and resend; all subsequent messages are removed and the conversation continues from the edited point
+- Response regeneration — "Regenerate Response" button appears above the input bar after every complete assistant reply, allowing the user to request a new response to the same message
+- Conversation branching — long-press any message (user or assistant) to fork the conversation from that point; the fork is a fully independent conversation with its own history up to the selected message; branch indicator (`arrow.branch`) shown on forked conversations in the list
+- `ExportConversationUseCase` — encodes a `Conversation` to pretty-printed ISO 8601 JSON using `JSONEncoder`
+- `BranchConversationUseCase` — forks a conversation at a given message, copying all preceding messages and saving the new conversation via `SaveConversationUseCase`
+- `parentConversationId` and `branchedFromMessageId` fields on `Conversation` (optional, backward-compatible)
+- `ChatView+ModelSelector.swift` and `ChatView+EditExport.swift` extensions to keep `ChatView.swift` under the 500-line SwiftLint limit
+- `ChatViewModel+EditExport.swift` extension grouping all export, regenerate, edit, and branch logic
+- `MockExportConversationUseCase` and `MockBranchConversationUseCase` test doubles
+- 29 new ViewModel unit tests across `ChatViewModelTests+Export`, `+Regenerate`, `+Editing`, `+Branching`
+- 14 new use-case unit tests across `ExportConversationUseCaseTests` and `BranchConversationUseCaseTests`
 - Reload button in the chat list toolbar (macOS only), between the New Chat button and the search bar, matching the existing Models reload button design
 - Pull-to-refresh in the Models screen (iOS/iPadOS), matching the existing pull-to-refresh in the chat list
 - Provider logo images (OpenAI, Anthropic, Ollama, Gemini) shown on each model row in the Models list; models without a recognised logo fall back to a SF Symbol generic icon (`cpu.fill` for local, `sparkles` for cloud)
@@ -22,6 +34,21 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - Poppins applied selectively to key UI elements: onboarding titles and primary action buttons, "How can I help you?" heading in chat empty state, conversation list section headers, model selector label in chat toolbar
 - `CFBundleDisplayName = "OpenClient"` in macOS `Info.plist` so the app shows the correct name in Finder, Launchpad, and TestFlight installations
 - `.xcodebuildmcp/config.yaml` project configuration for XcodeBuildMCP (simulator + macOS + ui-automation workflows, session defaults, telemetry disabled)
+- Scroll-to-top and scroll-to-bottom Liquid Glass buttons in the chat messages view — each button only appears when its direction makes sense (scroll-up hidden when already at the top, scroll-down hidden when already at the bottom or during streaming auto-scroll)
+- `"scroll-top"` anchor at the start of the messages `LazyVStack` to enable smooth animated scroll to the first message
+- `isNearTop` state tracking in `ChatView` using `onScrollGeometryChange` with an 80 pt threshold
+- Dedicated `SearchConversationsView` tab with `searchable(placement: .navigationBarDrawer(displayMode: .always))` — search bar is always visible when the tab is active; shows all conversations when no query is entered, filtered results otherwise
+- `Tab(role: .search)` in `HomeView` iOS layout — the system automatically places the search icon at the trailing end of the tab bar, separated from the main tabs (same pattern as Telegram and Apple Music)
+- `AppTab` enum (`chats`, `models`, `settings`) to track the selected tab and trigger SF Symbol animations
+- SF Symbol animations on tab bar icons on iOS: `.bounce` on Chats (`bubble.left.and.bubble.right`), `.pulse` on Models (`brain.head.profile`), `.rotate` on Settings (`gearshape`) — each animation fires once on selection
+- Speech-to-Text (STT) model selection in the Models screen — dedicated section listing STT-capable models; selection persisted via `selectedSTTModelId` in `SettingsManager`
+- `selectedSTTModelId` property and related persistence methods added to `SettingsManager` and `SettingsManagerProtocol`
+- `ChatViewModel` resolves the selected STT model ID alongside the TTS model ID when routing audio operations
+- Regenerate response button shown inline on the last assistant message bubble in `MessageBubbleView`, in addition to the existing toolbar button
+- `onForkCreated` callback on `ChatView` propagated through `HomeView` to navigate directly to the new conversation after branching
+- Maximum tag limit of 3 enforced in `ConversationTagsView`; add button disabled once the limit is reached
+- `Color.appAccent` extension returning `Color("AccentColor")` from the asset catalog — use instead of `Color.accentColor` for consistent branding on macOS regardless of the system accent setting
+- `Notification.Name.appDataDidReset` constant centralised in `Core/Extensions/Foundation/Notification.Name.swift`
 
 ### Changed
 
@@ -31,16 +58,28 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - Swipe-to-delete in the conversation list replaced `.onDelete` with `.swipeActions(edge: .trailing, allowsFullSwipe: false)` so the row does not animate away before the user confirms the delete alert
 - `ConversationListViewModel.refresh()` now exposes an async `refreshAsync()` variant awaited by `.refreshable` to keep the spinner duration in sync with the actual reload
 - `ModelsViewModel.refreshModels()` extracted shared network logic into `performRefresh() async`; `refreshAsync()` awaits it directly so the pull-to-refresh spinner lasts exactly as long as the network call
-- Settings navigation-style buttons (Personal Context, Rate the App, Suggest Features, Privacy Policy, Terms of Use) now show a `chevron.right` indicator on macOS to match platform conventions
-- Save button in Settings Server section uses `.buttonStyle(.bordered)` on macOS, matching the Test Connection button
 - Chat messages scroll view gains `.contentMargins(.top, 16, for: .scrollContent)` on macOS to avoid content starting flush against the toolbar
 - Keychain queries updated to include `kSecUseDataProtectionKeychain: true` on all operations (get, set, delete) to use the modern Data Protection Keychain on macOS, which never prompts the user for a password
 - `.gitignore` updated to exclude `.vscode/` directory
+- `TabView` in `HomeView` switched from anonymous tabs to `Tab(value:)` with explicit selection binding to support per-tab symbol animations
+- Models tab icon changed from `cpu` to `brain.head.profile` to better reflect AI model selection
+- `ConversationListView` search bar removed; search is now handled exclusively by the dedicated search tab, fixing the bug where the search bar would disappear when editing conversation tags
+- `ConversationListView` empty-filtered state for tag filter replaced with a dedicated `noTagResults` view (`tag.slash` icon) instead of reusing `ContentUnavailableView.search`
+- Conversation tags sorted case-insensitively in `ConversationListViewModel`
+- Tag filter bar repositioned above the conversation list rows in `ConversationListView`
+- Resend button in the message edit sheet disabled when the edited text is empty
+- Chat toolbar buttons apply glass effect and `contentShape` modifier for consistent appearance and hit area
+- `ChatView` scrolls to the bottom automatically when a new message arrives
+- Reset App Data button in Settings uses `.foregroundStyle(.red)` instead of a tinted button style
+- Settings navigation buttons simplified to plain `Label` on macOS — chevron icon and explicit `.buttonStyle(.bordered)` modifiers removed
+- Assistant message text blocks rendered using `interpretedSyntax: .inlineOnlyPreservingWhitespace` instead of `.full` — fixes all newlines and paragraph breaks being silently collapsed into spaces or removed, causing every response to appear as a single unformatted block of text regardless of model or provider
+- Normalization regex (`\n` → `\n\n`) removed from `textBlockView` as it was redundant and broke adjacent list items with the new rendering option
 
 ### Fixed
 
 - macOS app name showing as the Xcode target name (`openclient-llm-macOS`) instead of `OpenClient` in Finder and TestFlight installations
 - macOS Keychain access prompting for the user's login password on first launch; now uses Data Protection Keychain silently
+- Chat responses from all models (cloud and local) appearing as a single unformatted text block with no line breaks — root cause was `AttributedString(markdown:options:)` with `.full` syntax discarding all newline characters from the character string
 
 ## [0.0.1-build-11] - 2026-04-02
 

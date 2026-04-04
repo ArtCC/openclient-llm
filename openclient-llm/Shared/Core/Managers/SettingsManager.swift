@@ -25,6 +25,8 @@ protocol SettingsManagerProtocol: Sendable {
     func setSelectedTTSModelId(_ value: String?)
     func getSelectedTTSVoice(forModelId modelId: String) -> String
     func setSelectedTTSVoice(_ voice: String, forModelId modelId: String)
+    func getSelectedSTTModelId() -> String?
+    func setSelectedSTTModelId(_ value: String?)
     func deleteAll()
 }
 
@@ -39,6 +41,7 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         static let isCloudSyncEnabled = "isCloudSyncEnabled"
         static let showTokenUsage = "showTokenUsage"
         static let selectedTTSModelId = "selectedTTSModelId"
+        static let selectedSTTModelId = "selectedSTTModelId"
 
         static func ttsVoiceKey(forModelId modelId: String) -> String {
             "tts_voice_\(modelId)"
@@ -131,12 +134,21 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         defaults.set(voice, forKey: Keys.ttsVoiceKey(forModelId: modelId))
     }
 
+    func getSelectedSTTModelId() -> String? {
+        defaults.string(forKey: Keys.selectedSTTModelId)
+    }
+
+    func setSelectedSTTModelId(_ value: String?) {
+        defaults.set(value, forKey: Keys.selectedSTTModelId)
+    }
+
     func deleteAll() {
         defaults.removeObject(forKey: Keys.isOnboardingCompleted)
         defaults.removeObject(forKey: Keys.selectedModelId)
         defaults.removeObject(forKey: Keys.isCloudSyncEnabled)
         defaults.removeObject(forKey: Keys.showTokenUsage)
         defaults.removeObject(forKey: Keys.selectedTTSModelId)
+        defaults.removeObject(forKey: Keys.selectedSTTModelId)
         defaults.removeObject(forKey: LegacyKeys.serverBaseURL)
         defaults.removeObject(forKey: LegacyKeys.apiKey)
         keychainManager.deleteAll()

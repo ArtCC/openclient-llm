@@ -23,6 +23,7 @@ final class SettingsViewModel {
         case cloudSyncConflictResolved(keepLocal: Bool)
         case cloudSyncConflictCancelled
         case showTokenUsageToggled(Bool)
+        case resetConfirmed
     }
 
     enum State: Equatable {
@@ -55,6 +56,7 @@ final class SettingsViewModel {
     private let settingsManager: SettingsManagerProtocol
     private let cloudSyncManager: CloudSyncManagerProtocol
     private let userProfileManager: UserProfileManagerProtocol
+    private let resetAppUseCase: ResetAppDataUseCaseProtocol
 
     // MARK: - Init
 
@@ -64,7 +66,8 @@ final class SettingsViewModel {
         testServerConnectionUseCase: TestServerConnectionUseCaseProtocol = TestServerConnectionUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
-        userProfileManager: UserProfileManagerProtocol = UserProfileManager()
+        userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
+        resetAppUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase()
     ) {
         self.state = state
         self.saveServerConfigurationUseCase = saveServerConfigurationUseCase
@@ -72,6 +75,7 @@ final class SettingsViewModel {
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
         self.userProfileManager = userProfileManager
+        self.resetAppUseCase = resetAppUseCase
     }
 
     // MARK: - Input functions
@@ -96,6 +100,8 @@ final class SettingsViewModel {
             cancelCloudSyncToggle()
         case .showTokenUsageToggled(let show):
             toggleShowTokenUsage(show)
+        case .resetConfirmed:
+            resetApp()
         }
     }
 }
@@ -216,5 +222,11 @@ private extension SettingsViewModel {
         settingsManager.setShowTokenUsage(show)
         loadedState.showTokenUsage = show
         state = .loaded(loadedState)
+    }
+
+    func resetApp() {
+        resetAppUseCase.execute()
+        loadSettings()
+        NotificationCenter.default.post(name: .appDataDidReset, object: nil)
     }
 }

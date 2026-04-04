@@ -75,8 +75,11 @@ private extension ModelsView {
     }
 
     func modelsList(_ loadedState: ModelsViewModel.LoadedState) -> some View {
-        let chatModels = loadedState.models.filter { $0.mode != .audioSpeech }
+        let chatModels = loadedState.models.filter {
+            $0.mode != .audioSpeech && $0.mode != .audioTranscription
+        }
         let ttsModels = loadedState.models.filter { $0.mode == .audioSpeech }
+        let sttModels = loadedState.models.filter { $0.mode == .audioTranscription }
         let localModels = chatModels.filter { $0.provider == .local }
         let cloudModels = chatModels.filter { $0.provider == .cloud }
 
@@ -99,6 +102,13 @@ private extension ModelsView {
                 Section(String(localized: "Text to Speech")) {
                     ForEach(ttsModels) { model in
                         ttsModelRow(model, loadedState: loadedState)
+                    }
+                }
+            }
+            if !sttModels.isEmpty {
+                Section(String(localized: "Speech to Text")) {
+                    ForEach(sttModels) { model in
+                        sttModelRow(model, loadedState: loadedState)
                     }
                 }
             }
@@ -134,7 +144,7 @@ private extension ModelsView {
 
                     if isSelected {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(Color.accentColor)
+                            .foregroundStyle(Color.appAccent)
                     }
                 }
 
@@ -206,7 +216,7 @@ private extension ModelsView {
 
                         if isSelected {
                             Image(systemName: "waveform.circle.fill")
-                                .foregroundStyle(Color.accentColor)
+                                .foregroundStyle(Color.appAccent)
                         }
                     }
                     if isSelected {
@@ -215,6 +225,36 @@ private extension ModelsView {
                 }
                 .padding(.vertical, 4)
             }
+        }
+    }
+
+    func sttModelRow(_ model: LLMModel, loadedState: ModelsViewModel.LoadedState) -> some View {
+        let isSelected = model.id == loadedState.selectedSTTModelId
+
+        return Button {
+            viewModel.send(.sttModelTapped(model))
+        } label: {
+            HStack(spacing: 12) {
+                providerLogo(model)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(model.id)
+                        .font(.body)
+                    if !model.providerName.isEmpty {
+                        Text(model.providerName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "waveform.badge.mic")
+                        .foregroundStyle(Color.appAccent)
+                }
+            }
+            .padding(.vertical, 4)
         }
     }
 
@@ -283,7 +323,7 @@ private extension ModelsView {
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption2)
             }
-            .foregroundStyle(Color.accentColor)
+            .foregroundStyle(Color.appAccent)
         }
     }
 

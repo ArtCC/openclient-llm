@@ -19,6 +19,8 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
     var modelParameters: ModelParameters
     var isPinned: Bool
     var tags: [String]
+    var parentConversationId: UUID?
+    var branchedFromMessageId: UUID?
     let createdAt: Date
     var updatedAt: Date
 
@@ -33,6 +35,8 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         modelParameters: ModelParameters = .default,
         isPinned: Bool = false,
         tags: [String] = [],
+        parentConversationId: UUID? = nil,
+        branchedFromMessageId: UUID? = nil,
         createdAt: Date = Date(),
         updatedAt: Date = Date()
     ) {
@@ -44,6 +48,8 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         self.modelParameters = modelParameters
         self.isPinned = isPinned
         self.tags = tags
+        self.parentConversationId = parentConversationId
+        self.branchedFromMessageId = branchedFromMessageId
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -58,6 +64,8 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         modelParameters = try container.decodeIfPresent(ModelParameters.self, forKey: .modelParameters) ?? .default
         isPinned = try container.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
         tags = try container.decodeIfPresent([String].self, forKey: .tags) ?? []
+        parentConversationId = try container.decodeIfPresent(UUID.self, forKey: .parentConversationId)
+        branchedFromMessageId = try container.decodeIfPresent(UUID.self, forKey: .branchedFromMessageId)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }

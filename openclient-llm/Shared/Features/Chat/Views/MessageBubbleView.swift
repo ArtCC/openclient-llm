@@ -21,8 +21,12 @@ struct MessageBubbleView: View {
     var isSpeaking: Bool = false
     var hasTTS: Bool = false
     var showTokenUsage: Bool = true
+    var isLastMessage: Bool = false
     var onSpeakTapped: (() -> Void)?
     var onStopSpeakingTapped: (() -> Void)?
+    var onEditTapped: (() -> Void)?
+    var onRegenerateTapped: (() -> Void)?
+    var onForkTapped: (() -> Void)?
     @State private var cursorVisible: Bool = false
     @State private var expandedImageData: Data?
 
@@ -53,12 +57,13 @@ private extension MessageBubbleView {
                     .textSelection(.enabled)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 12)
-                    .foregroundStyle(Color.primary)
+                    .foregroundStyle(.white)
                     .glassEffect(
-                        .regular.tint(Color.accentColor),
+                        .regular.tint(Color.appAccent),
                         in: .rect(cornerRadius: 18)
                     )
             }
+            .contentShape(Rectangle())
             .contextMenu {
                 messageContextMenu(message.content)
             }
@@ -69,7 +74,7 @@ private extension MessageBubbleView {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: "sparkles")
                 .font(.system(size: 14))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Color.appAccent)
                 .frame(width: 28, height: 28)
                 .glassEffect(.regular, in: .circle)
 
@@ -91,8 +96,19 @@ private extension MessageBubbleView {
                 if !isStreaming && !message.content.isEmpty && message.role == .assistant && hasTTS {
                     speakButton
                 }
+
+                if !isStreaming, !message.content.isEmpty, isLastMessage, let onRegenerateTapped {
+                    Button(action: onRegenerateTapped) {
+                        Label(String(localized: "Regenerate Response"), systemImage: "arrow.clockwise")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 2)
+                }
             }
             .frame(minHeight: 28, alignment: .center)
+            .contentShape(Rectangle())
             .contextMenu {
                 if !message.content.isEmpty {
                     messageContextMenu(message.content)
@@ -217,6 +233,32 @@ private extension MessageBubbleView {
         ) {
             Label(String(localized: "Share"), systemImage: "square.and.arrow.up")
         }
+
+        if message.role == .user, let onEditTapped {
+            Divider()
+            Button {
+                onEditTapped()
+            } label: {
+                Label(String(localized: "Edit & Resend"), systemImage: "pencil")
+            }
+        }
+
+        if message.role == .assistant, isLastMessage, !isStreaming, let onRegenerateTapped {
+            Divider()
+            Button {
+                onRegenerateTapped()
+            } label: {
+                Label(String(localized: "Regenerate Response"), systemImage: "arrow.clockwise")
+            }
+        }
+
+        if let onForkTapped {
+            Button {
+                onForkTapped()
+            } label: {
+                Label(String(localized: "Fork from here"), systemImage: "arrow.branch")
+            }
+        }
     }
 
     func copyToClipboard(_ text: String) {
@@ -254,21 +296,14 @@ private extension MessageBubbleView {
     }
 
     func textBlockView(_ content: String, isLast: Bool) -> some View {
-        // Normalize single newlines to double newlines so CommonMark renders them
-        // as paragraph breaks instead of collapsing them into spaces.
-        let normalized = content.replacingOccurrences(
-            of: "(?<!\n)\n(?!\n)",
-            with: "\n\n",
-            options: .regularExpression
-        )
         let displayContent = isLast && isStreaming && cursorVisible
-            ? normalized + "█"
-            : normalized
+            ? content + "█"
+            : content
 
         let attributed: AttributedString = {
             if let result = try? AttributedString(
                 markdown: displayContent,
-                options: .init(interpretedSyntax: .full)
+                options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
             ) {
                 return result
             }

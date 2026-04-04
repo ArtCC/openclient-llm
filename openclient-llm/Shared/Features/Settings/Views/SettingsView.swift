@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var isAPIKeyVisible = false
     @State private var isShowingVotice = false
     @State private var isShowingUserProfile = false
+    @State private var showResetAlert = false
     @State private var presentedWebURL: WebDestination?
     @FocusState private var focusedField: Field?
 
@@ -74,6 +75,7 @@ private extension SettingsView {
                 Button(String(localized: "Cancel"), role: .cancel) {
                     viewModel.send(.cloudSyncConflictCancelled)
                 }
+                .buttonStyle(.plain)
             },
             message: {
                 Text(String(
@@ -81,11 +83,30 @@ private extension SettingsView {
                 ))
             }
         )
+        .alert(
+            String(localized: "Reset App Data"),
+            isPresented: $showResetAlert
+        ) {
+            Button(String(localized: "Reset"), role: .destructive) {
+                viewModel.send(.resetConfirmed)
+            }
+            Button(String(localized: "Cancel"), role: .cancel) {}
+        } message: {
+            Text(String(
+                localized: "All local settings and credentials will be deleted. iCloud data will not be affected."
+            ))
+        }
         .task {
             viewModel.send(.viewAppeared)
             if case .loaded(let initialState) = viewModel.state {
                 serverURL = initialState.serverURL
                 apiKey = initialState.apiKey
+            }
+        }
+        .onChange(of: viewModel.state) { _, newState in
+            if case .loaded(let loadedState) = newState {
+                serverURL = loadedState.serverURL
+                apiKey = loadedState.apiKey
             }
         }
     }
@@ -118,6 +139,7 @@ private extension SettingsView {
                 chatSection(loadedState)
                 feedbackSection()
                 legalSection()
+                dangerSection()
             }
 #if os(iOS)
             .scrollDismissesKeyboard(.immediately)
@@ -148,10 +170,8 @@ private extension SettingsView {
                     )
                 }
             }
-#if os(macOS)
-            .buttonStyle(.bordered)
-#endif
             .disabled(loadedState.serverURL.isEmpty || loadedState.connectionStatus == .testing)
+            .buttonStyle(.plain)
 
             Button {
                 focusedField = nil
@@ -166,9 +186,7 @@ private extension SettingsView {
                     }
                 }
             }
-#if os(macOS)
-            .buttonStyle(.bordered)
-#endif
+            .buttonStyle(.plain)
         } header: {
             Text(String(localized: "Server"))
         }
@@ -248,30 +266,16 @@ private extension SettingsView {
             Button {
                 requestAppReview()
             } label: {
-                HStack {
-                    Label(String(localized: "Rate the App"), systemImage: "star")
-                    #if os(macOS)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    #endif
-                }
+                Label(String(localized: "Rate the App"), systemImage: "star")
             }
+            .buttonStyle(.plain)
 
             Button {
                 isShowingVotice = true
             } label: {
-                HStack {
-                    Label(String(localized: "Suggest Features"), systemImage: "lightbulb")
-                    #if os(macOS)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    #endif
-                }
+                Label(String(localized: "Suggest Features"), systemImage: "lightbulb")
             }
+            .buttonStyle(.plain)
         } header: {
             Text(String(localized: "Feedback"))
         }
@@ -322,16 +326,9 @@ private extension SettingsView {
             Button {
                 isShowingUserProfile = true
             } label: {
-                HStack {
-                    Label(String(localized: "Personal Context"), systemImage: "person.text.rectangle")
-                    #if os(macOS)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    #endif
-                }
+                Label(String(localized: "Personal Context"), systemImage: "person.text.rectangle")
             }
+            .buttonStyle(.plain)
         } header: {
             Text(String(localized: "Personalization"))
         } footer: {
@@ -344,30 +341,16 @@ private extension SettingsView {
             Button {
                 presentedWebURL = .privacyPolicy
             } label: {
-                HStack {
-                    Label(String(localized: "Privacy Policy"), systemImage: "hand.raised")
-                    #if os(macOS)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    #endif
-                }
+                Label(String(localized: "Privacy Policy"), systemImage: "hand.raised")
             }
+            .buttonStyle(.plain)
 
             Button {
                 presentedWebURL = .termsOfUse
             } label: {
-                HStack {
-                    Label(String(localized: "Terms of Use"), systemImage: "doc.text")
-                    #if os(macOS)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    #endif
-                }
+                Label(String(localized: "Terms of Use"), systemImage: "doc.text")
             }
+            .buttonStyle(.plain)
 
             Button {
                 presentedWebURL = .authorGitHub
@@ -380,6 +363,7 @@ private extension SettingsView {
                         .foregroundStyle(.secondary)
                 }
             }
+            .buttonStyle(.plain)
 
             HStack {
                 Text(String(localized: "Version \(appVersion) (\(appBuild))"))
@@ -390,6 +374,22 @@ private extension SettingsView {
             }
         } header: {
             Text(String(localized: "About"))
+        }
+    }
+
+    func dangerSection() -> some View {
+        Section {
+            Button {
+                showResetAlert = true
+            } label: {
+                Label(String(localized: "Reset App Data"), systemImage: "trash")
+                    .foregroundStyle(.red)
+            }
+            .buttonStyle(.plain)
+        } header: {
+            Text(String(localized: "App Data"))
+        } footer: {
+            Text(String(localized: "Deletes all local settings and credentials. iCloud data will not be affected."))
         }
     }
 
