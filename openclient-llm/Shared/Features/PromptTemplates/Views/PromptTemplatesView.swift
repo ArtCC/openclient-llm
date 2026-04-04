@@ -57,9 +57,6 @@ struct PromptTemplatesView: View {
         .task {
             viewModel.send(.viewAppeared)
         }
-#if os(macOS)
-        .frame(width: 480, height: 520)
-#endif
     }
 }
 
@@ -97,8 +94,8 @@ private extension PromptTemplatesView {
             Divider()
 
             content
-                .frame(maxHeight: .infinity)
         }
+        .frame(width: 480, height: 520)
     }
 #endif
 
@@ -126,6 +123,82 @@ private extension PromptTemplatesView {
     }
 
     func templateList(loadedState: PromptTemplatesViewModel.LoadedState) -> some View {
+#if os(macOS)
+        macOSTemplateList(loadedState: loadedState)
+#else
+        iOSTemplateList(loadedState: loadedState)
+#endif
+    }
+
+#if os(macOS)
+    func macOSTemplateList(loadedState: PromptTemplatesViewModel.LoadedState) -> some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0, pinnedViews: .sectionHeaders) {
+                if !loadedState.builtInTemplates.isEmpty {
+                    macOSBuiltInSection(templates: loadedState.builtInTemplates)
+                }
+                if !loadedState.customTemplates.isEmpty {
+                    macOSCustomSection(templates: loadedState.customTemplates)
+                }
+            }
+        }
+        .frame(maxHeight: .infinity)
+    }
+
+    func macOSSectionHeader(title: LocalizedStringResource) -> some View {
+        Text(String(localized: title))
+            .font(.caption)
+            .fontWeight(.semibold)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(.background)
+    }
+
+    func macOSBuiltInSection(templates: [PromptTemplate]) -> some View {
+        Section {
+            ForEach(templates) { template in
+                templateRow(template)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                Divider()
+                    .padding(.leading, 16)
+            }
+        } header: {
+            macOSSectionHeader(title: "Built-in")
+        }
+    }
+
+    func macOSCustomSection(templates: [PromptTemplate]) -> some View {
+        Section {
+            ForEach(templates) { template in
+                templateRow(template)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .contextMenu {
+                        Button {
+                            editingTemplate = template
+                            showEditor = true
+                        } label: {
+                            Label(String(localized: "Edit"), systemImage: "pencil")
+                        }
+                        Button(role: .destructive) {
+                            viewModel.send(.deleteTapped(template))
+                        } label: {
+                            Label(String(localized: "Delete"), systemImage: "trash")
+                        }
+                    }
+                Divider()
+                    .padding(.leading, 16)
+            }
+        } header: {
+            macOSSectionHeader(title: "Custom")
+        }
+    }
+#endif
+
+    func iOSTemplateList(loadedState: PromptTemplatesViewModel.LoadedState) -> some View {
         List {
             if !loadedState.builtInTemplates.isEmpty {
                 Section(String(localized: "Built-in")) {
@@ -151,7 +224,6 @@ private extension PromptTemplatesView {
                                     Label(String(localized: "Delete"), systemImage: "trash")
                                 }
                             }
-#if os(iOS)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     viewModel.send(.deleteTapped(template))
@@ -166,7 +238,6 @@ private extension PromptTemplatesView {
                                 }
                                 .tint(.orange)
                             }
-#endif
                     }
                 }
             }

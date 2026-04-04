@@ -75,56 +75,6 @@ struct UserProfileView: View {
 // MARK: - Private
 
 private extension UserProfileView {
-    var loadedGroup: some View {
-        Group {
-            switch viewModel.state {
-            case .loading:
-                ProgressView()
-            case .loaded:
-                loadedView()
-            }
-        }
-    }
-
-#if os(macOS)
-    var macOSBody: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Button(String(localized: "Cancel")) {
-                    dismiss()
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-
-                Spacer()
-
-                Text(String(localized: "Personal Context"))
-                    .font(.headline)
-
-                Spacer()
-
-                Button(String(localized: "Save")) {
-                    viewModel.send(.save(
-                        name: name,
-                        description: profileDescription,
-                        extraInfo: extraInfo
-                    ))
-                    dismiss()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
-                .disabled(!hasChanges)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-
-            Divider()
-
-            loadedGroup
-        }
-    }
-#endif
-
     var hasChanges: Bool {
         guard case .loaded(let loadedState) = viewModel.state else { return false }
         return name != loadedState.originalName
@@ -132,18 +82,91 @@ private extension UserProfileView {
         || extraInfo != loadedState.originalExtraInfo
     }
 
+#if os(macOS)
+    var macOSLoadedView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                macOSNameField
+                macOSDescriptionField
+                macOSExtraInfoField
+            }
+            .padding(16)
+        }
+    }
+
+    var macOSNameField: some View {
+        macOSField(
+            header: String(localized: "Name"),
+            footer: String(localized: "How the assistant will address you. Max 50 characters.")
+        ) {
+            TextField(String(localized: "Your name"), text: $name, axis: .vertical)
+                .textFieldStyle(.roundedBorder)
+                .lineLimit(2...)
+                .autocorrectionDisabled()
+                .onChange(of: name) { _, newValue in
+                    if newValue.count > 50 { name = String(newValue.prefix(50)) }
+                }
+            if !name.isEmpty { characterCountLabel(count: name.count, max: 50) }
+        }
+    }
+
+    var macOSDescriptionField: some View {
+        macOSField(
+            header: String(localized: "Description"),
+            footer: String(localized: "A brief description about yourself. Max 200 characters.")
+        ) {
+            TextField(
+                String(localized: "A brief description about yourself"),
+                text: $profileDescription,
+                axis: .vertical
+            )
+            .textFieldStyle(.roundedBorder)
+            .lineLimit(3...)
+            .autocorrectionDisabled()
+            .onChange(of: profileDescription) { _, newValue in
+                if newValue.count > 200 { profileDescription = String(newValue.prefix(200)) }
+            }
+            if !profileDescription.isEmpty {
+                characterCountLabel(count: profileDescription.count, max: 200)
+            }
+        }
+    }
+
+    var macOSExtraInfoField: some View {
+        macOSField(
+            header: String(localized: "Extra Info"),
+            footer: String(
+                localized: "Any additional context you want the assistant to know. Max 500 characters."
+            )
+        ) {
+            TextField(
+                String(localized: "Any additional context for the assistant"),
+                text: $extraInfo,
+                axis: .vertical
+            )
+            .textFieldStyle(.roundedBorder)
+            .lineLimit(4...)
+            .autocorrectionDisabled()
+            .onChange(of: extraInfo) { _, newValue in
+                if newValue.count > 500 { extraInfo = String(newValue.prefix(500)) }
+            }
+            if !extraInfo.isEmpty { characterCountLabel(count: extraInfo.count, max: 500) }
+        }
+    }
+#endif
+
     func loadedView() -> some View {
+#if os(macOS)
+        macOSLoadedView
+#else
         Form {
             nameSection()
             descriptionSection()
             extraInfoSection()
             usageSection()
         }
-#if os(iOS)
         .scrollDismissesKeyboard(.interactively)
         .ignoresSafeArea(.keyboard, edges: .bottom)
-#elseif os(macOS)
-        .formStyle(.grouped)
 #endif
     }
 
@@ -154,6 +177,7 @@ private extension UserProfileView {
             VStack(alignment: .leading, spacing: 4) {
                 TextField(placeholder, text: $name, axis: .vertical)
                     .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .autocorrectionDisabled()
                     .lineLimit(2...)
 #if os(iOS)
@@ -182,6 +206,7 @@ private extension UserProfileView {
             VStack(alignment: .leading, spacing: 4) {
                 TextField(placeholder, text: $profileDescription, axis: .vertical)
                     .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .autocorrectionDisabled()
                     .lineLimit(3...)
 #if os(iOS)
@@ -210,6 +235,7 @@ private extension UserProfileView {
             VStack(alignment: .leading, spacing: 4) {
                 TextField(placeholder, text: $extraInfo, axis: .vertical)
                     .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .autocorrectionDisabled()
                     .lineLimit(4...)
 #if os(iOS)
@@ -250,6 +276,25 @@ private extension UserProfileView {
                 .foregroundStyle(count >= max ? .red : .secondary)
         }
     }
+
+#if os(macOS)
+    func macOSField<Content: View>(
+        header: String,
+        footer: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(header)
+                .font(.headline)
+                .foregroundStyle(.primary)
+            content()
+            Text(footer)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+#endif
 }
 
 #Preview {
