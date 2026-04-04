@@ -93,6 +93,11 @@ private extension ChatInputBarView {
 
             actionButton
         }
+        .onAppear {
+            if loadedState.inputText != inputText {
+                inputText = loadedState.inputText
+            }
+        }
     }
 
     var recordingBar: some View {
