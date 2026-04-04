@@ -14,6 +14,7 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
     let id: UUID
     let role: Role
     var content: String
+    var reasoningContent: String?
     let timestamp: Date
     var attachments: [Attachment]
     var tokenUsage: TokenUsage?
@@ -30,6 +31,7 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
         id: UUID = UUID(),
         role: Role,
         content: String,
+        reasoningContent: String? = nil,
         timestamp: Date = Date(),
         attachments: [Attachment] = [],
         tokenUsage: TokenUsage? = nil
@@ -37,6 +39,7 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
         self.id = id
         self.role = role
         self.content = content
+        self.reasoningContent = reasoningContent
         self.timestamp = timestamp
         self.attachments = attachments
         self.tokenUsage = tokenUsage

@@ -14,6 +14,8 @@ struct ChatSystemPromptView: View {
     var viewModel: ChatViewModel
     @Binding var isPresented: Bool
 
+    @State private var showTemplateLibrary = false
+
     // MARK: - View
 
     var body: some View {
@@ -38,6 +40,11 @@ struct ChatSystemPromptView: View {
         #if os(macOS)
         .frame(width: 500, height: 420)
         #endif
+        .sheet(isPresented: $showTemplateLibrary) {
+            PromptTemplatesView { template in
+                viewModel.send(.systemPromptChanged(template.content))
+            }
+        }
     }
 }
 
@@ -75,10 +82,23 @@ private extension ChatSystemPromptView {
     var editor: some View {
         if case .loaded(let loadedState) = viewModel.state {
             VStack(alignment: .leading, spacing: 12) {
-                Text(String(localized: "Set instructions for the assistant's behavior in this conversation."))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
+                HStack(alignment: .center) {
+                    Text(String(localized: "Set instructions for the assistant's behavior in this conversation."))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    Spacer()
+
+                    Button {
+                        showTemplateLibrary = true
+                    } label: {
+                        Label(String(localized: "Browse Library"), systemImage: "books.vertical")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+                .padding(.horizontal)
 
                 TextEditor(text: Binding(
                     get: { loadedState.systemPrompt },

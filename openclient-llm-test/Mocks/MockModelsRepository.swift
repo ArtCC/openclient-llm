@@ -15,6 +15,7 @@ final class MockModelsRepository: ModelsRepositoryProtocol, @unchecked Sendable 
 
     var fetchModelsResult: Result<[LLMModel], Error> = .success([])
     var fetchModelInfoResult: Result<[LLMModel], Error> = .success([])
+    var fetchOllamaModelDetailsResult: OllamaShowResponse?
 
     // MARK: - Public
 
@@ -24,5 +25,9 @@ final class MockModelsRepository: ModelsRepositoryProtocol, @unchecked Sendable 
 
     func fetchModelInfo() async throws -> [LLMModel] {
         try fetchModelInfoResult.get()
+    }
+
+    func fetchOllamaModelDetails(for modelId: String, rootURL: String) async -> OllamaShowResponse? {
+        fetchOllamaModelDetailsResult
     }
 }

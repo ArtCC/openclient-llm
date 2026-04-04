@@ -21,6 +21,7 @@ nonisolated struct ChatCompletionStreamResponse: Decodable, Sendable {
     struct Delta: Decodable, Sendable {
         let role: String?
         let content: String?
+        let reasoningContent: String?
         let images: [ImageItem]?
     }
 

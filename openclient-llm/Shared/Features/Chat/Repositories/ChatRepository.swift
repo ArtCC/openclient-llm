@@ -24,6 +24,7 @@ protocol ChatRepositoryProtocol: Sendable {
 
 enum StreamChunk: Sendable {
     case token(String)
+    case reasoning(String)
     case usage(TokenUsage)
     case image(Data)
 }
@@ -129,6 +130,9 @@ private extension ChatRepository {
                 if let content = chunk.choices.first?.delta.content {
                     totalChars += content.count
                     continuation.yield(.token(content))
+                }
+                if let reasoning = chunk.choices.first?.delta.reasoningContent {
+                    continuation.yield(.reasoning(reasoning))
                 }
                 if let images = chunk.choices.first?.delta.images {
                     for item in images {

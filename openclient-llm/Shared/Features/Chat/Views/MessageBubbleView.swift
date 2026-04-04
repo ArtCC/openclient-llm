@@ -28,6 +28,7 @@ struct MessageBubbleView: View {
     var onRegenerateTapped: (() -> Void)?
     var onForkTapped: (() -> Void)?
     @State private var cursorVisible: Bool = false
+    @State private var isThinkingExpanded: Bool = true
     @State private var expandedImageData: Data?
 
     // MARK: - View
@@ -83,7 +84,11 @@ private extension MessageBubbleView {
                     attachmentsView
                 }
 
-                if message.content.isEmpty && isStreaming {
+                if let reasoning = message.reasoningContent, !reasoning.isEmpty {
+                    thinkingDisclosureView(reasoning)
+                }
+
+                if message.content.isEmpty && isStreaming && (message.reasoningContent ?? "").isEmpty {
                     thinkingIndicator
                 } else if !message.content.isEmpty {
                     blocksView
@@ -120,8 +125,14 @@ private extension MessageBubbleView {
         .task(id: isStreaming) {
             guard isStreaming else {
                 cursorVisible = false
+                if message.reasoningContent != nil {
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        isThinkingExpanded = false
+                    }
+                }
                 return
             }
+            isThinkingExpanded = true
             while !Task.isCancelled {
                 cursorVisible.toggle()
                 try? await Task.sleep(for: .milliseconds(500))
@@ -325,6 +336,34 @@ private extension MessageBubbleView {
             } animation: { _ in
                 .easeInOut(duration: 0.8)
             }
+    }
+
+    func thinkingDisclosureView(_ reasoning: String) -> some View {
+        DisclosureGroup(isExpanded: $isThinkingExpanded) {
+            ScrollView {
+                Text(reasoning)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 6)
+            }
+            .frame(maxHeight: 200)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "brain")
+                    .font(.system(size: 11))
+                Text(String(localized: "Thinking"))
+                    .font(.caption)
+                    .fontWeight(.medium)
+            }
+            .foregroundStyle(isStreaming ? AnyShapeStyle(Color.appAccent) : AnyShapeStyle(.secondary))
+            .opacity(isStreaming ? (cursorVisible ? 1.0 : 0.5) : 0.7)
+        }
+        .animation(.easeInOut(duration: 0.5), value: cursorVisible)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .glassEffect(.regular, in: .rect(cornerRadius: 12))
     }
 
     func tokenUsageLabel(_ usage: TokenUsage) -> some View {

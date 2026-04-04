@@ -185,6 +185,7 @@ private extension OnboardingView {
                     subtitle: String(localized: "Fully open source on GitHub — inspect or contribute")
                 )
             }
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 

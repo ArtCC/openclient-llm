@@ -36,6 +36,7 @@ struct ConversationListView: View {
                 loadedView(loadedState)
             }
         }
+        .navigationTitle(String(localized: "Chats"))
 #if os(macOS)
         .focusedSceneValue(\.newChatAction) {
             viewModel.send(.newConversationTapped)
@@ -142,6 +143,17 @@ private extension ConversationListView {
 
     func conversationList(_ loadedState: ConversationListViewModel.LoadedState) -> some View {
         List {
+            if !loadedState.allTags.isEmpty {
+                Section {
+                    // pinned tag filter bar — no rows
+                } header: {
+                    VStack(spacing: 0) {
+                        tagFilterBar(loadedState)
+                        Divider()
+                    }
+                    .listRowInsets(EdgeInsets())
+                }
+            }
             ForEach(loadedState.groupedConversations) { section in
                 Section {
                     ForEach(section.conversations) { conversation in
@@ -172,15 +184,6 @@ private extension ConversationListView {
             await viewModel.refreshAsync()
         }
 #endif
-        .safeAreaInset(edge: .top, spacing: 0) {
-            if !loadedState.allTags.isEmpty {
-                VStack(spacing: 0) {
-                    tagFilterBar(loadedState)
-                    Divider()
-                }
-                .background(.regularMaterial)
-            }
-        }
     }
 
     @ViewBuilder

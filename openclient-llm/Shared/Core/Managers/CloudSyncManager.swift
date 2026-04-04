@@ -18,6 +18,10 @@ protocol CloudSyncManagerProtocol: Sendable {
     func saveProfileToCloud(_ profile: UserProfile) throws
     func loadProfileFromCloud() throws -> UserProfile?
     func deleteProfileFromCloud() throws
+    func syncTemplatesToCloud(_ templates: [PromptTemplate]) throws
+    func loadTemplatesFromCloud() throws -> [PromptTemplate]
+    func allCloudTemplateIds() -> Set<UUID>?
+    func deleteTemplateFromCloud(_ templateId: UUID) throws
 }
 
 struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
@@ -167,6 +171,86 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
         guard fileManager.fileExists(atPath: fileURL.path) else { return }
         try fileManager.removeItem(at: fileURL)
     }
+
+    func syncTemplatesToCloud(_ templates: [PromptTemplate]) throws {
+        guard let cloudURL = cloudTemplatesDirectory() else { return }
+
+        try ensureDirectoryExists(at: cloudURL)
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = .prettyPrinted
+
+        for template in templates {
+            let fileURL = cloudURL.appendingPathComponent("\(template.id.uuidString).json")
+            let data = try encoder.encode(template)
+            try data.write(to: fileURL, options: .atomic)
+        }
+    }
+
+    func loadTemplatesFromCloud() throws -> [PromptTemplate] {
+        guard let cloudURL = cloudTemplatesDirectory() else { return [] }
+        guard fileManager.fileExists(atPath: cloudURL.path) else { return [] }
+
+        let fileURLs = try fileManager.contentsOfDirectory(
+            at: cloudURL,
+            includingPropertiesForKeys: [.ubiquitousItemDownloadingStatusKey],
+            options: []
+        )
+
+        for url in fileURLs where url.lastPathComponent.hasPrefix(".") && url.pathExtension == "icloud" {
+            try? fileManager.startDownloadingUbiquitousItem(at: url)
+        }
+
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+
+        var templates: [PromptTemplate] = []
+        for url in fileURLs where url.pathExtension == "json" {
+            do {
+                let data = try Data(contentsOf: url)
+                let template = try decoder.decode(PromptTemplate.self, from: data)
+                templates.append(template)
+            } catch {
+                continue
+            }
+        }
+        return templates
+    }
+
+    func allCloudTemplateIds() -> Set<UUID>? {
+        guard let cloudURL = cloudTemplatesDirectory() else { return nil }
+        guard fileManager.fileExists(atPath: cloudURL.path) else { return nil }
+
+        guard let fileURLs = try? fileManager.contentsOfDirectory(
+            at: cloudURL,
+            includingPropertiesForKeys: nil,
+            options: []
+        ) else { return nil }
+
+        var ids = Set<UUID>()
+        for url in fileURLs {
+            let name = url.lastPathComponent
+            if url.pathExtension == "json",
+               let uuid = UUID(uuidString: url.deletingPathExtension().lastPathComponent) {
+                ids.insert(uuid)
+            } else if name.hasPrefix(".") && name.hasSuffix(".json.icloud") {
+                let stripped = String(name.dropFirst())
+                let uuidString = stripped.replacingOccurrences(of: ".json.icloud", with: "")
+                if let uuid = UUID(uuidString: uuidString) {
+                    ids.insert(uuid)
+                }
+            }
+        }
+        return ids
+    }
+
+    func deleteTemplateFromCloud(_ templateId: UUID) throws {
+        guard let cloudURL = cloudTemplatesDirectory() else { return }
+        let fileURL = cloudURL.appendingPathComponent("\(templateId.uuidString).json")
+        guard fileManager.fileExists(atPath: fileURL.path) else { return }
+        try fileManager.removeItem(at: fileURL)
+    }
 }
 
 // MARK: - Private
@@ -180,6 +264,11 @@ private extension CloudSyncManager {
     func cloudProfileFileURL() -> URL? {
         cloudDocumentsDirectory()?
             .appendingPathComponent("UserProfile.json")
+    }
+
+    func cloudTemplatesDirectory() -> URL? {
+        cloudDocumentsDirectory()?
+            .appendingPathComponent("PromptTemplates", isDirectory: true)
     }
 
     func cloudDocumentsDirectory() -> URL? {
