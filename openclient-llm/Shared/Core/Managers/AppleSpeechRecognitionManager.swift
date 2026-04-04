@@ -74,9 +74,12 @@ private extension AppleSpeechRecognitionManager {
         guard let cont = pendingContinuation else { return }
         pendingContinuation = nil
 
-        // Resume the continuation BEFORE cleaning up. Calling resetState() first
-        // would cancel the task and release the recognizer, which can trigger
-        // additional callbacks and EXC_BAD_ACCESS.
+        // Only nil out references — do NOT call cancel() on a completed task.
+        // Calling cancel() on a finished SFSpeechRecognitionTask can trigger
+        // EXC_BAD_ACCESS inside the Speech framework.
+        currentTask = nil
+        recognizer = nil
+
         if let error {
             cont.resume(throwing: error)
         } else if let result, result.isFinal {
@@ -86,8 +89,6 @@ private extension AppleSpeechRecognitionManager {
             // but must not leave the continuation suspended forever.
             cont.resume(throwing: AppleSpeechError.recognizerUnavailable)
         }
-
-        resetState()
     }
 
     func resetState() {
