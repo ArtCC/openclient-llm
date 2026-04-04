@@ -72,6 +72,8 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to report issues, propose features, and submit pull requests.
 
+You can also suggest features and report bugs directly from within the app — go to **Settings** and use the built-in feedback option powered by [Votice](https://github.com/ArtCC/votice-sdk), another open source project by the same author.
+
 ## Author
 
 **Arturo Carretero Calvo**
