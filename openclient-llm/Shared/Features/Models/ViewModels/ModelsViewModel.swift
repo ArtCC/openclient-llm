@@ -18,6 +18,7 @@ final class ModelsViewModel {
         case refreshTapped
         case modelTapped(LLMModel)
         case ttsModelTapped(LLMModel)
+        case sttModelTapped(LLMModel)
         case voiceSelected(String, forModelId: String)
     }
 
@@ -30,6 +31,7 @@ final class ModelsViewModel {
         var models: [LLMModel] = []
         var selectedModelId: String?
         var selectedTTSModelId: String?
+        var selectedSTTModelId: String?
         var selectedTTSVoices: [String: String] = [:]
         var errorMessage: String?
         var isRefreshing: Bool = false
@@ -66,6 +68,8 @@ final class ModelsViewModel {
             selectModel(model)
         case .ttsModelTapped(let model):
             selectTTSModel(model)
+        case .sttModelTapped(let model):
+            selectSTTModel(model)
         case .voiceSelected(let voice, let modelId):
             selectVoice(voice, forModelId: modelId)
         }
@@ -91,11 +95,13 @@ private extension ModelsViewModel {
                 let models = try await fetchModelsUseCase.execute()
                 let selectedModelId = settingsManager.getSelectedModelId()
                 let selectedTTSModelId = settingsManager.getSelectedTTSModelId()
+                let selectedSTTModelId = settingsManager.getSelectedSTTModelId()
                 let ttsVoices = buildTTSVoices(from: models)
                 state = .loaded(LoadedState(
                     models: models,
                     selectedModelId: selectedModelId,
                     selectedTTSModelId: selectedTTSModelId,
+                    selectedSTTModelId: selectedSTTModelId,
                     selectedTTSVoices: ttsVoices
                 ))
             } catch {
@@ -130,6 +136,13 @@ private extension ModelsViewModel {
         settingsManager.setSelectedTTSModelId(model.id)
     }
 
+    func selectSTTModel(_ model: LLMModel) {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.selectedSTTModelId = model.id
+        state = .loaded(loadedState)
+        settingsManager.setSelectedSTTModelId(model.id)
+    }
+
     func selectVoice(_ voice: String, forModelId modelId: String) {
         guard case .loaded(var loadedState) = state else { return }
         loadedState.selectedTTSVoices[modelId] = voice
@@ -142,11 +155,13 @@ private extension ModelsViewModel {
             let models = try await fetchModelsUseCase.execute()
             let selectedModelId = settingsManager.getSelectedModelId()
             let selectedTTSModelId = settingsManager.getSelectedTTSModelId()
+            let selectedSTTModelId = settingsManager.getSelectedSTTModelId()
             let ttsVoices = buildTTSVoices(from: models)
             state = .loaded(LoadedState(
                 models: models,
                 selectedModelId: selectedModelId,
                 selectedTTSModelId: selectedTTSModelId,
+                selectedSTTModelId: selectedSTTModelId,
                 selectedTTSVoices: ttsVoices
             ))
         } catch {

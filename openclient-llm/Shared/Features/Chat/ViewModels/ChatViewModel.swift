@@ -76,7 +76,7 @@ final class ChatViewModel {
     let transcribeAudioUseCase: TranscribeAudioUseCaseProtocol
     let exportConversationUseCase: ExportConversationUseCaseProtocol
     let branchConversationUseCase: BranchConversationUseCaseProtocol
-    private let settingsManager: SettingsManagerProtocol
+    let settingsManager: SettingsManagerProtocol
     private let userProfileManager: UserProfileManagerProtocol
     private let conversationStartersManager: ConversationStartersManagerProtocol
     private let audioPlayerManager: AudioPlayerManager
@@ -194,10 +194,7 @@ private extension ChatViewModel {
             let selectedId = selectedModel?.id ?? "-"
             LogManager.success("fetchAndBuildInitialState models=\(chatModels.count) selected=\(selectedId)")
 
-            let savedTTSModelId = settingsManager.getSelectedTTSModelId()
-            let ttsModelId = models.first(where: { $0.id == savedTTSModelId && $0.mode == .audioSpeech })?.id
-                ?? models.first(where: { $0.mode == .audioSpeech })?.id
-            let transcriptionModelId = models.first(where: { $0.mode == .audioTranscription })?.id
+            let (ttsModelId, transcriptionModelId) = resolveAudioModelIds(from: models)
             let starters = conversationStartersManager.randomStarters(count: 4)
             state = .loaded(LoadedState(
                 conversation: pending,
