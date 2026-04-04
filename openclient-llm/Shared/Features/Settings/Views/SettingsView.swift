@@ -169,9 +169,6 @@ private extension SettingsView {
                     )
                 }
             }
-#if os(macOS)
-            .buttonStyle(.bordered)
-#endif
             .disabled(loadedState.serverURL.isEmpty || loadedState.connectionStatus == .testing)
 
             Button {
@@ -187,9 +184,6 @@ private extension SettingsView {
                     }
                 }
             }
-#if os(macOS)
-            .buttonStyle(.bordered)
-#endif
         } header: {
             Text(String(localized: "Server"))
         }
@@ -269,29 +263,13 @@ private extension SettingsView {
             Button {
                 requestAppReview()
             } label: {
-                HStack {
-                    Label(String(localized: "Rate the App"), systemImage: "star")
-                    #if os(macOS)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    #endif
-                }
+                Label(String(localized: "Rate the App"), systemImage: "star")
             }
 
             Button {
                 isShowingVotice = true
             } label: {
-                HStack {
-                    Label(String(localized: "Suggest Features"), systemImage: "lightbulb")
-                    #if os(macOS)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    #endif
-                }
+                Label(String(localized: "Suggest Features"), systemImage: "lightbulb")
             }
         } header: {
             Text(String(localized: "Feedback"))
@@ -343,15 +321,7 @@ private extension SettingsView {
             Button {
                 isShowingUserProfile = true
             } label: {
-                HStack {
-                    Label(String(localized: "Personal Context"), systemImage: "person.text.rectangle")
-                    #if os(macOS)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    #endif
-                }
+                Label(String(localized: "Personal Context"), systemImage: "person.text.rectangle")
             }
         } header: {
             Text(String(localized: "Personalization"))
@@ -365,29 +335,13 @@ private extension SettingsView {
             Button {
                 presentedWebURL = .privacyPolicy
             } label: {
-                HStack {
-                    Label(String(localized: "Privacy Policy"), systemImage: "hand.raised")
-                    #if os(macOS)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    #endif
-                }
+                Label(String(localized: "Privacy Policy"), systemImage: "hand.raised")
             }
 
             Button {
                 presentedWebURL = .termsOfUse
             } label: {
-                HStack {
-                    Label(String(localized: "Terms of Use"), systemImage: "doc.text")
-                    #if os(macOS)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                    #endif
-                }
+                Label(String(localized: "Terms of Use"), systemImage: "doc.text")
             }
 
             Button {
