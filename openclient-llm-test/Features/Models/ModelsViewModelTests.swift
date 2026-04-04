@@ -61,7 +61,7 @@ final class ModelsViewModelTests: XCTestCase {
             XCTFail("Expected loaded state")
             return
         }
-        XCTAssertEqual(loadedState.models.count, 2)
+        XCTAssertEqual(loadedState.models.count, 3) // 2 chat models + Apple STT sentinel
         XCTAssertNil(loadedState.errorMessage)
     }
 
@@ -102,7 +102,7 @@ final class ModelsViewModelTests: XCTestCase {
             XCTFail("Expected loaded state")
             return
         }
-        XCTAssertEqual(loadedState.models.count, 2)
+        XCTAssertEqual(loadedState.models.count, 3) // 2 updated models + Apple STT sentinel
     }
 
     // MARK: - Tests — modelTapped

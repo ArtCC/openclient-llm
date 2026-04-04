@@ -143,4 +143,28 @@ extension ChatViewModelTests {
         XCTAssertEqual(loadedState.inputText, "")
     }
 
+    func test_noLiteLLMSTTModels_transcriptionModelIdIsApple() async throws {
+        // Given — solo modelos de chat, ningún Whisper de LiteLLM
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+
+        sut = ChatViewModel(
+            fetchModelsUseCase: mockFetchModels,
+            streamMessageUseCase: mockStreamMessage,
+            saveConversationUseCase: mockSaveConversation,
+            settingsManager: mockSettingsManager,
+            conversationStartersManager: mockConversationStarters
+        )
+
+        // When
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then — el micrófono siempre aparece gracias a Apple STT
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.transcriptionModelId, LLMModel.appleSpeechRecognition.id)
+    }
+
 }

@@ -20,6 +20,7 @@ openclient-llm/                              # iOS target
 │   │   │   ├── Models/
 │   │   │   │   └── Transcription.swift
 │   │   │   ├── Repositories/
+│   │   │   │   ├── AppleAudioTranscriptionRepository.swift
 │   │   │   │   └── AudioTranscriptionRepository.swift
 │   │   │   └── UseCases/
 │   │   │       └── TranscribeAudioUseCase.swift
@@ -119,6 +120,7 @@ openclient-llm/                              # iOS target
 │   │           └── SynthesizeSpeechUseCase.swift
 │   ├── Core/
 │   │   ├── Managers/
+│   │   │   ├── AppleSpeechRecognitionManager.swift
 │   │   │   ├── AudioPlayerManager.swift
 │   │   │   ├── AudioRecorderManager.swift
 │   │   │   ├── CloudSyncManager.swift
@@ -209,6 +211,7 @@ openclient-llm-test/                         # Unit tests
 │       └── UserProfileViewModelTests.swift
 └── Mocks/
     ├── MockAPIClient.swift
+    ├── MockAppleSpeechRecognitionManager.swift
     ├── MockBranchConversationUseCase.swift
     ├── MockChatRepository.swift
     ├── MockCheckOnboardingUseCase.swift

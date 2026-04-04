@@ -63,9 +63,14 @@ extension ChatViewModel {
         let ttsModelId = models.first(where: { $0.id == savedTTSModelId && $0.mode == .audioSpeech })?.id
             ?? models.first(where: { $0.mode == .audioSpeech })?.id
         let savedSTTModelId = settingsManager.getSelectedSTTModelId()
-        let transcriptionModelId = models.first(where: {
-            $0.id == savedSTTModelId && $0.mode == .audioTranscription
-        })?.id ?? models.first(where: { $0.mode == .audioTranscription })?.id
+        let transcriptionModelId: String
+        if let savedId = savedSTTModelId, savedId != LLMModel.appleSpeechRecognition.id {
+            transcriptionModelId = models.first(where: {
+                $0.id == savedId && $0.mode == .audioTranscription
+            })?.id ?? LLMModel.appleSpeechRecognition.id
+        } else {
+            transcriptionModelId = LLMModel.appleSpeechRecognition.id
+        }
         return (ttsModelId, transcriptionModelId)
     }
 }

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.0.0-build-16] - 2026-04-05
+
+### Added
+
+- Apple on-device Speech Recognition as a built-in STT option — always available in the Speech to Text section of the Models screen without requiring a LiteLLM Whisper model
+- `LLMModel.appleSpeechRecognition` sentinel (ID `apple-speech-recognition`, provider local, mode `.audioTranscription`) prepended to the STT model list at load and refresh
+- `AppleSpeechRecognitionManager` wrapping `SFSpeechRecognizer` with on-device recognition and async permission request
+- `AppleAudioTranscriptionRepository` implementing `AudioTranscriptionRepositoryProtocol` via `AppleSpeechRecognitionManager`
+- `TranscribeAudioUseCase` now routes to Apple STT or LiteLLM based on the selected model ID
+- Microphone button in the chat input bar is now always visible — Apple STT is used as fallback when no LiteLLM STT model is configured
+- `NSSpeechRecognitionUsageDescription` permission key added to iOS and macOS targets
+- `MockAppleSpeechRecognitionManager` test double
+- 3 new unit tests covering Apple STT default selection and mic always-present behaviour
+
 ## [1.0.0-build-15] - 2026-04-04
 
 ### Added
