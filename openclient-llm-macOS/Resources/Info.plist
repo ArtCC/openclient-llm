@@ -13,6 +13,10 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>OpenClient uses the microphone to record audio for speech-to-text transcription.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>OpenClient uses speech recognition to transcribe your voice into text.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Poppins-Black.ttf</string>

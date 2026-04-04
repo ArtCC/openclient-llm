@@ -8,11 +8,42 @@
 
 import Foundation
 
-// MARK: - Audio Transcription
+// MARK: - Audio Recording & Transcription
 
 extension ChatViewModel {
     /// Minimum recording duration in seconds required to attempt transcription.
     private static let minimumRecordingDuration: TimeInterval = 0.3
+
+    func startRecording() {
+        guard case .loaded(var loadedState) = state else { return }
+        audioRecorderManager.startRecording()
+        loadedState.isRecording = true
+        loadedState.recordingDuration = 0
+        state = .loaded(loadedState)
+        startDurationTracking()
+    }
+
+    func stopRecording() {
+        durationTrackingTask?.cancel()
+        durationTrackingTask = nil
+        let result = audioRecorderManager.stopRecording()
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.isRecording = false
+        loadedState.recordingDuration = 0
+        state = .loaded(loadedState)
+        guard let data = result.data else { return }
+        transcribeAudio(data: data, duration: result.duration)
+    }
+
+    func cancelRecording() {
+        durationTrackingTask?.cancel()
+        durationTrackingTask = nil
+        audioRecorderManager.cancelRecording()
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.isRecording = false
+        loadedState.recordingDuration = 0
+        state = .loaded(loadedState)
+    }
 
     func transcribeAudio(data: Data, duration: TimeInterval) {
         guard case .loaded(var loadedState) = state else { return }
@@ -62,6 +93,30 @@ extension ChatViewModel {
             currentState.errorMessage = error.localizedDescription
             state = .loaded(currentState)
             scheduleErrorDismiss()
+        }
+    }
+
+    func handleRecordingEvent(_ event: Event) {
+        switch event {
+        case .startRecordingTapped: startRecording()
+        case .stopRecordingTapped: stopRecording()
+        case .cancelRecordingTapped: cancelRecording()
+        default: break
+        }
+    }
+}
+
+// MARK: - Private
+
+private extension ChatViewModel {
+    func startDurationTracking() {
+        durationTrackingTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(500))
+                guard !Task.isCancelled, case .loaded(var loadedState) = state else { break }
+                loadedState.recordingDuration = audioRecorderManager.recordingDuration
+                state = .loaded(loadedState)
+            }
         }
     }
 }

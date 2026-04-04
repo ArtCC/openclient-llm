@@ -17,22 +17,22 @@ enum HapticsManager {
 
     @MainActor
     static func success() {
-        #if os(iOS)
+#if os(iOS)
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        #endif
+#endif
     }
 
     @MainActor
     static func error() {
-        #if os(iOS)
+#if os(iOS)
         UINotificationFeedbackGenerator().notificationOccurred(.error)
-        #endif
+#endif
     }
 
+#if os(iOS)
     @MainActor
     static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle = .medium) {
-        #if os(iOS)
         UIImpactFeedbackGenerator(style: style).impactOccurred()
-        #endif
     }
+#endif
 }

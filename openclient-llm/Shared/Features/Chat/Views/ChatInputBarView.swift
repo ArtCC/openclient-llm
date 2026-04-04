@@ -20,9 +20,10 @@ struct ChatInputBarView: View {
     let onInputChanged: (String) -> Void
     let onSend: () -> Void
     let onStopStreaming: () -> Void
-    let onAudioRecorded: (Data, TimeInterval) -> Void
+    let onStartRecording: () -> Void
+    let onStopRecording: () -> Void
+    let onCancelRecording: () -> Void
 
-    @State private var audioRecorder = AudioRecorderManager()
     @State private var isPulsing = false
     @Binding var showImageFilePicker: Bool
 
@@ -30,7 +31,7 @@ struct ChatInputBarView: View {
 
     var body: some View {
         ZStack {
-            if audioRecorder.isRecording {
+            if loadedState.isRecording {
                 recordingBar
                     .transition(.asymmetric(
                         insertion: .push(from: .trailing).combined(with: .opacity),
@@ -52,7 +53,7 @@ struct ChatInputBarView: View {
         .glassEffect(.regular, in: .capsule)
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
-        .animation(.spring(duration: 0.35), value: audioRecorder.isRecording)
+        .animation(.spring(duration: 0.35), value: loadedState.isRecording)
         .animation(.spring(duration: 0.35), value: loadedState.isTranscribing)
     }
 }
@@ -105,7 +106,7 @@ private extension ChatInputBarView {
 
             Spacer()
 
-            Button { cancelCurrentRecording() } label: {
+            Button { onCancelRecording() } label: {
                 Image(systemName: "xmark.circle.fill")
                     .font(.title)
                     .foregroundStyle(.secondary)
@@ -115,7 +116,7 @@ private extension ChatInputBarView {
             .buttonStyle(.plain)
             .accessibilityLabel(String(localized: "Cancel Recording"))
 
-            Button { stopRecording() } label: {
+            Button { onStopRecording() } label: {
                 Image(systemName: "stop.circle.fill")
                     .font(.title)
                     .foregroundStyle(.red)
@@ -163,7 +164,7 @@ private extension ChatInputBarView {
     }
 
     var timerText: String {
-        let total = Int(audioRecorder.recordingDuration)
+        let total = Int(loadedState.recordingDuration)
         return String(format: "%d:%02d", total / 60, total % 60)
     }
 
@@ -248,7 +249,7 @@ private extension ChatInputBarView {
     }
 
     var micButton: some View {
-        Button { startRecording() } label: {
+        Button { onStartRecording() } label: {
             Image(systemName: "mic.circle.fill").font(.title).foregroundStyle(.secondary)
                 .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
         }
@@ -258,21 +259,6 @@ private extension ChatInputBarView {
     }
 
     // MARK: Actions
-
-    func startRecording() {
-        audioRecorder.startRecording()
-    }
-
-    func stopRecording() {
-        audioRecorder.stopRecording { data, duration in
-            guard let data else { return }
-            onAudioRecorded(data, duration)
-        }
-    }
-
-    func cancelCurrentRecording() {
-        audioRecorder.cancelRecording()
-    }
 
     func startPulse() {
         isPulsing = false

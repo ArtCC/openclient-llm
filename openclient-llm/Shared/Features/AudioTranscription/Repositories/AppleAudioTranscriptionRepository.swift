@@ -15,7 +15,7 @@ struct AppleAudioTranscriptionRepository: AudioTranscriptionRepositoryProtocol {
 
     // MARK: - Init
 
-    init(manager: AppleSpeechRecognitionManagerProtocol = AppleSpeechRecognitionManager()) {
+    init(manager: AppleSpeechRecognitionManagerProtocol = AppleSpeechRecognitionManager.shared) {
         self.manager = manager
     }
 
@@ -27,29 +27,10 @@ struct AppleAudioTranscriptionRepository: AudioTranscriptionRepositoryProtocol {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("apple_stt_\(UUID().uuidString).m4a")
         try audioData.write(to: url)
+        defer { try? FileManager.default.removeItem(at: url) }
 
-        let text: String
-        do {
-            text = try await manager.transcribe(audioFileURL: url)
-        } catch {
-            // Delay cleanup so the Speech framework can finish any internal I/O.
-            scheduleFileCleanup(url: url)
-            throw error
-        }
-
-        // Delay cleanup so the Speech framework can finish any internal I/O.
-        scheduleFileCleanup(url: url)
-
+        let text = try await manager.transcribe(audioFileURL: url)
         LogManager.success("AppleSTT done chars=\(text.count)")
         return text
-    }
-
-    // MARK: - Private
-
-    private func scheduleFileCleanup(url: URL) {
-        Task {
-            try? await Task.sleep(for: .seconds(2))
-            try? FileManager.default.removeItem(at: url)
-        }
     }
 }

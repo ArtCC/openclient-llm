@@ -248,7 +248,9 @@ private extension ChatView {
                         onInputChanged: { viewModel.send(.inputChanged($0)) },
                         onSend: { viewModel.send(.sendTapped) },
                         onStopStreaming: { viewModel.send(.stopStreamingTapped) },
-                        onAudioRecorded: { data, duration in viewModel.send(.audioRecorded(data, duration)) },
+                        onStartRecording: { viewModel.send(.startRecordingTapped) },
+                        onStopRecording: { viewModel.send(.stopRecordingTapped) },
+                        onCancelRecording: { viewModel.send(.cancelRecordingTapped) },
                         showImageFilePicker: $showImageFilePicker
                     )
                 }

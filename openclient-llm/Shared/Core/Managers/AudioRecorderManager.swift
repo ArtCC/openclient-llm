@@ -9,9 +9,19 @@
 import AVFoundation
 import Foundation
 
+@MainActor
+protocol AudioRecorderManagerProtocol: AnyObject {
+    var isRecording: Bool { get }
+    var recordingDuration: TimeInterval { get }
+
+    func startRecording()
+    func stopRecording() -> (data: Data?, duration: TimeInterval)
+    func cancelRecording()
+}
+
 @Observable
 @MainActor
-final class AudioRecorderManager {
+final class AudioRecorderManager: AudioRecorderManagerProtocol {
     // MARK: - Properties
 
     private(set) var isRecording: Bool = false
@@ -50,10 +60,9 @@ final class AudioRecorderManager {
         }
     }
 
-    func stopRecording(completion: @MainActor (Data?, TimeInterval) -> Void) {
+    func stopRecording() -> (data: Data?, duration: TimeInterval) {
         guard let recorder = audioRecorder, recorder.isRecording else {
-            completion(nil, 0)
-            return
+            return (nil, 0)
         }
 
         recorder.stop()
@@ -67,8 +76,7 @@ final class AudioRecorderManager {
         let duration = startTime.map { Date().timeIntervalSince($0) } ?? 0
 
         guard let url = recordingURL else {
-            completion(nil, 0)
-            return
+            return (nil, 0)
         }
 
         let data = try? Data(contentsOf: url)
@@ -77,7 +85,7 @@ final class AudioRecorderManager {
         audioRecorder = nil
         startTime = nil
 
-        completion(data, duration)
+        return (data, duration)
     }
 
     func cancelRecording() {
