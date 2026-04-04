@@ -57,6 +57,10 @@ final class AudioRecorderManager {
         recorder.stop()
         isRecording = false
 
+        #if os(iOS)
+        deactivateAudioSession()
+        #endif
+
         let duration = startTime.map { Date().timeIntervalSince($0) } ?? 0
 
         guard let url = recordingURL else {
@@ -85,6 +89,15 @@ private extension AudioRecorderManager {
             try session.setActive(true)
         } catch {
             LogManager.error("Failed to configure audio session: \(error.localizedDescription)")
+        }
+    }
+
+    func deactivateAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+        do {
+            try session.setActive(false, options: .notifyOthersOnDeactivation)
+        } catch {
+            LogManager.error("Failed to deactivate audio session: \(error.localizedDescription)")
         }
     }
     #endif

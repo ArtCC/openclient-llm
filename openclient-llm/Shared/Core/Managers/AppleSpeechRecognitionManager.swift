@@ -52,12 +52,13 @@ final class AppleSpeechRecognitionManager: AppleSpeechRecognitionManagerProtocol
 
         return try await withCheckedThrowingContinuation { continuation in
             self.pendingContinuation = continuation
-            currentTask = rec.recognitionTask(with: request) { [weak self] result, error in
-                // Dispatch to @MainActor via a Task so the callback is always
-                // processed on the main actor regardless of which thread the
-                // Speech framework uses to deliver it.
-                Task { @MainActor [weak self] in
-                    self?.handleResult(result: result, error: error)
+            // Strong capture of `self` is intentional: the continuation MUST be
+            // resumed even if the manager is otherwise unreferenced. There is no
+            // retain cycle because the Speech framework releases the handler
+            // block after the task completes or is cancelled.
+            currentTask = rec.recognitionTask(with: request) { result, error in
+                Task { @MainActor in
+                    self.handleResult(result: result, error: error)
                 }
             }
         }
@@ -72,8 +73,10 @@ private extension AppleSpeechRecognitionManager {
         // Setting pendingContinuation to nil before resuming prevents double-resume.
         guard let cont = pendingContinuation else { return }
         pendingContinuation = nil
-        resetState()
 
+        // Resume the continuation BEFORE cleaning up. Calling resetState() first
+        // would cancel the task and release the recognizer, which can trigger
+        // additional callbacks and EXC_BAD_ACCESS.
         if let error {
             cont.resume(throwing: error)
         } else if let result, result.isFinal {
@@ -83,12 +86,22 @@ private extension AppleSpeechRecognitionManager {
             // but must not leave the continuation suspended forever.
             cont.resume(throwing: AppleSpeechError.recognizerUnavailable)
         }
+
+        resetState()
     }
 
     func resetState() {
         currentTask?.cancel()
         currentTask = nil
         recognizer = nil
+
+        // If a continuation is still pending (e.g. called from transcribe()
+        // while a previous operation was in-flight), resume it so it is never
+        // leaked. A leaked CheckedContinuation crashes in both debug and release.
+        if let cont = pendingContinuation {
+            pendingContinuation = nil
+            cont.resume(throwing: CancellationError())
+        }
     }
 
     func requestAuthorization() async -> SFSpeechRecognizerAuthorizationStatus {

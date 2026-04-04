@@ -11,8 +11,17 @@ import Foundation
 // MARK: - Audio Transcription
 
 extension ChatViewModel {
+    /// Minimum recording duration in seconds required to attempt transcription.
+    private static let minimumRecordingDuration: TimeInterval = 0.3
+
     func transcribeAudio(data: Data, duration: TimeInterval) {
         guard case .loaded(var loadedState) = state else { return }
+
+        guard duration >= Self.minimumRecordingDuration, !data.isEmpty else {
+            LogManager.warning("transcribeAudio: recording too short (\(String(format: "%.2f", duration))s), ignoring")
+            return
+        }
+
         guard let transcriptionModelId = loadedState.transcriptionModelId else {
             LogManager.warning("transcribeAudio: no audioTranscription model available")
             loadedState.errorMessage = String(
