@@ -251,6 +251,7 @@ private extension ChatView {
                         onStartRecording: { viewModel.send(.startRecordingTapped) },
                         onStopRecording: { viewModel.send(.stopRecordingTapped) },
                         onCancelRecording: { viewModel.send(.cancelRecordingTapped) },
+                        onWebSearchToggled: { viewModel.send(.webSearchToggled) },
                         showImageFilePicker: $showImageFilePicker
                     )
                 }

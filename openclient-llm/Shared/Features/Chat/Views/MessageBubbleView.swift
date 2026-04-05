@@ -98,6 +98,10 @@ private extension MessageBubbleView {
                     tokenUsageLabel(usage)
                 }
 
+                if let results = message.webSearchResults, !results.isEmpty, !isStreaming {
+                    WebSearchSourcesView(results: results)
+                }
+
                 if !isStreaming && !message.content.isEmpty && message.role == .assistant && hasTTS {
                     speakButton
                 }

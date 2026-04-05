@@ -36,6 +36,7 @@ final class ChatViewModel {
         case editMessage(id: UUID, newContent: String)
         case forkFromMessage(UUID)
         case branchedConversationConsumed
+        case webSearchToggled
     }
 
     enum State: Equatable {
@@ -66,6 +67,8 @@ final class ChatViewModel {
         var transcriptionModelId: String?
         var exportedData: Data?
         var branchedConversation: Conversation?
+        var isWebSearchEnabled: Bool = false
+        var isSearchingWeb: Bool = false
     }
 
     var state: State
@@ -75,6 +78,7 @@ final class ChatViewModel {
 
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     let streamMessageUseCase: StreamMessageUseCaseProtocol
+    let webSearchUseCase: WebSearchUseCaseProtocol
     let saveConversationUseCase: SaveConversationUseCaseProtocol
     private let synthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol
     let transcribeAudioUseCase: TranscribeAudioUseCaseProtocol
@@ -97,6 +101,7 @@ final class ChatViewModel {
         state: State = .loading,
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
         streamMessageUseCase: StreamMessageUseCaseProtocol = StreamMessageUseCase(),
+        webSearchUseCase: WebSearchUseCaseProtocol = WebSearchUseCase(),
         saveConversationUseCase: SaveConversationUseCaseProtocol = SaveConversationUseCase(),
         synthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol = SynthesizeSpeechUseCase(),
         transcribeAudioUseCase: TranscribeAudioUseCaseProtocol = TranscribeAudioUseCase(),
@@ -112,6 +117,7 @@ final class ChatViewModel {
         self.pendingConversation = conversation
         self.fetchModelsUseCase = fetchModelsUseCase
         self.streamMessageUseCase = streamMessageUseCase
+        self.webSearchUseCase = webSearchUseCase
         self.saveConversationUseCase = saveConversationUseCase
         self.synthesizeSpeechUseCase = synthesizeSpeechUseCase
         self.transcribeAudioUseCase = transcribeAudioUseCase
@@ -154,6 +160,8 @@ final class ChatViewModel {
         case .exportConversation, .exportDataConsumed, .regenerateLastResponse,
              .editMessage, .forkFromMessage, .branchedConversationConsumed:
             handlePhase6Event(event)
+        case .webSearchToggled:
+            toggleWebSearch()
         }
     }
 }
@@ -214,7 +222,8 @@ private extension ChatViewModel {
                 modelParameters: pending?.modelParameters ?? .default,
                 showTokenUsage: settingsManager.getShowTokenUsage(),
                 ttsModelId: ttsModelId,
-                transcriptionModelId: transcriptionModelId
+                transcriptionModelId: transcriptionModelId,
+                isWebSearchEnabled: settingsManager.getIsWebSearchEnabled()
             ))
         } catch {
             LogManager.error("fetchAndBuildInitialState failed: \(error)")
@@ -225,7 +234,8 @@ private extension ChatViewModel {
                 messages: pending?.messages ?? [],
                 errorMessage: error.localizedDescription,
                 systemPrompt: pending?.systemPrompt ?? "",
-                modelParameters: pending?.modelParameters ?? .default
+                modelParameters: pending?.modelParameters ?? .default,
+                isWebSearchEnabled: settingsManager.getIsWebSearchEnabled()
             ))
             scheduleErrorDismiss()
         }
@@ -355,15 +365,19 @@ private extension ChatViewModel {
         let currentMessages = loadedState.messages.filter { $0.id != assistantMessageId }
         let systemPrompt = loadedState.systemPrompt
         let parameters = loadedState.modelParameters
+        let webSearchEnabled = loadedState.isWebSearchEnabled
+        let queryText = text
 
         streamTask?.cancel()
         streamTask = Task {
+            let searchResults = webSearchEnabled ? await fetchSearchResults(for: queryText) : []
             await performStreaming(
                 messages: currentMessages,
                 model: model.id,
                 assistantMessageId: assistantMessageId,
                 systemPrompt: systemPrompt,
-                parameters: parameters
+                parameters: parameters,
+                searchResults: searchResults
             )
         }
     }

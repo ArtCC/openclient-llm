@@ -22,6 +22,9 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     var ttsVoices: [String: String] = [:]
     var isCloudSyncEnabled: Bool = false
     var showTokenUsage: Bool = true
+    var isWebSearchEnabled: Bool = false
+    var webSearchToolName: String = "brave-search"
+    var webSearchMaxResults: Int = 10
     var deleteAllCalled: Bool = false
 
     // MARK: - Public
@@ -74,6 +77,14 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         showTokenUsage = value
     }
 
+    func getIsWebSearchEnabled() -> Bool {
+        isWebSearchEnabled
+    }
+
+    func setIsWebSearchEnabled(_ value: Bool) {
+        isWebSearchEnabled = value
+    }
+
     func getSelectedTTSModelId() -> String? {
         selectedTTSModelId
     }
@@ -96,6 +107,22 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
     func setSelectedSTTModelId(_ value: String?) {
         selectedSTTModelId = value
+    }
+
+    func getWebSearchToolName() -> String {
+        webSearchToolName
+    }
+
+    func setWebSearchToolName(_ value: String) {
+        webSearchToolName = value
+    }
+
+    func getWebSearchMaxResults() -> Int {
+        webSearchMaxResults
+    }
+
+    func setWebSearchMaxResults(_ value: Int) {
+        webSearchMaxResults = value
     }
 
     func deleteAll() {

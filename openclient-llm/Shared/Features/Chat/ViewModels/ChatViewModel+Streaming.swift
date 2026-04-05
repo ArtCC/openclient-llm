@@ -16,9 +16,11 @@ extension ChatViewModel {
         model: String,
         assistantMessageId: UUID,
         systemPrompt: String,
-        parameters: ModelParameters
+        parameters: ModelParameters,
+        searchResults: [LiteLLMSearchResult] = []
     ) async {
-        LogManager.debug("performStreaming model=\(model) messages=\(messages.count)")
+        let hasSearch = !searchResults.isEmpty
+        LogManager.debug("performStreaming model=\(model) messages=\(messages.count) webSearch=\(hasSearch)")
         let profileContext = userProfileManager.getProfile().systemPromptContext
         let effectiveSystemPrompt = buildEffectiveSystemPrompt(
             profileContext: profileContext,
@@ -29,6 +31,13 @@ extension ChatViewModel {
         if !effectiveSystemPrompt.isEmpty {
             let systemMessage = ChatMessage(role: .system, content: effectiveSystemPrompt)
             allMessages.insert(systemMessage, at: 0)
+        }
+        if !searchResults.isEmpty {
+            let contextMessage = ChatMessage(
+                role: .system,
+                content: buildWebSearchContext(results: searchResults)
+            )
+            allMessages.insert(contextMessage, at: allMessages.endIndex - 1)
         }
 
         do {
@@ -41,6 +50,10 @@ extension ChatViewModel {
 
             guard case .loaded(var currentState) = state else { return }
             currentState.isStreaming = false
+            if !searchResults.isEmpty,
+               let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }) {
+                currentState.messages[index].webSearchResults = searchResults
+            }
             state = .loaded(currentState)
             LogManager.success("performStreaming completed model=\(model)")
             persistConversation()

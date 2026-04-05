@@ -23,6 +23,7 @@ struct ChatInputBarView: View {
     let onStartRecording: () -> Void
     let onStopRecording: () -> Void
     let onCancelRecording: () -> Void
+    let onWebSearchToggled: () -> Void
 
     @State private var isPulsing = false
     @Binding var showImageFilePicker: Bool
@@ -30,31 +31,48 @@ struct ChatInputBarView: View {
     // MARK: - View
 
     var body: some View {
-        ZStack {
-            if loadedState.isRecording {
-                recordingBar
-                    .transition(.asymmetric(
-                        insertion: .push(from: .trailing).combined(with: .opacity),
-                        removal: .push(from: .leading).combined(with: .opacity)
-                    ))
-            } else if loadedState.isTranscribing {
-                transcribingBar
-                    .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .center)))
-            } else {
-                normalBar
-                    .transition(.asymmetric(
-                        insertion: .push(from: .leading).combined(with: .opacity),
-                        removal: .push(from: .trailing).combined(with: .opacity)
-                    ))
+        VStack(spacing: 0) {
+            if loadedState.isSearchingWeb {
+                HStack(spacing: 6) {
+                    ProgressView()
+                        .controlSize(.mini)
+                    Text(String(localized: "Searching the web…"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 4)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
+
+            ZStack {
+                if loadedState.isRecording {
+                    recordingBar
+                        .transition(.asymmetric(
+                            insertion: .push(from: .trailing).combined(with: .opacity),
+                            removal: .push(from: .leading).combined(with: .opacity)
+                        ))
+                } else if loadedState.isTranscribing {
+                    transcribingBar
+                        .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .center)))
+                } else {
+                    normalBar
+                        .transition(.asymmetric(
+                            insertion: .push(from: .leading).combined(with: .opacity),
+                            removal: .push(from: .trailing).combined(with: .opacity)
+                        ))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+            .glassEffect(.regular, in: .capsule)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .glassEffect(.regular, in: .capsule)
         .padding(.horizontal, 16)
         .padding(.bottom, 8)
         .animation(.spring(duration: 0.35), value: loadedState.isRecording)
         .animation(.spring(duration: 0.35), value: loadedState.isTranscribing)
+        .animation(.easeInOut(duration: 0.2), value: loadedState.isSearchingWeb)
     }
 }
 
@@ -66,6 +84,8 @@ private extension ChatInputBarView {
     var normalBar: some View {
         HStack(spacing: 8) {
             attachmentMenu
+
+            webSearchButton
 
             TextField(
                 String(localized: "Message..."),
@@ -211,6 +231,23 @@ private extension ChatInputBarView {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+    }
+
+    var webSearchButton: some View {
+        Button { onWebSearchToggled() } label: {
+            Image(systemName: loadedState.isWebSearchEnabled ? "globe.badge.chevron.backward" : "globe")
+                .font(.title2)
+                .foregroundStyle(loadedState.isWebSearchEnabled ? Color.appAccent : .secondary)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            loadedState.isWebSearchEnabled
+            ? String(localized: "Disable Web Search")
+            : String(localized: "Enable Web Search")
+        )
+        .animation(.easeInOut(duration: 0.2), value: loadedState.isWebSearchEnabled)
     }
 
     @ViewBuilder

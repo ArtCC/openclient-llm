@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.0.0-build-17] - 2026-04-05
+
+### Added
+
+- Web browsing via LiteLLM Search API (≥ v1.78.7): globe button in the chat input bar triggers a `POST /v1/search/{tool_name}` call before each message and injects the top results as system context so the model can cite sources
+- `WebSearchUseCase` (`WebSearchUseCaseProtocol`) and `SearchModels` (`LiteLLMSearchRequest`, `LiteLLMSearchResponse`, `LiteLLMSearchResult`) for the search pipeline
+- `APIClient.searchRequest(toolName:body:)` method added to the protocol and implementation
+- `ChatMessage.webSearchResults` field stores the search results associated with an assistant reply
+- `ChatViewModel` extended with `isWebSearchEnabled` / `isSearchingWeb` state, `.webSearchToggled` event, and graceful fallback when search fails
+- `ChatViewModel+WebSearch` extension with `toggleWebSearch()` and `buildWebSearchContext(results:)` (top-5 Markdown citations)
+- `ChatInputBarView` globe button with active tint, "Searching the web…" `ProgressView` indicator above the input bar while the request is in flight
+- `MessageBubbleView` shows a collapsible `DisclosureGroup` of sources (title + snippet + date) after the assistant reply when results are present
+- Settings screen **Web Search** section: tool name field and max results stepper (1–20, default 10)
+- `SettingsManager` extended with `webSearchToolName` / `webSearchMaxResults` keys
+- `SettingsViewModel` extended with corresponding state, events, and persistence handlers
+- `MockWebSearchUseCase` test double
+- `WebSearchUseCaseTests` (5 tests) and `ChatViewModelTests+WebSearch` (6 tests)
+
 ## [1.0.0-build-16] - 2026-04-05
 
 ### Added
