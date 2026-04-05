@@ -41,7 +41,8 @@ Content-Type: application/json
 ```json
 {
   "query": "latest Swift 6 features",
-  "max_results": 5,
+  "max_results": 10,
+  "max_tokens_per_page": 1024,
   "country": "US"
 }
 ```
@@ -94,7 +95,8 @@ Content-Type: application/json
 
 struct LiteLLMSearchRequest: Codable, Sendable {
     let query: String
-    let maxResults: Int
+    let maxResults: Int?          // optional, API default: 10 (range 1–20)
+    let maxTokensPerPage: Int?    // optional, API default: 1024
     let country: String?
     let searchDomainFilter: [String]?
 }
@@ -180,7 +182,7 @@ search_tools:
 ## Settings
 
 - **Search tool name**: Stored in `SettingsManager` (UserDefaults), default: `"brave-search"` — must match `search_tool_name` in the LiteLLM `config.yaml`
-- **Result count**: Default 5, configurable (3–10)
+- **Result count**: Default 10 (matches API default), configurable (1–20)
 - **No search API key in the app** — key management is the server's responsibility
 
 ---

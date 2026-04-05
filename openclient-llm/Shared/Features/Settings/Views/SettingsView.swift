@@ -137,6 +137,7 @@ private extension SettingsView {
                 cloudSyncSection(loadedState)
                 personalizationSection()
                 chatSection(loadedState)
+                webSearchSection(loadedState)
                 feedbackSection()
                 legalSection()
                 dangerSection()
@@ -258,6 +259,45 @@ private extension SettingsView {
         case .failure(let message):
             Label(message, systemImage: "xmark.circle.fill")
                 .foregroundStyle(.red)
+        }
+    }
+
+    func webSearchSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
+        Section {
+            TextField(
+                String(localized: "Search Tool Name"),
+                text: Binding(
+                    get: { loadedState.webSearchToolName },
+                    set: { viewModel.send(.webSearchToolNameChanged($0)) }
+                )
+            )
+            .textSelection(.enabled)
+            .autocorrectionDisabled()
+#if os(iOS)
+            .textInputAutocapitalization(.never)
+            .keyboardType(.asciiCapable)
+#endif
+
+            Stepper(
+                value: Binding(
+                    get: { loadedState.webSearchMaxResults },
+                    set: { viewModel.send(.webSearchMaxResultsChanged($0)) }
+                ),
+                in: 1...20
+            ) {
+                HStack {
+                    Text(String(localized: "Results"))
+                    Spacer()
+                    Text("\(loadedState.webSearchMaxResults)")
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Text(String(localized: "Web Search"))
+        } footer: {
+            Text(String(
+                localized: "Tool name must match the search_tool_name configured in your LiteLLM config.yaml."
+            ))
         }
     }
 

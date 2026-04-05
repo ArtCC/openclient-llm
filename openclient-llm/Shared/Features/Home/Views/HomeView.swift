@@ -12,7 +12,6 @@ struct HomeView: View {
     // MARK: - Properties
 
     @State private var selectedConversation: Conversation?
-    @State private var conversationListId = UUID()
 
     #if os(macOS)
     @State private var sidebarDestination: SidebarDestination = .chats
@@ -93,16 +92,11 @@ private extension HomeView {
             ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
                 selectedConversation = conversation
             }
-            .id(conversationListId)
             .navigationDestination(item: $selectedConversation) { conversation in
                 ChatView(
                     conversation: conversation,
-                    onConversationUpdated: {
-                        conversationListId = UUID()
-                    },
                     onForkCreated: { fork in
                         selectedConversation = fork
-                        conversationListId = UUID()
                     }
                 )
             }
@@ -114,18 +108,13 @@ private extension HomeView {
             ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
                 selectedConversation = conversation
             }
-            .id(conversationListId)
             .navigationSplitViewColumnWidth(320)
         } detail: {
             if let selectedConversation {
                 ChatView(
                     conversation: selectedConversation,
-                    onConversationUpdated: {
-                        conversationListId = UUID()
-                    },
                     onForkCreated: { fork in
                         self.selectedConversation = fork
-                        conversationListId = UUID()
                     }
                 )
             } else {
@@ -193,16 +182,11 @@ private extension HomeView {
                 ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
                     selectedConversation = conversation
                 }
-                .id(conversationListId)
                 .navigationDestination(item: $selectedConversation) { conversation in
                     ChatView(
                         conversation: conversation,
-                        onConversationUpdated: {
-                            conversationListId = UUID()
-                        },
                         onForkCreated: { fork in
                             selectedConversation = fork
-                            conversationListId = UUID()
                         }
                     )
                 }

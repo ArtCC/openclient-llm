@@ -23,6 +23,8 @@ final class SettingsViewModel {
         case cloudSyncConflictResolved(keepLocal: Bool)
         case cloudSyncConflictCancelled
         case showTokenUsageToggled(Bool)
+        case webSearchToolNameChanged(String)
+        case webSearchMaxResultsChanged(Int)
         case resetConfirmed
     }
 
@@ -40,6 +42,8 @@ final class SettingsViewModel {
         var isCloudAvailable: Bool = false
         var showTokenUsage: Bool = true
         var showCloudSyncConflictAlert: Bool = false
+        var webSearchToolName: String = "brave-search"
+        var webSearchMaxResults: Int = 10
     }
 
     enum ConnectionStatus: Equatable {
@@ -92,14 +96,12 @@ final class SettingsViewModel {
             testConnection()
         case .saveTapped:
             saveSettings()
-        case .cloudSyncToggled(let enabled):
-            toggleCloudSync(enabled)
-        case .cloudSyncConflictResolved(let keepLocal):
-            resolveCloudSyncConflict(keepLocal: keepLocal)
-        case .cloudSyncConflictCancelled:
-            cancelCloudSyncToggle()
+        case .cloudSyncToggled, .cloudSyncConflictResolved, .cloudSyncConflictCancelled:
+            handleCloudSyncEvent(event)
         case .showTokenUsageToggled(let show):
             toggleShowTokenUsage(show)
+        case .webSearchToolNameChanged, .webSearchMaxResultsChanged:
+            handleWebSearchEvent(event)
         case .resetConfirmed:
             resetApp()
         }
@@ -115,7 +117,9 @@ private extension SettingsViewModel {
             apiKey: settingsManager.getAPIKey(),
             isCloudSyncEnabled: settingsManager.getIsCloudSyncEnabled(),
             isCloudAvailable: cloudSyncManager.isCloudAvailable(),
-            showTokenUsage: settingsManager.getShowTokenUsage()
+            showTokenUsage: settingsManager.getShowTokenUsage(),
+            webSearchToolName: settingsManager.getWebSearchToolName(),
+            webSearchMaxResults: settingsManager.getWebSearchMaxResults()
         )
         state = .loaded(loadedState)
     }
@@ -222,6 +226,44 @@ private extension SettingsViewModel {
         settingsManager.setShowTokenUsage(show)
         loadedState.showTokenUsage = show
         state = .loaded(loadedState)
+    }
+
+    func updateWebSearchToolName(_ name: String) {
+        guard case .loaded(var loadedState) = state else { return }
+        settingsManager.setWebSearchToolName(name)
+        loadedState.webSearchToolName = name
+        state = .loaded(loadedState)
+    }
+
+    func updateWebSearchMaxResults(_ count: Int) {
+        guard case .loaded(var loadedState) = state else { return }
+        settingsManager.setWebSearchMaxResults(count)
+        loadedState.webSearchMaxResults = count
+        state = .loaded(loadedState)
+    }
+
+    func handleCloudSyncEvent(_ event: Event) {
+        switch event {
+        case .cloudSyncToggled(let enabled):
+            toggleCloudSync(enabled)
+        case .cloudSyncConflictResolved(let keepLocal):
+            resolveCloudSyncConflict(keepLocal: keepLocal)
+        case .cloudSyncConflictCancelled:
+            cancelCloudSyncToggle()
+        default:
+            break
+        }
+    }
+
+    func handleWebSearchEvent(_ event: Event) {
+        switch event {
+        case .webSearchToolNameChanged(let name):
+            updateWebSearchToolName(name)
+        case .webSearchMaxResultsChanged(let count):
+            updateWebSearchMaxResults(count)
+        default:
+            break
+        }
     }
 
     func resetApp() {

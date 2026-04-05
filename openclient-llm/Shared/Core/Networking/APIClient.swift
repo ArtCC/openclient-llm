@@ -34,6 +34,10 @@ protocol APIClientProtocol: Sendable {
         endpoint: String,
         body: any Encodable & Sendable
     ) async throws -> Data
+    func searchRequest(
+        toolName: String,
+        body: LiteLLMSearchRequest
+    ) async throws -> LiteLLMSearchResponse
 }
 
 enum HTTPMethod: String, Sendable {
@@ -207,6 +211,14 @@ struct APIClient: APIClientProtocol, Sendable {
             LogManager.error("Multipart request failed /\(endpoint): \(error.localizedDescription)")
             throw error
         }
+    }
+
+    func searchRequest(
+        toolName: String,
+        body: LiteLLMSearchRequest
+    ) async throws -> LiteLLMSearchResponse {
+        let endpoint = "v1/search/\(toolName)"
+        return try await request(endpoint: endpoint, method: .post, body: body)
     }
 
     func rawDataRequest(

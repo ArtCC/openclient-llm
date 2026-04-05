@@ -80,6 +80,7 @@ final class ConversationListViewModel {
         self.fetchModelsUseCase = fetchModelsUseCase
         self.settingsManager = settingsManager
         observeAppDataReset()
+        observeConversationUpdated()
     }
 
     // MARK: - Input functions
@@ -287,6 +288,17 @@ private extension ConversationListViewModel {
             for await _ in notifications {
                 guard let self else { return }
                 await MainActor.run { self.loadData() }
+            }
+        }
+    }
+
+    func observeConversationUpdated() {
+        Task { [weak self] in
+            let notifications = NotificationCenter.default
+                .notifications(named: .conversationDidUpdate)
+            for await _ in notifications {
+                guard let self else { return }
+                await MainActor.run { self.reloadConversations() }
             }
         }
     }

@@ -18,11 +18,15 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
     let timestamp: Date
     var attachments: [Attachment]
     var tokenUsage: TokenUsage?
+    var webSearchResults: [LiteLLMSearchResult]?
+    var toolCalls: [ToolCall]?
+    var toolCallId: String?
 
     enum Role: String, Sendable, Equatable, Codable {
         case user
         case assistant
         case system
+        case tool
     }
 
     // MARK: - Init
@@ -34,7 +38,10 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
         reasoningContent: String? = nil,
         timestamp: Date = Date(),
         attachments: [Attachment] = [],
-        tokenUsage: TokenUsage? = nil
+        tokenUsage: TokenUsage? = nil,
+        webSearchResults: [LiteLLMSearchResult]? = nil,
+        toolCalls: [ToolCall]? = nil,
+        toolCallId: String? = nil
     ) {
         self.id = id
         self.role = role
@@ -43,6 +50,9 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
         self.timestamp = timestamp
         self.attachments = attachments
         self.tokenUsage = tokenUsage
+        self.webSearchResults = webSearchResults
+        self.toolCalls = toolCalls
+        self.toolCallId = toolCallId
     }
 }
 

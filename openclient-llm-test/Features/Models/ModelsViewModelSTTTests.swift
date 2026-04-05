@@ -157,4 +157,39 @@ final class ModelsViewModelSTTTests: XCTestCase {
         XCTAssertEqual(loadedState.selectedSTTModelId, "whisper-1")
         XCTAssertEqual(loadedState.selectedTTSModelId, "tts-1")
     }
+
+    // MARK: - Tests — Apple STT default
+
+    func test_viewAppeared_appleSTTAlwaysInList() async throws {
+        // Given — sin modelos STT de LiteLLM
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+
+        // When
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then — Apple sentinel siempre presente
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        let sttModels = loadedState.models.filter { $0.mode == .audioTranscription }
+        XCTAssertTrue(sttModels.contains(where: { $0.id == LLMModel.appleSpeechRecognition.id }))
+    }
+
+    func test_viewAppeared_appleSTTSelectedByDefault() async throws {
+        // Given — sin STT guardado en settings, sin modelos LiteLLM
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+
+        // When
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then — Apple seleccionado por defecto
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.selectedSTTModelId, LLMModel.appleSpeechRecognition.id)
+    }
 }

@@ -20,20 +20,25 @@ openclient-llm/                              # iOS target
 │   │   │   ├── Models/
 │   │   │   │   └── Transcription.swift
 │   │   │   ├── Repositories/
+│   │   │   │   ├── AppleAudioTranscriptionRepository.swift
 │   │   │   │   └── AudioTranscriptionRepository.swift
 │   │   │   └── UseCases/
 │   │   │       └── TranscribeAudioUseCase.swift
 │   │   ├── Chat/
 │   │   │   ├── Models/
 │   │   │   │   ├── ChatMessage.swift
+│   │   │   │   ├── ChatTool.swift
 │   │   │   │   ├── Conversation.swift
 │   │   │   │   ├── ConversationSection.swift
 │   │   │   │   ├── ModelParameters.swift
-│   │   │   │   └── TokenUsage.swift
+│   │   │   │   ├── TokenUsage.swift
+│   │   │   │   ├── ToolRegistry.swift
+│   │   │   │   └── WebSearchTool.swift
 │   │   │   ├── Repositories/
 │   │   │   │   ├── ChatRepository.swift
 │   │   │   │   └── ConversationRepository.swift
 │   │   │   ├── UseCases/
+│   │   │   │   ├── AgentStreamUseCase.swift
 │   │   │   │   ├── BranchConversationUseCase.swift
 │   │   │   │   ├── DeleteConversationUseCase.swift
 │   │   │   │   ├── ExportConversationUseCase.swift
@@ -42,12 +47,16 @@ openclient-llm/                              # iOS target
 │   │   │   │   ├── SaveConversationUseCase.swift
 │   │   │   │   ├── SendMessageUseCase.swift
 │   │   │   │   ├── StreamMessageUseCase.swift
-│   │   │   │   └── UpdateConversationTagsUseCase.swift
+│   │   │   │   ├── UpdateConversationTagsUseCase.swift
+│   │   │   │   └── WebSearchUseCase.swift
 │   │   │   ├── ViewModels/
 │   │   │   │   ├── ChatViewModel.swift
+│   │   │   │   ├── ChatViewModel+Agent.swift
 │   │   │   │   ├── ChatViewModel+EditExport.swift
 │   │   │   │   ├── ChatViewModel+Helpers.swift
+│   │   │   │   ├── ChatViewModel+Streaming.swift
 │   │   │   │   ├── ChatViewModel+Transcription.swift
+│   │   │   │   ├── ChatViewModel+WebSearch.swift
 │   │   │   │   └── ConversationListViewModel.swift
 │   │   │   └── Views/
 │   │   │       ├── AttachmentPickerView.swift
@@ -101,6 +110,20 @@ openclient-llm/                              # iOS target
 │   │   │   │   └── OnboardingViewModel.swift
 │   │   │   └── Views/
 │   │   │       └── OnboardingView.swift
+│   │   ├── PromptTemplates/
+│   │   │   ├── Models/
+│   │   │   │   └── PromptTemplate.swift
+│   │   │   ├── Repositories/
+│   │   │   │   └── PromptTemplateRepository.swift
+│   │   │   ├── UseCases/
+│   │   │   │   ├── DeletePromptTemplateUseCase.swift
+│   │   │   │   ├── LoadPromptTemplatesUseCase.swift
+│   │   │   │   └── SavePromptTemplateUseCase.swift
+│   │   │   ├── ViewModels/
+│   │   │   │   └── PromptTemplatesViewModel.swift
+│   │   │   └── Views/
+│   │   │       ├── PromptTemplateEditorView.swift
+│   │   │       └── PromptTemplatesView.swift
 │   │   ├── Settings/
 │   │   │   ├── Models/
 │   │   │   │   └── UserProfile.swift
@@ -119,10 +142,12 @@ openclient-llm/                              # iOS target
 │   │           └── SynthesizeSpeechUseCase.swift
 │   ├── Core/
 │   │   ├── Managers/
+│   │   │   ├── AppleSpeechRecognitionManager.swift
 │   │   │   ├── AudioPlayerManager.swift
 │   │   │   ├── AudioRecorderManager.swift
 │   │   │   ├── CloudSyncManager.swift
 │   │   │   ├── ConversationStartersManager.swift
+│   │   │   ├── HapticsManager.swift
 │   │   │   ├── KeychainManager.swift
 │   │   │   ├── LogManager.swift
 │   │   │   ├── SettingsManager.swift
@@ -172,23 +197,28 @@ openclient-llm-test/                         # Unit tests
 │       └── SettingsManagerTTSTests.swift
 ├── Features/
 │   ├── Chat/
+│   │   ├── AgentStreamUseCaseTests.swift
+│   │   ├── BranchConversationUseCaseTests.swift
 │   │   ├── ChatViewModelTests.swift
+│   │   ├── ChatViewModelTests+Agent.swift
 │   │   ├── ChatViewModelTests+Branching.swift
 │   │   ├── ChatViewModelTests+Editing.swift
 │   │   ├── ChatViewModelTests+Export.swift
 │   │   ├── ChatViewModelTests+Persistence.swift
+│   │   ├── ChatViewModelTests+Reasoning.swift
 │   │   ├── ChatViewModelTests+Regenerate.swift
 │   │   ├── ChatViewModelTests+TTS.swift
 │   │   ├── ChatViewModelTests+Transcription.swift
 │   │   ├── ChatViewModelTests+UserProfile.swift
-│   │   ├── BranchConversationUseCaseTests.swift
+│   │   ├── ChatViewModelTests+WebSearch.swift
 │   │   ├── ConversationListViewModelTests.swift
 │   │   ├── ConversationListViewModelTests+Pinning.swift
 │   │   ├── ConversationListViewModelTests+Tags.swift
 │   │   ├── ConversationSectionTests.swift
 │   │   ├── ExportConversationUseCaseTests.swift
 │   │   ├── SendMessageUseCaseTests.swift
-│   │   └── StreamMessageUseCaseTests.swift
+│   │   ├── StreamMessageUseCaseTests.swift
+│   │   └── WebSearchUseCaseTests.swift
 │   ├── Launch/
 │   │   ├── CheckOnboardingUseCaseTests.swift
 │   │   ├── LaunchViewModelTests.swift
@@ -203,12 +233,17 @@ openclient-llm-test/                         # Unit tests
 │   │   ├── OnboardingViewModelTests.swift
 │   │   ├── SaveServerConfigurationUseCaseTests.swift
 │   │   └── TestServerConnectionUseCaseTests.swift
+│   ├── PromptTemplates/
+│   │   └── PromptTemplatesViewModelTests.swift
 │   └── Settings/
 │       ├── SettingsViewModelTests.swift
 │       ├── UserProfileTests.swift
 │       └── UserProfileViewModelTests.swift
 └── Mocks/
     ├── MockAPIClient.swift
+    ├── MockAgentStreamUseCase.swift
+    ├── MockAppleSpeechRecognitionManager.swift
+    ├── MockAudioRecorderManager.swift
     ├── MockBranchConversationUseCase.swift
     ├── MockChatRepository.swift
     ├── MockCheckOnboardingUseCase.swift
@@ -217,15 +252,19 @@ openclient-llm-test/                         # Unit tests
     ├── MockConversationRepository.swift
     ├── MockConversationStartersManager.swift
     ├── MockDeleteConversationUseCase.swift
+    ├── MockDeletePromptTemplateUseCase.swift
     ├── MockExportConversationUseCase.swift
     ├── MockFetchModelsUseCase.swift
     ├── MockKeychainManager.swift
     ├── MockLoadConversationsUseCase.swift
+    ├── MockLoadPromptTemplatesUseCase.swift
     ├── MockModelsRepository.swift
     ├── MockOnboardingRepository.swift
     ├── MockPinConversationUseCase.swift
+    ├── MockPromptTemplateRepository.swift
     ├── MockResetAppDataUseCase.swift
     ├── MockSaveConversationUseCase.swift
+    ├── MockSavePromptTemplateUseCase.swift
     ├── MockSaveServerConfigurationUseCase.swift
     ├── MockSettingsManager.swift
     ├── MockStreamMessageUseCase.swift
@@ -233,7 +272,8 @@ openclient-llm-test/                         # Unit tests
     ├── MockTestServerConnectionUseCase.swift
     ├── MockTranscribeAudioUseCase.swift
     ├── MockUpdateConversationTagsUseCase.swift
-    └── MockUserProfileManager.swift
+    ├── MockUserProfileManager.swift
+    └── MockWebSearchUseCase.swift
 ```
 
 ## Layer Responsibilities

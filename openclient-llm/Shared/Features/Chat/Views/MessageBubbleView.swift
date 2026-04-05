@@ -39,6 +39,8 @@ struct MessageBubbleView: View {
             userMessageLayout
         case .assistant, .system:
             assistantMessageLayout
+        case .tool:
+            EmptyView()
         }
     }
 }
@@ -96,6 +98,10 @@ private extension MessageBubbleView {
 
                 if let usage = message.tokenUsage, !isStreaming, showTokenUsage {
                     tokenUsageLabel(usage)
+                }
+
+                if let results = message.webSearchResults, !results.isEmpty, !isStreaming {
+                    WebSearchSourcesView(results: results)
                 }
 
                 if !isStreaming && !message.content.isEmpty && message.role == .assistant && hasTTS {

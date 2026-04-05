@@ -10,3 +10,4 @@
 "NSMicrophoneUsageDescription" = "OpenClient LLM usa el micrófono para grabar audio y transcribirlo con el modelo de IA.";
 "NSLocalNetworkUsageDescription" = "OpenClient LLM necesita acceso a tu red local para conectarse a tu servidor LiteLLM.";
 "NSPhotoLibraryAddUsageDescription" = "Guarda las imágenes generadas en tu biblioteca de fotos.";
+"NSSpeechRecognitionUsageDescription" = "OpenClient LLM utiliza el reconocimiento de voz para transcribir tu voz localmente en el dispositivo.";
