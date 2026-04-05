@@ -117,6 +117,21 @@ extension LLMModel {
     }
 }
 
+// MARK: - Apple native
+
+extension LLMModel {
+    static let appleSpeechRecognition = LLMModel(
+        id: "apple-speech-recognition",
+        provider: .local,
+        mode: .audioTranscription,
+        providerName: "Apple"
+    )
+
+    var isAppleNative: Bool {
+        id == LLMModel.appleSpeechRecognition.id
+    }
+}
+
 // MARK: - Mode
 
 extension LLMModel {

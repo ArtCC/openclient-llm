@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.0.0-build-16] - 2026-04-05
+
+### Added
+
+- Apple on-device Speech Recognition as a built-in STT option — always available in the Speech to Text section of the Models screen without requiring a LiteLLM Whisper model
+- `LLMModel.appleSpeechRecognition` sentinel (ID `apple-speech-recognition`, provider local, mode `.audioTranscription`) prepended to the STT model list at load and refresh
+- `AppleSpeechRecognitionManager` wrapping `SFSpeechRecognizer` with on-device recognition and async permission request
+- `AppleAudioTranscriptionRepository` implementing `AudioTranscriptionRepositoryProtocol` via `AppleSpeechRecognitionManager`
+- `TranscribeAudioUseCase` now routes to Apple STT or LiteLLM based on the selected model ID
+- Microphone button in the chat input bar is now always visible — Apple STT is used as fallback when no LiteLLM STT model is configured
+- `NSSpeechRecognitionUsageDescription` permission key added to iOS and macOS targets
+- `MockAppleSpeechRecognitionManager` test double
+- 3 new unit tests covering Apple STT default selection and mic always-present behaviour
+- Web browsing via LiteLLM Search API (≥ v1.78.7): globe button in the chat input bar triggers a `POST /v1/search/{tool_name}` call before each message and injects the top results as system context so the model can cite sources
+- `WebSearchUseCase` (`WebSearchUseCaseProtocol`) and `SearchModels` (`LiteLLMSearchRequest`, `LiteLLMSearchResponse`, `LiteLLMSearchResult`) for the search pipeline
+- `APIClient.searchRequest(toolName:body:)` method added to the protocol and implementation
+- `ChatMessage.webSearchResults` field stores the search results associated with an assistant reply
+- `ChatViewModel` extended with `isWebSearchEnabled` / `isSearchingWeb` state, `.webSearchToggled` event, and graceful fallback when search fails
+- `ChatViewModel+WebSearch` extension with `toggleWebSearch()` and `buildWebSearchContext(results:)` (top-5 Markdown citations)
+- `ChatInputBarView` globe button with active tint, "Searching the web…" `ProgressView` indicator above the input bar while the request is in flight
+- `MessageBubbleView` shows a collapsible `DisclosureGroup` of sources (title + snippet + date) after the assistant reply when results are present
+- Settings screen **Web Search** section: tool name field and max results stepper (1–20, default 10)
+- `SettingsManager` extended with `webSearchToolName` / `webSearchMaxResults` keys
+- `SettingsViewModel` extended with corresponding state, events, and persistence handlers
+- `MockWebSearchUseCase` test double
+- `WebSearchUseCaseTests` (5 tests) and `ChatViewModelTests+WebSearch` (6 tests)
+- Agent mode (agentic loop) integrated transparently into the chat flow — automatically activated when web search is enabled and the selected model supports function calling (`finish_reason: "tool_calls"` → parallel tool execution → multi-turn loop); falls back to search-context injection for models without `.functionCalling` capability
+- `AgentStreamUseCase` (`AgentStreamUseCaseProtocol`) with `AgentEvent` enum — drives the agentic loop (up to 10 iterations) using `withThrowingTaskGroup` for parallel tool execution and streaming the final answer via SSE
+- `AgentLoopContext` internal value type grouping the loop's runtime parameters to keep function signatures within SwiftLint limits
+- `ChatToolProtocol` — `Sendable` protocol defining a tool executable by the agent (`definition: ToolDefinition` + `execute(arguments:) async throws -> String`)
+- `WebSearchTool` — implements `ChatToolProtocol`, executes `WebSearchUseCase` and formats the top results as a Markdown citation list
+- `ToolRegistry` — dictionary-based tool registry with `execute(toolName:arguments:)` dispatch and a `static func default(webSearchUseCase:)` factory
+- `ToolModels` — `ToolCall`, `ToolCallFunction`, `ToolDefinition`, `ToolFunctionDefinition`, `ToolParameters`, `ToolParameterProperty` Codable structs following the OpenAI tool-calling specification
+- `ChatMessage` extended with `.tool` role, `toolCalls: [ToolCall]?`, and `toolCallId: String?` for agent tool-call messages
+- `ChatCompletionRequest` extended with `tools: [ToolDefinition]?` and `toolChoice: String?`; `ChatCompletionMessage` extended with `toolCallId` and `toolCalls`; `ChatCompletionResponse.Message` extended with `toolCalls`
+- `ChatRepository` extended with `agentCompletion(messages:model:parameters:tools:)` for non-streaming completions with tool definitions
+- `ChatViewModel+Agent` extension — `performAgentStreaming` routes to the agentic loop; `applyAgentEvent` maps `AgentEvent` to `LoadedState` mutations
+- `MockAgentStreamUseCase` test double and 11 new unit tests across `AgentStreamUseCaseTests` and `ChatViewModelTests+Agent`
+
 ## [1.0.0-build-15] - 2026-04-04
 
 ### Added

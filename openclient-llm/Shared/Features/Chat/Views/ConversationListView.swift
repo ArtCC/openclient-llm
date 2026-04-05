@@ -164,11 +164,12 @@ private extension ConversationListView {
                                 conversationContextMenu(conversation)
                             }
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                                Button(role: .destructive) {
+                                Button {
                                     conversationToDelete = conversation
                                 } label: {
                                     Label(String(localized: "Delete"), systemImage: "trash")
                                 }
+                                .tint(.red)
                             }
                     }
                 } header: {

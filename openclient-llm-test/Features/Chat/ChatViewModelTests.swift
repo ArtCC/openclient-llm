@@ -16,6 +16,7 @@ final class ChatViewModelTests: XCTestCase {
     var sut: ChatViewModel!
     var mockFetchModels: MockFetchModelsUseCase!
     var mockStreamMessage: MockStreamMessageUseCase!
+    var mockWebSearch: MockWebSearchUseCase!
     var mockSaveConversation: MockSaveConversationUseCase!
     var mockSettingsManager: MockSettingsManager!
     var mockConversationStarters: MockConversationStartersManager!
@@ -29,6 +30,7 @@ final class ChatViewModelTests: XCTestCase {
 
         mockFetchModels = MockFetchModelsUseCase()
         mockStreamMessage = MockStreamMessageUseCase()
+        mockWebSearch = MockWebSearchUseCase()
         mockSaveConversation = MockSaveConversationUseCase()
         mockSettingsManager = MockSettingsManager()
         mockConversationStarters = MockConversationStartersManager()
@@ -37,6 +39,7 @@ final class ChatViewModelTests: XCTestCase {
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
             streamMessageUseCase: mockStreamMessage,
+            webSearchUseCase: mockWebSearch,
             saveConversationUseCase: mockSaveConversation,
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
@@ -49,6 +52,7 @@ final class ChatViewModelTests: XCTestCase {
         sut = nil
         mockFetchModels = nil
         mockStreamMessage = nil
+        mockWebSearch = nil
         mockSaveConversation = nil
         mockSettingsManager = nil
         mockConversationStarters = nil

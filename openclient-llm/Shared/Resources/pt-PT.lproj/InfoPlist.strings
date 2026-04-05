@@ -6,7 +6,8 @@
   Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
 */
 
-"NSCameraUsageDescription" = "O OpenClient LLM utiliza a câmara para capturar fotos e enviá-las ao modelo de IA.";
-"NSMicrophoneUsageDescription" = "O OpenClient LLM utiliza o microfone para gravar áudio e transcrevê-lo com o modelo de IA.";
-"NSLocalNetworkUsageDescription" = "O OpenClient LLM precisa de aceder à sua rede local para se ligar ao seu servidor LiteLLM.";
+"NSCameraUsageDescription" = "O OpenClient utiliza a câmara para capturar fotos e enviá-las ao modelo de IA.";
+"NSMicrophoneUsageDescription" = "O OpenClient utiliza o microfone para gravar áudio e transcrevê-lo com o modelo de IA.";
+"NSLocalNetworkUsageDescription" = "O OpenClient precisa de aceder à sua rede local para se ligar ao seu servidor LiteLLM.";
 "NSPhotoLibraryAddUsageDescription" = "Guarde as imagens geradas na sua biblioteca de fotografias.";
+"NSSpeechRecognitionUsageDescription" = "O OpenClient utiliza o reconhecimento de voz para transcrever a sua voz localmente no dispositivo.";

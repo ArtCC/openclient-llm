@@ -6,7 +6,8 @@
   Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
 */
 
-"NSCameraUsageDescription" = "Το OpenClient LLM χρησιμοποιεί την κάμερα για λήψη φωτογραφιών και αποστολή τους στο μοντέλο AI.";
-"NSMicrophoneUsageDescription" = "Το OpenClient LLM χρησιμοποιεί το μικρόφωνο για εγγραφή ήχου και μεταγραφή του με το μοντέλο AI.";
-"NSLocalNetworkUsageDescription" = "Το OpenClient LLM χρειάζεται πρόσβαση στο τοπικό σας δίκτυο για σύνδεση με τον διακομιστή LiteLLM.";
+"NSCameraUsageDescription" = "Το OpenClient χρησιμοποιεί την κάμερα για λήψη φωτογραφιών και αποστολή τους στο μοντέλο AI.";
+"NSMicrophoneUsageDescription" = "Το OpenClient χρησιμοποιεί το μικρόφωνο για εγγραφή ήχου και μεταγραφή του με το μοντέλο AI.";
+"NSLocalNetworkUsageDescription" = "Το OpenClient χρειάζεται πρόσβαση στο τοπικό σας δίκτυο για σύνδεση με τον διακομιστή LiteLLM.";
 "NSPhotoLibraryAddUsageDescription" = "Αποθήκευση παραγόμενων εικόνων στη βιβλιοθήκη φωτογραφιών σας.";
+"NSSpeechRecognitionUsageDescription" = "Το OpenClient χρησιμοποιεί την αναγνώριση ομιλίας για να μεταγράψει τη φωνή σας τοπικά στη συσκευή.";

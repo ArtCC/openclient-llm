@@ -22,6 +22,7 @@ nonisolated struct ChatCompletionResponse: Decodable, Sendable {
         let role: String
         let content: String?
         let images: [ImageItem]?
+        let toolCalls: [ToolCall]?
     }
 
     struct ImageItem: Decodable, Sendable {

@@ -1,11 +1,12 @@
-/* 
-  InfoPlist.strings
-  openclient-llm
+/*
+ InfoPlist.strings
+ openclient-llm
 
-  Created by Arturo Carretero Calvo on 31/03/2026.
-  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
-*/
+ Created by Arturo Carretero Calvo on 31/03/2026.
+ Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
+ */
 
-"NSCameraUsageDescription" = "OpenClient LLMはカメラを使用して写真を撮影し、AIモデルに送信します。";
-"NSMicrophoneUsageDescription" = "OpenClient LLMはマイクを使用して音声を録音し、AIモデルで文字起こしします。";
-"NSLocalNetworkUsageDescription" = "OpenClient LLMは、自己ホスト型LiteLLMサーバーに接続するためにローカルネットワークへのアクセスが必要です。";"NSPhotoLibraryAddUsageDescription" = "生成した画像をフォトライブラリに保存します。";
+"NSCameraUsageDescription" = "OpenClientはカメラを使用して写真を撮影し、AIモデルに送信します。";
+"NSMicrophoneUsageDescription" = "OpenClientはマイクを使用して音声を録音し、AIモデルで文字起こしします。";
+"NSLocalNetworkUsageDescription" = "OpenClientは、自己ホスト型LiteLLMサーバーに接続するためにローカルネットワークへのアクセスが必要です。";"NSPhotoLibraryAddUsageDescription" = "生成した画像をフォトライブラリに保存します。";
+"NSSpeechRecognitionUsageDescription" = "OpenClientは音声認識を使用して、デバイス上でローカルにあなたの声を文字起こしします。";

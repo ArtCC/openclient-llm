@@ -93,12 +93,13 @@ private extension ModelsViewModel {
         Task {
             do {
                 let models = try await fetchModelsUseCase.execute()
+                let allModels = [LLMModel.appleSpeechRecognition] + models
                 let selectedModelId = settingsManager.getSelectedModelId()
                 let selectedTTSModelId = settingsManager.getSelectedTTSModelId()
-                let selectedSTTModelId = settingsManager.getSelectedSTTModelId()
-                let ttsVoices = buildTTSVoices(from: models)
+                let selectedSTTModelId = settingsManager.getSelectedSTTModelId() ?? LLMModel.appleSpeechRecognition.id
+                let ttsVoices = buildTTSVoices(from: allModels)
                 state = .loaded(LoadedState(
-                    models: models,
+                    models: allModels,
                     selectedModelId: selectedModelId,
                     selectedTTSModelId: selectedTTSModelId,
                     selectedSTTModelId: selectedSTTModelId,
@@ -153,12 +154,13 @@ private extension ModelsViewModel {
     func performRefresh() async {
         do {
             let models = try await fetchModelsUseCase.execute()
+            let allModels = [LLMModel.appleSpeechRecognition] + models
             let selectedModelId = settingsManager.getSelectedModelId()
             let selectedTTSModelId = settingsManager.getSelectedTTSModelId()
-            let selectedSTTModelId = settingsManager.getSelectedSTTModelId()
-            let ttsVoices = buildTTSVoices(from: models)
+            let selectedSTTModelId = settingsManager.getSelectedSTTModelId() ?? LLMModel.appleSpeechRecognition.id
+            let ttsVoices = buildTTSVoices(from: allModels)
             state = .loaded(LoadedState(
-                models: models,
+                models: allModels,
                 selectedModelId: selectedModelId,
                 selectedTTSModelId: selectedTTSModelId,
                 selectedSTTModelId: selectedSTTModelId,

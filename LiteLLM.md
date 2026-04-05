@@ -220,6 +220,11 @@ search_tools:
       search_provider: firecrawl
       api_key: os.environ/FIRECRAWL_API_KEY
 
+  - search_tool_name: searxng-search
+    litellm_params:
+      search_provider: searxng
+      api_base: https://search.rhscz.eu
+
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   database_url: os.environ/DATABASE_URL

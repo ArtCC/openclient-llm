@@ -12,4 +12,7 @@ extension Notification.Name {
     /// Posted after the user confirms a full app data reset.
     /// ChatViewModel and ModelsViewModel observe this to reload their state.
     static let appDataDidReset = Notification.Name("openclient.appDataDidReset")
+    /// Posted whenever a conversation is persisted (message sent, updated, etc.).
+    /// ConversationListViewModel observes this to reload the list without recreating views.
+    static let conversationDidUpdate = Notification.Name("openclient.conversationDidUpdate")
 }

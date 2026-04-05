@@ -81,4 +81,17 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         }
         return rawDataResult ?? Data()
     }
+
+    func searchRequest(
+        toolName: String,
+        body: LiteLLMSearchRequest
+    ) async throws -> LiteLLMSearchResponse {
+        if let error = requestError {
+            throw error
+        }
+        guard let result = requestResult as? LiteLLMSearchResponse else {
+            throw APIError.decodingError
+        }
+        return result
+    }
 }
