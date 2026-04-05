@@ -37,6 +37,7 @@ extension ChatViewModel {
 
         do {
             try saveConversationUseCase.execute(conversation)
+            NotificationCenter.default.post(name: .conversationDidUpdate, object: nil)
             onConversationUpdated?()
         } catch {
             LogManager.error("persistConversation failed: \(error)")
