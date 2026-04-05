@@ -84,7 +84,7 @@ extension ChatViewModel {
             currentState.inputText = text
             currentState.isTranscribing = false
             state = .loaded(currentState)
-            HapticsManager.success()
+            HapticManager().lightImpact()
             LogManager.success("performTranscription done chars=\(text.count)")
         } catch {
             LogManager.error("performTranscription failed: \(error)")
