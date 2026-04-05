@@ -29,6 +29,8 @@ nonisolated struct ChatCompletionRequest: Encodable, Sendable {
     let topP: Double?
     let streamOptions: ChatStreamOptions?
     let modalities: [String]?
+    let tools: [ToolDefinition]?
+    let toolChoice: String?
 
     enum CodingKeys: String, CodingKey {
         case model
@@ -39,6 +41,8 @@ nonisolated struct ChatCompletionRequest: Encodable, Sendable {
         case topP = "top_p"
         case streamOptions = "stream_options"
         case modalities
+        case tools
+        case toolChoice = "tool_choice"
     }
 
     func encode(to encoder: Encoder) throws {
@@ -51,6 +55,8 @@ nonisolated struct ChatCompletionRequest: Encodable, Sendable {
         try container.encodeIfPresent(topP, forKey: .topP)
         try container.encodeIfPresent(streamOptions, forKey: .streamOptions)
         try container.encodeIfPresent(modalities, forKey: .modalities)
+        try container.encodeIfPresent(tools, forKey: .tools)
+        try container.encodeIfPresent(toolChoice, forKey: .toolChoice)
     }
 }
 
@@ -59,10 +65,22 @@ nonisolated struct ChatCompletionMessage: Encodable, Sendable {
 
     let role: String
     let content: Content
+    let toolCallId: String?
+    let toolCalls: [ToolCall]?
 
     enum Content: Sendable {
         case text(String)
         case multimodal([ContentPart])
+        case none
+    }
+
+    // MARK: - Init
+
+    init(role: String, content: Content, toolCallId: String? = nil, toolCalls: [ToolCall]? = nil) {
+        self.role = role
+        self.content = content
+        self.toolCallId = toolCallId
+        self.toolCalls = toolCalls
     }
 
     // MARK: - Encodable
@@ -70,6 +88,8 @@ nonisolated struct ChatCompletionMessage: Encodable, Sendable {
     enum CodingKeys: String, CodingKey {
         case role
         case content
+        case toolCallId = "tool_call_id"
+        case toolCalls = "tool_calls"
     }
 
     func encode(to encoder: Encoder) throws {
@@ -80,7 +100,11 @@ nonisolated struct ChatCompletionMessage: Encodable, Sendable {
             try container.encode(text, forKey: .content)
         case .multimodal(let parts):
             try container.encode(parts, forKey: .content)
+        case .none:
+            try container.encodeNil(forKey: .content)
         }
+        try container.encodeIfPresent(toolCallId, forKey: .toolCallId)
+        try container.encodeIfPresent(toolCalls, forKey: .toolCalls)
     }
 }
 

@@ -20,6 +20,12 @@ protocol ChatRepositoryProtocol: Sendable {
         model: String,
         parameters: ModelParameters
     ) -> AsyncThrowingStream<StreamChunk, Error>
+    func agentCompletion(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters,
+        tools: [ToolDefinition]
+    ) async throws -> ChatCompletionResponse
 }
 
 enum StreamChunk: Sendable {
@@ -56,7 +62,9 @@ struct ChatRepository: ChatRepositoryProtocol {
             maxTokens: parameters.maxTokens,
             topP: parameters.topP,
             streamOptions: nil,
-            modalities: nil
+            modalities: nil,
+            tools: nil,
+            toolChoice: nil
         )
 
         let response: ChatCompletionResponse = try await apiClient.request(
@@ -95,7 +103,9 @@ struct ChatRepository: ChatRepositoryProtocol {
             maxTokens: parameters.maxTokens,
             topP: parameters.topP,
             streamOptions: ChatStreamOptions(includeUsage: true),
-            modalities: nil
+            modalities: nil,
+            tools: nil,
+            toolChoice: nil
         )
 
         let decoder = JSONDecoder()
@@ -110,6 +120,34 @@ struct ChatRepository: ChatRepositoryProtocol {
                 task.cancel()
             }
         }
+    }
+
+    func agentCompletion(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters,
+        tools: [ToolDefinition]
+    ) async throws -> ChatCompletionResponse {
+        LogManager.info("agentCompletion model=\(model) messages=\(messages.count) tools=\(tools.count)")
+        let request = ChatCompletionRequest(
+            model: model,
+            messages: messages.map { buildCompletionMessage($0) },
+            stream: false,
+            temperature: parameters.temperature,
+            maxTokens: parameters.maxTokens,
+            topP: parameters.topP,
+            streamOptions: nil,
+            modalities: nil,
+            tools: tools,
+            toolChoice: "auto"
+        )
+        let response: ChatCompletionResponse = try await apiClient.request(
+            endpoint: "chat/completions",
+            method: .post,
+            body: request
+        )
+        LogManager.success("agentCompletion done finishReason=\(response.choices.first?.finishReason ?? "nil")")
+        return response
     }
 }
 
@@ -166,6 +204,25 @@ private extension ChatRepository {
     }
 
     func buildCompletionMessage(_ message: ChatMessage) -> ChatCompletionMessage {
+        // Tool result message: role "tool" with tool_call_id
+        if message.role == .tool {
+            return ChatCompletionMessage(
+                role: "tool",
+                content: .text(message.content),
+                toolCallId: message.toolCallId
+            )
+        }
+
+        // Assistant message with tool_calls: content is null
+        if message.role == .assistant, let toolCalls = message.toolCalls, !toolCalls.isEmpty {
+            return ChatCompletionMessage(
+                role: "assistant",
+                content: .none,
+                toolCallId: nil,
+                toolCalls: toolCalls
+            )
+        }
+
         if message.attachments.isEmpty {
             return ChatCompletionMessage(
                 role: message.role.rawValue,

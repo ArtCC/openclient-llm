@@ -16,6 +16,21 @@ final class MockChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
     var sendMessageResult: Result<(String, TokenUsage?), Error> = .success(("Mock response", nil))
     var streamChunks: [StreamChunk] = []
     var streamError: Error?
+    var agentCompletionResult: Result<ChatCompletionResponse, Error> = .success(
+        ChatCompletionResponse(
+            id: "mock-id",
+            choices: [ChatCompletionResponse.Choice(
+                message: ChatCompletionResponse.Message(
+                    role: "assistant",
+                    content: "Mock answer",
+                    images: nil,
+                    toolCalls: nil
+                ),
+                finishReason: "stop"
+            )],
+            usage: nil
+        )
+    )
 
     // MARK: - Public
 
@@ -46,5 +61,14 @@ final class MockChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
                 }
             }
         }
+    }
+
+    func agentCompletion(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters,
+        tools: [ToolDefinition]
+    ) async throws -> ChatCompletionResponse {
+        try agentCompletionResult.get()
     }
 }

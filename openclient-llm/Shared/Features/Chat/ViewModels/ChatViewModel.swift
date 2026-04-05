@@ -78,6 +78,7 @@ final class ChatViewModel {
 
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     let streamMessageUseCase: StreamMessageUseCaseProtocol
+    let agentStreamUseCase: AgentStreamUseCaseProtocol
     let webSearchUseCase: WebSearchUseCaseProtocol
     let saveConversationUseCase: SaveConversationUseCaseProtocol
     private let synthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol
@@ -101,6 +102,7 @@ final class ChatViewModel {
         state: State = .loading,
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
         streamMessageUseCase: StreamMessageUseCaseProtocol = StreamMessageUseCase(),
+        agentStreamUseCase: AgentStreamUseCaseProtocol = AgentStreamUseCase(),
         webSearchUseCase: WebSearchUseCaseProtocol = WebSearchUseCase(),
         saveConversationUseCase: SaveConversationUseCaseProtocol = SaveConversationUseCase(),
         synthesizeSpeechUseCase: SynthesizeSpeechUseCaseProtocol = SynthesizeSpeechUseCase(),
@@ -117,6 +119,7 @@ final class ChatViewModel {
         self.pendingConversation = conversation
         self.fetchModelsUseCase = fetchModelsUseCase
         self.streamMessageUseCase = streamMessageUseCase
+        self.agentStreamUseCase = agentStreamUseCase
         self.webSearchUseCase = webSearchUseCase
         self.saveConversationUseCase = saveConversationUseCase
         self.synthesizeSpeechUseCase = synthesizeSpeechUseCase
@@ -334,52 +337,56 @@ private extension ChatViewModel {
         guard !text.isEmpty, let model = loadedState.selectedModel, !loadedState.isStreaming else { return }
         LogManager.info("sendMessage model=\(model.id) text=\"\(String(text.prefix(80)))\"")
 
-        // Create or update conversation
+        let assistantId = prepareMessageState(text: text, model: model, loadedState: &loadedState)
+        let currentMessages = loadedState.messages.filter { $0.id != assistantId }
+        let systemPrompt = loadedState.systemPrompt
+        let parameters = loadedState.modelParameters
+        let webSearchEnabled = loadedState.isWebSearchEnabled
+        let modelCapabilities = model.capabilities
+        let queryText = text
+
+        streamTask?.cancel()
+        streamTask = Task {
+            let supportsAgentMode = webSearchEnabled && modelCapabilities.contains(.functionCalling)
+            if supportsAgentMode {
+                await performAgentStreaming(
+                    messages: currentMessages,
+                    model: model.id,
+                    assistantMessageId: assistantId,
+                    systemPrompt: systemPrompt,
+                    parameters: parameters
+                )
+            } else {
+                let searchResults = webSearchEnabled ? await fetchSearchResults(for: queryText) : []
+                await performStreaming(
+                    messages: currentMessages,
+                    model: model.id,
+                    assistantMessageId: assistantId,
+                    systemPrompt: systemPrompt,
+                    parameters: parameters,
+                    searchResults: searchResults
+                )
+            }
+        }
+    }
+
+    func prepareMessageState(text: String, model: LLMModel, loadedState: inout LoadedState) -> UUID {
         if loadedState.conversation == nil {
             loadedState.conversation = Conversation(modelId: model.id, systemPrompt: loadedState.systemPrompt)
         }
-
-        let userMessage = ChatMessage(
-            role: .user,
-            content: text,
-            attachments: loadedState.pendingAttachments
-        )
+        let userMessage = ChatMessage(role: .user, content: text, attachments: loadedState.pendingAttachments)
         loadedState.messages.append(userMessage)
         loadedState.inputText = ""
         loadedState.pendingAttachments = []
         loadedState.isStreaming = true
         loadedState.errorMessage = nil
-
         let assistantMessage = ChatMessage(role: .assistant, content: "")
         loadedState.messages.append(assistantMessage)
-        state = .loaded(loadedState)
-
-        // Auto-generate title from first user message
         if loadedState.conversation?.title.isEmpty == true {
-            let preview = String(text.prefix(50))
-            loadedState.conversation?.title = preview
-            state = .loaded(loadedState)
+            loadedState.conversation?.title = String(text.prefix(50))
         }
-
-        let assistantMessageId = assistantMessage.id
-        let currentMessages = loadedState.messages.filter { $0.id != assistantMessageId }
-        let systemPrompt = loadedState.systemPrompt
-        let parameters = loadedState.modelParameters
-        let webSearchEnabled = loadedState.isWebSearchEnabled
-        let queryText = text
-
-        streamTask?.cancel()
-        streamTask = Task {
-            let searchResults = webSearchEnabled ? await fetchSearchResults(for: queryText) : []
-            await performStreaming(
-                messages: currentMessages,
-                model: model.id,
-                assistantMessageId: assistantMessageId,
-                systemPrompt: systemPrompt,
-                parameters: parameters,
-                searchResults: searchResults
-            )
-        }
+        state = .loaded(loadedState)
+        return assistantMessage.id
     }
 
     func speakMessage(_ message: ChatMessage) {

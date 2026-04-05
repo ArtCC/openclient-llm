@@ -39,6 +39,8 @@ struct MessageBubbleView: View {
             userMessageLayout
         case .assistant, .system:
             assistantMessageLayout
+        case .tool:
+            EmptyView()
         }
     }
 }
