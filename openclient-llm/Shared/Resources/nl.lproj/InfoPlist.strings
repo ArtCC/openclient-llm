@@ -6,8 +6,8 @@
   Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
 */
 
-"NSCameraUsageDescription" = "OpenClient LLM gebruikt de camera om foto's te maken en naar het AI-model te sturen.";
-"NSMicrophoneUsageDescription" = "OpenClient LLM gebruikt de microfoon om audio op te nemen en te transcriberen met het AI-model.";
-"NSLocalNetworkUsageDescription" = "OpenClient LLM heeft toegang tot uw lokale netwerk nodig om verbinding te maken met uw LiteLLM-server.";
+"NSCameraUsageDescription" = "OpenClient gebruikt de camera om foto's te maken en naar het AI-model te sturen.";
+"NSMicrophoneUsageDescription" = "OpenClient gebruikt de microfoon om audio op te nemen en te transcriberen met het AI-model.";
+"NSLocalNetworkUsageDescription" = "OpenClient heeft toegang tot uw lokale netwerk nodig om verbinding te maken met uw LiteLLM-server.";
 "NSPhotoLibraryAddUsageDescription" = "Sla gegenereerde afbeeldingen op in uw fotobibliotheek.";
-"NSSpeechRecognitionUsageDescription" = "OpenClient LLM gebruikt spraakherkenning om uw stem lokaal";
+"NSSpeechRecognitionUsageDescription" = "OpenClient gebruikt spraakherkenning om uw stem lokaal";

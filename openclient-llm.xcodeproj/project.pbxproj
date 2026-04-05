@@ -502,11 +502,11 @@
 				INFOPLIST_KEY_CFBundleDisplayName = OpenClient;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCameraUsageDescription = "OpenClient LLM uses the camera to capture photos for sending to the AI model.";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "OpenClient LLM needs access to your local network to connect to your self-hosted LiteLLM server.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OpenClient LLM uses the microphone to record audio for transcription by the AI model.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "OpenClient uses the camera to capture photos for sending to the AI model.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "OpenClient needs access to your local network to connect to your self-hosted LiteLLM server.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OpenClient uses the microphone to record audio for transcription by the AI model.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save generated images to your photo library.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OpenClient LLM uses speech recognition to transcribe your voice locally on device.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OpenClient uses speech recognition to transcribe your voice locally on device.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -550,11 +550,11 @@
 				INFOPLIST_KEY_CFBundleDisplayName = OpenClient;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
-				INFOPLIST_KEY_NSCameraUsageDescription = "OpenClient LLM uses the camera to capture photos for sending to the AI model.";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "OpenClient LLM needs access to your local network to connect to your self-hosted LiteLLM server.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OpenClient LLM uses the microphone to record audio for transcription by the AI model.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "OpenClient uses the camera to capture photos for sending to the AI model.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "OpenClient needs access to your local network to connect to your self-hosted LiteLLM server.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OpenClient uses the microphone to record audio for transcription by the AI model.";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Save generated images to your photo library.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OpenClient LLM uses speech recognition to transcribe your voice locally on device.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OpenClient uses speech recognition to transcribe your voice locally on device.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -614,9 +614,9 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "OpenClient LLM needs access to your local network to connect to your self-hosted LiteLLM server.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OpenClient LLM uses the microphone to record audio for transcription by the AI model.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OpenClient LLM uses speech recognition to transcribe your voice locally on device.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "OpenClient needs access to your local network to connect to your self-hosted LiteLLM server.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OpenClient uses the microphone to record audio for transcription by the AI model.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OpenClient uses speech recognition to transcribe your voice locally on device.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -669,9 +669,9 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "OpenClient LLM needs access to your local network to connect to your self-hosted LiteLLM server.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OpenClient LLM uses the microphone to record audio for transcription by the AI model.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OpenClient LLM uses speech recognition to transcribe your voice locally on device.";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "OpenClient needs access to your local network to connect to your self-hosted LiteLLM server.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OpenClient uses the microphone to record audio for transcription by the AI model.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OpenClient uses speech recognition to transcribe your voice locally on device.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",

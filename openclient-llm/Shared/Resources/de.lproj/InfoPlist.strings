@@ -6,8 +6,8 @@
   Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
 */
 
-"NSCameraUsageDescription" = "OpenClient LLM verwendet die Kamera, um Fotos aufzunehmen und an das KI-Modell zu senden.";
-"NSMicrophoneUsageDescription" = "OpenClient LLM verwendet das Mikrofon, um Audio aufzunehmen und es mit dem KI-Modell zu transkribieren.";
-"NSLocalNetworkUsageDescription" = "OpenClient LLM benötigt Zugriff auf Ihr lokales Netzwerk, um sich mit Ihrem LiteLLM-Server zu verbinden.";
+"NSCameraUsageDescription" = "OpenClient verwendet die Kamera, um Fotos aufzunehmen und an das KI-Modell zu senden.";
+"NSMicrophoneUsageDescription" = "OpenClient verwendet das Mikrofon, um Audio aufzunehmen und es mit dem KI-Modell zu transkribieren.";
+"NSLocalNetworkUsageDescription" = "OpenClient benötigt Zugriff auf Ihr lokales Netzwerk, um sich mit Ihrem LiteLLM-Server zu verbinden.";
 "NSPhotoLibraryAddUsageDescription" = "Speichern Sie generierte Bilder in Ihrer Fotomediathek.";
-"NSSpeechRecognitionUsageDescription" = "OpenClient LLM verwendet die Spracherkennung, um Ihre Stimme lokal auf dem Gerät zu transkribieren.";
+"NSSpeechRecognitionUsageDescription" = "OpenClient verwendet die Spracherkennung, um Ihre Stimme lokal auf dem Gerät zu transkribieren.";
