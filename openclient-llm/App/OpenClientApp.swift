@@ -10,11 +10,18 @@ import SwiftUI
 
 @main
 struct OpenClientApp: App {
+    // MARK: - Properties
+
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+
+    @State private var shortcutManager = ShortcutManager.shared
+
     // MARK: - View
 
     var body: some Scene {
         WindowGroup {
             LaunchView()
+                .environment(shortcutManager)
         }
     }
 }

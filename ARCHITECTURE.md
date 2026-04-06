@@ -13,7 +13,9 @@ View → ViewModel → UseCase → Repository → APIClient / LocalStorage
 ```
 openclient-llm/                              # iOS target
 ├── App/
-│   └── OpenClientApp.swift                  # iOS app entry point
+│   ├── AppDelegate.swift                    # iOS UIKit delegate — registers SceneDelegate, sets dynamic shortcuts
+│   ├── OpenClientApp.swift                  # iOS app entry point
+│   └── SceneDelegate.swift                  # UIWindowSceneDelegate — quick action routing (cold + background launch)
 ├── Shared/                                  # Shared code (iOS + macOS)
 │   ├── Features/
 │   │   ├── AudioTranscription/

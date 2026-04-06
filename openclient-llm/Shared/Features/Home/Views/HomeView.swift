@@ -12,6 +12,7 @@ struct HomeView: View {
     // MARK: - Properties
 
     @State private var selectedConversation: Conversation?
+    @State private var pendingSpotlightConversationId: UUID?
 
     #if os(macOS)
     @State private var sidebarDestination: SidebarDestination = .chats
@@ -20,15 +21,47 @@ struct HomeView: View {
     #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab: AppTab = .chats
+    @State private var shortcutManager = ShortcutManager.shared
     #endif
 
     // MARK: - View
 
     var body: some View {
-        #if os(macOS)
-        macOSLayout
-        #else
-        iOSLayout
+        Group {
+            #if os(macOS)
+            macOSLayout
+            #else
+            iOSLayout
+            #endif
+        }
+        .onContinueUserActivity(SpotlightManager.activityType) { activity in
+            guard let idString = activity.userInfo?[SpotlightManager.activityIdentifierKey] as? String,
+                  let id = UUID(uuidString: idString) else { return }
+            pendingSpotlightConversationId = id
+        }
+        .onChange(of: pendingSpotlightConversationId) { _, id in
+            guard let id else { return }
+            Task { @MainActor in
+                guard let conversations = try? LoadConversationsUseCase().execute(),
+                      let conversation = conversations.first(where: { $0.id == id }) else {
+                    pendingSpotlightConversationId = nil
+                    return
+                }
+                #if os(iOS)
+                selectedTab = .chats
+                #elseif os(macOS)
+                sidebarDestination = .chats
+                #endif
+                selectedConversation = conversation
+                pendingSpotlightConversationId = nil
+            }
+        }
+        #if os(iOS)
+        .onChange(of: shortcutManager.pendingAction) { _, action in
+            guard let action else { return }
+            handleShortcutAction(action)
+            shortcutManager.pendingAction = nil
+        }
         #endif
     }
 }
@@ -134,6 +167,17 @@ private extension HomeView {
         case models
         case settings
         case search
+    }
+
+    func handleShortcutAction(_ action: ShortcutAction) {
+        switch action {
+        case .newChat:
+            selectedTab = .chats
+            let modelId = SettingsManager().getSelectedModelId() ?? ""
+            selectedConversation = Conversation(modelId: modelId)
+        case .search:
+            selectedTab = .search
+        }
     }
     #endif
 

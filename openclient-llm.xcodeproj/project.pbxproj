@@ -34,8 +34,11 @@
 		80126ECB2F7A748E00A5557C /* Exceptions for "openclient-llm" folder in "openclient-llm-macOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				App/AppDelegate.swift,
 				App/OpenClientApp.swift,
+				App/SceneDelegate.swift,
 				Resources/Info.plist,
+				Shared/Core/Managers/ShortcutManager.swift,
 			);
 			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
 		};
