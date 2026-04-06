@@ -113,7 +113,7 @@ private extension UserProfileView {
     var macOSDescriptionField: some View {
         macOSField(
             header: String(localized: "Description"),
-            footer: String(localized: "A brief description about yourself. Max 200 characters.")
+            footer: String(localized: "A brief description about yourself. Max 500 characters.")
         ) {
             TextField(
                 String(localized: "A brief description about yourself"),
@@ -124,10 +124,10 @@ private extension UserProfileView {
             .lineLimit(3...)
             .autocorrectionDisabled()
             .onChange(of: profileDescription) { _, newValue in
-                if newValue.count > 200 { profileDescription = String(newValue.prefix(200)) }
+                if newValue.count > 500 { profileDescription = String(newValue.prefix(500)) }
             }
             if !profileDescription.isEmpty {
-                characterCountLabel(count: profileDescription.count, max: 200)
+                characterCountLabel(count: profileDescription.count, max: 500)
             }
         }
     }
@@ -166,7 +166,6 @@ private extension UserProfileView {
             usageSection()
         }
         .scrollDismissesKeyboard(.interactively)
-        .ignoresSafeArea(.keyboard, edges: .bottom)
 #endif
     }
 
@@ -213,18 +212,18 @@ private extension UserProfileView {
                     .textInputAutocapitalization(.sentences)
 #endif
                     .onChange(of: profileDescription) { _, newValue in
-                        if newValue.count > 200 {
-                            profileDescription = String(newValue.prefix(200))
+                        if newValue.count > 500 {
+                            profileDescription = String(newValue.prefix(500))
                         }
                     }
                 if !profileDescription.isEmpty {
-                    characterCountLabel(count: profileDescription.count, max: 200)
+                    characterCountLabel(count: profileDescription.count, max: 500)
                 }
             }
         } header: {
             Text(String(localized: "Description"))
         } footer: {
-            Text(String(localized: "A brief description about yourself. Max 200 characters."))
+            Text(String(localized: "A brief description about yourself. Max 500 characters."))
         }
     }
 
