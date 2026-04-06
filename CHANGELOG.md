@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.0.0-build-17] - 2026-04-06
+
+### Added
+
+- App icon quick actions on iOS and iPadOS: long-press the app icon to reveal "New Chat" (opens a blank conversation) and "Search" (navigates to the search tab) via `UIApplicationShortcutItem` declared statically in `Info.plist`
+- `ShortcutManager` — `@Observable @MainActor` singleton tracking the pending `ShortcutAction` (`newChat`, `search`); consumed by `HomeView` via `@State`; wrapped in `#if os(iOS)`
+- `AppDelegate` (iOS) — `UIApplicationDelegate` routing the system shortcut callback to `ShortcutManager.shared`; registered via `@UIApplicationDelegateAdaptor`; guarded with `#if canImport(UIKit)` as the macOS target also compiles `openclient-llm/App/`
+- Spotlight search for iOS, iPadOS, and macOS: conversations indexed in CoreSpotlight on save and deindexed on delete; tapping a Spotlight result opens the app directly in that conversation via `NSUserActivity` continuation
+- `SpotlightManager` — `nonisolated struct Sendable` using `CSSearchableIndex` to index/deindex conversations with title and a 160-character snippet of the last message; indexes run fire-and-forget on a background `Task.detached`
+- `SaveConversationUseCase` calls `SpotlightManager.index` as a background side-effect after persisting
+- `DeleteConversationUseCase` calls `SpotlightManager.deindex` after deleting
+- `HomeView` handles `NSUserActivity` continuation from Spotlight via `.onContinueUserActivity(SpotlightManager.activityType)` on iOS, iPadOS, and macOS; handles `ShortcutManager.pendingAction` changes via `.onChange` on iOS
+
+### Fixed
+
+- Keyboard covering the bottom TextField in the Personal Context screen — removed `.ignoresSafeArea(.keyboard, edges: .bottom)` which suppressed SwiftUI's native keyboard avoidance in `Form`
+
+### Changed
+
+- Personal Context "Description" field character limit raised from 200 to 500
+
 ## [1.0.0-build-16] - 2026-04-05
 
 ### Added

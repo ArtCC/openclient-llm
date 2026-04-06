@@ -95,8 +95,8 @@ Goal: Prompt templates, web search, and agentic tool-calling loop.
 
 Goal: Deeper OS integration and quick actions.
 
-- [ ] **App icon quick actions (iOS/iPadOS)**: Add Home Screen quick actions to the iOS and iPadOS app icon using `UIApplicationShortcutItem`. Actions: "New Chat" (creates a blank conversation and navigates directly to chat input) and "Search" (opens the conversation list with the search field already focused). Actions defined statically in `Info.plist` and/or dynamically at runtime via `UIApplication.shortcutItems`. Handled in the app delegate / scene delegate with a `ShortcutAction` enum (`newChat`, `search`) routed through the navigation state.
-- [ ] **Spotlight search**: Index conversations with `CSSearchableItem` / `CoreSpotlight` so users can find past chats directly from Spotlight. Each conversation is indexed with its title and a snippet of the last message. Tapping a Spotlight result opens the app directly in that conversation via `NSUserActivity` continuation.
+- [x] **App icon quick actions (iOS/iPadOS)**: Add Home Screen quick actions to the iOS and iPadOS app icon using `UIApplicationShortcutItem`. Actions: "New Chat" (creates a blank conversation and navigates directly to chat input) and "Search" (opens the conversation list with the search field already focused). Actions defined statically in `Info.plist` and/or dynamically at runtime via `UIApplication.shortcutItems`. Handled in the app delegate / scene delegate with a `ShortcutAction` enum (`newChat`, `search`) routed through the navigation state.
+- [x] **Spotlight search**: Index conversations with `CSSearchableItem` / `CoreSpotlight` so users can find past chats directly from Spotlight. Each conversation is indexed with its title and a snippet of the last message. Tapping a Spotlight result opens the app directly in that conversation via `NSUserActivity` continuation.
 
 ## Phase 9 — RAG & Knowledge Base
 
@@ -106,6 +106,6 @@ Goal: Let users build persistent knowledge bases from their documents and query 
 - [ ] **RAG: knowledge base mode in conversation**: When a conversation has a `vector_store_id`, route messages through `POST /v1/rag/query` (with `retrieval_config`) instead of `/chat/completions`. Supports streaming. A visual indicator in the input bar shows RAG is active. The `rag/query` response follows the standard OpenAI chat completion format — no UI changes needed for message rendering.
 - [ ] **Knowledge base management**: Screen in Settings to list and delete the knowledge bases (vector store IDs) associated with conversations. Each entry shows conversation title, provider, and creation date.
 
-## Current Phase: 8 — System Integration & Shortcuts
+## Current Phase: 9 — RAG & Knowledge Base
 
-Focus exclusively on Phase 8 features. Do not over-engineer for future phases.
+Focus exclusively on Phase 9 features. Do not over-engineer for future phases.

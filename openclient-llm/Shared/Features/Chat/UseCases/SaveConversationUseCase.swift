@@ -27,5 +27,6 @@ struct SaveConversationUseCase: SaveConversationUseCaseProtocol {
 
     func execute(_ conversation: Conversation) throws {
         try repository.save(conversation)
+        SpotlightManager.index(conversation)
     }
 }

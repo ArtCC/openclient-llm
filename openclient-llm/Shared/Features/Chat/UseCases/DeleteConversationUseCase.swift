@@ -27,5 +27,6 @@ struct DeleteConversationUseCase: DeleteConversationUseCaseProtocol {
 
     func execute(_ conversationId: UUID) throws {
         try repository.delete(conversationId)
+        SpotlightManager.deindex(id: conversationId)
     }
 }
