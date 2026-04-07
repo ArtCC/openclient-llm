@@ -75,7 +75,8 @@ openclient-llm/                              # iOS target
 │   │   │       ├── ConversationTagsView.swift
 │   │   │       ├── ImagePreviewView.swift
 │   │   │       ├── MessageBubbleView.swift
-│   │   │       └── SearchConversationsView.swift
+│   │   │       ├── SearchConversationsView.swift
+│   │   │       └── WebSearchSourcesView.swift
 │   │   ├── Home/
 │   │   │   ├── UseCases/
 │   │   │   │   └── GetSelectedModelUseCase.swift  # Returns selected model ID via SettingsManagerProtocol
@@ -147,20 +148,24 @@ openclient-llm/                              # iOS target
 │   │       └── UseCases/
 │   │           └── SynthesizeSpeechUseCase.swift
 │   ├── Core/
-│   │   ├── Utils/
-│   │   │   ├── Constants.swift
-│   │   │   ├── MarkdownParser.swift
-│   │   │   └── SpotlightConstants.swift            # activityType + activityIdentifierKey (CSSearchableItem constants)
+│   │   ├── Extensions/
+│   │   │   ├── Foundation/
+│   │   │   │   └── Notification.Name.swift
+│   │   │   └── SwiftUI/
+│   │   │       ├── Color.swift
+│   │   │       └── Font.swift
 │   │   ├── Managers/
 │   │   │   ├── AppleSpeechRecognitionManager.swift
 │   │   │   ├── AudioPlayerManager.swift
 │   │   │   ├── AudioRecorderManager.swift
 │   │   │   ├── CloudSyncManager.swift
 │   │   │   ├── ConversationStartersManager.swift
-│   │   │   ├── HapticsManager.swift
+│   │   │   ├── HapticManager.swift
 │   │   │   ├── KeychainManager.swift
 │   │   │   ├── LogManager.swift
 │   │   │   ├── SettingsManager.swift
+│   │   │   ├── ShortcutManager.swift
+│   │   │   ├── SpotlightManager.swift
 │   │   │   ├── UserProfileManager.swift
 │   │   │   └── VoticeManager.swift
 │   │   ├── Networking/
@@ -174,7 +179,15 @@ openclient-llm/                              # iOS target
 │   │   │       ├── ChatCompletionStreamResponse.swift
 │   │   │       ├── ModelInfoResponse.swift
 │   │   │       ├── ModelsResponse.swift
-│   │   │       └── TextToSpeechRequest.swift
+│   │   │       ├── OllamaShowResponse.swift
+│   │   │       ├── SearchModels.swift
+│   │   │       ├── TextToSpeechRequest.swift
+│   │   │       └── ToolModels.swift
+│   │   ├── Utils/
+│   │   │   ├── Constants.swift
+│   │   │   ├── MarkdownParser.swift
+│   │   │   ├── PoppinsFont.swift
+│   │   │   └── SpotlightConstants.swift            # activityType + activityIdentifierKey (CSSearchableItem constants)
 │   │   └── Views/
 │   │       ├── FlowLayout.swift
 │   │       └── WebContentView.swift
