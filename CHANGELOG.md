@@ -11,18 +11,26 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 ### Added
 
-- `LLMModel.Capability.nativeWebSearch` — new capability flag for models that support native web search via the `web_search_options` parameter (Claude 3.5+/3.7, Gemini 2.0+, xAI Grok-3, OpenAI search preview models)
-- `ModelInfo.supportsWebSearch` field decoded from the LiteLLM `/model/info` response and mapped to `.nativeWebSearch` capability in `ModelsRepository`
-- `WebSearchOptions` encodable struct (`search_context_size`) added to `ChatCompletionRequest` and passed through `ChatRepository`, `StreamMessageUseCase`, and `ChatViewModel+Streaming`
+- Tool system prompt in agent mode — instructs the model about the `web_search` tool, when to use it, how to cite sources, and allows any response format (Markdown, lists, code blocks, etc.)
 - `ToolExecutionResult` value type replacing the plain `String` return of tool execution — carries `text` and optional `searchResults: [LiteLLMSearchResult]?` so agent tool results can surface sources in the UI
 - `AgentEvent.toolCallCompleted` now includes `searchResults: [LiteLLMSearchResult]?` so web search results from the agentic loop are propagated to `ChatMessage.webSearchResults` and displayed in the sources disclosure group
 
+### Changed
+
+- Web search simplified to a **single method**: agent loop with `web_search` tool via `/v1/search` — removed native `web_search_options` path entirely
+- `WebSearchOptions` struct removed from `ChatCompletionRequest` along with the `webSearchOptions` field and its propagation through `ChatRepository`, `StreamMessageUseCase`, and `ChatViewModel+Streaming`
+- `LLMModel.Capability.nativeWebSearch` removed — web search capability is now determined solely by `.functionCalling`
+- `ModelsRepository` no longer maps `model_info.supports_web_search` to a capability
+- Globe button in `ChatInputBarView` now checks only `.functionCalling` (accent = supported, red = unsupported)
+- `streamWithWebSearch` reduced from 3 branches (agent / native / none) to 2 (agent / regular streaming)
+- `SendMessageContext` no longer carries `providerName` — provider-specific routing eliminated
+
 ### Fixed
 
-- Models with native web search (Claude, Gemini, Grok, OpenAI search) now receive `web_search_options` directly in `/chat/completions` instead of being silently treated as models without web search support
 - Agent mode performed a redundant second LLM request after receiving a `finish_reason: "stop"` response — removed `streamFinalResponse()` and the final answer is now emitted directly from `choice.message.content` as a single token
 - Web search sources were never shown after agent tool calls — `WebSearchTool` now returns results via `ToolExecutionResult`, which are merged into `ChatMessage.webSearchResults` by `applyAgentEvent`
-- `WebSearchTool` did not instruct the model to cite sources when responding in agent mode — citation guidance (`[Source Title](URL) format`) is now appended to the tool result text
+- Regular OpenAI models (`gpt-5`, `gpt-4.1`, `gpt-5.4-mini`) no longer receive `web_search_options` that caused HTTP 400 — the native path was removed entirely
+- Agent loop comment corrected from "responds in plain text" to "generates a natural response"
 
 ## [1.0.0-build-17] - 2026-04-06
 
