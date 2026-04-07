@@ -121,8 +121,7 @@ final class AgentStreamUseCaseTests: XCTestCase {
             func streamMessage(
                 messages: [ChatMessage],
                 model: String,
-                parameters: ModelParameters,
-                webSearchOptions: WebSearchOptions?
+                parameters: ModelParameters
             ) -> AsyncThrowingStream<StreamChunk, Error> {
                 AsyncThrowingStream { continuation in Task { continuation.finish() } }
             }
@@ -131,7 +130,7 @@ final class AgentStreamUseCaseTests: XCTestCase {
                 messages: [ChatMessage],
                 model: String,
                 parameters: ModelParameters,
-                tools: [ToolDefinition]
+                tools: [ToolDefinition]?
             ) async throws -> ChatCompletionResponse {
                 callCount += 1
                 return toolCallResponse
@@ -231,8 +230,7 @@ final class SequentialMockRepo: ChatRepositoryProtocol, @unchecked Sendable {
     func streamMessage(
         messages: [ChatMessage],
         model: String,
-        parameters: ModelParameters,
-        webSearchOptions: WebSearchOptions?
+        parameters: ModelParameters
     ) -> AsyncThrowingStream<StreamChunk, Error> {
         let chunks = streamChunks
         return AsyncThrowingStream { continuation in
@@ -244,7 +242,7 @@ final class SequentialMockRepo: ChatRepositoryProtocol, @unchecked Sendable {
         messages: [ChatMessage],
         model: String,
         parameters: ModelParameters,
-        tools: [ToolDefinition]
+        tools: [ToolDefinition]?
     ) async throws -> ChatCompletionResponse {
         let response = responses[callIndex]
         callIndex += 1

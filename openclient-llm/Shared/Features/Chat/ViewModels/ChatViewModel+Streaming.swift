@@ -16,21 +16,16 @@ extension ChatViewModel {
         model: String,
         assistantMessageId: UUID,
         systemPrompt: String,
-        parameters: ModelParameters,
-        webSearchOptions: WebSearchOptions? = nil
+        parameters: ModelParameters
     ) async {
-        LogManager.debug(
-            "performStreaming model=\(model) messages=\(messages.count)"
-            + " nativeWebSearch=\(webSearchOptions != nil)"
-        )
+        LogManager.debug("performStreaming model=\(model) messages=\(messages.count)")
         let allMessages = buildStreamMessages(messages, systemPrompt: systemPrompt)
 
         do {
             let stream = streamMessageUseCase.execute(
                 messages: allMessages,
                 model: model,
-                parameters: parameters,
-                webSearchOptions: webSearchOptions
+                parameters: parameters
             )
             for try await chunk in stream {
                 guard !Task.isCancelled, case .loaded(var currentState) = state else { return }

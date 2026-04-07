@@ -20,17 +20,9 @@ extension ChatViewModel {
     ) async {
         LogManager.debug("performAgentStreaming model=\(model) messages=\(messages.count)")
 
-        let profileContext = userProfileManager.getProfile().systemPromptContext
-        let effectiveSystemPrompt = buildEffectiveSystemPrompt(
-            profileContext: profileContext,
-            conversationSystemPrompt: systemPrompt
-        )
-
         var allMessages = messages
-        if !effectiveSystemPrompt.isEmpty {
-            let systemMessage = ChatMessage(role: .system, content: effectiveSystemPrompt)
-            allMessages.insert(systemMessage, at: 0)
-        }
+        let systemMessage = ChatMessage(role: .system, content: buildAgentSystemPrompt(systemPrompt))
+        allMessages.insert(systemMessage, at: 0)
 
         let registry = ToolRegistry.default(webSearchUseCase: webSearchUseCase)
 
@@ -112,6 +104,24 @@ extension ChatViewModel {
 // MARK: - Private
 
 private extension ChatViewModel {
+    func buildAgentSystemPrompt(_ conversationSystemPrompt: String) -> String {
+        let profileContext = userProfileManager.getProfile().systemPromptContext
+        let effectiveSystemPrompt = buildEffectiveSystemPrompt(
+            profileContext: profileContext,
+            conversationSystemPrompt: conversationSystemPrompt
+        )
+        let toolInstructions = """
+        You have access to a `web_search` tool. Use it when the user asks about current events, \
+        recent information, real-time data, or anything that may require up-to-date knowledge. \
+        After receiving search results, incorporate them naturally into your answer and cite sources \
+        when relevant. Respond using whatever format best serves the answer (Markdown, lists, \
+        code blocks, tables, etc.).
+        """
+        return effectiveSystemPrompt.isEmpty
+            ? toolInstructions
+            : "\(effectiveSystemPrompt)\n\n\(toolInstructions)"
+    }
+
     func mergeSearchResults(
         _ searchResults: [LiteLLMSearchResult]?,
         into state: inout LoadedState,

@@ -96,7 +96,7 @@ extension ChatViewModelTests {
     }
 
     func test_sendMessage_noCapabilitiesModel_andWebSearch_usesRegularStreaming() async throws {
-        // Given — model without any capabilities (no functionCalling, no nativeWebSearch)
+        // Given — model without any capabilities (no functionCalling)
         let mockAgent = MockAgentStreamUseCase()
         mockAgent.events = [.token("Should not appear")]
         mockStreamMessage.chunks = [.token("Regular response")]

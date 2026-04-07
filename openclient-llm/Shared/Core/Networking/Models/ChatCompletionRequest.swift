@@ -18,24 +18,6 @@ nonisolated struct ChatStreamOptions: Encodable, Sendable {
     }
 }
 
-// MARK: - WebSearchOptions
-
-/// Options passed to LiteLLM's `web_search_options` field.
-/// Supported by models with native web search: OpenAI search models, xAI Grok-3,
-/// Anthropic Claude 3.5+/3.7, Gemini 2.0+.
-nonisolated struct WebSearchOptions: Encodable, Sendable {
-    /// `"low"`, `"medium"` (default), or `"high"`.
-    let searchContextSize: String
-
-    init(searchContextSize: String = "medium") {
-        self.searchContextSize = searchContextSize
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case searchContextSize = "search_context_size"
-    }
-}
-
 // MARK: - ChatCompletionRequest
 
 nonisolated struct ChatCompletionRequest: Encodable, Sendable {
@@ -49,7 +31,6 @@ nonisolated struct ChatCompletionRequest: Encodable, Sendable {
     let modalities: [String]?
     let tools: [ToolDefinition]?
     let toolChoice: String?
-    let webSearchOptions: WebSearchOptions?
 
     enum CodingKeys: String, CodingKey {
         case model
@@ -62,7 +43,6 @@ nonisolated struct ChatCompletionRequest: Encodable, Sendable {
         case modalities
         case tools
         case toolChoice = "tool_choice"
-        case webSearchOptions = "web_search_options"
     }
 
     func encode(to encoder: Encoder) throws {
@@ -77,7 +57,6 @@ nonisolated struct ChatCompletionRequest: Encodable, Sendable {
         try container.encodeIfPresent(modalities, forKey: .modalities)
         try container.encodeIfPresent(tools, forKey: .tools)
         try container.encodeIfPresent(toolChoice, forKey: .toolChoice)
-        try container.encodeIfPresent(webSearchOptions, forKey: .webSearchOptions)
     }
 }
 

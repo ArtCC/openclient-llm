@@ -105,6 +105,7 @@ private extension AgentStreamUseCase {
     ) async throws {
         var conversationMessages = messages
         var iteration = 0
+        var toolsJustExecuted = false
         let context = AgentLoopContext(
             model: model,
             parameters: parameters,
@@ -117,11 +118,13 @@ private extension AgentStreamUseCase {
             iteration += 1
             LogManager.debug("agentLoop iteration=\(iteration) messages=\(conversationMessages.count)")
 
+            // After tool execution, omit tools so the model generates a natural response
+            let tools: [ToolDefinition]? = toolsJustExecuted ? nil : toolRegistry.definitions
             let response = try await repository.agentCompletion(
                 messages: conversationMessages,
                 model: model,
                 parameters: parameters,
-                tools: toolRegistry.definitions
+                tools: tools
             )
 
             guard let choice = response.choices.first else {
@@ -134,6 +137,7 @@ private extension AgentStreamUseCase {
                 conversationMessages: &conversationMessages,
                 context: context
             )
+            toolsJustExecuted = shouldContinue
             if !shouldContinue { break }
         }
 

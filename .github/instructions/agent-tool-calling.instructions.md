@@ -384,7 +384,6 @@ When persisting conversations with tool calling:
 Web search (`web_search`) is the **first and primary tool** in the agent system:
 
 - When web search is ON + model has `.functionCalling` → Agent mode activates with `web_search` as a registered tool. The app's agentic loop executes the tool via `/v1/search`.
-- When web search is ON + model has `.nativeWebSearch` → Uses `web_search_options` in the request body (no agent mode needed)
-- When web search is ON + model has no capabilities → **No search occurs**. The globe shows red to inform the user.
+- When web search is ON + model has no `.functionCalling` → **No search occurs**. The globe shows red to inform the user.
 - When web search is OFF → Regular streaming, no tools registered
 - See `web-browsing.instructions.md` for the full flow table and implementation details

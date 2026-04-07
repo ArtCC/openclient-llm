@@ -18,14 +18,13 @@ protocol ChatRepositoryProtocol: Sendable {
     func streamMessage(
         messages: [ChatMessage],
         model: String,
-        parameters: ModelParameters,
-        webSearchOptions: WebSearchOptions?
+        parameters: ModelParameters
     ) -> AsyncThrowingStream<StreamChunk, Error>
     func agentCompletion(
         messages: [ChatMessage],
         model: String,
         parameters: ModelParameters,
-        tools: [ToolDefinition]
+        tools: [ToolDefinition]?
     ) async throws -> ChatCompletionResponse
 }
 
@@ -65,8 +64,7 @@ struct ChatRepository: ChatRepositoryProtocol {
             streamOptions: nil,
             modalities: nil,
             tools: nil,
-            toolChoice: nil,
-            webSearchOptions: nil
+            toolChoice: nil
         )
 
         let response: ChatCompletionResponse = try await apiClient.request(
@@ -94,8 +92,7 @@ struct ChatRepository: ChatRepositoryProtocol {
     func streamMessage(
         messages: [ChatMessage],
         model: String,
-        parameters: ModelParameters,
-        webSearchOptions: WebSearchOptions?
+        parameters: ModelParameters
     ) -> AsyncThrowingStream<StreamChunk, Error> {
         LogManager.info("streamMessage model=\(model) messages=\(messages.count)")
         let request = ChatCompletionRequest(
@@ -108,8 +105,7 @@ struct ChatRepository: ChatRepositoryProtocol {
             streamOptions: ChatStreamOptions(includeUsage: true),
             modalities: nil,
             tools: nil,
-            toolChoice: nil,
-            webSearchOptions: webSearchOptions
+            toolChoice: nil
         )
 
         let decoder = JSONDecoder()
@@ -130,9 +126,9 @@ struct ChatRepository: ChatRepositoryProtocol {
         messages: [ChatMessage],
         model: String,
         parameters: ModelParameters,
-        tools: [ToolDefinition]
+        tools: [ToolDefinition]?
     ) async throws -> ChatCompletionResponse {
-        LogManager.info("agentCompletion model=\(model) messages=\(messages.count) tools=\(tools.count)")
+        LogManager.info("agentCompletion model=\(model) messages=\(messages.count) tools=\(tools?.count ?? 0)")
         let request = ChatCompletionRequest(
             model: model,
             messages: messages.map { buildCompletionMessage($0) },
@@ -143,8 +139,7 @@ struct ChatRepository: ChatRepositoryProtocol {
             streamOptions: nil,
             modalities: nil,
             tools: tools,
-            toolChoice: "auto",
-            webSearchOptions: nil
+            toolChoice: tools != nil ? "auto" : nil
         )
         let response: ChatCompletionResponse = try await apiClient.request(
             endpoint: "chat/completions",

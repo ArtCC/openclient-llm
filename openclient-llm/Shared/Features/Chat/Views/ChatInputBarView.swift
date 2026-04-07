@@ -235,7 +235,7 @@ private extension ChatInputBarView {
 
     var webSearchButton: some View {
         let modelSupportsWebSearch = loadedState.selectedModel.map {
-            $0.capabilities.contains(.nativeWebSearch) || $0.capabilities.contains(.functionCalling)
+            $0.capabilities.contains(.functionCalling)
         } ?? false
 
         return Button { onWebSearchToggled() } label: {
