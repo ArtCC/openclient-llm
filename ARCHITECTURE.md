@@ -77,8 +77,12 @@ openclient-llm/                              # iOS target
 │   │   │       ├── MessageBubbleView.swift
 │   │   │       └── SearchConversationsView.swift
 │   │   ├── Home/
+│   │   │   ├── UseCases/
+│   │   │   │   └── GetSelectedModelUseCase.swift  # Returns selected model ID via SettingsManagerProtocol
+│   │   │   ├── ViewModels/
+│   │   │   │   └── HomeViewModel.swift            # Event/State: newChatShortcutTriggered, spotlightConversationRequested
 │   │   │   └── Views/
-│   │   │       └── HomeView.swift             # iOS TabView (AppTab enum + symbol animations) + macOS NavigationSplitView
+│   │   │       └── HomeView.swift                 # iOS TabView (AppTab enum + symbol animations) + macOS NavigationSplitView
 │   │   ├── Launch/
 │   │   │   ├── UseCases/
 │   │   │   │   ├── CheckOnboardingUseCase.swift
@@ -143,6 +147,10 @@ openclient-llm/                              # iOS target
 │   │       └── UseCases/
 │   │           └── SynthesizeSpeechUseCase.swift
 │   ├── Core/
+│   │   ├── Utils/
+│   │   │   ├── Constants.swift
+│   │   │   ├── MarkdownParser.swift
+│   │   │   └── SpotlightConstants.swift            # activityType + activityIdentifierKey (CSSearchableItem constants)
 │   │   ├── Managers/
 │   │   │   ├── AppleSpeechRecognitionManager.swift
 │   │   │   ├── AudioPlayerManager.swift
@@ -167,9 +175,6 @@ openclient-llm/                              # iOS target
 │   │   │       ├── ModelInfoResponse.swift
 │   │   │       ├── ModelsResponse.swift
 │   │   │       └── TextToSpeechRequest.swift
-│   │   ├── Utils/
-│   │   │   ├── Constants.swift
-│   │   │   └── MarkdownParser.swift
 │   │   └── Views/
 │   │       ├── FlowLayout.swift
 │   │       └── WebContentView.swift
@@ -198,6 +203,8 @@ openclient-llm-test/                         # Unit tests
 │       ├── SettingsManagerSTTTests.swift
 │       └── SettingsManagerTTSTests.swift
 ├── Features/
+│   ├── Home/
+│   │   └── HomeViewModelTests.swift
 │   ├── Chat/
 │   │   ├── AgentStreamUseCaseTests.swift
 │   │   ├── BranchConversationUseCaseTests.swift
@@ -257,6 +264,7 @@ openclient-llm-test/                         # Unit tests
     ├── MockDeletePromptTemplateUseCase.swift
     ├── MockExportConversationUseCase.swift
     ├── MockFetchModelsUseCase.swift
+    ├── MockGetSelectedModelUseCase.swift
     ├── MockKeychainManager.swift
     ├── MockLoadConversationsUseCase.swift
     ├── MockLoadPromptTemplatesUseCase.swift

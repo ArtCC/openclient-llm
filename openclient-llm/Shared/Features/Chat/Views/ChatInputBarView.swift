@@ -234,10 +234,16 @@ private extension ChatInputBarView {
     }
 
     var webSearchButton: some View {
-        Button { onWebSearchToggled() } label: {
+        let modelSupportsWebSearch = loadedState.selectedModel.map {
+            $0.capabilities.contains(.nativeWebSearch) || $0.capabilities.contains(.functionCalling)
+        } ?? false
+
+        return Button { onWebSearchToggled() } label: {
             Image(systemName: loadedState.isWebSearchEnabled ? "globe.badge.chevron.backward" : "globe")
                 .font(.title2)
-                .foregroundStyle(loadedState.isWebSearchEnabled ? Color.appAccent : .secondary)
+                .foregroundStyle(
+                    webSearchColor(enabled: loadedState.isWebSearchEnabled, supported: modelSupportsWebSearch)
+                )
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Circle())
         }
@@ -307,5 +313,10 @@ private extension ChatInputBarView {
         withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: false)) {
             isPulsing = true
         }
+    }
+
+    func webSearchColor(enabled: Bool, supported: Bool) -> Color {
+        guard supported else { return .red }
+        return enabled ? Color.appAccent : .secondary
     }
 }

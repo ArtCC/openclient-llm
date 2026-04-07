@@ -172,6 +172,60 @@ final class ChatViewModel {
 // MARK: - Private
 
 private extension ChatViewModel {
+    struct SendMessageContext {
+        let text: String
+        let messages: [ChatMessage]
+        let modelId: String
+        let assistantId: UUID
+        let systemPrompt: String
+        let parameters: ModelParameters
+        let webSearchEnabled: Bool
+        let modelCapabilities: [LLMModel.Capability]
+    }
+
+    func streamWithWebSearch(_ context: SendMessageContext) async {
+        let supportsNativeWebSearch = context.webSearchEnabled && context.modelCapabilities.contains(.nativeWebSearch)
+        let supportsAgentMode = context.webSearchEnabled
+            && context.modelCapabilities.contains(.functionCalling)
+            && !supportsNativeWebSearch
+        if supportsAgentMode {
+            await performAgentStreaming(
+                messages: context.messages,
+                model: context.modelId,
+                assistantMessageId: context.assistantId,
+                systemPrompt: context.systemPrompt,
+                parameters: context.parameters
+            )
+        } else if supportsNativeWebSearch {
+            await performStreaming(
+                messages: context.messages,
+                model: context.modelId,
+                assistantMessageId: context.assistantId,
+                systemPrompt: context.systemPrompt,
+                parameters: context.parameters,
+                webSearchOptions: WebSearchOptions()
+            )
+        } else if context.webSearchEnabled {
+            let searchResults = await fetchSearchResults(for: context.text)
+            await performStreaming(
+                messages: context.messages,
+                model: context.modelId,
+                assistantMessageId: context.assistantId,
+                systemPrompt: context.systemPrompt,
+                parameters: context.parameters,
+                searchResults: searchResults
+            )
+        } else {
+            await performStreaming(
+                messages: context.messages,
+                model: context.modelId,
+                assistantMessageId: context.assistantId,
+                systemPrompt: context.systemPrompt,
+                parameters: context.parameters
+            )
+        }
+    }
+
     func handleConfigurationEvent(_ event: Event) {
         switch event {
         case .modelSelected(let model): selectModel(model)
@@ -343,42 +397,19 @@ private extension ChatViewModel {
         let parameters = loadedState.modelParameters
         let webSearchEnabled = loadedState.isWebSearchEnabled
         let modelCapabilities = model.capabilities
-        let queryText = text
 
         streamTask?.cancel()
         streamTask = Task {
-            let supportsNativeWebSearch = webSearchEnabled && modelCapabilities.contains(.nativeWebSearch)
-            let supportsAgentMode = webSearchEnabled
-                && modelCapabilities.contains(.functionCalling)
-                && !supportsNativeWebSearch
-            if supportsAgentMode {
-                await performAgentStreaming(
-                    messages: currentMessages,
-                    model: model.id,
-                    assistantMessageId: assistantId,
-                    systemPrompt: systemPrompt,
-                    parameters: parameters
-                )
-            } else if supportsNativeWebSearch {
-                await performStreaming(
-                    messages: currentMessages,
-                    model: model.id,
-                    assistantMessageId: assistantId,
-                    systemPrompt: systemPrompt,
-                    parameters: parameters,
-                    webSearchOptions: WebSearchOptions()
-                )
-            } else {
-                let searchResults = webSearchEnabled ? await fetchSearchResults(for: queryText) : []
-                await performStreaming(
-                    messages: currentMessages,
-                    model: model.id,
-                    assistantMessageId: assistantId,
-                    systemPrompt: systemPrompt,
-                    parameters: parameters,
-                    searchResults: searchResults
-                )
-            }
+            await streamWithWebSearch(SendMessageContext(
+                text: text,
+                messages: currentMessages,
+                modelId: model.id,
+                assistantId: assistantId,
+                systemPrompt: systemPrompt,
+                parameters: parameters,
+                webSearchEnabled: webSearchEnabled,
+                modelCapabilities: modelCapabilities
+            ))
         }
     }
 

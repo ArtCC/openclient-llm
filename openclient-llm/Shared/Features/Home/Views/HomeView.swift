@@ -11,8 +11,8 @@ import SwiftUI
 struct HomeView: View {
     // MARK: - Properties
 
+    @State private var viewModel = HomeViewModel()
     @State private var selectedConversation: Conversation?
-    @State private var pendingSpotlightConversationId: UUID?
 
     #if os(macOS)
     @State private var sidebarDestination: SidebarDestination = .chats
@@ -34,27 +34,20 @@ struct HomeView: View {
             iOSLayout
             #endif
         }
-        .onContinueUserActivity(SpotlightManager.activityType) { activity in
-            guard let idString = activity.userInfo?[SpotlightManager.activityIdentifierKey] as? String,
+        .onContinueUserActivity(SpotlightConstants.activityType) { activity in
+            guard let idString = activity.userInfo?[SpotlightConstants.activityIdentifierKey] as? String,
                   let id = UUID(uuidString: idString) else { return }
-            pendingSpotlightConversationId = id
+            viewModel.send(.spotlightConversationRequested(id))
         }
-        .onChange(of: pendingSpotlightConversationId) { _, id in
-            guard let id else { return }
-            Task { @MainActor in
-                guard let conversations = try? LoadConversationsUseCase().execute(),
-                      let conversation = conversations.first(where: { $0.id == id }) else {
-                    pendingSpotlightConversationId = nil
-                    return
-                }
-                #if os(iOS)
-                selectedTab = .chats
-                #elseif os(macOS)
-                sidebarDestination = .chats
-                #endif
-                selectedConversation = conversation
-                pendingSpotlightConversationId = nil
-            }
+        .onChange(of: viewModel.pendingConversation) { _, conversation in
+            guard let conversation else { return }
+            #if os(iOS)
+            selectedTab = .chats
+            #elseif os(macOS)
+            sidebarDestination = .chats
+            #endif
+            selectedConversation = conversation
+            viewModel.send(.pendingConversationConsumed)
         }
         #if os(iOS)
         .onChange(of: shortcutManager.pendingAction) { _, action in
@@ -173,8 +166,7 @@ private extension HomeView {
         switch action {
         case .newChat:
             selectedTab = .chats
-            let modelId = SettingsManager().getSelectedModelId() ?? ""
-            selectedConversation = Conversation(modelId: modelId)
+            viewModel.send(.newChatShortcutTriggered)
         case .search:
             selectedTab = .search
         }
