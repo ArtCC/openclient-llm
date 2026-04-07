@@ -20,6 +20,14 @@ enum AgentEvent: Sendable {
     case completed
 }
 
+// MARK: - ToolCallResult
+
+struct ToolCallResult: Sendable {
+    let toolCallId: String
+    let toolName: String
+    let executionResult: ToolExecutionResult
+}
+
 // MARK: - AgentStreamUseCaseProtocol
 
 protocol AgentStreamUseCaseProtocol: Sendable {
@@ -163,8 +171,13 @@ private extension AgentStreamUseCase {
             registry: context.toolRegistry,
             continuation: context.continuation
         )
-        for (toolCallId, executionResult) in toolResults {
-            conversationMessages.append(ChatMessage(role: .tool, content: executionResult.text, toolCallId: toolCallId))
+        for toolResult in toolResults {
+            conversationMessages.append(ChatMessage(
+                role: .tool,
+                content: toolResult.executionResult.text,
+                toolCallId: toolResult.toolCallId,
+                toolName: toolResult.toolName
+            ))
         }
         return true
     }
@@ -173,10 +186,10 @@ private extension AgentStreamUseCase {
         _ toolCalls: [ToolCall],
         registry: ToolRegistry,
         continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
-    ) async throws -> [(String, ToolExecutionResult)] {
-        var results: [(String, ToolExecutionResult)] = []
+    ) async throws -> [ToolCallResult] {
+        var results: [ToolCallResult] = []
 
-        try await withThrowingTaskGroup(of: (String, ToolExecutionResult).self) { group in
+        try await withThrowingTaskGroup(of: ToolCallResult.self) { group in
             for toolCall in toolCalls {
                 continuation.yield(.toolCallStarted(toolCall))
                 group.addTask {
@@ -191,16 +204,20 @@ private extension AgentStreamUseCase {
                             text: "Error executing \(toolCall.function.name): \(error.localizedDescription)"
                         )
                     }
-                    return (toolCall.id, executionResult)
+                    return ToolCallResult(
+                        toolCallId: toolCall.id,
+                        toolName: toolCall.function.name,
+                        executionResult: executionResult
+                    )
                 }
             }
 
-            for try await (id, executionResult) in group {
-                results.append((id, executionResult))
+            for try await toolCallResult in group {
+                results.append(toolCallResult)
                 continuation.yield(.toolCallCompleted(
-                    toolCallId: id,
-                    result: executionResult.text,
-                    searchResults: executionResult.searchResults
+                    toolCallId: toolCallResult.toolCallId,
+                    result: toolCallResult.executionResult.text,
+                    searchResults: toolCallResult.executionResult.searchResults
                 ))
             }
         }

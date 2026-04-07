@@ -209,12 +209,13 @@ private extension ChatRepository {
     }
 
     func buildCompletionMessage(_ message: ChatMessage) -> ChatCompletionMessage {
-        // Tool result message: role "tool" with tool_call_id
+        // Tool result message: role "tool" with tool_call_id and name
         if message.role == .tool {
             return ChatCompletionMessage(
                 role: "tool",
                 content: .text(message.content),
-                toolCallId: message.toolCallId
+                toolCallId: message.toolCallId,
+                name: message.toolName
             )
         }
 

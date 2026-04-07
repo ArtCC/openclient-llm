@@ -88,6 +88,7 @@ nonisolated struct ChatCompletionMessage: Encodable, Sendable {
     let content: Content
     let toolCallId: String?
     let toolCalls: [ToolCall]?
+    let name: String?
 
     enum Content: Sendable {
         case text(String)
@@ -97,11 +98,12 @@ nonisolated struct ChatCompletionMessage: Encodable, Sendable {
 
     // MARK: - Init
 
-    init(role: String, content: Content, toolCallId: String? = nil, toolCalls: [ToolCall]? = nil) {
+    init(role: String, content: Content, toolCallId: String? = nil, toolCalls: [ToolCall]? = nil, name: String? = nil) {
         self.role = role
         self.content = content
         self.toolCallId = toolCallId
         self.toolCalls = toolCalls
+        self.name = name
     }
 
     // MARK: - Encodable
@@ -111,6 +113,7 @@ nonisolated struct ChatCompletionMessage: Encodable, Sendable {
         case content
         case toolCallId = "tool_call_id"
         case toolCalls = "tool_calls"
+        case name
     }
 
     func encode(to encoder: Encoder) throws {
@@ -126,6 +129,7 @@ nonisolated struct ChatCompletionMessage: Encodable, Sendable {
         }
         try container.encodeIfPresent(toolCallId, forKey: .toolCallId)
         try container.encodeIfPresent(toolCalls, forKey: .toolCalls)
+        try container.encodeIfPresent(name, forKey: .name)
     }
 }
 

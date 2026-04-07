@@ -58,6 +58,7 @@ services:
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
       FIRECRAWL_API_KEY: ${FIRECRAWL_API_KEY}
+      BRAVE_API_KEY: ${BRAVE_API_KEY}
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -78,6 +79,7 @@ ANTHROPIC_API_KEY=your-anthropic-api-key
 GOOGLE_API_KEY=your-google-api-key
 DEEPSEEK_API_KEY=your-deepseek-api-key
 FIRECRAWL_API_KEY=your-firecrawl-api-key
+BRAVE_API_KEY=your-brave-api-key
 ```
 
 ## Reference config.yaml
@@ -215,6 +217,11 @@ model_list:
       api_key: os.environ/DEEPSEEK_API_KEY
 
 search_tools:
+  - search_tool_name: brave-search
+    litellm_params:
+      search_provider: brave
+      api_key: os.environ/BRAVE_API_KEY
+
   - search_tool_name: firecrawl-search
     litellm_params:
       search_provider: firecrawl

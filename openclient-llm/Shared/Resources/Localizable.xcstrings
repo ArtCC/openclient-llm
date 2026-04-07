@@ -1754,6 +1754,7 @@
     },
     "Based on the following web search results:" : {
       "comment" : "Title of a list of web search results.",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

@@ -205,16 +205,6 @@ private extension ChatViewModel {
                 parameters: context.parameters,
                 webSearchOptions: WebSearchOptions()
             )
-        } else if context.webSearchEnabled {
-            let searchResults = await fetchSearchResults(for: context.text)
-            await performStreaming(
-                messages: context.messages,
-                model: context.modelId,
-                assistantMessageId: context.assistantId,
-                systemPrompt: context.systemPrompt,
-                parameters: context.parameters,
-                searchResults: searchResults
-            )
         } else {
             await performStreaming(
                 messages: context.messages,

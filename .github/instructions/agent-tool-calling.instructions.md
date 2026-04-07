@@ -144,6 +144,7 @@ POST /chat/completions
     {
       "role": "tool",
       "tool_call_id": "call_abc123",
+      "name": "web_search",
       "content": "1. Swift 6.1 released with improved concurrency... 2. ..."
     }
   ],
@@ -266,7 +267,7 @@ struct ToolFunctionDefinition: Codable, Sendable {
 ```
 
 Built-in tools to implement:
-- **`web_search`**: Web search integration via LiteLLM (see web-browsing.instructions.md)
+- **`web_search`**: Web search integration via LiteLLM (see web-browsing.instructions.md). Uses a generic name to avoid triggering LiteLLM's `websearch_interception` callback, which may interfere with providers like Ollama.
 - Future: calculator, code execution, file operations, etc.
 
 ### Agentic UseCase
@@ -380,8 +381,10 @@ When persisting conversations with tool calling:
 
 ## Relationship with Web Browsing
 
-Web browsing (Brave Search) is the **first tool** in the agent system:
+Web search (`web_search`) is the **first and primary tool** in the agent system:
 
-- When only web browsing is enabled → Use the simpler client-side approach (inject search context)
-- When full agent mode is enabled → Web search becomes a registered tool that the model can invoke
-- This provides a natural upgrade path: simple web search → full agentic capabilities
+- When web search is ON + model has `.functionCalling` → Agent mode activates with `web_search` as a registered tool. The app's agentic loop executes the tool via `/v1/search`.
+- When web search is ON + model has `.nativeWebSearch` → Uses `web_search_options` in the request body (no agent mode needed)
+- When web search is ON + model has no capabilities → **No search occurs**. The globe shows red to inform the user.
+- When web search is OFF → Regular streaming, no tools registered
+- See `web-browsing.instructions.md` for the full flow table and implementation details

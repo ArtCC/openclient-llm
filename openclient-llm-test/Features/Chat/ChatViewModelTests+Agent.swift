@@ -95,16 +95,13 @@ extension ChatViewModelTests {
         XCTAssertEqual(lastAssistant?.content, "Regular response")
     }
 
-    func test_sendMessage_noFunctionCallingModel_andWebSearch_usesContextInjection() async throws {
-        // Given — model without functionCalling capability
+    func test_sendMessage_noCapabilitiesModel_andWebSearch_usesRegularStreaming() async throws {
+        // Given — model without any capabilities (no functionCalling, no nativeWebSearch)
         let mockAgent = MockAgentStreamUseCase()
         mockAgent.events = [.token("Should not appear")]
-        mockStreamMessage.chunks = [.token("Context-injected response")]
-        mockWebSearch.result = .success([
-            LiteLLMSearchResult(title: "Result", url: "https://example.com", snippet: "Test snippet", date: nil)
-        ])
-        let modelWithoutFunctionCalling = LLMModel(id: "llama3", capabilities: [])
-        mockFetchModels.result = .success([modelWithoutFunctionCalling])
+        mockStreamMessage.chunks = [.token("Regular response")]
+        let modelWithoutCapabilities = LLMModel(id: "llama3", capabilities: [])
+        mockFetchModels.result = .success([modelWithoutCapabilities])
 
         let sutWithAgent = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
@@ -129,7 +126,7 @@ extension ChatViewModelTests {
         sutWithAgent.send(.sendTapped)
         try await Task.sleep(for: .milliseconds(200))
 
-        // Then — uses regular streaming (context injection), NOT agent
+        // Then — falls through to regular streaming, does NOT call web search or agent
         guard case .loaded(let loadedState) = sutWithAgent.state else {
             XCTFail("Expected loaded state")
             return
@@ -137,7 +134,12 @@ extension ChatViewModelTests {
         let assistantMessages = loadedState.messages.filter { $0.role == .assistant }
         XCTAssertFalse(assistantMessages.isEmpty)
         let lastAssistant = assistantMessages.last
-        XCTAssertEqual(lastAssistant?.content, "Context-injected response")
+        XCTAssertEqual(lastAssistant?.content, "Regular response")
+        XCTAssertEqual(
+            mockWebSearch.executeCallCount,
+            0,
+            "Web search should NOT be called for models without capabilities"
+        )
     }
 
     func test_applyAgentEvent_token_appendsToAssistantMessage() {

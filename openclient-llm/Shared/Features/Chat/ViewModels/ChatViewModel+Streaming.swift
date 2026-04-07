@@ -17,14 +17,13 @@ extension ChatViewModel {
         assistantMessageId: UUID,
         systemPrompt: String,
         parameters: ModelParameters,
-        searchResults: [LiteLLMSearchResult] = [],
         webSearchOptions: WebSearchOptions? = nil
     ) async {
         LogManager.debug(
             "performStreaming model=\(model) messages=\(messages.count)"
-            + " webSearch=\(!searchResults.isEmpty) nativeWebSearch=\(webSearchOptions != nil)"
+            + " nativeWebSearch=\(webSearchOptions != nil)"
         )
-        let allMessages = buildStreamMessages(messages, systemPrompt: systemPrompt, searchResults: searchResults)
+        let allMessages = buildStreamMessages(messages, systemPrompt: systemPrompt)
 
         do {
             let stream = streamMessageUseCase.execute(
@@ -41,10 +40,6 @@ extension ChatViewModel {
 
             guard case .loaded(var currentState) = state else { return }
             currentState.isStreaming = false
-            if !searchResults.isEmpty,
-               let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }) {
-                currentState.messages[index].webSearchResults = searchResults
-            }
             state = .loaded(currentState)
             LogManager.success("performStreaming completed model=\(model)")
             persistConversation()
@@ -95,8 +90,7 @@ extension ChatViewModel {
 private extension ChatViewModel {
     func buildStreamMessages(
         _ messages: [ChatMessage],
-        systemPrompt: String,
-        searchResults: [LiteLLMSearchResult]
+        systemPrompt: String
     ) -> [ChatMessage] {
         let profileContext = userProfileManager.getProfile().systemPromptContext
         let effectiveSystemPrompt = buildEffectiveSystemPrompt(
@@ -106,12 +100,6 @@ private extension ChatViewModel {
         var result = messages
         if !effectiveSystemPrompt.isEmpty {
             result.insert(ChatMessage(role: .system, content: effectiveSystemPrompt), at: 0)
-        }
-        if !searchResults.isEmpty {
-            result.insert(
-                ChatMessage(role: .system, content: buildWebSearchContext(results: searchResults)),
-                at: result.endIndex - 1
-            )
         }
         return result
     }
