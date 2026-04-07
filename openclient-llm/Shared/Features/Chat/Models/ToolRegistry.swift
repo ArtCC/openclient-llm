@@ -25,9 +25,9 @@ struct ToolRegistry: Sendable {
 
     // MARK: - Public
 
-    func execute(toolName: String, arguments: String) async throws -> String {
+    func execute(toolName: String, arguments: String) async throws -> ToolExecutionResult {
         guard let tool = tools[toolName] else {
-            return "Unknown tool: \(toolName)"
+            return ToolExecutionResult(text: "Unknown tool: \(toolName)")
         }
         return try await tool.execute(arguments: arguments)
     }

@@ -347,7 +347,10 @@ private extension ChatViewModel {
 
         streamTask?.cancel()
         streamTask = Task {
-            let supportsAgentMode = webSearchEnabled && modelCapabilities.contains(.functionCalling)
+            let supportsNativeWebSearch = webSearchEnabled && modelCapabilities.contains(.nativeWebSearch)
+            let supportsAgentMode = webSearchEnabled
+                && modelCapabilities.contains(.functionCalling)
+                && !supportsNativeWebSearch
             if supportsAgentMode {
                 await performAgentStreaming(
                     messages: currentMessages,
@@ -355,6 +358,15 @@ private extension ChatViewModel {
                     assistantMessageId: assistantId,
                     systemPrompt: systemPrompt,
                     parameters: parameters
+                )
+            } else if supportsNativeWebSearch {
+                await performStreaming(
+                    messages: currentMessages,
+                    model: model.id,
+                    assistantMessageId: assistantId,
+                    systemPrompt: systemPrompt,
+                    parameters: parameters,
+                    webSearchOptions: WebSearchOptions()
                 )
             } else {
                 let searchResults = webSearchEnabled ? await fetchSearchResults(for: queryText) : []

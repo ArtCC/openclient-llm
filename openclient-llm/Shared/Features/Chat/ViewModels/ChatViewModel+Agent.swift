@@ -76,8 +76,9 @@ extension ChatViewModel {
         case .toolCallStarted:
             state.isSearchingWeb = true
             return
-        case .toolCallCompleted:
+        case .toolCallCompleted(_, _, let searchResults):
             state.isSearchingWeb = false
+            mergeSearchResults(searchResults, into: &state, assistantMessageId: assistantMessageId)
             return
         case .completed:
             return
@@ -105,5 +106,21 @@ extension ChatViewModel {
         default:
             break
         }
+    }
+}
+
+// MARK: - Private
+
+private extension ChatViewModel {
+    func mergeSearchResults(
+        _ searchResults: [LiteLLMSearchResult]?,
+        into state: inout LoadedState,
+        assistantMessageId: UUID
+    ) {
+        guard let results = searchResults, !results.isEmpty,
+              let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) else { return }
+        var merged = state.messages[index].webSearchResults ?? []
+        merged.append(contentsOf: results)
+        state.messages[index].webSearchResults = merged
     }
 }

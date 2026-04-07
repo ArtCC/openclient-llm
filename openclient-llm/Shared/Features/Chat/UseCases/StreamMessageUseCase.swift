@@ -12,7 +12,8 @@ protocol StreamMessageUseCaseProtocol: Sendable {
     func execute(
         messages: [ChatMessage],
         model: String,
-        parameters: ModelParameters
+        parameters: ModelParameters,
+        webSearchOptions: WebSearchOptions?
     ) -> AsyncThrowingStream<StreamChunk, Error>
 }
 
@@ -32,8 +33,14 @@ struct StreamMessageUseCase: StreamMessageUseCaseProtocol {
     func execute(
         messages: [ChatMessage],
         model: String,
-        parameters: ModelParameters
+        parameters: ModelParameters,
+        webSearchOptions: WebSearchOptions? = nil
     ) -> AsyncThrowingStream<StreamChunk, Error> {
-        repository.streamMessage(messages: messages, model: model, parameters: parameters)
+        repository.streamMessage(
+            messages: messages,
+            model: model,
+            parameters: parameters,
+            webSearchOptions: webSearchOptions
+        )
     }
 }

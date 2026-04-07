@@ -22,7 +22,8 @@ final class MockStreamMessageUseCase: StreamMessageUseCaseProtocol, @unchecked S
     func execute(
         messages: [ChatMessage],
         model: String,
-        parameters: ModelParameters
+        parameters: ModelParameters,
+        webSearchOptions: WebSearchOptions?
     ) -> AsyncThrowingStream<StreamChunk, Error> {
         let chunks = chunks
         let error = error

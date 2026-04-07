@@ -41,17 +41,21 @@ struct WebSearchTool: ChatToolProtocol {
 
     // MARK: - Execute
 
-    func execute(arguments: String) async throws -> String {
+    func execute(arguments: String) async throws -> ToolExecutionResult {
         guard let data = arguments.data(using: .utf8),
               let json = try? JSONDecoder().decode([String: String].self, from: data),
               let query = json["query"], !query.isEmpty else {
-            return String(localized: "Error: missing or invalid 'query' argument.")
+            return ToolExecutionResult(
+                text: String(localized: "Error: missing or invalid 'query' argument.")
+            )
         }
 
         let results = try await webSearchUseCase.execute(query: query)
 
         guard !results.isEmpty else {
-            return String(localized: "No results found for: \(query)")
+            return ToolExecutionResult(
+                text: String(localized: "No results found for: \(query)")
+            )
         }
 
         var output = ""
@@ -60,6 +64,10 @@ struct WebSearchTool: ChatToolProtocol {
             output += "   URL: \(result.url)\n"
             output += "   \(result.snippet)\n\n"
         }
-        return output.trimmingCharacters(in: .whitespacesAndNewlines)
+        output = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        output += "\n\n" + String(
+            localized: "Use these sources to answer the user's question. Cite sources using [Source Title](URL) format."
+        )
+        return ToolExecutionResult(text: output, searchResults: results)
     }
 }

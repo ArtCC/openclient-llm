@@ -38,7 +38,6 @@ final class AgentStreamUseCaseTests: XCTestCase {
     func test_execute_stopOnFirstRound_emitsTokenAndCompletes() async throws {
         // Given
         mockRepository.agentCompletionResult = .success(makeStopResponse(content: "Hello world"))
-        mockRepository.streamChunks = [.token("Hello"), .token(" world")]
 
         // When
         var tokens: [String] = []
@@ -52,8 +51,8 @@ final class AgentStreamUseCaseTests: XCTestCase {
             if case .token(let text) = event { tokens.append(text) }
         }
 
-        // Then
-        XCTAssertEqual(tokens, ["Hello", " world"])
+        // Then — content emitted directly as a single token (no second request)
+        XCTAssertEqual(tokens, ["Hello world"])
     }
 
     // MARK: - Tests — Tool call round
@@ -122,7 +121,8 @@ final class AgentStreamUseCaseTests: XCTestCase {
             func streamMessage(
                 messages: [ChatMessage],
                 model: String,
-                parameters: ModelParameters
+                parameters: ModelParameters,
+                webSearchOptions: WebSearchOptions?
             ) -> AsyncThrowingStream<StreamChunk, Error> {
                 AsyncThrowingStream { continuation in Task { continuation.finish() } }
             }
@@ -231,7 +231,8 @@ final class SequentialMockRepo: ChatRepositoryProtocol, @unchecked Sendable {
     func streamMessage(
         messages: [ChatMessage],
         model: String,
-        parameters: ModelParameters
+        parameters: ModelParameters,
+        webSearchOptions: WebSearchOptions?
     ) -> AsyncThrowingStream<StreamChunk, Error> {
         let chunks = streamChunks
         return AsyncThrowingStream { continuation in

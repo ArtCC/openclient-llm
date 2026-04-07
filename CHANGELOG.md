@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.0.1-build-18] - 2026-04-07
+
+### Added
+
+- `LLMModel.Capability.nativeWebSearch` — new capability flag for models that support native web search via the `web_search_options` parameter (Claude 3.5+/3.7, Gemini 2.0+, xAI Grok-3, OpenAI search preview models)
+- `ModelInfo.supportsWebSearch` field decoded from the LiteLLM `/model/info` response and mapped to `.nativeWebSearch` capability in `ModelsRepository`
+- `WebSearchOptions` encodable struct (`search_context_size`) added to `ChatCompletionRequest` and passed through `ChatRepository`, `StreamMessageUseCase`, and `ChatViewModel+Streaming`
+- `ToolExecutionResult` value type replacing the plain `String` return of tool execution — carries `text` and optional `searchResults: [LiteLLMSearchResult]?` so agent tool results can surface sources in the UI
+- `AgentEvent.toolCallCompleted` now includes `searchResults: [LiteLLMSearchResult]?` so web search results from the agentic loop are propagated to `ChatMessage.webSearchResults` and displayed in the sources disclosure group
+
+### Fixed
+
+- Models with native web search (Claude, Gemini, Grok, OpenAI search) now receive `web_search_options` directly in `/chat/completions` instead of being silently treated as models without web search support
+- Agent mode performed a redundant second LLM request after receiving a `finish_reason: "stop"` response — removed `streamFinalResponse()` and the final answer is now emitted directly from `choice.message.content` as a single token
+- Web search sources were never shown after agent tool calls — `WebSearchTool` now returns results via `ToolExecutionResult`, which are merged into `ChatMessage.webSearchResults` by `applyAgentEvent`
+- `WebSearchTool` did not instruct the model to cite sources when responding in agent mode — citation guidance (`[Source Title](URL) format`) is now appended to the tool result text
+
 ## [1.0.0-build-17] - 2026-04-06
 
 ### Added

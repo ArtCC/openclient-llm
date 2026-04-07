@@ -164,6 +164,7 @@ extension LLMModel {
         case functionCalling
         case parallelFunctionCalling
         case jsonSchema
+        case nativeWebSearch
 
         // MARK: - Properties
 
@@ -177,6 +178,8 @@ extension LLMModel {
                 String(localized: "Parallel Tools")
             case .jsonSchema:
                 String(localized: "JSON Mode")
+            case .nativeWebSearch:
+                String(localized: "Web Search")
             }
         }
 
@@ -186,6 +189,7 @@ extension LLMModel {
             case .functionCalling: "wrench.and.screwdriver"
             case .parallelFunctionCalling: "square.stack.3d.up"
             case .jsonSchema: "curlybraces"
+            case .nativeWebSearch: "globe"
             }
         }
 
@@ -195,6 +199,7 @@ extension LLMModel {
             case .functionCalling: .orange
             case .parallelFunctionCalling: .cyan
             case .jsonSchema: .green
+            case .nativeWebSearch: .blue
             }
         }
     }

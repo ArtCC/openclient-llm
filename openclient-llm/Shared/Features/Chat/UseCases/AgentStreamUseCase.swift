@@ -14,7 +14,7 @@ enum AgentEvent: Sendable {
     case token(String)
     case reasoning(String)
     case toolCallStarted(ToolCall)
-    case toolCallCompleted(toolCallId: String, result: String)
+    case toolCallCompleted(toolCallId: String, result: String, searchResults: [LiteLLMSearchResult]?)
     case usage(TokenUsage)
     case image(Data)
     case completed
@@ -143,13 +143,12 @@ private extension AgentStreamUseCase {
         guard finishReason == "tool_calls",
               let toolCalls = choice.message.toolCalls,
               !toolCalls.isEmpty else {
+            // Emit the model's answer directly — no second network call needed.
+            // The non-streaming agentCompletion already contains the full response.
             if let content = choice.message.content, !content.isEmpty {
-                try await streamFinalResponse(
-                    messages: conversationMessages,
-                    model: context.model,
-                    parameters: context.parameters,
-                    continuation: context.continuation
-                )
+                context.continuation.yield(.token(content))
+            } else {
+                LogManager.warning("agentLoop: stop with empty content")
             }
             return false
         }
@@ -164,8 +163,8 @@ private extension AgentStreamUseCase {
             registry: context.toolRegistry,
             continuation: context.continuation
         )
-        for (toolCallId, result) in toolResults {
-            conversationMessages.append(ChatMessage(role: .tool, content: result, toolCallId: toolCallId))
+        for (toolCallId, executionResult) in toolResults {
+            conversationMessages.append(ChatMessage(role: .tool, content: executionResult.text, toolCallId: toolCallId))
         }
         return true
     }
@@ -174,56 +173,38 @@ private extension AgentStreamUseCase {
         _ toolCalls: [ToolCall],
         registry: ToolRegistry,
         continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
-    ) async throws -> [(String, String)] {
-        var results: [(String, String)] = []
+    ) async throws -> [(String, ToolExecutionResult)] {
+        var results: [(String, ToolExecutionResult)] = []
 
-        try await withThrowingTaskGroup(of: (String, String).self) { group in
+        try await withThrowingTaskGroup(of: (String, ToolExecutionResult).self) { group in
             for toolCall in toolCalls {
                 continuation.yield(.toolCallStarted(toolCall))
                 group.addTask {
-                    let result: String
+                    let executionResult: ToolExecutionResult
                     do {
-                        result = try await registry.execute(
+                        executionResult = try await registry.execute(
                             toolName: toolCall.function.name,
                             arguments: toolCall.function.arguments
                         )
                     } catch {
-                        result = "Error executing \(toolCall.function.name): \(error.localizedDescription)"
+                        executionResult = ToolExecutionResult(
+                            text: "Error executing \(toolCall.function.name): \(error.localizedDescription)"
+                        )
                     }
-                    return (toolCall.id, result)
+                    return (toolCall.id, executionResult)
                 }
             }
 
-            for try await (id, result) in group {
-                results.append((id, result))
-                continuation.yield(.toolCallCompleted(toolCallId: id, result: result))
+            for try await (id, executionResult) in group {
+                results.append((id, executionResult))
+                continuation.yield(.toolCallCompleted(
+                    toolCallId: id,
+                    result: executionResult.text,
+                    searchResults: executionResult.searchResults
+                ))
             }
         }
 
         return results
-    }
-
-    func streamFinalResponse(
-        messages: [ChatMessage],
-        model: String,
-        parameters: ModelParameters,
-        continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
-    ) async throws {
-        LogManager.debug("agentLoop streaming final response messages=\(messages.count)")
-        let stream = repository.streamMessage(messages: messages, model: model, parameters: parameters)
-
-        for try await chunk in stream {
-            guard !Task.isCancelled else { return }
-            switch chunk {
-            case .token(let text):
-                continuation.yield(.token(text))
-            case .reasoning(let text):
-                continuation.yield(.reasoning(text))
-            case .usage(let usage):
-                continuation.yield(.usage(usage))
-            case .image(let data):
-                continuation.yield(.image(data))
-            }
-        }
     }
 }

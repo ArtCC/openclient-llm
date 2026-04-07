@@ -18,6 +18,8 @@ Native Apple client for OpenAI-compatible LLM servers. Works out of the box with
 
 🌐 [Project website](https://www.arturocarreterocalvo.com/openclient-llm/)
 
+[<img src="assets/app_store_black.svg" alt="Download on the App Store" height="50">](https://apps.apple.com/us/app/openclient-private-ai-chat/id6761379499)
+
 ## Technologies
 
 | Technology | Purpose |

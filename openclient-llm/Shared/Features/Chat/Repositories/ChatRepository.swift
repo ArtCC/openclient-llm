@@ -18,7 +18,8 @@ protocol ChatRepositoryProtocol: Sendable {
     func streamMessage(
         messages: [ChatMessage],
         model: String,
-        parameters: ModelParameters
+        parameters: ModelParameters,
+        webSearchOptions: WebSearchOptions?
     ) -> AsyncThrowingStream<StreamChunk, Error>
     func agentCompletion(
         messages: [ChatMessage],
@@ -64,7 +65,8 @@ struct ChatRepository: ChatRepositoryProtocol {
             streamOptions: nil,
             modalities: nil,
             tools: nil,
-            toolChoice: nil
+            toolChoice: nil,
+            webSearchOptions: nil
         )
 
         let response: ChatCompletionResponse = try await apiClient.request(
@@ -92,7 +94,8 @@ struct ChatRepository: ChatRepositoryProtocol {
     func streamMessage(
         messages: [ChatMessage],
         model: String,
-        parameters: ModelParameters
+        parameters: ModelParameters,
+        webSearchOptions: WebSearchOptions?
     ) -> AsyncThrowingStream<StreamChunk, Error> {
         LogManager.info("streamMessage model=\(model) messages=\(messages.count)")
         let request = ChatCompletionRequest(
@@ -105,7 +108,8 @@ struct ChatRepository: ChatRepositoryProtocol {
             streamOptions: ChatStreamOptions(includeUsage: true),
             modalities: nil,
             tools: nil,
-            toolChoice: nil
+            toolChoice: nil,
+            webSearchOptions: webSearchOptions
         )
 
         let decoder = JSONDecoder()
@@ -139,7 +143,8 @@ struct ChatRepository: ChatRepositoryProtocol {
             streamOptions: nil,
             modalities: nil,
             tools: tools,
-            toolChoice: "auto"
+            toolChoice: "auto",
+            webSearchOptions: nil
         )
         let response: ChatCompletionResponse = try await apiClient.request(
             endpoint: "chat/completions",

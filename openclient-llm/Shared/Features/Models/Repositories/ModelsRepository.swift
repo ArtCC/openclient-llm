@@ -65,6 +65,9 @@ struct ModelsRepository: ModelsRepositoryProtocol {
             if info.modelInfo?.supportsResponseSchema == true {
                 capabilities.append(.jsonSchema)
             }
+            if info.modelInfo?.supportsWebSearch == true {
+                capabilities.append(.nativeWebSearch)
+            }
 
             let provider = LLMModel.Provider.from(info.modelInfo?.litellmProvider)
             let mode = LLMModel.Mode(rawString: info.modelInfo?.mode)

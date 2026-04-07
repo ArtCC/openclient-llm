@@ -211,7 +211,7 @@ extension ChatViewModelTests {
 
         // When
         viewModel.applyAgentEvent(
-            .toolCallCompleted(toolCallId: "c1", result: "results"),
+            .toolCallCompleted(toolCallId: "c1", result: "results", searchResults: nil),
             to: &loadedState,
             assistantMessageId: UUID()
         )
