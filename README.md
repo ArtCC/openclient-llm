@@ -82,13 +82,7 @@ You can also suggest features and report bugs directly from within the app — g
 
 **Arturo Carretero Calvo**
 
-- [GitHub](https://github.com/ArtCC)
-
----
-
-<p align="left">
-  This project was developed entirely with <strong>Claude Opus 4.6</strong>, <strong>Visual Studio Code</strong> and <strong>Xcode</strong>.
-</p>
+- [GitHub Profile](https://github.com/ArtCC)
 
 ---
 
