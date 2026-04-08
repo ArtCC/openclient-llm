@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.0.1-build-19] - 2026-04-08
+
+### Added
+
+- Ollama model capability detection via `litellm_params.model` prefix fallback — when `model_info:` is absent in LiteLLM config, the provider is inferred from the `ollama/` or `ollama_chat/` prefix; capabilities are supplemented via Ollama's native `/api/show` using the `api_base` from `litellm_params`
+
+### Changed
+
+- Capability tags in the model list cell are now sorted alphabetically by label
+
+### Fixed
+
+- Ollama capability detection failed when `model_info:` block was omitted from LiteLLM `config.yaml` — the app now falls back to `litellm_params.model` prefix to identify Ollama-backed models
+- Ollama `/api/show` requests used `host.docker.internal` (from `litellm_params.api_base`) which is unreachable from the client device — fixed by using the IP configured in `api_base`; `LiteLLM.md` updated to document this requirement
+
 ## [1.0.1-build-18] - 2026-04-08
 
 ### Added

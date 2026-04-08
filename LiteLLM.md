@@ -92,19 +92,7 @@ model_list:
   - model_name: gemma4:e4b
     litellm_params:
       model: ollama/gemma4:e4b
-      api_base: http://host.docker.internal:11434
-    model_info:
-      supports_vision: true
-      supports_function_calling: false
-
-  # Ollama — Qwen (Alibaba)
-  - model_name: qwen3:14b
-    litellm_params:
-      model: ollama/qwen3:14b
-      api_base: http://host.docker.internal:11434
-    model_info:
-      supports_vision: false
-      supports_function_calling: true
+      api_base: http://your_ollama_ip_server:11434
 
   # APIs cloud
   # OpenAI

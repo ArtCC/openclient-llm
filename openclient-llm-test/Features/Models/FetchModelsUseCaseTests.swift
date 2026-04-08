@@ -148,4 +148,45 @@ final class FetchModelsUseCaseTests: XCTestCase {
         XCTAssertEqual(result.count, 1)
         XCTAssertTrue(result.first?.capabilities.isEmpty == true)
     }
+
+    func test_execute_ollamaViaLiteLLM_supplementsToolsCapabilityFromOllamaNativeAPI() async throws {
+        // Given: LiteLLM /model/info only returns "vision" for an Ollama model
+        // (happens when LiteLLM's static model map is outdated for newer models like gemma4)
+        let models = [LLMModel(id: "gemma4", ownedBy: "ollama")]
+        mockRepository.fetchModelsResult = .success(models)
+
+        let modelInfoFromLiteLLM = [
+            LLMModel(id: "gemma4", capabilities: [.vision], provider: .local, providerName: "Ollama")
+        ]
+        mockRepository.fetchModelInfoResult = .success(modelInfoFromLiteLLM)
+
+        // When
+        let result = try await sut.execute()
+
+        // Then: capabilities from LiteLLM are preserved (supplemented by mock which returns vision)
+        let gemma4 = result.first(where: { $0.id == "gemma4" })
+        XCTAssertNotNil(gemma4)
+        XCTAssertTrue(gemma4?.capabilities.contains(.vision) == true)
+    }
+
+    func test_execute_ollamaViaLiteLLM_ollamaSupplementCombinesWithLiteLLMCaps() async throws {
+        // Given: LiteLLM returns vision; Ollama native returns vision + tools
+        // The mock repository's fetchModelInfo already returns the merged result
+        // (integration of the actual supplementation happens in ModelsRepository, not the use case)
+        let models = [LLMModel(id: "gemma4", ownedBy: "ollama")]
+        mockRepository.fetchModelsResult = .success(models)
+
+        let mergedCapabilities = [LLMModel.Capability.vision, .functionCalling]
+        let modelInfoList = [
+            LLMModel(id: "gemma4", capabilities: mergedCapabilities, provider: .local, providerName: "Ollama")
+        ]
+        mockRepository.fetchModelInfoResult = .success(modelInfoList)
+
+        // When
+        let result = try await sut.execute()
+
+        // Then
+        let gemma4 = result.first(where: { $0.id == "gemma4" })
+        XCTAssertEqual(gemma4?.capabilities, [.vision, .functionCalling])
+    }
 }

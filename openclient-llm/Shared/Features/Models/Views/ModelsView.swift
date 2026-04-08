@@ -176,7 +176,7 @@ private extension ModelsView {
 
     func capabilityTags(_ capabilities: [LLMModel.Capability]) -> some View {
         FlowLayout(spacing: 6) {
-            ForEach(capabilities, id: \.self) { capability in
+            ForEach(capabilities.sorted { $0.label < $1.label }, id: \.self) { capability in
                 HStack(spacing: 4) {
                     Image(systemName: capability.icon)
                         .font(.caption2)
