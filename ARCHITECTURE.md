@@ -268,6 +268,7 @@ openclient-llm-test/                         # Unit tests
     ├── MockAudioRecorderManager.swift
     ├── MockBranchConversationUseCase.swift
     ├── MockChatRepository.swift
+    ├── MockCheckLiteLLMHealthUseCase.swift
     ├── MockCheckOnboardingUseCase.swift
     ├── MockCloudSyncManager.swift
     ├── MockCompleteOnboardingUseCase.swift

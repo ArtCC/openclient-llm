@@ -24,6 +24,7 @@ struct SettingsView: View {
     @State private var showResetAlert = false
     @State private var presentedWebURL: WebDestination?
     @FocusState private var focusedField: Field?
+    private let liteLLMHintText = String(localized: "Optimised for LiteLLM. Any OpenAI-compatible server also works.")
 
     // MARK: - View
 
@@ -190,6 +191,10 @@ private extension SettingsView {
             .buttonStyle(.plain)
         } header: {
             Text(String(localized: "Server"))
+        } footer: {
+            if loadedState.showLiteLLMHint {
+                Label(liteLLMHintText, systemImage: "info.circle").foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -295,9 +300,7 @@ private extension SettingsView {
         } header: {
             Text(String(localized: "Web Search"))
         } footer: {
-            Text(String(
-                localized: "Tool name must match the search_tool_name configured in your LiteLLM config.yaml."
-            ))
+            Text(String(localized: "Tool name must match the search_tool_name configured in your LiteLLM config.yaml."))
         }
     }
 

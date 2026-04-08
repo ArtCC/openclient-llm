@@ -44,6 +44,7 @@ final class SettingsViewModel {
         var showCloudSyncConflictAlert: Bool = false
         var webSearchToolName: String = "brave-search"
         var webSearchMaxResults: Int = 10
+        var showLiteLLMHint: Bool = false
     }
 
     enum ConnectionStatus: Equatable {
@@ -57,6 +58,7 @@ final class SettingsViewModel {
 
     private let saveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol
     private let testServerConnectionUseCase: TestServerConnectionUseCaseProtocol
+    private let checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
     private let cloudSyncManager: CloudSyncManagerProtocol
     private let userProfileManager: UserProfileManagerProtocol
@@ -68,6 +70,7 @@ final class SettingsViewModel {
         state: State = .loading,
         saveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol = SaveServerConfigurationUseCase(),
         testServerConnectionUseCase: TestServerConnectionUseCaseProtocol = TestServerConnectionUseCase(),
+        checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol = CheckLiteLLMHealthUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
         userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
@@ -76,6 +79,7 @@ final class SettingsViewModel {
         self.state = state
         self.saveServerConfigurationUseCase = saveServerConfigurationUseCase
         self.testServerConnectionUseCase = testServerConnectionUseCase
+        self.checkLiteLLMHealthUseCase = checkLiteLLMHealthUseCase
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
         self.userProfileManager = userProfileManager
@@ -122,6 +126,12 @@ private extension SettingsViewModel {
             webSearchMaxResults: settingsManager.getWebSearchMaxResults()
         )
         state = .loaded(loadedState)
+        let serverURL = loadedState.serverURL
+        if !serverURL.isEmpty {
+            Task {
+                await updateLiteLLMHint(serverURL: serverURL)
+            }
+        }
     }
 
     func updateServerURL(_ url: String) {
@@ -142,39 +152,48 @@ private extension SettingsViewModel {
 
     func testConnection() {
         guard case .loaded(var loadedState) = state else { return }
-        LogManager.info("testConnection url=\(loadedState.serverURL)")
+        let serverURL = loadedState.serverURL
+        let apiKey = loadedState.apiKey
+        LogManager.info("testConnection url=\(serverURL)")
         loadedState.connectionStatus = .testing
         state = .loaded(loadedState)
 
         Task {
             do {
-                try await testServerConnectionUseCase.execute(
-                    serverURL: loadedState.serverURL,
-                    apiKey: loadedState.apiKey
-                )
+                try await testServerConnectionUseCase.execute(serverURL: serverURL, apiKey: apiKey)
                 guard case .loaded(var currentState) = state else { return }
                 currentState.connectionStatus = .success
                 state = .loaded(currentState)
-                LogManager.success("testConnection success url=\(loadedState.serverURL)")
+                LogManager.success("testConnection success url=\(serverURL)")
             } catch {
                 guard case .loaded(var currentState) = state else { return }
                 currentState.connectionStatus = .failure(error.localizedDescription)
                 state = .loaded(currentState)
-                LogManager.error("testConnection failed url=\(loadedState.serverURL): \(error)")
+                LogManager.error("testConnection failed url=\(serverURL): \(error)")
             }
+            await updateLiteLLMHint(serverURL: serverURL)
         }
     }
 
     func saveSettings() {
         guard case .loaded(var loadedState) = state else { return }
-        LogManager.info("saveSettings url=\(loadedState.serverURL)")
-        saveServerConfigurationUseCase.execute(
-            serverURL: loadedState.serverURL,
-            apiKey: loadedState.apiKey
-        )
+        let serverURL = loadedState.serverURL
+        let apiKey = loadedState.apiKey
+        LogManager.info("saveSettings url=\(serverURL)")
+        saveServerConfigurationUseCase.execute(serverURL: serverURL, apiKey: apiKey)
         loadedState.isSaved = true
         state = .loaded(loadedState)
         LogManager.success("saveSettings done")
+        Task {
+            await updateLiteLLMHint(serverURL: serverURL)
+        }
+    }
+
+    func updateLiteLLMHint(serverURL: String) async {
+        let isLiteLLM = await checkLiteLLMHealthUseCase.execute(serverURL: serverURL)
+        guard case .loaded(var currentState) = state else { return }
+        currentState.showLiteLLMHint = !isLiteLLM
+        state = .loaded(currentState)
     }
 
     func toggleCloudSync(_ enabled: Bool) {

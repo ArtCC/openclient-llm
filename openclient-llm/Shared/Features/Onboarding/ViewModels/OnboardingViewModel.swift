@@ -35,6 +35,7 @@ final class OnboardingViewModel {
         var serverURL: String = ""
         var apiKey: String = ""
         var connectionStatus: ConnectionStatus = .idle
+        var showLiteLLMHint: Bool = false
     }
 
     enum ConnectionStatus: Equatable {
@@ -51,6 +52,7 @@ final class OnboardingViewModel {
     private let completeOnboardingUseCase: CompleteOnboardingUseCaseProtocol
     private let saveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol
     private let testServerConnectionUseCase: TestServerConnectionUseCaseProtocol
+    private let checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol
 
     // MARK: - Init
 
@@ -58,12 +60,14 @@ final class OnboardingViewModel {
         state: State = .loading,
         completeOnboardingUseCase: CompleteOnboardingUseCaseProtocol = CompleteOnboardingUseCase(),
         saveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol = SaveServerConfigurationUseCase(),
-        testServerConnectionUseCase: TestServerConnectionUseCaseProtocol = TestServerConnectionUseCase()
+        testServerConnectionUseCase: TestServerConnectionUseCaseProtocol = TestServerConnectionUseCase(),
+        checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol = CheckLiteLLMHealthUseCase()
     ) {
         self.state = state
         self.completeOnboardingUseCase = completeOnboardingUseCase
         self.saveServerConfigurationUseCase = saveServerConfigurationUseCase
         self.testServerConnectionUseCase = testServerConnectionUseCase
+        self.checkLiteLLMHealthUseCase = checkLiteLLMHealthUseCase
     }
 
     // MARK: - Input functions
@@ -85,6 +89,7 @@ final class OnboardingViewModel {
         case .testConnectionTapped:
             testConnection()
         case .nextTapped:
+            checkLiteLLMHealth()
             updateStep(.allSet)
         case .startChattingTapped:
             handleComplete()
@@ -136,15 +141,14 @@ private extension OnboardingViewModel {
 
     func testConnection() {
         guard case .loaded(var loadedState) = state else { return }
+        let serverURL = loadedState.serverURL
+        let apiKey = loadedState.apiKey
         loadedState.connectionStatus = .testing
         state = .loaded(loadedState)
 
         Task {
             do {
-                try await testServerConnectionUseCase.execute(
-                    serverURL: loadedState.serverURL,
-                    apiKey: loadedState.apiKey
-                )
+                try await testServerConnectionUseCase.execute(serverURL: serverURL, apiKey: apiKey)
                 guard case .loaded(var currentState) = state else { return }
                 currentState.connectionStatus = .success
                 state = .loaded(currentState)
@@ -153,7 +157,23 @@ private extension OnboardingViewModel {
                 currentState.connectionStatus = .failure(error.localizedDescription)
                 state = .loaded(currentState)
             }
+            await updateLiteLLMHint(serverURL: serverURL)
         }
+    }
+
+    func checkLiteLLMHealth() {
+        guard case .loaded(let loadedState) = state, !loadedState.serverURL.isEmpty else { return }
+        let serverURL = loadedState.serverURL
+        Task {
+            await updateLiteLLMHint(serverURL: serverURL)
+        }
+    }
+
+    func updateLiteLLMHint(serverURL: String) async {
+        let isLiteLLM = await checkLiteLLMHealthUseCase.execute(serverURL: serverURL)
+        guard case .loaded(var currentState) = state else { return }
+        currentState.showLiteLLMHint = !isLiteLLM
+        state = .loaded(currentState)
     }
 
     func handleComplete() {

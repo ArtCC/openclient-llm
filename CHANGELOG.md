@@ -7,10 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [1.0.1-build-18] - 2026-04-07
+## [1.0.1-build-18] - 2026-04-10
 
 ### Added
 
+- Non-blocking LiteLLM server detection via `GET /health/readiness` — shown after "Test Connection" or "Save" in Settings, and after "Test Connection" or advancing to the next step in Onboarding; displays an informational hint below the server field when the server is not identified as LiteLLM
+- `CheckLiteLLMHealthUseCase` — fires a lightweight, non-blocking `GET /health/readiness` call and returns `true` only when the response contains the `litellm_version` field (exclusive to LiteLLM proxy)
+- `showLiteLLMHint` flag in `SettingsViewModel.LoadedState` and `OnboardingViewModel.LoadedState` — set to `true` when the connected server is not identified as LiteLLM
+- `checkLiteLLMHealth(serverURL:)` method on `OnboardingRepository` / `OnboardingRepositoryProtocol`
 - Tool system prompt in agent mode — instructs the model about the `web_search` tool, when to use it, how to cite sources, and allows any response format (Markdown, lists, code blocks, etc.)
 - `ToolExecutionResult` value type replacing the plain `String` return of tool execution — carries `text` and optional `searchResults: [LiteLLMSearchResult]?` so agent tool results can surface sources in the UI
 - `AgentEvent.toolCallCompleted` now includes `searchResults: [LiteLLMSearchResult]?` so web search results from the agentic loop are propagated to `ChatMessage.webSearchResults` and displayed in the sources disclosure group

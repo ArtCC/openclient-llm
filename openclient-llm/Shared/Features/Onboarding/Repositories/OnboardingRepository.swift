@@ -10,6 +10,7 @@ import Foundation
 
 protocol OnboardingRepositoryProtocol: Sendable {
     func testConnection(serverURL: String, apiKey: String) async throws
+    func checkLiteLLMHealth(serverURL: String) async -> Bool
 }
 
 struct OnboardingRepository: OnboardingRepositoryProtocol {
@@ -43,6 +44,34 @@ struct OnboardingRepository: OnboardingRepositoryProtocol {
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
             throw OnboardingRepositoryError.serverUnreachable
+        }
+    }
+
+    func checkLiteLLMHealth(serverURL: String) async -> Bool {
+        guard !serverURL.isEmpty,
+              let url = URL(string: serverURL)?.appendingPathComponent("health/readiness") else {
+            return false
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        request.timeoutInterval = 10
+
+        do {
+            let (data, response) = try await session.data(for: request)
+
+            guard let httpResponse = response as? HTTPURLResponse,
+                  httpResponse.statusCode == 200 else {
+                return false
+            }
+
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                return false
+            }
+
+            return json["litellm_version"] != nil
+        } catch {
+            return false
         }
     }
 }

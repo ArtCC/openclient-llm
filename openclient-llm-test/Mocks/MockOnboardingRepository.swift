@@ -14,10 +14,15 @@ final class MockOnboardingRepository: OnboardingRepositoryProtocol, @unchecked S
     // MARK: - Properties
 
     var testConnectionResult: Result<Void, Error> = .success(())
+    var checkLiteLLMHealthResult: Bool = true
 
     // MARK: - Public
 
     func testConnection(serverURL: String, apiKey: String) async throws {
         try testConnectionResult.get()
+    }
+
+    func checkLiteLLMHealth(serverURL: String) async -> Bool {
+        checkLiteLLMHealthResult
     }
 }

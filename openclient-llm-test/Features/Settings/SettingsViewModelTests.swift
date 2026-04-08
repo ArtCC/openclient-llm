@@ -16,6 +16,7 @@ final class SettingsViewModelTests: XCTestCase {
     private var sut: SettingsViewModel!
     private var mockSaveServerConfig: MockSaveServerConfigurationUseCase!
     private var mockTestConnection: MockTestServerConnectionUseCase!
+    private var mockCheckLiteLLMHealth: MockCheckLiteLLMHealthUseCase!
     private var mockSettingsManager: MockSettingsManager!
     private var mockCloudSyncManager: MockCloudSyncManager!
     private var mockUserProfileManager: MockUserProfileManager!
@@ -28,6 +29,7 @@ final class SettingsViewModelTests: XCTestCase {
 
         mockSaveServerConfig = MockSaveServerConfigurationUseCase()
         mockTestConnection = MockTestServerConnectionUseCase()
+        mockCheckLiteLLMHealth = MockCheckLiteLLMHealthUseCase()
         mockSettingsManager = MockSettingsManager()
         mockCloudSyncManager = MockCloudSyncManager()
         mockUserProfileManager = MockUserProfileManager()
@@ -35,6 +37,7 @@ final class SettingsViewModelTests: XCTestCase {
         sut = SettingsViewModel(
             saveServerConfigurationUseCase: mockSaveServerConfig,
             testServerConnectionUseCase: mockTestConnection,
+            checkLiteLLMHealthUseCase: mockCheckLiteLLMHealth,
             settingsManager: mockSettingsManager,
             cloudSyncManager: mockCloudSyncManager,
             userProfileManager: mockUserProfileManager,
@@ -46,6 +49,7 @@ final class SettingsViewModelTests: XCTestCase {
         sut = nil
         mockSaveServerConfig = nil
         mockTestConnection = nil
+        mockCheckLiteLLMHealth = nil
         mockSettingsManager = nil
         mockCloudSyncManager = nil
         mockUserProfileManager = nil
