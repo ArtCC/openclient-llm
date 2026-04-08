@@ -16,32 +16,17 @@ extension ChatViewModel {
         model: String,
         assistantMessageId: UUID,
         systemPrompt: String,
-        parameters: ModelParameters,
-        searchResults: [LiteLLMSearchResult] = []
+        parameters: ModelParameters
     ) async {
-        let hasSearch = !searchResults.isEmpty
-        LogManager.debug("performStreaming model=\(model) messages=\(messages.count) webSearch=\(hasSearch)")
-        let profileContext = userProfileManager.getProfile().systemPromptContext
-        let effectiveSystemPrompt = buildEffectiveSystemPrompt(
-            profileContext: profileContext,
-            conversationSystemPrompt: systemPrompt
-        )
-
-        var allMessages = messages
-        if !effectiveSystemPrompt.isEmpty {
-            let systemMessage = ChatMessage(role: .system, content: effectiveSystemPrompt)
-            allMessages.insert(systemMessage, at: 0)
-        }
-        if !searchResults.isEmpty {
-            let contextMessage = ChatMessage(
-                role: .system,
-                content: buildWebSearchContext(results: searchResults)
-            )
-            allMessages.insert(contextMessage, at: allMessages.endIndex - 1)
-        }
+        LogManager.debug("performStreaming model=\(model) messages=\(messages.count)")
+        let allMessages = buildStreamMessages(messages, systemPrompt: systemPrompt)
 
         do {
-            let stream = streamMessageUseCase.execute(messages: allMessages, model: model, parameters: parameters)
+            let stream = streamMessageUseCase.execute(
+                messages: allMessages,
+                model: model,
+                parameters: parameters
+            )
             for try await chunk in stream {
                 guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
                 applyStreamChunk(chunk, to: &currentState, assistantMessageId: assistantMessageId)
@@ -50,13 +35,11 @@ extension ChatViewModel {
 
             guard case .loaded(var currentState) = state else { return }
             currentState.isStreaming = false
-            if !searchResults.isEmpty,
-               let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }) {
-                currentState.messages[index].webSearchResults = searchResults
-            }
             state = .loaded(currentState)
             LogManager.success("performStreaming completed model=\(model)")
             persistConversation()
+            streamingBackgroundUseCase.end()
+            await notifyStreamingCompletedUseCase.execute()
         } catch {
             guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
             LogManager.error("performStreaming error model=\(model): \(error)")
@@ -69,6 +52,7 @@ extension ChatViewModel {
             state = .loaded(currentState)
             scheduleErrorDismiss()
             persistConversation()
+            streamingBackgroundUseCase.end()
         }
     }
 
@@ -96,5 +80,25 @@ extension ChatViewModel {
                 state.messages[index].attachments.append(attachment)
             }
         }
+    }
+}
+
+// MARK: - Private
+
+private extension ChatViewModel {
+    func buildStreamMessages(
+        _ messages: [ChatMessage],
+        systemPrompt: String
+    ) -> [ChatMessage] {
+        let profileContext = getUserProfileContextUseCase.execute()
+        let effectiveSystemPrompt = buildEffectiveSystemPrompt(
+            profileContext: profileContext,
+            conversationSystemPrompt: systemPrompt
+        )
+        var result = messages
+        if !effectiveSystemPrompt.isEmpty {
+            result.insert(ChatMessage(role: .system, content: effectiveSystemPrompt), at: 0)
+        }
+        return result
     }
 }

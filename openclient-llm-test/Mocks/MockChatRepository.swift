@@ -67,7 +67,7 @@ final class MockChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
         messages: [ChatMessage],
         model: String,
         parameters: ModelParameters,
-        tools: [ToolDefinition]
+        tools: [ToolDefinition]?
     ) async throws -> ChatCompletionResponse {
         try agentCompletionResult.get()
     }

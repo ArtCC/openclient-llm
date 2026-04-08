@@ -21,6 +21,7 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
     var webSearchResults: [LiteLLMSearchResult]?
     var toolCalls: [ToolCall]?
     var toolCallId: String?
+    var toolName: String?
 
     enum Role: String, Sendable, Equatable, Codable {
         case user
@@ -41,7 +42,8 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
         tokenUsage: TokenUsage? = nil,
         webSearchResults: [LiteLLMSearchResult]? = nil,
         toolCalls: [ToolCall]? = nil,
-        toolCallId: String? = nil
+        toolCallId: String? = nil,
+        toolName: String? = nil
     ) {
         self.id = id
         self.role = role
@@ -53,6 +55,7 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
         self.webSearchResults = webSearchResults
         self.toolCalls = toolCalls
         self.toolCallId = toolCallId
+        self.toolName = toolName
     }
 }
 

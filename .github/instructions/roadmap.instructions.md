@@ -106,6 +106,17 @@ Goal: Let users build persistent knowledge bases from their documents and query 
 - [ ] **RAG: knowledge base mode in conversation**: When a conversation has a `vector_store_id`, route messages through `POST /v1/rag/query` (with `retrieval_config`) instead of `/chat/completions`. Supports streaming. A visual indicator in the input bar shows RAG is active. The `rag/query` response follows the standard OpenAI chat completion format — no UI changes needed for message rendering.
 - [ ] **Knowledge base management**: Screen in Settings to list and delete the knowledge bases (vector store IDs) associated with conversations. Each entry shows conversation title, provider, and creation date.
 
+## Phase 10 — System Integration & Import
+
+Goal: Allow other apps to send content to OpenClient LLM and let users bring data from external sources.
+
+- [ ] **Share Extension (iOS/iPadOS/macOS)**: System extension to receive text, URLs, images, and PDFs shared from any app (Safari, Notes, Files…). When activated, opens OpenClient and creates a new conversation with the shared content as an attachment or initial message.
+- [ ] **Drag & Drop between apps**: Accept drags from other apps directly into the chat input — text, images, files — especially useful on iPad and macOS where multitasking with Split View is common.
+- [ ] **Custom URL scheme (`openclient://`)**: URL scheme to open the app with prefilled content from external automations, Shortcuts, or third-party apps.
+- [ ] **Apple Shortcuts integration**: Define `AppIntents`/`NSUserActivity` so Shortcuts can execute actions such as "New conversation with message", "Search conversations", or "Send file to chat".
+- [ ] **Widget (iOS/iPadOS)**: Home Screen / Lock Screen widget using WidgetKit. Exact widget types, sizes, and content to be defined — needs further scoping before implementation.
+- [ ] **Live Activities / Dynamic Island (iOS)**: Show the streaming of an in-progress response on the Lock Screen and in the Dynamic Island while the user multitasks. Implemented via `ActivityKit` with a `ActivityAttributes` struct carrying the current partial response text and model name.
+
 ## Current Phase: 9 — RAG & Knowledge Base
 
 Focus exclusively on Phase 9 features. Do not over-engineer for future phases.

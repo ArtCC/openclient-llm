@@ -24,7 +24,7 @@ protocol ChatRepositoryProtocol: Sendable {
         messages: [ChatMessage],
         model: String,
         parameters: ModelParameters,
-        tools: [ToolDefinition]
+        tools: [ToolDefinition]?
     ) async throws -> ChatCompletionResponse
 }
 
@@ -126,9 +126,9 @@ struct ChatRepository: ChatRepositoryProtocol {
         messages: [ChatMessage],
         model: String,
         parameters: ModelParameters,
-        tools: [ToolDefinition]
+        tools: [ToolDefinition]?
     ) async throws -> ChatCompletionResponse {
-        LogManager.info("agentCompletion model=\(model) messages=\(messages.count) tools=\(tools.count)")
+        LogManager.info("agentCompletion model=\(model) messages=\(messages.count) tools=\(tools?.count ?? 0)")
         let request = ChatCompletionRequest(
             model: model,
             messages: messages.map { buildCompletionMessage($0) },
@@ -139,7 +139,7 @@ struct ChatRepository: ChatRepositoryProtocol {
             streamOptions: nil,
             modalities: nil,
             tools: tools,
-            toolChoice: "auto"
+            toolChoice: tools != nil ? "auto" : nil
         )
         let response: ChatCompletionResponse = try await apiClient.request(
             endpoint: "chat/completions",
@@ -204,12 +204,13 @@ private extension ChatRepository {
     }
 
     func buildCompletionMessage(_ message: ChatMessage) -> ChatCompletionMessage {
-        // Tool result message: role "tool" with tool_call_id
+        // Tool result message: role "tool" with tool_call_id and name
         if message.role == .tool {
             return ChatCompletionMessage(
                 role: "tool",
                 content: .text(message.content),
-                toolCallId: message.toolCallId
+                toolCallId: message.toolCallId,
+                name: message.toolName
             )
         }
 

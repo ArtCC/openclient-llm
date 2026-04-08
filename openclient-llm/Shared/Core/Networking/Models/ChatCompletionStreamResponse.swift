@@ -23,6 +23,7 @@ nonisolated struct ChatCompletionStreamResponse: Decodable, Sendable {
         let content: String?
         let reasoningContent: String?
         let images: [ImageItem]?
+        let toolCalls: [ToolCall]?
     }
 
     struct ImageItem: Decodable, Sendable {

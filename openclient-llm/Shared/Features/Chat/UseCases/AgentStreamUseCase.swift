@@ -14,10 +14,18 @@ enum AgentEvent: Sendable {
     case token(String)
     case reasoning(String)
     case toolCallStarted(ToolCall)
-    case toolCallCompleted(toolCallId: String, result: String)
+    case toolCallCompleted(toolCallId: String, result: String, searchResults: [LiteLLMSearchResult]?)
     case usage(TokenUsage)
     case image(Data)
     case completed
+}
+
+// MARK: - ToolCallResult
+
+struct ToolCallResult: Sendable {
+    let toolCallId: String
+    let toolName: String
+    let executionResult: ToolExecutionResult
 }
 
 // MARK: - AgentStreamUseCaseProtocol
@@ -97,6 +105,7 @@ private extension AgentStreamUseCase {
     ) async throws {
         var conversationMessages = messages
         var iteration = 0
+        var toolsJustExecuted = false
         let context = AgentLoopContext(
             model: model,
             parameters: parameters,
@@ -109,11 +118,13 @@ private extension AgentStreamUseCase {
             iteration += 1
             LogManager.debug("agentLoop iteration=\(iteration) messages=\(conversationMessages.count)")
 
+            // After tool execution, omit tools so the model generates a natural response
+            let tools: [ToolDefinition]? = toolsJustExecuted ? nil : toolRegistry.definitions
             let response = try await repository.agentCompletion(
                 messages: conversationMessages,
                 model: model,
                 parameters: parameters,
-                tools: toolRegistry.definitions
+                tools: tools
             )
 
             guard let choice = response.choices.first else {
@@ -126,6 +137,7 @@ private extension AgentStreamUseCase {
                 conversationMessages: &conversationMessages,
                 context: context
             )
+            toolsJustExecuted = shouldContinue
             if !shouldContinue { break }
         }
 
@@ -139,19 +151,30 @@ private extension AgentStreamUseCase {
         conversationMessages: inout [ChatMessage],
         context: AgentLoopContext
     ) async throws -> Bool {
-        let finishReason = choice.finishReason ?? "stop"
-        guard finishReason == "tool_calls",
-              let toolCalls = choice.message.toolCalls,
-              !toolCalls.isEmpty else {
-            if let content = choice.message.content, !content.isEmpty {
-                try await streamFinalResponse(
-                    messages: conversationMessages,
-                    model: context.model,
-                    parameters: context.parameters,
-                    continuation: context.continuation
-                )
+        // Check tool_calls presence first — some models (Ollama/Llama/Mistral/Qwen)
+        // include tool_calls with finishReason "stop" or nil instead of "tool_calls".
+        // Relying solely on finishReason misses those cases and causes {} to be emitted.
+        guard let toolCalls = choice.message.toolCalls, !toolCalls.isEmpty else {
+            // No tool calls — emit the model's final text response.
+            // Exception: if content is literally "{}" the model tried to call a tool
+            // but emitted it as plain text instead of structured tool_calls (known Ollama quirk).
+            // Signal the loop to retry without tools so the model answers naturally.
+            let content = choice.message.content ?? ""
+            if content.trimmingCharacters(in: .whitespaces) == "{}" {
+                LogManager.warning("agentLoop: content is '{}' with no tool_calls — retrying without tools")
+                return true
+            }
+            if !content.isEmpty {
+                context.continuation.yield(.token(content))
+            } else {
+                LogManager.warning("agentLoop: stop with empty content")
             }
             return false
+        }
+
+        let finishReason = choice.finishReason ?? "stop"
+        if finishReason != "tool_calls" {
+            LogManager.warning("agentLoop: tool_calls present but finishReason=\(finishReason) — executing anyway")
         }
 
         conversationMessages.append(ChatMessage(
@@ -164,8 +187,13 @@ private extension AgentStreamUseCase {
             registry: context.toolRegistry,
             continuation: context.continuation
         )
-        for (toolCallId, result) in toolResults {
-            conversationMessages.append(ChatMessage(role: .tool, content: result, toolCallId: toolCallId))
+        for toolResult in toolResults {
+            conversationMessages.append(ChatMessage(
+                role: .tool,
+                content: toolResult.executionResult.text,
+                toolCallId: toolResult.toolCallId,
+                toolName: toolResult.toolName
+            ))
         }
         return true
     }
@@ -174,56 +202,42 @@ private extension AgentStreamUseCase {
         _ toolCalls: [ToolCall],
         registry: ToolRegistry,
         continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
-    ) async throws -> [(String, String)] {
-        var results: [(String, String)] = []
+    ) async throws -> [ToolCallResult] {
+        var results: [ToolCallResult] = []
 
-        try await withThrowingTaskGroup(of: (String, String).self) { group in
+        try await withThrowingTaskGroup(of: ToolCallResult.self) { group in
             for toolCall in toolCalls {
                 continuation.yield(.toolCallStarted(toolCall))
                 group.addTask {
-                    let result: String
+                    let executionResult: ToolExecutionResult
                     do {
-                        result = try await registry.execute(
+                        executionResult = try await registry.execute(
                             toolName: toolCall.function.name,
                             arguments: toolCall.function.arguments
                         )
                     } catch {
-                        result = "Error executing \(toolCall.function.name): \(error.localizedDescription)"
+                        executionResult = ToolExecutionResult(
+                            text: "Error executing \(toolCall.function.name): \(error.localizedDescription)"
+                        )
                     }
-                    return (toolCall.id, result)
+                    return ToolCallResult(
+                        toolCallId: toolCall.id,
+                        toolName: toolCall.function.name,
+                        executionResult: executionResult
+                    )
                 }
             }
 
-            for try await (id, result) in group {
-                results.append((id, result))
-                continuation.yield(.toolCallCompleted(toolCallId: id, result: result))
+            for try await toolCallResult in group {
+                results.append(toolCallResult)
+                continuation.yield(.toolCallCompleted(
+                    toolCallId: toolCallResult.toolCallId,
+                    result: toolCallResult.executionResult.text,
+                    searchResults: toolCallResult.executionResult.searchResults
+                ))
             }
         }
 
         return results
-    }
-
-    func streamFinalResponse(
-        messages: [ChatMessage],
-        model: String,
-        parameters: ModelParameters,
-        continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
-    ) async throws {
-        LogManager.debug("agentLoop streaming final response messages=\(messages.count)")
-        let stream = repository.streamMessage(messages: messages, model: model, parameters: parameters)
-
-        for try await chunk in stream {
-            guard !Task.isCancelled else { return }
-            switch chunk {
-            case .token(let text):
-                continuation.yield(.token(text))
-            case .reasoning(let text):
-                continuation.yield(.reasoning(text))
-            case .usage(let usage):
-                continuation.yield(.usage(usage))
-            case .image(let data):
-                continuation.yield(.image(data))
-            }
-        }
     }
 }

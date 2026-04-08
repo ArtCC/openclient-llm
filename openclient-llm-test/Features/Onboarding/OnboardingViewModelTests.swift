@@ -17,6 +17,7 @@ final class OnboardingViewModelTests: XCTestCase {
     private var mockCompleteOnboarding: MockCompleteOnboardingUseCase!
     private var mockSaveServerConfig: MockSaveServerConfigurationUseCase!
     private var mockTestConnection: MockTestServerConnectionUseCase!
+    private var mockCheckLiteLLMHealth: MockCheckLiteLLMHealthUseCase!
 
     // MARK: - Setup
 
@@ -26,10 +27,12 @@ final class OnboardingViewModelTests: XCTestCase {
         mockCompleteOnboarding = MockCompleteOnboardingUseCase()
         mockSaveServerConfig = MockSaveServerConfigurationUseCase()
         mockTestConnection = MockTestServerConnectionUseCase()
+        mockCheckLiteLLMHealth = MockCheckLiteLLMHealthUseCase()
         sut = OnboardingViewModel(
             completeOnboardingUseCase: mockCompleteOnboarding,
             saveServerConfigurationUseCase: mockSaveServerConfig,
-            testServerConnectionUseCase: mockTestConnection
+            testServerConnectionUseCase: mockTestConnection,
+            checkLiteLLMHealthUseCase: mockCheckLiteLLMHealth
         )
     }
 
@@ -38,6 +41,7 @@ final class OnboardingViewModelTests: XCTestCase {
         mockCompleteOnboarding = nil
         mockSaveServerConfig = nil
         mockTestConnection = nil
+        mockCheckLiteLLMHealth = nil
 
         try await super.tearDown()
     }

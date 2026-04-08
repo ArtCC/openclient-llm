@@ -16,7 +16,7 @@ extension ChatViewModel {
 
     func startRecording() {
         guard case .loaded(var loadedState) = state else { return }
-        audioRecorderManager.startRecording()
+        recordAudioUseCase.startRecording()
         loadedState.isRecording = true
         loadedState.recordingDuration = 0
         state = .loaded(loadedState)
@@ -26,7 +26,7 @@ extension ChatViewModel {
     func stopRecording() {
         durationTrackingTask?.cancel()
         durationTrackingTask = nil
-        let result = audioRecorderManager.stopRecording()
+        let result = recordAudioUseCase.stopRecording()
         guard case .loaded(var loadedState) = state else { return }
         loadedState.isRecording = false
         loadedState.recordingDuration = 0
@@ -38,7 +38,7 @@ extension ChatViewModel {
     func cancelRecording() {
         durationTrackingTask?.cancel()
         durationTrackingTask = nil
-        audioRecorderManager.cancelRecording()
+        recordAudioUseCase.cancelRecording()
         guard case .loaded(var loadedState) = state else { return }
         loadedState.isRecording = false
         loadedState.recordingDuration = 0
@@ -84,7 +84,7 @@ extension ChatViewModel {
             currentState.inputText = text
             currentState.isTranscribing = false
             state = .loaded(currentState)
-            HapticManager().lightImpact()
+            triggerHapticFeedbackUseCase.lightImpact()
             LogManager.success("performTranscription done chars=\(text.count)")
         } catch {
             LogManager.error("performTranscription failed: \(error)")
@@ -114,7 +114,7 @@ private extension ChatViewModel {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(500))
                 guard !Task.isCancelled, case .loaded(var loadedState) = state else { break }
-                loadedState.recordingDuration = audioRecorderManager.recordingDuration
+                loadedState.recordingDuration = recordAudioUseCase.recordingDuration
                 state = .loaded(loadedState)
             }
         }

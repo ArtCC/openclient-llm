@@ -18,7 +18,8 @@ struct WebSearchTool: ChatToolProtocol {
             type: "function",
             function: ToolFunctionDefinition(
                 name: "web_search",
-                description: "Search the web for current information, news, facts, or any topic the user asks about.",
+                description: "Search the web for current information, recent news, real-time data, " +
+                    "or facts that may have changed after your training cutoff.",
                 parameters: ToolParameters(
                     type: "object",
                     properties: [
@@ -41,17 +42,22 @@ struct WebSearchTool: ChatToolProtocol {
 
     // MARK: - Execute
 
-    func execute(arguments: String) async throws -> String {
+    func execute(arguments: String) async throws -> ToolExecutionResult {
         guard let data = arguments.data(using: .utf8),
               let json = try? JSONDecoder().decode([String: String].self, from: data),
               let query = json["query"], !query.isEmpty else {
-            return String(localized: "Error: missing or invalid 'query' argument.")
+            return ToolExecutionResult(
+                text: "No search query was provided. Please answer the user's question directly " +
+                    "using your existing knowledge without performing a web search."
+            )
         }
 
         let results = try await webSearchUseCase.execute(query: query)
 
         guard !results.isEmpty else {
-            return String(localized: "No results found for: \(query)")
+            return ToolExecutionResult(
+                text: String(localized: "No results found for: \(query)")
+            )
         }
 
         var output = ""
@@ -60,6 +66,10 @@ struct WebSearchTool: ChatToolProtocol {
             output += "   URL: \(result.url)\n"
             output += "   \(result.snippet)\n\n"
         }
-        return output.trimmingCharacters(in: .whitespacesAndNewlines)
+        output = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        output += "\n\n" + String(
+            localized: "Use these sources to answer the user's question. Cite sources using [Source Title](URL) format."
+        )
+        return ToolExecutionResult(text: output, searchResults: results)
     }
 }

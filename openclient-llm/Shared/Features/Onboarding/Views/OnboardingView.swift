@@ -234,27 +234,21 @@ private extension OnboardingView {
 
                     Text(String(localized: "Enter your LiteLLM proxy URL, the gateway to any AI model."))
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(2)
+                        .foregroundStyle(.secondary).multilineTextAlignment(.center).lineSpacing(2)
                 }
             }
 
             VStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
                     Label(String(localized: "Server URL"), systemImage: "link")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.secondary)
+                        .font(.caption).fontWeight(.medium).foregroundStyle(.secondary)
 
                     TextField(
                         "http://localhost:4000",
                         text: $serverURL
                     )
                     .textFieldStyle(.roundedBorder)
-                    .textSelection(.enabled)
-                    .textContentType(.URL)
-                    .autocorrectionDisabled()
+                    .textSelection(.enabled).textContentType(.URL).autocorrectionDisabled()
                     #if os(iOS)
                     .textInputAutocapitalization(.never)
                     .keyboardType(.URL)
@@ -268,7 +262,19 @@ private extension OnboardingView {
             }
 
             connectionSection(loadedState)
+            if loadedState.showLiteLLMHint {
+                liteLLMHintView.transition(.scale(scale: 0.95).combined(with: .opacity))
+            }
         }
+    }
+
+    var liteLLMHintView: some View {
+        let hint = String(localized: "Optimised for LiteLLM. Any OpenAI-compatible server also works.")
+        return Label(hint, systemImage: "info.circle")
+            .font(.caption)
+            .foregroundStyle(Color.appAccent)
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .background(Color.appAccent.opacity(0.08), in: .rect(cornerRadius: 12))
     }
 
     var apiKeyField: some View {

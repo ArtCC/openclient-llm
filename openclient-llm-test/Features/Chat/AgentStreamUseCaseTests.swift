@@ -38,7 +38,6 @@ final class AgentStreamUseCaseTests: XCTestCase {
     func test_execute_stopOnFirstRound_emitsTokenAndCompletes() async throws {
         // Given
         mockRepository.agentCompletionResult = .success(makeStopResponse(content: "Hello world"))
-        mockRepository.streamChunks = [.token("Hello"), .token(" world")]
 
         // When
         var tokens: [String] = []
@@ -52,8 +51,8 @@ final class AgentStreamUseCaseTests: XCTestCase {
             if case .token(let text) = event { tokens.append(text) }
         }
 
-        // Then
-        XCTAssertEqual(tokens, ["Hello", " world"])
+        // Then — content emitted directly as a single token (no second request)
+        XCTAssertEqual(tokens, ["Hello world"])
     }
 
     // MARK: - Tests — Tool call round
@@ -96,6 +95,76 @@ final class AgentStreamUseCaseTests: XCTestCase {
         XCTAssertEqual(seqRepo.callIndex, 2)
     }
 
+    // MARK: - Tests — Non-standard finish_reason (regression for {} bug)
+
+    func test_execute_plainTextCurlyBraces_retriesWithoutToolsAndEmitsFinalAnswer() async throws {
+        // Regression: qwen3:14b / some Ollama models emit content="{}" as plain text
+        // with no tool_calls when tools are present in the request. Before the fix
+        // this "{}" was emitted directly as a token to the UI.
+        // After the fix: the loop detects content=="{}" + no tool_calls and retries
+        // without tools, which forces the model to give a natural response.
+        let firstResponse = makeStopResponse(content: "{}")
+        let secondResponse = makeStopResponse(content: "Hola! Estoy bien, gracias.")
+        let seqRepo = makeSequentialRepo(responses: [firstResponse, secondResponse])
+        let seqSut = AgentStreamUseCase(repository: seqRepo)
+
+        var tokens: [String] = []
+        let stream = seqSut.execute(
+            messages: [ChatMessage(role: .user, content: "Hola! Que tal?")],
+            model: "ollama/qwen3:14b",
+            parameters: .default,
+            toolRegistry: ToolRegistry(tools: [])
+        )
+        for try await event in stream {
+            if case .token(let text) = event { tokens.append(text) }
+        }
+
+        XCTAssertFalse(tokens.contains("{}"), "Raw '{}' must never reach the UI")
+        XCTAssertEqual(tokens, ["Hola! Estoy bien, gracias."])
+        XCTAssertEqual(seqRepo.callIndex, 2, "Should have made a second request without tools")
+    }
+
+    func test_execute_toolCallsWithStopFinishReason_executesToolsInsteadOfEmittingContent() async throws {
+        // Regression: some models (Ollama/Llama/Mistral/Qwen) respond with
+        // finish_reason "stop" even though tool_calls is present. Before the fix
+        // the agent loop would emit the content (often "{}") instead of running
+        // the tool, causing the user to see a bare "{}" response.
+        let toolCall = ToolCall(
+            id: "call_1",
+            type: "function",
+            function: ToolCallFunction(name: "unknown_tool", arguments: "{}")
+        )
+        let firstResponse = makeToolCallResponseWithFinishReason(
+            toolCalls: [toolCall],
+            finishReason: "stop",    // <- non-standard: "stop" instead of "tool_calls"
+            content: "{}"           // <- the bare JSON that used to leak to the UI
+        )
+        let secondResponse = makeStopResponse(content: "Final grounded answer")
+        let seqRepo = makeSequentialRepo(responses: [firstResponse, secondResponse])
+        let seqSut = AgentStreamUseCase(repository: seqRepo)
+
+        var toolStarted = false
+        var tokens: [String] = []
+        let stream = seqSut.execute(
+            messages: [ChatMessage(role: .user, content: "Search something")],
+            model: "ollama/llama3",
+            parameters: .default,
+            toolRegistry: ToolRegistry(tools: [])
+        )
+        for try await event in stream {
+            switch event {
+            case .toolCallStarted: toolStarted = true
+            case .token(let text): tokens.append(text)
+            default: break
+            }
+        }
+
+        XCTAssertTrue(toolStarted, "Tool should have been executed despite finish_reason='stop'")
+        XCTAssertFalse(tokens.contains("{}"), "Raw '{}' must never reach the UI")
+        XCTAssertEqual(tokens, ["Final grounded answer"])
+        XCTAssertEqual(seqRepo.callIndex, 2)
+    }
+
     // MARK: - Tests — Max iterations
 
     func test_execute_maxIterationsExceeded_stopsLoop() async throws {
@@ -131,7 +200,7 @@ final class AgentStreamUseCaseTests: XCTestCase {
                 messages: [ChatMessage],
                 model: String,
                 parameters: ModelParameters,
-                tools: [ToolDefinition]
+                tools: [ToolDefinition]?
             ) async throws -> ChatCompletionResponse {
                 callCount += 1
                 return toolCallResponse
@@ -206,6 +275,21 @@ private extension AgentStreamUseCaseTests {
         )
     }
 
+    func makeToolCallResponseWithFinishReason(
+        toolCalls: [ToolCall],
+        finishReason: String,
+        content: String? = nil
+    ) -> ChatCompletionResponse {
+        let message = ChatCompletionResponse.Message(
+            role: "assistant", content: content, images: nil, toolCalls: toolCalls
+        )
+        return ChatCompletionResponse(
+            id: "resp-tool-nonstandard",
+            choices: [ChatCompletionResponse.Choice(message: message, finishReason: finishReason)],
+            usage: nil
+        )
+    }
+
     func makeSequentialRepo(responses: [ChatCompletionResponse]) -> SequentialMockRepo {
         SequentialMockRepo(responses: responses)
     }
@@ -243,7 +327,7 @@ final class SequentialMockRepo: ChatRepositoryProtocol, @unchecked Sendable {
         messages: [ChatMessage],
         model: String,
         parameters: ModelParameters,
-        tools: [ToolDefinition]
+        tools: [ToolDefinition]?
     ) async throws -> ChatCompletionResponse {
         let response = responses[callIndex]
         callIndex += 1

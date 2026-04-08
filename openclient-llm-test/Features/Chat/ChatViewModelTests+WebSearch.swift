@@ -54,19 +54,10 @@ extension ChatViewModelTests {
         XCTAssertFalse(loadedState.isWebSearchEnabled)
     }
 
-    func test_send_sendTapped_withWebSearchEnabled_callsWebSearch() async throws {
-        // Given
-        let searchResults = [
-            LiteLLMSearchResult(
-                title: "Swift 6",
-                url: "https://swift.org",
-                snippet: "Swift 6 introduces strict concurrency.",
-                date: nil
-            )
-        ]
-        mockWebSearch.result = .success(searchResults)
+    func test_send_sendTapped_withWebSearchEnabled_noCapabilities_usesRegularStreaming() async throws {
+        // Given — default model has no capabilities, so web search enabled falls through to regular streaming
         mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
-        mockStreamMessage.chunks = [.token("Answer about Swift 6.")]
+        mockStreamMessage.chunks = [.token("Regular answer.")]
 
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
@@ -76,9 +67,8 @@ extension ChatViewModelTests {
         sut.send(.sendTapped)
         try await Task.sleep(for: .milliseconds(300))
 
-        // Then
-        XCTAssertEqual(mockWebSearch.executeCallCount, 1)
-        XCTAssertEqual(mockWebSearch.lastQuery, "Tell me about Swift 6")
+        // Then — web search use case NOT called (model has no capabilities)
+        XCTAssertEqual(mockWebSearch.executeCallCount, 0)
 
         guard case .loaded(let loadedState) = sut.state else {
             XCTFail("Expected loaded state")
@@ -86,8 +76,7 @@ extension ChatViewModelTests {
         }
         let assistantMessage = loadedState.messages.last
         XCTAssertEqual(assistantMessage?.role, .assistant)
-        XCTAssertEqual(assistantMessage?.webSearchResults?.count, 1)
-        XCTAssertEqual(assistantMessage?.webSearchResults?.first?.title, "Swift 6")
+        XCTAssertEqual(assistantMessage?.content, "Regular answer.")
     }
 
     func test_send_sendTapped_withWebSearchDisabled_doesNotCallWebSearch() async throws {
@@ -114,57 +103,41 @@ extension ChatViewModelTests {
         XCTAssertNil(assistantMessage?.webSearchResults)
     }
 
-    func test_send_sendTapped_withWebSearchFailing_fallsBackGracefully() async throws {
-        // Given
-        mockWebSearch.result = .failure(URLError(.notConnectedToInternet))
-        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
-        mockStreamMessage.chunks = [.token("Fallback answer.")]
+    func test_send_sendTapped_withWebSearchEnabled_functionCallingModel_usesAgent() async throws {
+        // Given — model WITH functionCalling → agent mode when web search ON
+        let mockAgent = MockAgentStreamUseCase()
+        mockAgent.events = [.token("Agent answer.")]
+        let modelWithFC = LLMModel(id: "gpt-4", capabilities: [.functionCalling])
+        mockFetchModels.result = .success([modelWithFC])
 
-        sut.send(.viewAppeared)
+        let sutWithAgent = ChatViewModel(
+            fetchModelsUseCase: mockFetchModels,
+            streamMessageUseCase: mockStreamMessage,
+            agentStreamUseCase: mockAgent,
+            webSearchUseCase: mockWebSearch,
+            saveConversationUseCase: mockSaveConversation,
+            exportConversationUseCase: mockExportConversation,
+            branchConversationUseCase: mockBranchConversation,
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
+        )
+
+        sutWithAgent.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
-        sut.send(.webSearchToggled)
-        sut.send(.inputChanged("What is the weather?"))
-        sut.send(.sendTapped)
+        sutWithAgent.send(.webSearchToggled)
+        sutWithAgent.send(.inputChanged("What is the weather?"))
+        sutWithAgent.send(.sendTapped)
         try await Task.sleep(for: .milliseconds(300))
 
-        // Then: streaming proceeds despite search failure
-        guard case .loaded(let loadedState) = sut.state else {
+        // Then — agent use case used, webSearch use case NOT called directly
+        guard case .loaded(let loadedState) = sutWithAgent.state else {
             XCTFail("Expected loaded state")
             return
         }
         let assistantMessage = loadedState.messages.last
-        XCTAssertEqual(assistantMessage?.content, "Fallback answer.")
-        XCTAssertNil(assistantMessage?.webSearchResults)
+        XCTAssertEqual(assistantMessage?.content, "Agent answer.")
+        XCTAssertEqual(mockWebSearch.executeCallCount, 0)
         XCTAssertFalse(loadedState.isStreaming)
-    }
-
-    func test_buildWebSearchContext_returnsMarkdownWithTopFiveResults() {
-        // Given
-        let results = (1...7).map {
-            LiteLLMSearchResult(
-                title: "Result \($0)",
-                url: "https://example.com/\($0)",
-                snippet: "Snippet \($0)",
-                date: nil
-            )
-        }
-
-        // When
-        let context = sut.buildWebSearchContext(results: results)
-
-        // Then — only top 5 results should appear
-        XCTAssertTrue(context.contains("Result 1"))
-        XCTAssertTrue(context.contains("Result 5"))
-        XCTAssertFalse(context.contains("Result 6"))
-        XCTAssertFalse(context.contains("Result 7"))
-    }
-
-    func test_buildWebSearchContext_withEmptyResults_returnsEmptyString() {
-        // When
-        let context = sut.buildWebSearchContext(results: [])
-
-        // Then
-        XCTAssertEqual(context, "")
     }
 }

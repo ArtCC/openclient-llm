@@ -11,65 +11,66 @@ import SwiftUI
 struct HomeView: View {
     // MARK: - Properties
 
+    @State private var viewModel = HomeViewModel()
     @State private var selectedConversation: Conversation?
-    @State private var pendingSpotlightConversationId: UUID?
 
-    #if os(macOS)
+#if os(macOS)
     @State private var sidebarDestination: SidebarDestination = .chats
-    #endif
+#endif
 
-    #if os(iOS)
+#if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab: AppTab = .chats
-    @State private var shortcutManager = ShortcutManager.shared
-    #endif
+#endif
 
     // MARK: - View
 
     var body: some View {
         Group {
-            #if os(macOS)
+#if os(macOS)
             macOSLayout
-            #else
+#else
             iOSLayout
-            #endif
+#endif
         }
-        .onContinueUserActivity(SpotlightManager.activityType) { activity in
-            guard let idString = activity.userInfo?[SpotlightManager.activityIdentifierKey] as? String,
+        .onContinueUserActivity(SpotlightConstants.activityType) { activity in
+            guard let idString = activity.userInfo?[SpotlightConstants.activityIdentifierKey] as? String,
                   let id = UUID(uuidString: idString) else { return }
-            pendingSpotlightConversationId = id
+            viewModel.send(.spotlightConversationRequested(id))
         }
-        .onChange(of: pendingSpotlightConversationId) { _, id in
-            guard let id else { return }
-            Task { @MainActor in
-                guard let conversations = try? LoadConversationsUseCase().execute(),
-                      let conversation = conversations.first(where: { $0.id == id }) else {
-                    pendingSpotlightConversationId = nil
-                    return
-                }
-                #if os(iOS)
-                selectedTab = .chats
-                #elseif os(macOS)
-                sidebarDestination = .chats
-                #endif
-                selectedConversation = conversation
-                pendingSpotlightConversationId = nil
-            }
+        .task {
+            viewModel.send(.viewAppeared)
         }
-        #if os(iOS)
-        .onChange(of: shortcutManager.pendingAction) { _, action in
+        .onChange(of: viewModel.pendingConversation) { _, conversation in
+            guard let conversation else { return }
+#if os(iOS)
+            selectedTab = .chats
+#elseif os(macOS)
+            sidebarDestination = .chats
+#endif
+            selectedConversation = conversation
+            viewModel.send(.pendingConversationConsumed)
+        }
+#if os(iOS)
+        .task {
+            guard let action = viewModel.pendingShortcutAction else { return }
+            try? await Task.sleep(for: .milliseconds(300))
+            handleShortcutAction(action)
+            viewModel.send(.shortcutActionConsumed)
+        }
+        .onChange(of: viewModel.pendingShortcutAction) { _, action in
             guard let action else { return }
             handleShortcutAction(action)
-            shortcutManager.pendingAction = nil
+            viewModel.send(.shortcutActionConsumed)
         }
-        #endif
+#endif
     }
 }
 
 // MARK: - Private
 
 private extension HomeView {
-    #if os(iOS)
+#if os(iOS)
     var iOSLayout: some View {
         TabView(selection: $selectedTab) {
             Tab(value: AppTab.chats) {
@@ -173,15 +174,17 @@ private extension HomeView {
         switch action {
         case .newChat:
             selectedTab = .chats
-            let modelId = SettingsManager().getSelectedModelId() ?? ""
-            selectedConversation = Conversation(modelId: modelId)
+            Task {
+                try? await Task.sleep(for: .milliseconds(350))
+                viewModel.send(.newChatShortcutTriggered)
+            }
         case .search:
             selectedTab = .search
         }
     }
-    #endif
+#endif
 
-    #if os(macOS)
+#if os(macOS)
     enum SidebarDestination: Hashable {
         case chats
         case models
@@ -241,7 +244,7 @@ private extension HomeView {
             SettingsView()
         }
     }
-    #endif
+#endif
 }
 
 // MARK: - Hashable

@@ -6,10 +6,10 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-iOS%2026+%20|%20iPadOS%2026+%20|%20macOS%2026+-blue?style=flat-square" alt="Platform" />
+    <img src="https://img.shields.io/badge/Xcode-26+-blue?style=flat-square&logo=xcode" alt="Xcode" />
   <img src="https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift" alt="Swift" />
   <img src="https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square" alt="License" />
-  <img src="https://img.shields.io/badge/Xcode-26+-blue?style=flat-square&logo=xcode" alt="Xcode" />
 </p>
 
 ## Description
@@ -17,6 +17,8 @@
 Native Apple client for OpenAI-compatible LLM servers. Works out of the box with [LiteLLM](https://github.com/BerriAI/litellm) — a self-hosted proxy that connects to any LLM provider (Ollama, OpenAI, Anthropic, Groq, and more) — and also directly with [Ollama](https://ollama.com) using its built-in OpenAI-compatible endpoint (`/v1`). Just point the app at your server and start chatting.
 
 🌐 [Project website](https://www.arturocarreterocalvo.com/openclient-llm/)
+
+[<img src="assets/app_store_black.svg" alt="Download on the App Store" height="65">](https://apps.apple.com/us/app/openclient-private-ai-chat/id6761379499)
 
 ## Technologies
 
@@ -30,6 +32,8 @@ Native Apple client for OpenAI-compatible LLM servers. Works out of the box with
 | Keychain | Secure storage |
 | SwiftLint | Code linting |
 | SF Symbols | Iconography |
+
+This project was developed entirely with Xcode, Visual Studio Code and GitHub Copilot (with Claude Opus / Sonnet 4.6).
 
 ## Architecture
 
@@ -80,18 +84,11 @@ You can also suggest features and report bugs directly from within the app — g
 
 **Arturo Carretero Calvo**
 
-- [GitHub](https://github.com/ArtCC)
+- [GitHub Profile](https://github.com/ArtCC)
 
----
-
-<p align="left">
-  This project was developed entirely with <strong>Claude Opus 4.6</strong>, <strong>Visual Studio Code</strong> and <strong>Xcode</strong>.
-</p>
-
----
+## Your AI. Your server. Your rules
 
 <p align="left">
-  <strong>Your AI. Your server. Your rules.</strong><br/><br/>
   OpenClient is built on the belief that generative AI should be something you control — not something that controls your data.<br/>
   Run local models entirely on your own hardware, or route cloud providers through your own self-hosted proxy.<br/>
   Either way, you decide what gets sent where — no vendor lock-in, no platform middleman, no data you didn't choose to share.<br/><br/>

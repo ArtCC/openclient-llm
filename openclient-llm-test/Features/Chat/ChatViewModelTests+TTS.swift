@@ -27,8 +27,8 @@ extension ChatViewModelTests {
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
             synthesizeSpeechUseCase: mockSynthesize,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         sut.send(.viewAppeared)
@@ -58,8 +58,8 @@ extension ChatViewModelTests {
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
             synthesizeSpeechUseCase: mockSynthesize,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         sut.send(.viewAppeared)
@@ -92,8 +92,8 @@ extension ChatViewModelTests {
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
             synthesizeSpeechUseCase: mockSynthesize,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         sut.send(.viewAppeared)
@@ -123,8 +123,8 @@ extension ChatViewModelTests {
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
             synthesizeSpeechUseCase: mockSynthesize,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         sut.send(.viewAppeared)
@@ -160,8 +160,8 @@ extension ChatViewModelTests {
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
             synthesizeSpeechUseCase: mockSynthesize,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         sut.send(.viewAppeared)
@@ -191,15 +191,15 @@ extension ChatViewModelTests {
             LLMModel(id: "gpt-4"),
             LLMModel(id: "tts-1", mode: .audioSpeech)
         ])
-        mockSettingsManager.ttsVoices["tts-1"] = "nova"
+        mockGetChatPreferences.ttsVoice = "nova"
 
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
             synthesizeSpeechUseCase: mockSynthesize,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         sut.send(.viewAppeared)
@@ -222,7 +222,10 @@ extension ChatViewModelTests {
             LLMModel(id: "tts-1", mode: .audioSpeech),
             LLMModel(id: "tts-2", mode: .audioSpeech)
         ])
-        mockSettingsManager.selectedTTSModelId = "tts-2"
+        mockResolveAudioModelIds.result = AudioModelIds(
+            ttsModelId: "tts-2",
+            transcriptionModelId: LLMModel.appleSpeechRecognition.id
+        )
 
         // When
         sut.send(.viewAppeared)
@@ -242,7 +245,10 @@ extension ChatViewModelTests {
             LLMModel(id: "gpt-4"),
             LLMModel(id: "tts-1", mode: .audioSpeech)
         ])
-        mockSettingsManager.selectedTTSModelId = "tts-nonexistent"
+        mockResolveAudioModelIds.result = AudioModelIds(
+            ttsModelId: "tts-1",
+            transcriptionModelId: LLMModel.appleSpeechRecognition.id
+        )
 
         // When
         sut.send(.viewAppeared)

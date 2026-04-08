@@ -75,10 +75,15 @@ openclient-llm/                              # iOS target
 │   │   │       ├── ConversationTagsView.swift
 │   │   │       ├── ImagePreviewView.swift
 │   │   │       ├── MessageBubbleView.swift
-│   │   │       └── SearchConversationsView.swift
+│   │   │       ├── SearchConversationsView.swift
+│   │   │       └── WebSearchSourcesView.swift
 │   │   ├── Home/
+│   │   │   ├── UseCases/
+│   │   │   │   └── GetSelectedModelUseCase.swift  # Returns selected model ID via SettingsManagerProtocol
+│   │   │   ├── ViewModels/
+│   │   │   │   └── HomeViewModel.swift            # Event/State: newChatShortcutTriggered, spotlightConversationRequested
 │   │   │   └── Views/
-│   │   │       └── HomeView.swift             # iOS TabView (AppTab enum + symbol animations) + macOS NavigationSplitView
+│   │   │       └── HomeView.swift                 # iOS TabView (AppTab enum + symbol animations) + macOS NavigationSplitView
 │   │   ├── Launch/
 │   │   │   ├── UseCases/
 │   │   │   │   ├── CheckOnboardingUseCase.swift
@@ -143,16 +148,24 @@ openclient-llm/                              # iOS target
 │   │       └── UseCases/
 │   │           └── SynthesizeSpeechUseCase.swift
 │   ├── Core/
+│   │   ├── Extensions/
+│   │   │   ├── Foundation/
+│   │   │   │   └── Notification.Name.swift
+│   │   │   └── SwiftUI/
+│   │   │       ├── Color.swift
+│   │   │       └── Font.swift
 │   │   ├── Managers/
 │   │   │   ├── AppleSpeechRecognitionManager.swift
 │   │   │   ├── AudioPlayerManager.swift
 │   │   │   ├── AudioRecorderManager.swift
 │   │   │   ├── CloudSyncManager.swift
 │   │   │   ├── ConversationStartersManager.swift
-│   │   │   ├── HapticsManager.swift
+│   │   │   ├── HapticManager.swift
 │   │   │   ├── KeychainManager.swift
 │   │   │   ├── LogManager.swift
 │   │   │   ├── SettingsManager.swift
+│   │   │   ├── ShortcutManager.swift
+│   │   │   ├── SpotlightManager.swift
 │   │   │   ├── UserProfileManager.swift
 │   │   │   └── VoticeManager.swift
 │   │   ├── Networking/
@@ -166,10 +179,15 @@ openclient-llm/                              # iOS target
 │   │   │       ├── ChatCompletionStreamResponse.swift
 │   │   │       ├── ModelInfoResponse.swift
 │   │   │       ├── ModelsResponse.swift
-│   │   │       └── TextToSpeechRequest.swift
+│   │   │       ├── OllamaShowResponse.swift
+│   │   │       ├── SearchModels.swift
+│   │   │       ├── TextToSpeechRequest.swift
+│   │   │       └── ToolModels.swift
 │   │   ├── Utils/
 │   │   │   ├── Constants.swift
-│   │   │   └── MarkdownParser.swift
+│   │   │   ├── MarkdownParser.swift
+│   │   │   ├── PoppinsFont.swift
+│   │   │   └── SpotlightConstants.swift            # activityType + activityIdentifierKey (CSSearchableItem constants)
 │   │   └── Views/
 │   │       ├── FlowLayout.swift
 │   │       └── WebContentView.swift
@@ -198,6 +216,8 @@ openclient-llm-test/                         # Unit tests
 │       ├── SettingsManagerSTTTests.swift
 │       └── SettingsManagerTTSTests.swift
 ├── Features/
+│   ├── Home/
+│   │   └── HomeViewModelTests.swift
 │   ├── Chat/
 │   │   ├── AgentStreamUseCaseTests.swift
 │   │   ├── BranchConversationUseCaseTests.swift
@@ -248,6 +268,7 @@ openclient-llm-test/                         # Unit tests
     ├── MockAudioRecorderManager.swift
     ├── MockBranchConversationUseCase.swift
     ├── MockChatRepository.swift
+    ├── MockCheckLiteLLMHealthUseCase.swift
     ├── MockCheckOnboardingUseCase.swift
     ├── MockCloudSyncManager.swift
     ├── MockCompleteOnboardingUseCase.swift
@@ -257,6 +278,7 @@ openclient-llm-test/                         # Unit tests
     ├── MockDeletePromptTemplateUseCase.swift
     ├── MockExportConversationUseCase.swift
     ├── MockFetchModelsUseCase.swift
+    ├── MockGetSelectedModelUseCase.swift
     ├── MockKeychainManager.swift
     ├── MockLoadConversationsUseCase.swift
     ├── MockLoadPromptTemplatesUseCase.swift

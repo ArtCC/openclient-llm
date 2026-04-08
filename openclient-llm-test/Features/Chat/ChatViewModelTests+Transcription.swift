@@ -15,16 +15,16 @@ import XCTest
 extension ChatViewModelTests {
     func test_send_startRecordingTapped_setsIsRecording() async throws {
         // Given
-        let mockRecorder = MockAudioRecorderManager()
+        let mockRecordAudio = MockRecordAudioUseCase()
         mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
 
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters,
-            audioRecorderManager: mockRecorder
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters,
+            recordAudioUseCase: mockRecordAudio
         )
 
         sut.send(.viewAppeared)
@@ -39,21 +39,21 @@ extension ChatViewModelTests {
             return
         }
         XCTAssertTrue(loadedState.isRecording)
-        XCTAssertTrue(mockRecorder.startRecordingCalled)
+        XCTAssertTrue(mockRecordAudio.startRecordingCalled)
     }
 
     func test_send_cancelRecordingTapped_clearsRecording() async throws {
         // Given
-        let mockRecorder = MockAudioRecorderManager()
+        let mockRecordAudio = MockRecordAudioUseCase()
         mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
 
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters,
-            audioRecorderManager: mockRecorder
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters,
+            recordAudioUseCase: mockRecordAudio
         )
 
         sut.send(.viewAppeared)
@@ -70,13 +70,13 @@ extension ChatViewModelTests {
             return
         }
         XCTAssertFalse(loadedState.isRecording)
-        XCTAssertTrue(mockRecorder.cancelRecordingCalled)
+        XCTAssertTrue(mockRecordAudio.cancelRecordingCalled)
     }
 
     func test_send_stopRecordingTapped_triggersTranscription() async throws {
         // Given
-        let mockRecorder = MockAudioRecorderManager()
-        mockRecorder.stopRecordingResult = (Data([1, 2, 3]), 2.0)
+        let mockRecordAudio = MockRecordAudioUseCase()
+        mockRecordAudio.stopRecordingResult = (Data([1, 2, 3]), 2.0)
 
         let mockTranscribe = MockTranscribeAudioUseCase()
         mockTranscribe.result = .success("Hello world")
@@ -90,9 +90,9 @@ extension ChatViewModelTests {
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
             transcribeAudioUseCase: mockTranscribe,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters,
-            audioRecorderManager: mockRecorder
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters,
+            recordAudioUseCase: mockRecordAudio
         )
 
         sut.send(.viewAppeared)
@@ -105,7 +105,7 @@ extension ChatViewModelTests {
         try await Task.sleep(for: .milliseconds(200))
 
         // Then
-        XCTAssertTrue(mockRecorder.stopRecordingCalled)
+        XCTAssertTrue(mockRecordAudio.stopRecordingCalled)
         XCTAssertTrue(mockTranscribe.executeCalled)
         guard case .loaded(let loadedState) = sut.state else {
             XCTFail("Expected loaded state")
@@ -117,8 +117,8 @@ extension ChatViewModelTests {
 
     func test_send_stopRecordingTapped_withNoData_doesNotTranscribe() async throws {
         // Given
-        let mockRecorder = MockAudioRecorderManager()
-        mockRecorder.stopRecordingResult = (nil, 0)
+        let mockRecordAudio = MockRecordAudioUseCase()
+        mockRecordAudio.stopRecordingResult = (nil, 0)
 
         let mockTranscribe = MockTranscribeAudioUseCase()
         mockTranscribe.result = .success("Hello world")
@@ -129,9 +129,9 @@ extension ChatViewModelTests {
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
             transcribeAudioUseCase: mockTranscribe,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters,
-            audioRecorderManager: mockRecorder
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters,
+            recordAudioUseCase: mockRecordAudio
         )
 
         sut.send(.viewAppeared)
@@ -147,8 +147,8 @@ extension ChatViewModelTests {
 
     func test_send_stopRecordingTapped_withError_setsErrorMessage() async throws {
         // Given
-        let mockRecorder = MockAudioRecorderManager()
-        mockRecorder.stopRecordingResult = (Data([1, 2, 3]), 2.0)
+        let mockRecordAudio = MockRecordAudioUseCase()
+        mockRecordAudio.stopRecordingResult = (Data([1, 2, 3]), 2.0)
 
         let mockTranscribe = MockTranscribeAudioUseCase()
         mockTranscribe.result = .failure(APIError.serverUnreachable)
@@ -162,9 +162,9 @@ extension ChatViewModelTests {
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
             transcribeAudioUseCase: mockTranscribe,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters,
-            audioRecorderManager: mockRecorder
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters,
+            recordAudioUseCase: mockRecordAudio
         )
 
         sut.send(.viewAppeared)
@@ -194,8 +194,8 @@ extension ChatViewModelTests {
             fetchModelsUseCase: mockFetchModels,
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         // When

@@ -3,156 +3,65 @@ description: "Use when implementing web browsing or web search capabilities, int
 applyTo: "**/*.swift"
 ---
 
-# Web Search — Integration via LiteLLM Search API
+# Web Search — Integration via LiteLLM
 
 ## References
 
-- LiteLLM Search Overview: https://docs.litellm.ai/docs/search/
-- LiteLLM ≥ v1.78.7 required for the `/v1/search` endpoint
+- LiteLLM Search API (`/v1/search`): https://docs.litellm.ai/docs/search/
+- LiteLLM Function Calling: https://docs.litellm.ai/docs/completion/function_call
 
 ## Overview
 
-Web search is implemented **exclusively through the LiteLLM Search API**. The app never calls any search provider API directly and never uses function calling / tool interception for search. All search requests go to the user's LiteLLM proxy via `POST /v1/search/{search_tool_name}`. LiteLLM handles provider selection, API keys, and result fetching transparently on the server side.
+Web search uses a **single mechanism**: an **agent loop** with a tool named `web_search`. The app never calls any search provider API directly — LiteLLM handles provider selection, API keys, and result fetching on the server side via its `/v1/search` endpoint.
 
 - **No search API keys in the app** — keys live in LiteLLM's server environment
 - **No direct calls to any search provider** (Brave, Perplexity, Tavily, etc.)
-- **No function calling / `litellm_web_search` tool** — the dedicated `/v1/search` endpoint is used instead
-- Works with **any model** — no function calling support required
+- **No manual context injection** — results are never fetched client-side and injected as system messages
+- **No `web_search_options`** — the app never sends native web search parameters in the request body
 - The LiteLLM base URL is the same one already configured by the user for chat
 
-### Flow
+### Web Search Flow Table
 
-```
-User taps 🌐  →  POST /v1/search/{tool_name}  →  inject results as context  →  POST /chat/completions  →  response with citations
-```
+| Condition | Globe Color | Behavior |
+|-----------|------------|----------|
+| Web search OFF | Grey | No search — regular streaming |
+| Web search ON + `.functionCalling` | Accent | Agent loop with tool `web_search` → executed via `/v1/search` endpoint |
+| Web search ON + no `.functionCalling` | Red | **No search. Ignored.** Falls through to regular streaming |
 
----
+### How It Works (Agent Loop with `/v1/search`)
 
-## LiteLLM Search Endpoint
+For models with function calling capability. The app registers a tool named `web_search` and runs an **agentic loop**:
 
-```
-POST {litellm_base_url}/v1/search/{search_tool_name}
-Authorization: Bearer {litellm_api_key}
-Content-Type: application/json
-```
+1. App sends request with `tools: [web_search]` + `tool_choice: "auto"`
+2. Model responds with `tool_calls: [{"function": {"name": "web_search", ...}}]`
+3. App's `AgentStreamUseCase` → `WebSearchTool.execute()` → calls `POST /v1/search/{search_tool_name}` (e.g., `/v1/search/brave-search`)
+4. Search results sent back to model as tool result
+5. Model generates final grounded response (second request **omits** `tools` so the model replies naturally)
 
-**Request body**:
+This works with **any model from any provider** (Ollama, OpenAI, Anthropic, Groq, etc.) as long as the model returns structured `tool_calls` (not text-plain JSON). The `/v1/search` endpoint is completely model-agnostic.
 
-```json
-{
-  "query": "latest Swift 6 features",
-  "max_results": 10,
-  "max_tokens_per_page": 1024,
-  "country": "US"
-}
-```
+**Model detection**: `model_info.supports_function_calling == true` → `.functionCalling` capability.
 
-**Response** (Perplexity-compatible format):
+**Known limitation**: Some small/specialized models (e.g., `qwen2.5-coder`) may emit tool calls as plain text in `content` instead of structured `tool_calls` in the response. In this case the agent loop cannot intercept them and the raw JSON is displayed as the assistant message.
 
-```json
-{
-  "object": "search",
-  "results": [
-    {
-      "title": "What's new in Swift 6",
-      "url": "https://www.swift.org/blog/swift-6/",
-      "snippet": "Swift 6 introduces complete concurrency checking...",
-      "date": "2024-06-10"
-    }
-  ]
-}
-```
+### Why Not Native `web_search_options`?
 
-### Request Parameters
+Native web search (`web_search_options` in the request body) was intentionally removed because:
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `query` | String | Yes | Search query |
-| `max_results` | Int | No | Results to return (1–20, default: 10) |
-| `search_domain_filter` | [String] | No | Restrict to specific domains |
-| `country` | String | No | Country code filter (e.g., `"US"`, `"ES"`) |
-| `max_tokens_per_page` | Int | No | Max tokens per result page (default: 1024) |
+- **OpenAI** only supports it for search-dedicated models (`gpt-5-search-api`, `gpt-4o-search-preview`); regular OpenAI models reject it with HTTP 400
+- **Provider-specific routing** creates fragile code paths that are hard to test and maintain
+- The **agent loop approach works universally** across all providers and models with function calling
+- One single method = simpler codebase, fewer bugs, consistent behavior
 
-### Response Fields
+### Tool Name: `web_search` (Not `litellm_web_search`)
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `object` | String | Always `"search"` |
-| `results` | Array | List of search results |
-| `results[].title` | String | Title of the result |
-| `results[].url` | String | URL of the result |
-| `results[].snippet` | String | Text snippet |
-| `results[].date` | String? | Optional publication date |
-
----
-
-## Implementation
-
-### Models
-
-```swift
-// Shared/Core/Networking/SearchModels.swift
-
-struct LiteLLMSearchRequest: Codable, Sendable {
-    let query: String
-    let maxResults: Int?          // optional, API default: 10 (range 1–20)
-    let maxTokensPerPage: Int?    // optional, API default: 1024
-    let country: String?
-    let searchDomainFilter: [String]?
-}
-
-struct LiteLLMSearchResponse: Codable, Sendable {
-    let object: String
-    let results: [LiteLLMSearchResult]
-}
-
-struct LiteLLMSearchResult: Codable, Sendable {
-    let title: String
-    let url: String
-    let snippet: String
-    let date: String?
-}
-```
-
-### UseCase
-
-```swift
-// Shared/Features/Chat/UseCases/WebSearchUseCase.swift
-
-protocol WebSearchUseCaseProtocol: Sendable {
-    func search(query: String) async throws -> [LiteLLMSearchResult]
-}
-```
-
-- Calls `APIClient` using the LiteLLM base URL already configured
-- The search tool name is read from `SettingsManager` (e.g. `"brave-search"`)
-- Uses the same `Authorization: Bearer` header as chat requests
-- **Never** constructs URLs to external search providers
-
-### Context Injection
-
-Inject results as a system message prepended before the user message:
-
-```
-Based on the following web search results for "{query}":
-
-1. [{title}]({url})
-   {snippet}
-
-2. [{title}]({url})
-   {snippet}
-
-Use these sources to answer the user's question. Cite sources using [Source Title](URL) format.
-```
-
-- Limit to top 5 results to manage token usage
-- Include source URLs for citation
+The app uses `web_search` as the tool name (not `litellm_web_search`) to **avoid triggering LiteLLM's server-side web search interception**. The interception feature may cause unexpected behavior with some providers like Ollama.
 
 ---
 
 ## LiteLLM Server Configuration (reference for users)
 
-Add `search_tools` to the LiteLLM proxy `config.yaml`. The `search_tool_name` value must match what is configured in the app's settings.
+### Search Tools (required for `/v1/search`)
 
 ```yaml
 search_tools:
@@ -162,7 +71,7 @@ search_tools:
       api_key: os.environ/BRAVE_API_KEY
 ```
 
-### Supported providers (agnostic to the app)
+### Supported Search Providers (agnostic to the app)
 
 | Provider | `search_provider` value | Server env var |
 |----------|------------------------|----------------|
@@ -176,51 +85,52 @@ search_tools:
 | Firecrawl | `firecrawl` | `FIRECRAWL_API_KEY` |
 | Linkup | `linkup` | `LINKUP_API_KEY` |
 | Serper | `serper` | `SERPER_API_KEY` |
+| SearchAPI.io | `searchapi` | `SEARCHAPI_API_KEY` |
+
+---
+
+## Implementation
+
+### Decision Logic (`streamWithWebSearch`)
+
+```swift
+func streamWithWebSearch(_ context: SendMessageContext) async {
+    let useAgentMode = context.webSearchEnabled
+        && context.modelCapabilities.contains(.functionCalling)
+    if useAgentMode {
+        // Agent loop: tool web_search → /v1/search endpoint
+        await performAgentStreaming(...)
+    } else {
+        // No search (disabled or no capabilities) → regular streaming
+        await performStreaming(...)
+    }
+}
+```
+
+### Key Types
+
+- `WebSearchTool` — Implements `ChatToolProtocol`, defines `web_search` function. On execution, calls `WebSearchUseCase` which hits `/v1/search/{search_tool_name}`
+- `ToolRegistry` — Registers `WebSearchTool` when agent mode is used
+- `AgentStreamUseCase` — Manages the agentic loop (see `agent-tool-calling.instructions.md`)
+- `WebSearchUseCase` — Calls `APIClient.searchRequest()` → `POST /v1/search/{search_tool_name}`
+
+### Tool Result Messages
+
+When the agent loop handles `web_search`, tool result messages include the `name` field per OpenAI spec:
+
+```json
+{
+  "role": "tool",
+  "tool_call_id": "call_abc123",
+  "name": "web_search",
+  "content": "{\"results\": [...]}"
+}
+```
+
+The `name` field is stored in `ChatMessage.toolName` and serialized via `ChatCompletionMessage.name`.
 
 ---
 
 ## Settings
 
-- **Search tool name**: Stored in `SettingsManager` (UserDefaults), default: `"brave-search"` — must match `search_tool_name` in the LiteLLM `config.yaml`
-- **Result count**: Default 10 (matches API default), configurable (1–20)
-- **No search API key in the app** — key management is the server's responsibility
-
----
-
-## UI
-
-### Globe button in chat input bar
-
-- **SF Symbol**: `globe` (inactive) / filled or tinted variant (active)
-- Placed in the input bar alongside the model selector and other action buttons
-- Always visible — works with any model, no capability check required
-- When tapped: toggles `webSearchEnabled` on the current conversation
-- When active: show globe with accent color tint
-- During search: show a brief "Searching the web…" inline status below the input bar while the `/v1/search` request is in flight
-
-### Response rendering
-
-- Render citations as tappable `Link` views: `[Source Title](URL)`
-- Show a collapsible "Sources" section below the assistant response when search results are available
-- Display result count (e.g. "3 sources") in the collapsed header
-
----
-
-## Security Considerations
-
-- **No external API keys in the app** — all credentials live on the user's LiteLLM server
-- **Content sanitization**: Strip HTML from snippets before displaying
-- **URL validation**: Validate URLs from results before making them tappable
-- **No arbitrary URL fetching**: Never fetch content from result URLs, only display them as links
-- **SSRF prevention**: The app only connects to the user-configured LiteLLM base URL — same trust boundary as chat
-
----
-
-## Error Handling
-
-- Search tool not configured on server (404) → Show: "Web search is not configured on your LiteLLM server. Add a `search_tools` entry to your config.yaml."
-- 401 → LiteLLM API key invalid or missing
-- 404 → `search_tool_name` in Settings does not match any configured tool on the server
-- 429 → Rate limited by the search provider — show "Try again later"
-- Network error → Fall back gracefully: send the message without search context
-- Empty results → Inform user "No relevant web results found", proceed without context
+- **Search tool name**: Stored in `SettingsManager` (UserDefaults), default: `"brave-search"` — must match a `search_tool_name` in the LiteLLM `config.yaml`

@@ -34,6 +34,10 @@ struct StreamMessageUseCase: StreamMessageUseCaseProtocol {
         model: String,
         parameters: ModelParameters
     ) -> AsyncThrowingStream<StreamChunk, Error> {
-        repository.streamMessage(messages: messages, model: model, parameters: parameters)
+        repository.streamMessage(
+            messages: messages,
+            model: model,
+            parameters: parameters
+        )
     }
 }

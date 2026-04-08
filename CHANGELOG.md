@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.0.1-build-18] - 2026-04-08
+
+### Added
+
+- Background streaming continuation — when the app moves to background while a model is responding, the stream continues using `UIApplication.beginBackgroundTask` (up to ~30 s); the partial response is saved and a local notification is sent when the response completes or the time budget expires
+- `BackgroundTaskManager` — iOS manager wrapping `UIBackgroundTaskIdentifier` lifecycle (`beginTask` / `endTask`) with a macOS no-op stub
+- `LocalNotificationManager` — shared manager using `UNUserNotificationCenter` to schedule "Response ready" and "Response interrupted" local notifications
+- `StreamingBackgroundUseCase` — use case that begins and ends the background task around streaming calls in `ChatViewModel`
+- `NotifyStreamingCompletedUseCase` — use case that fires a local notification when streaming finishes while the app is in background, or unconditionally when the background time budget expires
+- `NotificationPermissionUseCase` — use case that requests `UNUserNotificationCenter` authorization; called after the user completes or skips Onboarding (not at app launch)
+- Non-blocking LiteLLM server detection via `GET /health/readiness` — shown after "Test Connection" or "Save" in Settings, and after "Test Connection" or advancing to the next step in Onboarding; displays an informational hint below the server field when the server is not identified as LiteLLM
+- `CheckLiteLLMHealthUseCase` — fires a lightweight, non-blocking `GET /health/readiness` call and returns `true` only when the response contains the `litellm_version` field (exclusive to LiteLLM proxy)
+- `showLiteLLMHint` flag in `SettingsViewModel.LoadedState` and `OnboardingViewModel.LoadedState` — set to `true` when the connected server is not identified as LiteLLM
+- `checkLiteLLMHealth(serverURL:)` method on `OnboardingRepository` / `OnboardingRepositoryProtocol`
+- Tool system prompt in agent mode — instructs the model about the `web_search` tool, when to use it, how to cite sources, and allows any response format (Markdown, lists, code blocks, etc.)
+- `ToolExecutionResult` value type replacing the plain `String` return of tool execution — carries `text` and optional `searchResults: [LiteLLMSearchResult]?` so agent tool results can surface sources in the UI
+- `AgentEvent.toolCallCompleted` now includes `searchResults: [LiteLLMSearchResult]?` so web search results from the agentic loop are propagated to `ChatMessage.webSearchResults` and displayed in the sources disclosure group
+
+### Changed
+
+- Web search simplified to a **single method**: agent loop with `web_search` tool via `/v1/search` — removed native `web_search_options` path entirely
+- `WebSearchOptions` struct removed from `ChatCompletionRequest` along with the `webSearchOptions` field and its propagation through `ChatRepository`, `StreamMessageUseCase`, and `ChatViewModel+Streaming`
+- `LLMModel.Capability.nativeWebSearch` removed — web search capability is now determined solely by `.functionCalling`
+- `ModelsRepository` no longer maps `model_info.supports_web_search` to a capability
+- Globe button in `ChatInputBarView` now checks only `.functionCalling` (accent = supported, red = unsupported)
+- `streamWithWebSearch` reduced from 3 branches (agent / native / none) to 2 (agent / regular streaming)
+- `SendMessageContext` no longer carries `providerName` — provider-specific routing eliminated
+
+### Fixed
+
+- Agent mode performed a redundant second LLM request after receiving a `finish_reason: "stop"` response — removed `streamFinalResponse()` and the final answer is now emitted directly from `choice.message.content` as a single token
+- Web search sources were never shown after agent tool calls — `WebSearchTool` now returns results via `ToolExecutionResult`, which are merged into `ChatMessage.webSearchResults` by `applyAgentEvent`
+- Regular OpenAI models (`gpt-5`, `gpt-4.1`, `gpt-5.4-mini`) no longer receive `web_search_options` that caused HTTP 400 — the native path was removed entirely
+- Agent loop comment corrected from "responds in plain text" to "generates a natural response"
+- Quick Action cold launch (app fully closed) never triggered navigation — `onChange(of: pendingAction)` does not fire on the initial value set by `SceneDelegate` before `HomeView` exists; added `.task` to `HomeView` that reads `pendingAction` on first appear and consumes it after a 300 ms stabilisation delay
+- Quick Action "New Chat" navigation invisible when launched from a non-chats tab — `selectedTab = .chats` and `newChatShortcutTriggered` were dispatched in the same render frame; added a 350 ms async delay so the tab-switch animation completes before the navigation push fires
+
 ## [1.0.0-build-17] - 2026-04-06
 
 ### Added

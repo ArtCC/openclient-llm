@@ -20,17 +20,9 @@ extension ChatViewModel {
     ) async {
         LogManager.debug("performAgentStreaming model=\(model) messages=\(messages.count)")
 
-        let profileContext = userProfileManager.getProfile().systemPromptContext
-        let effectiveSystemPrompt = buildEffectiveSystemPrompt(
-            profileContext: profileContext,
-            conversationSystemPrompt: systemPrompt
-        )
-
         var allMessages = messages
-        if !effectiveSystemPrompt.isEmpty {
-            let systemMessage = ChatMessage(role: .system, content: effectiveSystemPrompt)
-            allMessages.insert(systemMessage, at: 0)
-        }
+        let systemMessage = ChatMessage(role: .system, content: buildAgentSystemPrompt(systemPrompt))
+        allMessages.insert(systemMessage, at: 0)
 
         let registry = ToolRegistry.default(webSearchUseCase: webSearchUseCase)
 
@@ -54,6 +46,8 @@ extension ChatViewModel {
             state = .loaded(finalState)
             LogManager.success("performAgentStreaming completed model=\(model)")
             persistConversation()
+            streamingBackgroundUseCase.end()
+            await notifyStreamingCompletedUseCase.execute()
         } catch {
             guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
             LogManager.error("performAgentStreaming error model=\(model): \(error)")
@@ -67,6 +61,7 @@ extension ChatViewModel {
             state = .loaded(currentState)
             scheduleErrorDismiss()
             persistConversation()
+            streamingBackgroundUseCase.end()
         }
     }
 
@@ -76,8 +71,9 @@ extension ChatViewModel {
         case .toolCallStarted:
             state.isSearchingWeb = true
             return
-        case .toolCallCompleted:
+        case .toolCallCompleted(_, _, let searchResults):
             state.isSearchingWeb = false
+            mergeSearchResults(searchResults, into: &state, assistantMessageId: assistantMessageId)
             return
         case .completed:
             return
@@ -105,5 +101,41 @@ extension ChatViewModel {
         default:
             break
         }
+    }
+}
+
+// MARK: - Private
+
+private extension ChatViewModel {
+    func buildAgentSystemPrompt(_ conversationSystemPrompt: String) -> String {
+        let profileContext = getUserProfileContextUseCase.execute()
+        let effectiveSystemPrompt = buildEffectiveSystemPrompt(
+            profileContext: profileContext,
+            conversationSystemPrompt: conversationSystemPrompt
+        )
+        let toolInstructions = """
+        You have access to a `web_search` tool. Use it when your training knowledge is insufficient \
+        or likely outdated to answer the user's question accurately: current events, recent news, \
+        real-time data, prices, sports results, software versions, or any fact that may have changed \
+        after your training cutoff. If you can answer confidently from your training knowledge, \
+        respond directly without calling the tool. After receiving search results, incorporate them \
+        naturally into your answer and cite sources when relevant. Respond using whatever format best \
+        serves the answer (Markdown, lists, code blocks, tables, etc.).
+        """
+        return effectiveSystemPrompt.isEmpty
+            ? toolInstructions
+            : "\(effectiveSystemPrompt)\n\n\(toolInstructions)"
+    }
+
+    func mergeSearchResults(
+        _ searchResults: [LiteLLMSearchResult]?,
+        into state: inout LoadedState,
+        assistantMessageId: UUID
+    ) {
+        guard let results = searchResults, !results.isEmpty,
+              let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) else { return }
+        var merged = state.messages[index].webSearchResults ?? []
+        merged.append(contentsOf: results)
+        state.messages[index].webSearchResults = merged
     }
 }

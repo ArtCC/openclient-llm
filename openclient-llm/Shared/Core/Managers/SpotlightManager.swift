@@ -12,9 +12,6 @@ import Foundation
 nonisolated struct SpotlightManager: Sendable {
     // MARK: - Properties
 
-    static let activityType: String = CSSearchableItemActionType
-    static let activityIdentifierKey: String = CSSearchableItemActivityIdentifier
-
     private static let domainIdentifier = "com.artcc.openclient-llm.conversations"
 
     // MARK: - Public
