@@ -18,8 +18,12 @@ final class ChatViewModelTests: XCTestCase {
     var mockStreamMessage: MockStreamMessageUseCase!
     var mockWebSearch: MockWebSearchUseCase!
     var mockSaveConversation: MockSaveConversationUseCase!
-    var mockSettingsManager: MockSettingsManager!
-    var mockConversationStarters: MockConversationStartersManager!
+    var mockGetChatPreferences: MockGetChatPreferencesUseCase!
+    var mockSaveSelectedModel: MockSaveSelectedModelUseCase!
+    var mockSetWebSearchEnabled: MockSetWebSearchEnabledUseCase!
+    var mockResolveAudioModelIds: MockResolveAudioModelIdsUseCase!
+    var mockGetUserProfileContext: MockGetUserProfileContextUseCase!
+    var mockGetConversationStarters: MockGetConversationStartersUseCase!
     var mockExportConversation: MockExportConversationUseCase!
     var mockBranchConversation: MockBranchConversationUseCase!
 
@@ -32,8 +36,12 @@ final class ChatViewModelTests: XCTestCase {
         mockStreamMessage = MockStreamMessageUseCase()
         mockWebSearch = MockWebSearchUseCase()
         mockSaveConversation = MockSaveConversationUseCase()
-        mockSettingsManager = MockSettingsManager()
-        mockConversationStarters = MockConversationStartersManager()
+        mockGetChatPreferences = MockGetChatPreferencesUseCase()
+        mockSaveSelectedModel = MockSaveSelectedModelUseCase()
+        mockSetWebSearchEnabled = MockSetWebSearchEnabledUseCase()
+        mockResolveAudioModelIds = MockResolveAudioModelIdsUseCase()
+        mockGetUserProfileContext = MockGetUserProfileContextUseCase()
+        mockGetConversationStarters = MockGetConversationStartersUseCase()
         mockExportConversation = MockExportConversationUseCase()
         mockBranchConversation = MockBranchConversationUseCase()
         sut = ChatViewModel(
@@ -43,8 +51,12 @@ final class ChatViewModelTests: XCTestCase {
             saveConversationUseCase: mockSaveConversation,
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            saveSelectedModelUseCase: mockSaveSelectedModel,
+            setWebSearchEnabledUseCase: mockSetWebSearchEnabled,
+            resolveAudioModelIdsUseCase: mockResolveAudioModelIds,
+            getUserProfileContextUseCase: mockGetUserProfileContext,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
     }
 
@@ -54,8 +66,12 @@ final class ChatViewModelTests: XCTestCase {
         mockStreamMessage = nil
         mockWebSearch = nil
         mockSaveConversation = nil
-        mockSettingsManager = nil
-        mockConversationStarters = nil
+        mockGetChatPreferences = nil
+        mockSaveSelectedModel = nil
+        mockSetWebSearchEnabled = nil
+        mockResolveAudioModelIds = nil
+        mockGetUserProfileContext = nil
+        mockGetConversationStarters = nil
         mockExportConversation = nil
         mockBranchConversation = nil
 
@@ -268,14 +284,14 @@ final class ChatViewModelTests: XCTestCase {
         sut.send(.modelSelected(models[1]))
 
         // Then
-        XCTAssertEqual(mockSettingsManager.selectedModelId, "llama3")
+        XCTAssertEqual(mockSaveSelectedModel.savedModelId, "llama3")
     }
 
     func test_send_viewAppeared_restoresSavedModel() async throws {
         // Given
         let models = [LLMModel(id: "gpt-4"), LLMModel(id: "llama3")]
         mockFetchModels.result = .success(models)
-        mockSettingsManager.selectedModelId = "llama3"
+        mockGetChatPreferences.selectedModelId = "llama3"
 
         // When
         sut.send(.viewAppeared)
@@ -293,7 +309,7 @@ final class ChatViewModelTests: XCTestCase {
         // Given
         let models = [LLMModel(id: "gpt-4"), LLMModel(id: "llama3")]
         mockFetchModels.result = .success(models)
-        mockSettingsManager.selectedModelId = "deleted-model"
+        mockGetChatPreferences.selectedModelId = "deleted-model"
 
         // When
         sut.send(.viewAppeared)

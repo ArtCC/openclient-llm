@@ -118,8 +118,8 @@ extension ChatViewModelTests {
             saveConversationUseCase: mockSaveConversation,
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         sutWithAgent.send(.viewAppeared)

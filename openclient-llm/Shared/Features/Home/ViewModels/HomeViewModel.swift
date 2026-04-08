@@ -15,23 +15,31 @@ final class HomeViewModel {
 
     enum Event {
         case newChatShortcutTriggered
+        case shortcutActionConsumed
         case spotlightConversationRequested(UUID)
         case pendingConversationConsumed
     }
 
     private(set) var pendingConversation: Conversation?
 
+    var pendingShortcutAction: ShortcutAction? {
+        shortcutManager.pendingAction
+    }
+
     private let getSelectedModelUseCase: GetSelectedModelUseCaseProtocol
     private let loadConversationsUseCase: LoadConversationsUseCaseProtocol
+    private let shortcutManager: ShortcutManager
 
     // MARK: - Init
 
     init(
         getSelectedModelUseCase: GetSelectedModelUseCaseProtocol = GetSelectedModelUseCase(),
-        loadConversationsUseCase: LoadConversationsUseCaseProtocol = LoadConversationsUseCase()
+        loadConversationsUseCase: LoadConversationsUseCaseProtocol = LoadConversationsUseCase(),
+        shortcutManager: ShortcutManager = .shared
     ) {
         self.getSelectedModelUseCase = getSelectedModelUseCase
         self.loadConversationsUseCase = loadConversationsUseCase
+        self.shortcutManager = shortcutManager
     }
 
     // MARK: - Input functions
@@ -41,6 +49,8 @@ final class HomeViewModel {
         case .newChatShortcutTriggered:
             let modelId = getSelectedModelUseCase.execute()
             pendingConversation = Conversation(modelId: modelId)
+        case .shortcutActionConsumed:
+            shortcutManager.pendingAction = nil
         case .spotlightConversationRequested(let id):
             resolveSpotlightConversation(id: id)
         case .pendingConversationConsumed:

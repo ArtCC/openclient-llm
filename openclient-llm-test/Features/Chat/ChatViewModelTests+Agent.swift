@@ -28,8 +28,8 @@ extension ChatViewModelTests {
             saveConversationUseCase: mockSaveConversation,
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         sutWithAgent.send(.viewAppeared)
@@ -70,8 +70,8 @@ extension ChatViewModelTests {
             saveConversationUseCase: mockSaveConversation,
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         sutWithAgent.send(.viewAppeared)
@@ -111,8 +111,8 @@ extension ChatViewModelTests {
             saveConversationUseCase: mockSaveConversation,
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         sutWithAgent.send(.viewAppeared)
@@ -157,8 +157,8 @@ extension ChatViewModelTests {
             saveConversationUseCase: mockSaveConversation,
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
         viewModel.applyAgentEvent(.token("Hello "), to: &loadedState, assistantMessageId: assistantId)
         viewModel.applyAgentEvent(.token("world"), to: &loadedState, assistantMessageId: assistantId)
@@ -184,8 +184,8 @@ extension ChatViewModelTests {
             saveConversationUseCase: mockSaveConversation,
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         // When
@@ -207,8 +207,8 @@ extension ChatViewModelTests {
             saveConversationUseCase: mockSaveConversation,
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         // When
@@ -237,8 +237,8 @@ extension ChatViewModelTests {
             saveConversationUseCase: mockSaveConversation,
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         sutWithAgent.send(.viewAppeared)

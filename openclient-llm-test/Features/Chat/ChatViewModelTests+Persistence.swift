@@ -198,8 +198,8 @@ extension ChatViewModelTests {
             fetchModelsUseCase: mockFetchModels,
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         // When
@@ -229,8 +229,8 @@ extension ChatViewModelTests {
             fetchModelsUseCase: mockFetchModels,
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
-            settingsManager: mockSettingsManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
 
         // When

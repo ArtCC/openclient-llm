@@ -72,6 +72,26 @@ final class HomeViewModelTests: XCTestCase {
         XCTAssertNil(sut.pendingConversation)
     }
 
+    // MARK: - shortcutActionConsumed
+
+    func test_send_shortcutActionConsumed_clearsPendingShortcutAction() {
+        ShortcutManager.shared.pendingAction = .newChat
+        XCTAssertNotNil(sut.pendingShortcutAction)
+
+        sut.send(.shortcutActionConsumed)
+
+        XCTAssertNil(sut.pendingShortcutAction)
+        ShortcutManager.shared.pendingAction = nil
+    }
+
+    func test_pendingShortcutAction_reflectsShortcutManager() {
+        ShortcutManager.shared.pendingAction = .search
+
+        XCTAssertEqual(sut.pendingShortcutAction, .search)
+
+        ShortcutManager.shared.pendingAction = nil
+    }
+
     // MARK: - spotlightConversationRequested
 
     func test_send_spotlightConversationRequested_withMatchingId_setsPendingConversation() async throws {

@@ -55,23 +55,3 @@ extension ChatViewModel {
         }
     }
 }
-
-// MARK: - Audio model helpers
-
-extension ChatViewModel {
-    func resolveAudioModelIds(from models: [LLMModel]) -> (ttsModelId: String?, transcriptionModelId: String?) {
-        let savedTTSModelId = settingsManager.getSelectedTTSModelId()
-        let ttsModelId = models.first(where: { $0.id == savedTTSModelId && $0.mode == .audioSpeech })?.id
-            ?? models.first(where: { $0.mode == .audioSpeech })?.id
-        let savedSTTModelId = settingsManager.getSelectedSTTModelId()
-        let transcriptionModelId: String
-        if let savedId = savedSTTModelId, savedId != LLMModel.appleSpeechRecognition.id {
-            transcriptionModelId = models.first(where: {
-                $0.id == savedId && $0.mode == .audioTranscription
-            })?.id ?? LLMModel.appleSpeechRecognition.id
-        } else {
-            transcriptionModelId = LLMModel.appleSpeechRecognition.id
-        }
-        return (ttsModelId, transcriptionModelId)
-    }
-}

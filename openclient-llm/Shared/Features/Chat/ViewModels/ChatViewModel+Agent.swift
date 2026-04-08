@@ -105,7 +105,7 @@ extension ChatViewModel {
 
 private extension ChatViewModel {
     func buildAgentSystemPrompt(_ conversationSystemPrompt: String) -> String {
-        let profileContext = userProfileManager.getProfile().systemPromptContext
+        let profileContext = getUserProfileContextUseCase.execute()
         let effectiveSystemPrompt = buildEffectiveSystemPrompt(
             profileContext: profileContext,
             conversationSystemPrompt: conversationSystemPrompt

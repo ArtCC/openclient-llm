@@ -17,9 +17,9 @@ final class ChatViewModelUserProfileTests: XCTestCase {
     private var mockFetchModels: MockFetchModelsUseCase!
     private var mockStreamMessage: MockStreamMessageUseCase!
     private var mockSaveConversation: MockSaveConversationUseCase!
-    private var mockSettingsManager: MockSettingsManager!
-    private var mockUserProfileManager: MockUserProfileManager!
-    private var mockConversationStarters: MockConversationStartersManager!
+    private var mockGetChatPreferences: MockGetChatPreferencesUseCase!
+    private var mockGetUserProfileContext: MockGetUserProfileContextUseCase!
+    private var mockGetConversationStarters: MockGetConversationStartersUseCase!
 
     // MARK: - Setup
 
@@ -29,16 +29,16 @@ final class ChatViewModelUserProfileTests: XCTestCase {
         mockFetchModels = MockFetchModelsUseCase()
         mockStreamMessage = MockStreamMessageUseCase()
         mockSaveConversation = MockSaveConversationUseCase()
-        mockSettingsManager = MockSettingsManager()
-        mockUserProfileManager = MockUserProfileManager()
-        mockConversationStarters = MockConversationStartersManager()
+        mockGetChatPreferences = MockGetChatPreferencesUseCase()
+        mockGetUserProfileContext = MockGetUserProfileContextUseCase()
+        mockGetConversationStarters = MockGetConversationStartersUseCase()
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
-            settingsManager: mockSettingsManager,
-            userProfileManager: mockUserProfileManager,
-            conversationStartersManager: mockConversationStarters
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getUserProfileContextUseCase: mockGetUserProfileContext,
+            getConversationStartersUseCase: mockGetConversationStarters
         )
     }
 
@@ -47,9 +47,9 @@ final class ChatViewModelUserProfileTests: XCTestCase {
         mockFetchModels = nil
         mockStreamMessage = nil
         mockSaveConversation = nil
-        mockSettingsManager = nil
-        mockUserProfileManager = nil
-        mockConversationStarters = nil
+        mockGetChatPreferences = nil
+        mockGetUserProfileContext = nil
+        mockGetConversationStarters = nil
         try await super.tearDown()
     }
 

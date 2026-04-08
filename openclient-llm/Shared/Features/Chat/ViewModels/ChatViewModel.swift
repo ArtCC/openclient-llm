@@ -85,11 +85,15 @@ final class ChatViewModel {
     let transcribeAudioUseCase: TranscribeAudioUseCaseProtocol
     let exportConversationUseCase: ExportConversationUseCaseProtocol
     let branchConversationUseCase: BranchConversationUseCaseProtocol
-    let settingsManager: SettingsManagerProtocol
-    let userProfileManager: UserProfileManagerProtocol
-    private let conversationStartersManager: ConversationStartersManagerProtocol
-    private let audioPlayerManager: AudioPlayerManager
-    let audioRecorderManager: AudioRecorderManagerProtocol
+    let getChatPreferencesUseCase: GetChatPreferencesUseCaseProtocol
+    private let saveSelectedModelUseCase: SaveSelectedModelUseCaseProtocol
+    let setWebSearchEnabledUseCase: SetWebSearchEnabledUseCaseProtocol
+    private let resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol
+    let getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol
+    private let getConversationStartersUseCase: GetConversationStartersUseCaseProtocol
+    private let playAudioUseCase: any PlayAudioUseCaseProtocol
+    let recordAudioUseCase: any RecordAudioUseCaseProtocol
+    let triggerHapticFeedbackUseCase: TriggerHapticFeedbackUseCaseProtocol
     var streamTask: Task<Void, Never>?
     var errorDismissTask: Task<Void, Never>?
     var durationTrackingTask: Task<Void, Never>?
@@ -109,11 +113,15 @@ final class ChatViewModel {
         transcribeAudioUseCase: TranscribeAudioUseCaseProtocol = TranscribeAudioUseCase(),
         exportConversationUseCase: ExportConversationUseCaseProtocol = ExportConversationUseCase(),
         branchConversationUseCase: BranchConversationUseCaseProtocol = BranchConversationUseCase(),
-        settingsManager: SettingsManagerProtocol = SettingsManager(),
-        userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
-        conversationStartersManager: ConversationStartersManagerProtocol = ConversationStartersManager(),
-        audioPlayerManager: AudioPlayerManager = AudioPlayerManager(),
-        audioRecorderManager: AudioRecorderManagerProtocol = AudioRecorderManager()
+        getChatPreferencesUseCase: GetChatPreferencesUseCaseProtocol = GetChatPreferencesUseCase(),
+        saveSelectedModelUseCase: SaveSelectedModelUseCaseProtocol = SaveSelectedModelUseCase(),
+        setWebSearchEnabledUseCase: SetWebSearchEnabledUseCaseProtocol = SetWebSearchEnabledUseCase(),
+        resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol = ResolveAudioModelIdsUseCase(),
+        getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol = GetUserProfileContextUseCase(),
+        getConversationStartersUseCase: GetConversationStartersUseCaseProtocol = GetConversationStartersUseCase(),
+        playAudioUseCase: any PlayAudioUseCaseProtocol = PlayAudioUseCase(),
+        recordAudioUseCase: any RecordAudioUseCaseProtocol = RecordAudioUseCase(),
+        triggerHapticFeedbackUseCase: TriggerHapticFeedbackUseCaseProtocol = TriggerHapticFeedbackUseCase()
     ) {
         self.state = state
         self.pendingConversation = conversation
@@ -126,11 +134,15 @@ final class ChatViewModel {
         self.transcribeAudioUseCase = transcribeAudioUseCase
         self.exportConversationUseCase = exportConversationUseCase
         self.branchConversationUseCase = branchConversationUseCase
-        self.settingsManager = settingsManager
-        self.userProfileManager = userProfileManager
-        self.conversationStartersManager = conversationStartersManager
-        self.audioPlayerManager = audioPlayerManager
-        self.audioRecorderManager = audioRecorderManager
+        self.getChatPreferencesUseCase = getChatPreferencesUseCase
+        self.saveSelectedModelUseCase = saveSelectedModelUseCase
+        self.setWebSearchEnabledUseCase = setWebSearchEnabledUseCase
+        self.resolveAudioModelIdsUseCase = resolveAudioModelIdsUseCase
+        self.getUserProfileContextUseCase = getUserProfileContextUseCase
+        self.getConversationStartersUseCase = getConversationStartersUseCase
+        self.playAudioUseCase = playAudioUseCase
+        self.recordAudioUseCase = recordAudioUseCase
+        self.triggerHapticFeedbackUseCase = triggerHapticFeedbackUseCase
         observeAppDataReset()
     }
 
@@ -233,7 +245,7 @@ private extension ChatViewModel {
             let chatModels = models.filter {
                 [.chat, .completion, .unknown, .imageGeneration].contains($0.mode)
             }
-            let savedModelId = settingsManager.getSelectedModelId()
+            let savedModelId = getChatPreferencesUseCase.getSelectedModelId()
             let selectedModel: LLMModel?
 
             if let pending {
@@ -246,8 +258,8 @@ private extension ChatViewModel {
             let selectedId = selectedModel?.id ?? "-"
             LogManager.success("fetchAndBuildInitialState models=\(chatModels.count) selected=\(selectedId)")
 
-            let (ttsModelId, transcriptionModelId) = resolveAudioModelIds(from: models)
-            let starters = conversationStartersManager.randomStarters(count: 4)
+            let audioModelIds = resolveAudioModelIdsUseCase.execute(from: models)
+            let starters = getConversationStartersUseCase.execute(count: 4)
             state = .loaded(LoadedState(
                 conversation: pending,
                 messages: pending?.messages ?? [],
@@ -256,10 +268,10 @@ private extension ChatViewModel {
                 conversationStarters: (pending?.messages ?? []).isEmpty ? starters : [],
                 systemPrompt: pending?.systemPrompt ?? "",
                 modelParameters: pending?.modelParameters ?? .default,
-                showTokenUsage: settingsManager.getShowTokenUsage(),
-                ttsModelId: ttsModelId,
-                transcriptionModelId: transcriptionModelId,
-                isWebSearchEnabled: settingsManager.getIsWebSearchEnabled()
+                showTokenUsage: getChatPreferencesUseCase.getShowTokenUsage(),
+                ttsModelId: audioModelIds.ttsModelId,
+                transcriptionModelId: audioModelIds.transcriptionModelId,
+                isWebSearchEnabled: getChatPreferencesUseCase.getIsWebSearchEnabled()
             ))
         } catch {
             LogManager.error("fetchAndBuildInitialState failed: \(error)")
@@ -271,7 +283,7 @@ private extension ChatViewModel {
                 errorMessage: error.localizedDescription,
                 systemPrompt: pending?.systemPrompt ?? "",
                 modelParameters: pending?.modelParameters ?? .default,
-                isWebSearchEnabled: settingsManager.getIsWebSearchEnabled()
+                isWebSearchEnabled: getChatPreferencesUseCase.getIsWebSearchEnabled()
             ))
             scheduleErrorDismiss()
         }
@@ -309,7 +321,7 @@ private extension ChatViewModel {
         LogManager.info("selectModel id=\(model.id)")
         loadedState.selectedModel = model
         state = .loaded(loadedState)
-        settingsManager.setSelectedModelId(model.id)
+        saveSelectedModelUseCase.execute(modelId: model.id)
         if loadedState.conversation != nil {
             loadedState.conversation?.modelId = model.id
             state = .loaded(loadedState)
@@ -424,18 +436,13 @@ private extension ChatViewModel {
                 let audioData = try await synthesizeSpeechUseCase.execute(
                     text: message.content,
                     model: ttsModelId,
-                    voice: settingsManager.getSelectedTTSVoice(forModelId: ttsModelId)
+                    voice: getChatPreferencesUseCase.getSelectedTTSVoice(forModelId: ttsModelId)
                 )
-                audioPlayerManager.play(data: audioData, messageId: message.id)
-                Task {
-                    while audioPlayerManager.isPlaying {
-                        try? await Task.sleep(for: .milliseconds(200))
-                    }
-                    guard case .loaded(var currentState) = state else { return }
-                    currentState.isSpeaking = false
-                    currentState.speakingMessageId = nil
-                    state = .loaded(currentState)
-                }
+                await playAudioUseCase.play(data: audioData, messageId: message.id)
+                guard case .loaded(var currentState) = state else { return }
+                currentState.isSpeaking = false
+                currentState.speakingMessageId = nil
+                state = .loaded(currentState)
             } catch {
                 guard case .loaded(var currentState) = state else { return }
                 currentState.isSpeaking = false
@@ -448,7 +455,7 @@ private extension ChatViewModel {
     }
 
     func stopSpeaking() {
-        audioPlayerManager.stop()
+        playAudioUseCase.stop()
         guard case .loaded(var loadedState) = state else { return }
         loadedState.isSpeaking = false
         loadedState.speakingMessageId = nil

@@ -33,6 +33,8 @@ Native Apple client for OpenAI-compatible LLM servers. Works out of the box with
 | SwiftLint | Code linting |
 | SF Symbols | Iconography |
 
+ This project was developed entirely with GitHub Copilot (with Claude Opus / Sonnet 4.6), Visual Studio Code and Xcode.
+
 ## Architecture
 
 The project follows **MVVM + UseCase + Repository + Manager** with Swift strict concurrency and `async/await`. Code is organized by feature under `Shared/`, shared across iOS and macOS targets. Platform-specific UI lives in each target's own folder.

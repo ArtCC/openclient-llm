@@ -21,7 +21,6 @@ struct HomeView: View {
 #if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab: AppTab = .chats
-    @State private var shortcutManager = ShortcutManager.shared
 #endif
 
     // MARK: - View
@@ -51,15 +50,15 @@ struct HomeView: View {
         }
 #if os(iOS)
         .task {
-            guard let action = shortcutManager.pendingAction else { return }
+            guard let action = viewModel.pendingShortcutAction else { return }
             try? await Task.sleep(for: .milliseconds(300))
             handleShortcutAction(action)
-            shortcutManager.pendingAction = nil
+            viewModel.send(.shortcutActionConsumed)
         }
-        .onChange(of: shortcutManager.pendingAction) { _, action in
+        .onChange(of: viewModel.pendingShortcutAction) { _, action in
             guard let action else { return }
             handleShortcutAction(action)
-            shortcutManager.pendingAction = nil
+            viewModel.send(.shortcutActionConsumed)
         }
 #endif
     }

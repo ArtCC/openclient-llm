@@ -87,7 +87,7 @@ private extension ChatViewModel {
         _ messages: [ChatMessage],
         systemPrompt: String
     ) -> [ChatMessage] {
-        let profileContext = userProfileManager.getProfile().systemPromptContext
+        let profileContext = getUserProfileContextUseCase.execute()
         let effectiveSystemPrompt = buildEffectiveSystemPrompt(
             profileContext: profileContext,
             conversationSystemPrompt: systemPrompt

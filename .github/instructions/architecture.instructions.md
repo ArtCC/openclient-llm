@@ -159,7 +159,7 @@ View → ViewModel → UseCase → Repository → APIClient / LocalStorage
 - **ViewModel**: `@Observable @MainActor` classes with Event/State pattern. Coordinates UseCases.
 - **UseCase**: Encapsulates a single business operation (e.g., `SendMessageUseCase`, `FetchModelsUseCase`). Calls Repositories and Managers.
 - **Repository**: Abstracts data access (network, cache, local storage). Protocols for testability.
-- **Manager**: Transversal services used across features (auth, settings, connectivity). Called from UseCases.
+- **Manager**: Transversal services used across features (auth, settings, connectivity). Called from UseCases. **Never inject or call Managers directly from ViewModels or Views** — always go through a UseCase. Exception: `LogManager` is a static diagnostic utility (equivalent to `os_log`) and may be used anywhere in the codebase, including ViewModels.
 - **APIClient**: Single networking layer using `URLSession` + `async/await` to communicate with LiteLLM.
 
 ### ViewModel Template (Event/State Pattern)

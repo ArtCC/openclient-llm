@@ -14,7 +14,7 @@ extension ChatViewModel {
     func toggleWebSearch() {
         guard case .loaded(var loadedState) = state else { return }
         let newValue = !loadedState.isWebSearchEnabled
-        settingsManager.setIsWebSearchEnabled(newValue)
+        setWebSearchEnabledUseCase.execute(newValue)
         loadedState.isWebSearchEnabled = newValue
         state = .loaded(loadedState)
         LogManager.debug("webSearch toggled: \(newValue)")
