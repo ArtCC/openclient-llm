@@ -38,6 +38,8 @@ extension ChatViewModel {
             state = .loaded(currentState)
             LogManager.success("performStreaming completed model=\(model)")
             persistConversation()
+            streamingBackgroundUseCase.end()
+            await notifyStreamingCompletedUseCase.execute()
         } catch {
             guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
             LogManager.error("performStreaming error model=\(model): \(error)")
@@ -50,6 +52,7 @@ extension ChatViewModel {
             state = .loaded(currentState)
             scheduleErrorDismiss()
             persistConversation()
+            streamingBackgroundUseCase.end()
         }
     }
 

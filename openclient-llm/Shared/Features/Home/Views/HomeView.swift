@@ -38,6 +38,9 @@ struct HomeView: View {
                   let id = UUID(uuidString: idString) else { return }
             viewModel.send(.spotlightConversationRequested(id))
         }
+        .task {
+            viewModel.send(.viewAppeared)
+        }
         .onChange(of: viewModel.pendingConversation) { _, conversation in
             guard let conversation else { return }
 #if os(iOS)

@@ -9,6 +9,7 @@
 import SwiftUI
 #if os(iOS)
 import StoreKit
+import UIKit
 #endif
 import VoticeSDK
 
@@ -24,6 +25,7 @@ struct SettingsView: View {
     @State private var showResetAlert = false
     @State private var presentedWebURL: WebDestination?
     @FocusState private var focusedField: Field?
+    @Environment(\.scenePhase) private var scenePhase
     private let liteLLMHintText = String(localized: "Optimised for LiteLLM. Any OpenAI-compatible server also works.")
 
     // MARK: - View
@@ -104,6 +106,11 @@ private extension SettingsView {
                 apiKey = initialState.apiKey
             }
         }
+        .onChange(of: scenePhase) { _, newPhase in
+            if newPhase == .active {
+                viewModel.send(.notificationStatusRefresh)
+            }
+        }
         .onChange(of: viewModel.state) { _, newState in
             if case .loaded(let loadedState) = newState {
                 serverURL = loadedState.serverURL
@@ -138,6 +145,7 @@ private extension SettingsView {
                 cloudSyncSection(loadedState)
                 personalizationSection()
                 chatSection(loadedState)
+                notificationsSection(loadedState)
                 webSearchSection(loadedState)
                 feedbackSection()
                 legalSection()
@@ -364,6 +372,41 @@ private extension SettingsView {
         }
     }
 
+    func notificationsSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
+        Section {
+            switch loadedState.notificationPermissionStatus {
+            case .authorized:
+                Label(String(localized: "Notifications enabled"), systemImage: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+            case .denied:
+                Label(String(localized: "Notifications disabled"), systemImage: "bell.slash")
+                    .foregroundStyle(.secondary)
+                #if os(iOS)
+                Button {
+                    guard let url = URL(string: UIApplication.openNotificationSettingsURLString) else { return }
+                    UIApplication.shared.open(url)
+                } label: {
+                    Label(String(localized: "Open Settings"), systemImage: "arrow.up.right.square")
+                }
+                .buttonStyle(.plain)
+                #endif
+            case .notDetermined:
+                Label(String(localized: "Notifications not authorized"), systemImage: "bell.badge.slash")
+                    .foregroundStyle(.secondary)
+                Button {
+                    viewModel.send(.requestNotificationPermissionTapped)
+                } label: {
+                    Label(String(localized: "Enable Notifications"), systemImage: "bell")
+                }
+                .buttonStyle(.plain)
+            }
+        } header: {
+            Text(String(localized: "Notifications"))
+        } footer: {
+            Text(String(localized: "Sent when a response finishes while the app is in the background."))
+        }
+    }
+
     func personalizationSection() -> some View {
         Section {
             Button {
@@ -433,64 +476,6 @@ private extension SettingsView {
             Text(String(localized: "App Data"))
         } footer: {
             Text(String(localized: "Deletes all local settings and credentials. iCloud data will not be affected."))
-        }
-    }
-
-    var appVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "—"
-    }
-
-    var appBuild: String {
-        Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "—"
-    }
-
-    func requestAppReview() {
-#if os(iOS)
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
-        AppStore.requestReview(in: windowScene)
-#else
-        if let url = URL(string: "macappstore://apps.apple.com/app/id\(Constants.App.appStoreId)?action=write-review") {
-            NSWorkspace.shared.open(url)
-        }
-#endif
-    }
-}
-
-// MARK: - WebDestination
-
-extension SettingsView {
-    enum WebDestination: Identifiable {
-        case privacyPolicy
-        case termsOfUse
-        case authorGitHub
-
-        // MARK: - Properties
-
-        var id: String {
-            switch self {
-            case .privacyPolicy: "privacy"
-            case .termsOfUse: "terms"
-            case .authorGitHub: "author"
-            }
-        }
-
-        var title: String {
-            switch self {
-            case .privacyPolicy: String(localized: "Privacy Policy")
-            case .termsOfUse: String(localized: "Terms of Use")
-            case .authorGitHub: String(localized: "GitHub Profile")
-            }
-        }
-
-        var url: URL? {
-            switch self {
-            case .privacyPolicy:
-                Constants.URLs.privacyPolicy
-            case .termsOfUse:
-                Constants.URLs.termsOfUse
-            case .authorGitHub:
-                Constants.URLs.authorGitHub
-            }
         }
     }
 }

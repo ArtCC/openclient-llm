@@ -26,6 +26,8 @@ final class SettingsViewModel {
         case webSearchToolNameChanged(String)
         case webSearchMaxResultsChanged(Int)
         case resetConfirmed
+        case requestNotificationPermissionTapped
+        case notificationStatusRefresh
     }
 
     enum State: Equatable {
@@ -45,6 +47,7 @@ final class SettingsViewModel {
         var webSearchToolName: String = "brave-search"
         var webSearchMaxResults: Int = 10
         var showLiteLLMHint: Bool = false
+        var notificationPermissionStatus: NotificationPermissionStatus = .notDetermined
     }
 
     enum ConnectionStatus: Equatable {
@@ -63,6 +66,8 @@ final class SettingsViewModel {
     private let cloudSyncManager: CloudSyncManagerProtocol
     private let userProfileManager: UserProfileManagerProtocol
     private let resetAppUseCase: ResetAppDataUseCaseProtocol
+    private let checkNotificationPermissionUseCase: NotificationStatusCheckProtocol
+    private let notificationPermissionUseCase: NotificationPermissionUseCaseProtocol
 
     // MARK: - Init
 
@@ -74,7 +79,9 @@ final class SettingsViewModel {
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
         userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
-        resetAppUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase()
+        resetAppUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase(),
+        checkNotificationPermissionUseCase: NotificationStatusCheckProtocol = CheckNotificationPermissionUseCase(),
+        notificationPermissionUseCase: NotificationPermissionUseCaseProtocol = NotificationPermissionUseCase()
     ) {
         self.state = state
         self.saveServerConfigurationUseCase = saveServerConfigurationUseCase
@@ -84,6 +91,8 @@ final class SettingsViewModel {
         self.cloudSyncManager = cloudSyncManager
         self.userProfileManager = userProfileManager
         self.resetAppUseCase = resetAppUseCase
+        self.checkNotificationPermissionUseCase = checkNotificationPermissionUseCase
+        self.notificationPermissionUseCase = notificationPermissionUseCase
     }
 
     // MARK: - Input functions
@@ -108,6 +117,8 @@ final class SettingsViewModel {
             handleWebSearchEvent(event)
         case .resetConfirmed:
             resetApp()
+        case .requestNotificationPermissionTapped, .notificationStatusRefresh:
+            handleNotificationEvent(event)
         }
     }
 }
@@ -132,6 +143,7 @@ private extension SettingsViewModel {
                 await updateLiteLLMHint(serverURL: serverURL)
             }
         }
+        refreshNotificationStatus()
     }
 
     func updateServerURL(_ url: String) {
@@ -289,5 +301,32 @@ private extension SettingsViewModel {
         resetAppUseCase.execute()
         loadSettings()
         NotificationCenter.default.post(name: .appDataDidReset, object: nil)
+    }
+
+    func refreshNotificationStatus() {
+        Task {
+            let status = await checkNotificationPermissionUseCase.execute()
+            guard case .loaded(var currentState) = state else { return }
+            currentState.notificationPermissionStatus = status
+            state = .loaded(currentState)
+        }
+    }
+
+    func requestNotificationPermission() {
+        Task {
+            await notificationPermissionUseCase.execute()
+            refreshNotificationStatus()
+        }
+    }
+
+    func handleNotificationEvent(_ event: Event) {
+        switch event {
+        case .requestNotificationPermissionTapped:
+            requestNotificationPermission()
+        case .notificationStatusRefresh:
+            refreshNotificationStatus()
+        default:
+            break
+        }
     }
 }

@@ -94,6 +94,8 @@ final class ChatViewModel {
     private let playAudioUseCase: any PlayAudioUseCaseProtocol
     let recordAudioUseCase: any RecordAudioUseCaseProtocol
     let triggerHapticFeedbackUseCase: TriggerHapticFeedbackUseCaseProtocol
+    let streamingBackgroundUseCase: StreamingBackgroundUseCaseProtocol
+    let notifyStreamingCompletedUseCase: NotifyStreamingCompletedUseCaseProtocol
     var streamTask: Task<Void, Never>?
     var errorDismissTask: Task<Void, Never>?
     var durationTrackingTask: Task<Void, Never>?
@@ -121,7 +123,9 @@ final class ChatViewModel {
         getConversationStartersUseCase: GetConversationStartersUseCaseProtocol = GetConversationStartersUseCase(),
         playAudioUseCase: any PlayAudioUseCaseProtocol = PlayAudioUseCase(),
         recordAudioUseCase: any RecordAudioUseCaseProtocol = RecordAudioUseCase(),
-        triggerHapticFeedbackUseCase: TriggerHapticFeedbackUseCaseProtocol = TriggerHapticFeedbackUseCase()
+        triggerHapticFeedbackUseCase: TriggerHapticFeedbackUseCaseProtocol = TriggerHapticFeedbackUseCase(),
+        streamingBackgroundUseCase: StreamingBackgroundUseCaseProtocol = StreamingBackgroundUseCase(),
+        notifyStreamingCompletedUseCase: NotifyStreamingCompletedUseCaseProtocol = NotifyStreamingCompletedUseCase()
     ) {
         self.state = state
         self.pendingConversation = conversation
@@ -143,6 +147,8 @@ final class ChatViewModel {
         self.playAudioUseCase = playAudioUseCase
         self.recordAudioUseCase = recordAudioUseCase
         self.triggerHapticFeedbackUseCase = triggerHapticFeedbackUseCase
+        self.streamingBackgroundUseCase = streamingBackgroundUseCase
+        self.notifyStreamingCompletedUseCase = notifyStreamingCompletedUseCase
         observeAppDataReset()
     }
 
@@ -365,6 +371,7 @@ private extension ChatViewModel {
         LogManager.debug("stopStreaming requested")
         streamTask?.cancel()
         streamTask = nil
+        streamingBackgroundUseCase.end()
         guard case .loaded(var loadedState) = state else { return }
         loadedState.isStreaming = false
         state = .loaded(loadedState)
@@ -390,6 +397,16 @@ private extension ChatViewModel {
         let modelCapabilities = model.capabilities
 
         streamTask?.cancel()
+        streamingBackgroundUseCase.begin { [weak self] in
+            LogManager.warning("Background time expired — saving partial response")
+            self?.streamTask?.cancel()
+            self?.streamTask = nil
+            guard let self, case .loaded(var currentState) = self.state else { return }
+            currentState.isStreaming = false
+            self.state = .loaded(currentState)
+            self.persistConversation()
+            Task { await self.notifyStreamingCompletedUseCase.executeExpired() }
+        }
         streamTask = Task {
             await streamWithWebSearch(SendMessageContext(
                 text: text,

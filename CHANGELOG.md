@@ -11,6 +11,12 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 ### Added
 
+- Background streaming continuation — when the app moves to background while a model is responding, the stream continues using `UIApplication.beginBackgroundTask` (up to ~30 s); the partial response is saved and a local notification is sent when the response completes or the time budget expires
+- `BackgroundTaskManager` — iOS manager wrapping `UIBackgroundTaskIdentifier` lifecycle (`beginTask` / `endTask`) with a macOS no-op stub
+- `LocalNotificationManager` — shared manager using `UNUserNotificationCenter` to schedule "Response ready" and "Response interrupted" local notifications
+- `StreamingBackgroundUseCase` — use case that begins and ends the background task around streaming calls in `ChatViewModel`
+- `NotifyStreamingCompletedUseCase` — use case that fires a local notification when streaming finishes while the app is in background, or unconditionally when the background time budget expires
+- `NotificationPermissionUseCase` — use case that requests `UNUserNotificationCenter` authorization; called after the user completes or skips Onboarding (not at app launch)
 - Non-blocking LiteLLM server detection via `GET /health/readiness` — shown after "Test Connection" or "Save" in Settings, and after "Test Connection" or advancing to the next step in Onboarding; displays an informational hint below the server field when the server is not identified as LiteLLM
 - `CheckLiteLLMHealthUseCase` — fires a lightweight, non-blocking `GET /health/readiness` call and returns `true` only when the response contains the `litellm_version` field (exclusive to LiteLLM proxy)
 - `showLiteLLMHint` flag in `SettingsViewModel.LoadedState` and `OnboardingViewModel.LoadedState` — set to `true` when the connected server is not identified as LiteLLM

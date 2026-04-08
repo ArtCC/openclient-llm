@@ -53,6 +53,7 @@ final class OnboardingViewModel {
     private let saveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol
     private let testServerConnectionUseCase: TestServerConnectionUseCaseProtocol
     private let checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol
+    private let requestNotificationPermissionUseCase: NotificationPermissionUseCaseProtocol
 
     // MARK: - Init
 
@@ -61,13 +62,15 @@ final class OnboardingViewModel {
         completeOnboardingUseCase: CompleteOnboardingUseCaseProtocol = CompleteOnboardingUseCase(),
         saveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol = SaveServerConfigurationUseCase(),
         testServerConnectionUseCase: TestServerConnectionUseCaseProtocol = TestServerConnectionUseCase(),
-        checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol = CheckLiteLLMHealthUseCase()
+        checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol = CheckLiteLLMHealthUseCase(),
+        requestNotificationPermissionUseCase: NotificationPermissionUseCaseProtocol = NotificationPermissionUseCase()
     ) {
         self.state = state
         self.completeOnboardingUseCase = completeOnboardingUseCase
         self.saveServerConfigurationUseCase = saveServerConfigurationUseCase
         self.testServerConnectionUseCase = testServerConnectionUseCase
         self.checkLiteLLMHealthUseCase = checkLiteLLMHealthUseCase
+        self.requestNotificationPermissionUseCase = requestNotificationPermissionUseCase
     }
 
     // MARK: - Input functions
@@ -122,6 +125,7 @@ private extension OnboardingViewModel {
 
     func handleSkip() {
         completeOnboardingUseCase.execute()
+        Task { await requestNotificationPermissionUseCase.execute() }
         onComplete?()
     }
 
@@ -183,6 +187,7 @@ private extension OnboardingViewModel {
             apiKey: loadedState.apiKey
         )
         completeOnboardingUseCase.execute()
+        Task { await requestNotificationPermissionUseCase.execute() }
         onComplete?()
     }
 }
