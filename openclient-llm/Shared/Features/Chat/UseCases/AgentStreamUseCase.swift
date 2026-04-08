@@ -151,18 +151,30 @@ private extension AgentStreamUseCase {
         conversationMessages: inout [ChatMessage],
         context: AgentLoopContext
     ) async throws -> Bool {
-        let finishReason = choice.finishReason ?? "stop"
-        guard finishReason == "tool_calls",
-              let toolCalls = choice.message.toolCalls,
-              !toolCalls.isEmpty else {
-            // Emit the model's answer directly — no second network call needed.
-            // The non-streaming agentCompletion already contains the full response.
-            if let content = choice.message.content, !content.isEmpty {
+        // Check tool_calls presence first — some models (Ollama/Llama/Mistral/Qwen)
+        // include tool_calls with finishReason "stop" or nil instead of "tool_calls".
+        // Relying solely on finishReason misses those cases and causes {} to be emitted.
+        guard let toolCalls = choice.message.toolCalls, !toolCalls.isEmpty else {
+            // No tool calls — emit the model's final text response.
+            // Exception: if content is literally "{}" the model tried to call a tool
+            // but emitted it as plain text instead of structured tool_calls (known Ollama quirk).
+            // Signal the loop to retry without tools so the model answers naturally.
+            let content = choice.message.content ?? ""
+            if content.trimmingCharacters(in: .whitespaces) == "{}" {
+                LogManager.warning("agentLoop: content is '{}' with no tool_calls — retrying without tools")
+                return true
+            }
+            if !content.isEmpty {
                 context.continuation.yield(.token(content))
             } else {
                 LogManager.warning("agentLoop: stop with empty content")
             }
             return false
+        }
+
+        let finishReason = choice.finishReason ?? "stop"
+        if finishReason != "tool_calls" {
+            LogManager.warning("agentLoop: tool_calls present but finishReason=\(finishReason) — executing anyway")
         }
 
         conversationMessages.append(ChatMessage(

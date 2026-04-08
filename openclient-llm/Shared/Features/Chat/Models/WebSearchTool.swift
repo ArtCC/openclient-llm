@@ -18,7 +18,8 @@ struct WebSearchTool: ChatToolProtocol {
             type: "function",
             function: ToolFunctionDefinition(
                 name: "web_search",
-                description: "Search the web for current information, news, facts, or any topic the user asks about.",
+                description: "Search the web for current information, recent news, real-time data, " +
+                    "or facts that may have changed after your training cutoff.",
                 parameters: ToolParameters(
                     type: "object",
                     properties: [
@@ -46,7 +47,8 @@ struct WebSearchTool: ChatToolProtocol {
               let json = try? JSONDecoder().decode([String: String].self, from: data),
               let query = json["query"], !query.isEmpty else {
             return ToolExecutionResult(
-                text: String(localized: "Error: missing or invalid 'query' argument.")
+                text: "No search query was provided. Please answer the user's question directly " +
+                    "using your existing knowledge without performing a web search."
             )
         }
 

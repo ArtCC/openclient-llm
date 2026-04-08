@@ -114,11 +114,13 @@ private extension ChatViewModel {
             conversationSystemPrompt: conversationSystemPrompt
         )
         let toolInstructions = """
-        You have access to a `web_search` tool. Use it when the user asks about current events, \
-        recent information, real-time data, or anything that may require up-to-date knowledge. \
-        After receiving search results, incorporate them naturally into your answer and cite sources \
-        when relevant. Respond using whatever format best serves the answer (Markdown, lists, \
-        code blocks, tables, etc.).
+        You have access to a `web_search` tool. Use it when your training knowledge is insufficient \
+        or likely outdated to answer the user's question accurately: current events, recent news, \
+        real-time data, prices, sports results, software versions, or any fact that may have changed \
+        after your training cutoff. If you can answer confidently from your training knowledge, \
+        respond directly without calling the tool. After receiving search results, incorporate them \
+        naturally into your answer and cite sources when relevant. Respond using whatever format best \
+        serves the answer (Markdown, lists, code blocks, tables, etc.).
         """
         return effectiveSystemPrompt.isEmpty
             ? toolInstructions
