@@ -14,25 +14,25 @@ struct HomeView: View {
     @State private var viewModel = HomeViewModel()
     @State private var selectedConversation: Conversation?
 
-    #if os(macOS)
+#if os(macOS)
     @State private var sidebarDestination: SidebarDestination = .chats
-    #endif
+#endif
 
-    #if os(iOS)
+#if os(iOS)
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab: AppTab = .chats
     @State private var shortcutManager = ShortcutManager.shared
-    #endif
+#endif
 
     // MARK: - View
 
     var body: some View {
         Group {
-            #if os(macOS)
+#if os(macOS)
             macOSLayout
-            #else
+#else
             iOSLayout
-            #endif
+#endif
         }
         .onContinueUserActivity(SpotlightConstants.activityType) { activity in
             guard let idString = activity.userInfo?[SpotlightConstants.activityIdentifierKey] as? String,
@@ -41,28 +41,34 @@ struct HomeView: View {
         }
         .onChange(of: viewModel.pendingConversation) { _, conversation in
             guard let conversation else { return }
-            #if os(iOS)
+#if os(iOS)
             selectedTab = .chats
-            #elseif os(macOS)
+#elseif os(macOS)
             sidebarDestination = .chats
-            #endif
+#endif
             selectedConversation = conversation
             viewModel.send(.pendingConversationConsumed)
         }
-        #if os(iOS)
+#if os(iOS)
+        .task {
+            guard let action = shortcutManager.pendingAction else { return }
+            try? await Task.sleep(for: .milliseconds(300))
+            handleShortcutAction(action)
+            shortcutManager.pendingAction = nil
+        }
         .onChange(of: shortcutManager.pendingAction) { _, action in
             guard let action else { return }
             handleShortcutAction(action)
             shortcutManager.pendingAction = nil
         }
-        #endif
+#endif
     }
 }
 
 // MARK: - Private
 
 private extension HomeView {
-    #if os(iOS)
+#if os(iOS)
     var iOSLayout: some View {
         TabView(selection: $selectedTab) {
             Tab(value: AppTab.chats) {
@@ -166,14 +172,17 @@ private extension HomeView {
         switch action {
         case .newChat:
             selectedTab = .chats
-            viewModel.send(.newChatShortcutTriggered)
+            Task {
+                try? await Task.sleep(for: .milliseconds(350))
+                viewModel.send(.newChatShortcutTriggered)
+            }
         case .search:
             selectedTab = .search
         }
     }
-    #endif
+#endif
 
-    #if os(macOS)
+#if os(macOS)
     enum SidebarDestination: Hashable {
         case chats
         case models
@@ -233,7 +242,7 @@ private extension HomeView {
             SettingsView()
         }
     }
-    #endif
+#endif
 }
 
 // MARK: - Hashable

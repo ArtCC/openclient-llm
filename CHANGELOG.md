@@ -35,6 +35,8 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - Web search sources were never shown after agent tool calls — `WebSearchTool` now returns results via `ToolExecutionResult`, which are merged into `ChatMessage.webSearchResults` by `applyAgentEvent`
 - Regular OpenAI models (`gpt-5`, `gpt-4.1`, `gpt-5.4-mini`) no longer receive `web_search_options` that caused HTTP 400 — the native path was removed entirely
 - Agent loop comment corrected from "responds in plain text" to "generates a natural response"
+- Quick Action cold launch (app fully closed) never triggered navigation — `onChange(of: pendingAction)` does not fire on the initial value set by `SceneDelegate` before `HomeView` exists; added `.task` to `HomeView` that reads `pendingAction` on first appear and consumes it after a 300 ms stabilisation delay
+- Quick Action "New Chat" navigation invisible when launched from a non-chats tab — `selectedTab = .chats` and `newChatShortcutTriggered` were dispatched in the same render frame; added a 350 ms async delay so the tab-switch animation completes before the navigation push fires
 
 ## [1.0.0-build-17] - 2026-04-06
 
