@@ -6,10 +6,10 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-iOS%2026+%20|%20iPadOS%2026+%20|%20macOS%2026+-blue?style=flat-square" alt="Platform" />
+    <img src="https://img.shields.io/badge/Xcode-26+-blue?style=flat-square&logo=xcode" alt="Xcode" />
   <img src="https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift" alt="Swift" />
   <img src="https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square" alt="License" />
-  <img src="https://img.shields.io/badge/Xcode-26+-blue?style=flat-square&logo=xcode" alt="Xcode" />
 </p>
 
 ## Description
@@ -86,8 +86,9 @@ You can also suggest features and report bugs directly from within the app — g
 
 ---
 
+## Your AI. Your server. Your rules
+
 <p align="left">
-  <strong>Your AI. Your server. Your rules.</strong><br/><br/>
   OpenClient is built on the belief that generative AI should be something you control — not something that controls your data.<br/>
   Run local models entirely on your own hardware, or route cloud providers through your own self-hosted proxy.<br/>
   Either way, you decide what gets sent where — no vendor lock-in, no platform middleman, no data you didn't choose to share.<br/><br/>
