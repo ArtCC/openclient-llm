@@ -84,8 +84,6 @@ You can also suggest features and report bugs directly from within the app — g
 
 - [GitHub Profile](https://github.com/ArtCC)
 
----
-
 ## Your AI. Your server. Your rules
 
 <p align="left">
