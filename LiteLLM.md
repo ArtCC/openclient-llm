@@ -98,7 +98,7 @@ model_list:
       supports_function_calling: false
 
   # Ollama — Qwen (Alibaba)
-    - model_name: qwen3:14b
+  - model_name: qwen3:14b
     litellm_params:
       model: ollama/qwen3:14b
       api_base: http://host.docker.internal:11434
