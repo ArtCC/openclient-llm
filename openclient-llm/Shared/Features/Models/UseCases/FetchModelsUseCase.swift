@@ -99,6 +99,9 @@ private extension FetchModelsUseCase {
         var result: [LLMModel.Capability] = []
         if capabilities.contains("vision") { result.append(.vision) }
         if capabilities.contains("tools") { result.append(.functionCalling) }
+        if capabilities.contains("thinking") { result.append(.thinking) }
+        if capabilities.contains("audio") { result.append(.audioInput) }
+        if capabilities.contains("image") { result.append(.imageGeneration) }
         return result
     }
 

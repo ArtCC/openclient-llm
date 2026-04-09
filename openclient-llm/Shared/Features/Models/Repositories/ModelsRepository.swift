@@ -50,33 +50,25 @@ struct ModelsRepository: ModelsRepositoryProtocol {
             body: nil
         )
 
-        let result = response.data.map { info in
-            var capabilities: [LLMModel.Capability] = []
-
-            if info.modelInfo?.supportsVision == true {
-                capabilities.append(.vision)
-            }
-            if info.modelInfo?.supportsFunctionCalling == true {
-                capabilities.append(.functionCalling)
-            }
-            if info.modelInfo?.supportsParallelFunctionCalling == true {
-                capabilities.append(.parallelFunctionCalling)
-            }
-            if info.modelInfo?.supportsResponseSchema == true {
-                capabilities.append(.jsonSchema)
-            }
-
-            let provider = LLMModel.Provider.from(info.modelInfo?.litellmProvider)
-            let mode = LLMModel.Mode(rawString: info.modelInfo?.mode)
-            let providerName = LLMModel.Provider.displayName(from: info.modelInfo?.litellmProvider)
+        var result = response.data.map { info -> LLMModel in
+            let inferredProvider = Self.inferLitellmProvider(
+                from: info.modelInfo?.litellmProvider,
+                modelParam: info.litellmParams?.model
+            )
             return LLMModel(
                 id: info.modelName,
-                capabilities: capabilities,
-                provider: provider,
-                mode: mode,
-                providerName: providerName
+                capabilities: Self.capabilitiesFromModelInfo(info.modelInfo),
+                provider: LLMModel.Provider.from(inferredProvider),
+                mode: LLMModel.Mode(rawString: info.modelInfo?.mode),
+                providerName: LLMModel.Provider.displayName(from: inferredProvider)
             )
         }
+
+        let ollamaItems = Self.ollamaSupplementItems(from: response)
+        if !ollamaItems.isEmpty {
+            result = await supplementOllamaCapabilities(in: result, using: ollamaItems)
+        }
+
         LogManager.success("fetchModelInfo returned \(result.count) models")
         return result
     }
@@ -99,5 +91,96 @@ struct ModelsRepository: ModelsRepositoryProtocol {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return try? decoder.decode(OllamaShowResponse.self, from: data)
+    }
+}
+
+// MARK: - Private
+
+private struct OllamaSupplementItem {
+    let llmModelId: String
+    let nativeModelId: String
+    let apiBase: String
+}
+
+private extension ModelsRepository {
+    nonisolated static func capabilitiesFromModelInfo(
+        _ modelInfo: ModelInfoResponse.ModelInfo?
+    ) -> [LLMModel.Capability] {
+        var caps: [LLMModel.Capability] = []
+        if modelInfo?.supportsVision == true { caps.append(.vision) }
+        if modelInfo?.supportsFunctionCalling == true { caps.append(.functionCalling) }
+        if modelInfo?.supportsParallelFunctionCalling == true { caps.append(.parallelFunctionCalling) }
+        if modelInfo?.supportsResponseSchema == true { caps.append(.jsonSchema) }
+        if modelInfo?.supportsWebSearch == true { caps.append(.webSearch) }
+        return caps
+    }
+
+    nonisolated static func ollamaSupplementItems(from response: ModelInfoResponse) -> [OllamaSupplementItem] {
+        response.data.compactMap { info in
+            let provider = info.modelInfo?.litellmProvider?.lowercased()
+            let rawModelParam = info.litellmParams?.model ?? ""
+            let isOllamaByProvider = provider == "ollama" || provider == "ollama_chat"
+            let isOllamaByParams = rawModelParam.hasPrefix("ollama/") || rawModelParam.hasPrefix("ollama_chat/")
+            guard isOllamaByProvider || isOllamaByParams else { return nil }
+            let apiBase = info.litellmParams?.apiBase ?? "http://localhost:11434"
+            let rawModel = rawModelParam.isEmpty ? info.modelName : rawModelParam
+            let nativeId = rawModel
+                .replacingOccurrences(of: "ollama_chat/", with: "")
+                .replacingOccurrences(of: "ollama/", with: "")
+            return OllamaSupplementItem(llmModelId: info.modelName, nativeModelId: nativeId, apiBase: apiBase)
+        }
+    }
+
+    func supplementOllamaCapabilities(
+        in result: [LLMModel],
+        using items: [OllamaSupplementItem]
+    ) async -> [LLMModel] {
+        var supplementalCaps: [String: [LLMModel.Capability]] = [:]
+        await withTaskGroup(of: (String, [LLMModel.Capability]).self) { group in
+            for item in items {
+                group.addTask {
+                    guard let detail = await self.fetchOllamaModelDetails(
+                        for: item.nativeModelId,
+                        rootURL: item.apiBase
+                    ) else { return (item.llmModelId, []) }
+                    return (item.llmModelId, Self.ollamaCapabilitiesFromNative(detail.capabilities ?? []))
+                }
+            }
+            for await (id, caps) in group where !caps.isEmpty {
+                supplementalCaps[id] = caps
+            }
+        }
+        return result.map { model in
+            guard let extra = supplementalCaps[model.id] else { return model }
+            var updated = model
+            let existing = Set(updated.capabilities.map(\.rawValue))
+            updated.capabilities += extra.filter { !existing.contains($0.rawValue) }
+            return updated
+        }
+    }
+
+    /// Maps Ollama native capability strings to `LLMModel.Capability` values.
+    nonisolated static func ollamaCapabilitiesFromNative(_ capabilities: [String]) -> [LLMModel.Capability] {
+        var result: [LLMModel.Capability] = []
+        if capabilities.contains("vision") { result.append(.vision) }
+        if capabilities.contains("tools") { result.append(.functionCalling) }
+        if capabilities.contains("thinking") { result.append(.thinking) }
+        if capabilities.contains("audio") { result.append(.audioInput) }
+        if capabilities.contains("image") { result.append(.imageGeneration) }
+        return result
+    }
+
+    /// Returns the effective LiteLLM provider string, falling back to the
+    /// `litellm_params.model` prefix when `model_info.litellm_provider` is absent.
+    nonisolated static func inferLitellmProvider(from explicit: String?, modelParam: String?) -> String? {
+        if let explicit, !explicit.isEmpty { return explicit }
+        guard let param = modelParam else { return nil }
+        if param.hasPrefix("ollama_chat/") { return "ollama_chat" }
+        if param.hasPrefix("ollama/") { return "ollama" }
+        if param.hasPrefix("openai/") { return "openai" }
+        if param.hasPrefix("anthropic/") { return "anthropic" }
+        if param.hasPrefix("gemini/") { return "gemini" }
+        if param.hasPrefix("deepseek/") { return "deepseek" }
+        return nil
     }
 }

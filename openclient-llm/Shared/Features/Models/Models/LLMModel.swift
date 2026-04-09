@@ -164,19 +164,31 @@ extension LLMModel {
         case functionCalling
         case parallelFunctionCalling
         case jsonSchema
+        case webSearch
+        case thinking
+        case audioInput
+        case imageGeneration
 
         // MARK: - Properties
 
         var label: String {
             switch self {
             case .vision:
-                String(localized: "Vision")
+                String(localized: "tag.vision")
             case .functionCalling:
-                String(localized: "Tools")
+                String(localized: "tag.tools")
             case .parallelFunctionCalling:
-                String(localized: "Parallel Tools")
+                String(localized: "tag.parallel.tools")
             case .jsonSchema:
-                String(localized: "JSON Mode")
+                String(localized: "tag.JSON.mode")
+            case .webSearch:
+                String(localized: "tag.web.search")
+            case .thinking:
+                String(localized: "tag.thinking")
+            case .audioInput:
+                String(localized: "tag.audio")
+            case .imageGeneration:
+                String(localized: "tag.image.generation")
             }
         }
 
@@ -186,6 +198,10 @@ extension LLMModel {
             case .functionCalling: "wrench.and.screwdriver"
             case .parallelFunctionCalling: "square.stack.3d.up"
             case .jsonSchema: "curlybraces"
+            case .webSearch: "globe"
+            case .thinking: "brain"
+            case .audioInput: "waveform"
+            case .imageGeneration: "photo.artframe"
             }
         }
 
@@ -195,6 +211,10 @@ extension LLMModel {
             case .functionCalling: .orange
             case .parallelFunctionCalling: .cyan
             case .jsonSchema: .green
+            case .webSearch: .blue
+            case .thinking: .indigo
+            case .audioInput: .pink
+            case .imageGeneration: .mint
             }
         }
     }

@@ -13,7 +13,15 @@ nonisolated struct ModelInfoResponse: Decodable, Sendable {
 
     struct ModelInfoData: Decodable, Sendable {
         let modelName: String
+        let litellmParams: LiteLLMParams?
         let modelInfo: ModelInfo?
+    }
+
+    struct LiteLLMParams: Decodable, Sendable {
+        /// Underlying model identifier, e.g. "ollama/gemma4:27b"
+        let model: String?
+        /// Base URL of the backend provider, e.g. "http://localhost:11434"
+        let apiBase: String?
     }
 
     struct ModelInfo: Decodable, Sendable {
