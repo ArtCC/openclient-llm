@@ -39,6 +39,71 @@
       },
       "shouldTranslate" : false
     },
+    "%lld attachment(s)" : {
+      "comment" : "A label that shows the number of attachments and a paperclip icon.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld Anhang/Anhänge"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld συνημμένο(α)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld attachment(s)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld archivo(s) adjunto(s)"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld pièce(s) jointe(s)"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld allegato(i)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 件の添付ファイル"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld bijlage(n)"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld anexo(s)"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld bilaga(or)"
+          }
+        }
+      }
+    },
     "%lld sources" : {
       "comment" : "A label that displays the number of sources found in a search result. The argument is the number of sources.",
       "localizations" : {
@@ -716,6 +781,71 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lägg till tagg…"
+          }
+        }
+      }
+    },
+    "Add to Favourites" : {
+      "comment" : "A label for a button that adds a message to the user's favourites.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zu Favoriten hinzufügen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Προσθήκη στα Αγαπημένα"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add to Favorites"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir a Favoritos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter aux favoris"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi ai Preferiti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お気に入りに追加"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toevoegen aan favorieten"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar aos Favoritos"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till i favoriter"
           }
         }
       }
@@ -1490,6 +1620,71 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Är du säker på att du vill ta bort detta förslag?"
+          }
+        }
+      }
+    },
+    "Assistant" : {
+      "comment" : "A name for the assistant.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistent"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Βοηθός"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistant"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Asistente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistant"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistente"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アシスタント"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistent"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistente"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistent"
           }
         }
       }
@@ -4778,6 +4973,71 @@
         }
       }
     },
+    "Documents" : {
+      "comment" : "A section header for a list of documents.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dokumente"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Έγγραφα"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documents"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documentos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documents"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documenti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ドキュメント"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documenten"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Documentos"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dokument"
+          }
+        }
+      }
+    },
     "Done" : {
       "localizations" : {
         "de" : {
@@ -6070,71 +6330,6 @@
         }
       }
     },
-    "Export Conversation" : {
-      "comment" : "A button that exports the conversation.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Konversation exportieren"
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Εξαγωγή Συνομιλίας"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export Conversation"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Exportar conversación"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Exporter la conversation"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Esporta conversazione"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "会話をエクスポート"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gesprek exporteren"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Exportar Conversa"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Exportera konversation"
-          }
-        }
-      }
-    },
     "Extra Info" : {
       "comment" : "A label displayed above the user's extra information.",
       "localizations" : {
@@ -6196,6 +6391,71 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Extra information"
+          }
+        }
+      }
+    },
+    "Favourites" : {
+      "comment" : "A title for a screen that shows the user's favourite messages.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoriten"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αγαπημένα"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoritos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoris"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preferiti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お気に入り"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorieten"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoritos"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favoriter"
           }
         }
       }
@@ -7425,6 +7685,136 @@
         }
       }
     },
+    "Images" : {
+      "comment" : "A section header for a list of images.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilder"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Εικόνες"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Images"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imágenes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Images"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Immagini"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afbeeldingen"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imagens"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilder"
+          }
+        }
+      }
+    },
+    "Images and documents you attach to messages will appear here." : {
+      "comment" : "A description of the content of the view.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilder und Dokumente, die Sie Nachrichten anhängen, werden hier angezeigt."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Οι εικόνες και τα έγγραφα που επισυνάπτετε στα μηνύματα θα εμφανίζονται εδώ."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Images and documents you attach to messages will appear here."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las imágenes y documentos que adjuntes a los mensajes aparecerán aquí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les images et documents que vous joignez aux messages apparaîtront ici."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le immagini e i documenti che alleghi ai messaggi appariranno qui."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メッセージに添付した画像や書類はここに表示されます。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afbeeldingen en documenten die je aan berichten toevoegt, verschijnen hier."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As imagens e documentos que anexar às mensagens aparecerão aqui."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bilder och dokument som du bifogar i meddelanden visas här."
+          }
+        }
+      }
+    },
     "In Progress" : {
       "localizations" : {
         "de" : {
@@ -8259,6 +8649,71 @@
         }
       }
     },
+    "Long-press any message and tap \"Add to Favourites\" to save it here." : {
+      "comment" : "A description of the action to add a message to the favourites.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halte eine Nachricht gedrückt und tippe auf „Zu Favoriten hinzufügen“, um sie hier zu speichern."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πατήστε παρατεταμένα οποιοδήποτε μήνυμα και επιλέξτε «Προσθήκη στα Αγαπημένα» για να το αποθηκεύσετε εδώ."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Long-press any message and tap \"Add to Favorites\" to save it here."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantén pulsado cualquier mensaje y toca \"Añadir a Favoritos\" para guardarlo aquí."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appuyez longuement sur un message et touchez « Ajouter aux favoris » pour l’enregistrer ici."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieni premuto un messaggio e tocca \"Aggiungi ai Preferiti\" per salvarlo qui."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メッセージを長押しして「お気に入りに追加」をタップすると、ここに保存されます。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd een bericht ingedrukt en tik op \"Toevoegen aan favorieten\" om het hier op te slaan."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pressione longamente qualquer mensagem e toque em \"Adicionar aos Favoritos\" para guardá-la aqui."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck länge på ett meddelande och tryck på \"Lägg till i favoriter\" för att spara det här."
+          }
+        }
+      }
+    },
     "Max Tokens" : {
       "comment" : "A slider that lets the user adjust the maximum number of tokens.",
       "localizations" : {
@@ -8453,6 +8908,71 @@
         }
       }
     },
+    "Media & Files" : {
+      "comment" : "A button that displays a sheet for selecting and viewing media files and attachments.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medien & Dateien"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Μέσα & Αρχεία"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Media & Files"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medios y archivos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Médias et fichiers"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Media e file"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メディアとファイル"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Media en bestanden"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Média e Ficheiros"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Media och filer"
+          }
+        }
+      }
+    },
     "Message..." : {
       "localizations" : {
         "de" : {
@@ -8642,6 +9162,71 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Modeller"
+          }
+        }
+      }
+    },
+    "More Options" : {
+      "comment" : "A label for the \"More Options\" button.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weitere Optionen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Περισσότερες επιλογές"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More Options"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más opciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus d’options"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altre opzioni"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "その他のオプション"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meer opties"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais Opções"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fler alternativ"
           }
         }
       }
@@ -9290,6 +9875,71 @@
         }
       }
     },
+    "No Favourites Yet" : {
+      "comment" : "A message displayed when a user has no favourite messages.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch keine Favoriten vorhanden"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Δεν υπάρχουν αγαπημένα ακόμα"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Favorites Yet"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin favoritos aún"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun favori pour le moment"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun preferito ancora"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お気に入りはまだありません"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nog geen favorieten"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem Favoritos Ainda"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga favoriter än"
+          }
+        }
+      }
+    },
     "No internet connection. Please check your network." : {
       "localizations" : {
         "de" : {
@@ -9350,6 +10000,71 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ingen internetanslutning. Kontrollera ditt nätverk."
+          }
+        }
+      }
+    },
+    "No Media or Files" : {
+      "comment" : "A description of the state displayed when the user has no media or files.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Medien oder Dateien"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Δεν υπάρχουν μέσα ή αρχεία"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Media or Files"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sin medios ni archivos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun média ni fichier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nessun media o file"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メディアやファイルがありません"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geen media of bestanden"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sem Média ou Ficheiros"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inga medier eller filer"
           }
         }
       }
@@ -10193,6 +10908,71 @@
         }
       }
     },
+    "Open in App" : {
+      "comment" : "A button that opens the app.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In App öffnen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Άνοιγμα στην εφαρμογή"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in App"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir en la app"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir dans l’app"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri nell’app"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリで開く"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Openen in app"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir na App"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öppna i appen"
+          }
+        }
+      }
+    },
     "Open Settings" : {
       "comment" : "A button that opens the user's device settings.",
       "localizations" : {
@@ -10449,6 +11229,71 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "OpenClient ansluter till din LiteLLM för integritetsfokuserad åtkomst till AI."
+          }
+        }
+      }
+    },
+    "OpenClient LLM" : {
+      "comment" : "Accessibility description of the menu bar icon.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenClient LLM"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenClient LLM"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenClient LLM menu bar icon"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenClient LLM"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenClient LLM"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenClient LLM"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenClient LLM"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenClient LLM"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenClient LLM"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenClient LLM"
           }
         }
       }
@@ -11740,6 +12585,71 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Avvisad"
+          }
+        }
+      }
+    },
+    "Remove from Favourites" : {
+      "comment" : "A label for removing a message from the user's favourites.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aus Favoriten entfernen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αφαίρεση από Αγαπημένα"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from Favorites"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitar de Favoritos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retirer des favoris"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi dai Preferiti"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お気に入りから削除"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verwijderen uit favorieten"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover dos Favoritos"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta bort från favoriter"
           }
         }
       }
@@ -15288,130 +16198,522 @@
     },
     "tag.audio" : {
       "comment" : "Label for the audio input capability.",
-      "isCommentAutoGenerated" : true,
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Audio" } },
-        "el" : { "stringUnit" : { "state" : "translated", "value" : "Audio" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Audio" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Audio" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Audio" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Audio" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Audio" } },
-        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Audio" } },
-        "pt-PT" : { "stringUnit" : { "state" : "translated", "value" : "Audio" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Audio" } }
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Audio"
+          }
+        }
       }
     },
     "tag.image.generation" : {
       "comment" : "Label for the image generation capability.",
-      "isCommentAutoGenerated" : true,
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Image" } },
-        "el" : { "stringUnit" : { "state" : "translated", "value" : "Image" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Image" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Image" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Image" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Image" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Image" } },
-        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Image" } },
-        "pt-PT" : { "stringUnit" : { "state" : "translated", "value" : "Image" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Image" } }
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Image"
+          }
+        }
       }
     },
     "tag.JSON.mode" : {
       "comment" : "Label for a capability that uses JSON schemas.",
-      "isCommentAutoGenerated" : true,
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "JSON Mode" } },
-        "el" : { "stringUnit" : { "state" : "translated", "value" : "JSON Mode" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "JSON Mode" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "JSON Mode" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "JSON Mode" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "JSON Mode" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "JSON Mode" } },
-        "nl" : { "stringUnit" : { "state" : "translated", "value" : "JSON Mode" } },
-        "pt-PT" : { "stringUnit" : { "state" : "translated", "value" : "JSON Mode" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "JSON Mode" } }
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JSON Mode"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JSON Mode"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JSON Mode"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JSON Mode"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JSON Mode"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JSON Mode"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JSON Mode"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JSON Mode"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JSON Mode"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JSON Mode"
+          }
+        }
       }
     },
     "tag.parallel.tools" : {
       "comment" : "Label for a capability that allows parallel function calls.",
-      "isCommentAutoGenerated" : true,
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Parallel Tools" } },
-        "el" : { "stringUnit" : { "state" : "translated", "value" : "Parallel Tools" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Parallel Tools" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Parallel Tools" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Parallel Tools" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Parallel Tools" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Parallel Tools" } },
-        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Parallel Tools" } },
-        "pt-PT" : { "stringUnit" : { "state" : "translated", "value" : "Parallel Tools" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Parallel Tools" } }
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parallel Tools"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parallel Tools"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parallel Tools"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parallel Tools"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parallel Tools"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parallel Tools"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parallel Tools"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parallel Tools"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parallel Tools"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parallel Tools"
+          }
+        }
       }
     },
     "tag.thinking" : {
       "comment" : "Label for a capability that allows the LLM to think and generate complex responses.",
-      "isCommentAutoGenerated" : true,
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Thinking" } },
-        "el" : { "stringUnit" : { "state" : "translated", "value" : "Thinking" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Thinking" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Thinking" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Thinking" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Thinking" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Thinking" } },
-        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Thinking" } },
-        "pt-PT" : { "stringUnit" : { "state" : "translated", "value" : "Thinking" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Thinking" } }
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Thinking"
+          }
+        }
       }
     },
     "tag.tools" : {
       "comment" : "Label for a capability that allows calling functions in other tools.",
-      "isCommentAutoGenerated" : true,
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Tools" } },
-        "el" : { "stringUnit" : { "state" : "translated", "value" : "Tools" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Tools" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Tools" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Tools" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Tools" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Tools" } },
-        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Tools" } },
-        "pt-PT" : { "stringUnit" : { "state" : "translated", "value" : "Tools" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Tools" } }
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tools"
+          }
+        }
       }
     },
     "tag.vision" : {
       "comment" : "Label for the \"Vision\" capability.",
-      "isCommentAutoGenerated" : true,
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Vision" } },
-        "el" : { "stringUnit" : { "state" : "translated", "value" : "Vision" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Vision" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Vision" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Vision" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Vision" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Vision" } },
-        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Vision" } },
-        "pt-PT" : { "stringUnit" : { "state" : "translated", "value" : "Vision" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Vision" } }
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vision"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vision"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vision"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vision"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vision"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vision"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vision"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vision"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vision"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vision"
+          }
+        }
       }
     },
     "tag.web.search" : {
       "comment" : "Label for a capability that allows the model to perform web searches.",
-      "isCommentAutoGenerated" : true,
       "localizations" : {
-        "de" : { "stringUnit" : { "state" : "translated", "value" : "Web Search" } },
-        "el" : { "stringUnit" : { "state" : "translated", "value" : "Web Search" } },
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Web Search" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Web Search" } },
-        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Web Search" } },
-        "it" : { "stringUnit" : { "state" : "translated", "value" : "Web Search" } },
-        "ja" : { "stringUnit" : { "state" : "translated", "value" : "Web Search" } },
-        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Web Search" } },
-        "pt-PT" : { "stringUnit" : { "state" : "translated", "value" : "Web Search" } },
-        "sv" : { "stringUnit" : { "state" : "translated", "value" : "Web Search" } }
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web Search"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web Search"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web Search"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web Search"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web Search"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web Search"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web Search"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web Search"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web Search"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Web Search"
+          }
+        }
       }
     },
     "Tags" : {
@@ -18312,6 +19614,71 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Igår"
+          }
+        }
+      }
+    },
+    "You" : {
+      "comment" : "A name for the user.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Εσύ"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tú"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "あなた"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jij"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du"
           }
         }
       }

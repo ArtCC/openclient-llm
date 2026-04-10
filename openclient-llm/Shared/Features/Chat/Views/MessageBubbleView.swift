@@ -27,6 +27,7 @@ struct MessageBubbleView: View {
     var onEditTapped: (() -> Void)?
     var onRegenerateTapped: (() -> Void)?
     var onForkTapped: (() -> Void)?
+    var onFavouriteTapped: (() -> Void)?
     @State private var cursorVisible: Bool = false
     @State private var isThinkingExpanded: Bool = true
     @State private var expandedImageData: Data?
@@ -276,6 +277,20 @@ private extension MessageBubbleView {
                 Label(String(localized: "Fork from here"), systemImage: "arrow.branch")
             }
         }
+
+        if let onFavouriteTapped {
+            Divider()
+            Button {
+                onFavouriteTapped()
+            } label: {
+                Label(
+                    message.isFavourite
+                        ? String(localized: "Remove from Favourites")
+                        : String(localized: "Add to Favourites"),
+                    systemImage: message.isFavourite ? "star.slash" : "star"
+                )
+            }
+        }
     }
 
     func copyToClipboard(_ text: String) {
@@ -451,44 +466,4 @@ private extension MessageBubbleView {
         NSPasteboard.general.writeObjects([image])
 #endif
     }
-}
-
-#Preview("User message") {
-    MessageBubbleView(
-        message: ChatMessage(role: .user, content: "Hello, how are you?")
-    )
-    .padding()
-}
-
-// swiftlint:disable line_length
-#Preview("Assistant message") {
-    MessageBubbleView(
-        message: ChatMessage(
-            role: .assistant,
-            content: "I'm doing great! **How can I help you** today?\n\nHere's a list:\n- Item one\n- Item two\n- Item three"
-        )
-    )
-    .padding()
-}
-
-#Preview("Code block") {
-    MessageBubbleView(
-        message: ChatMessage(
-            role: .assistant,
-            content: "Sure! Here's how to do it in Swift:\n\n```swift\nfunc greet(name: String) -> String {\n    return \"Hello, \\(name)!\"\n}\n```\n\nJust call `greet(name: \"World\")` and you're done."
-        )
-    )
-    .padding()
-}
-// swiftlint:enable line_length
-
-#Preview("Streaming message") {
-    MessageBubbleView(
-        message: ChatMessage(
-            role: .assistant,
-            content: "Let me think about that..."
-        ),
-        isStreaming: true
-    )
-    .padding()
 }

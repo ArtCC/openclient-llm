@@ -22,6 +22,9 @@ struct ChatView: View {
     @State private var scrollPosition = ScrollPosition(idType: String.self)
     @State private var showSystemPromptSheet: Bool = false
     @State private var showModelParametersSheet: Bool = false
+    @State private var showFavouritesSheet: Bool = false
+    @State private var showMediaGallery: Bool = false
+    @State private var scrollToMessageId: UUID?
     @State private var showImagePicker: Bool = false
     @State private var showDocumentPicker: Bool = false
     @State private var showCameraPicker: Bool = false
@@ -49,18 +52,18 @@ struct ChatView: View {
     // MARK: - View
 
     var body: some View {
-        #if os(macOS)
+#if os(macOS)
         macOSBody
-        #else
+#else
         iOSBody
-        #endif
+#endif
     }
 }
 
 // MARK: - Private
 
 private extension ChatView {
-    #if os(macOS)
+#if os(macOS)
     var macOSBody: some View {
         Group {
             switch viewModel.state {
@@ -76,30 +79,43 @@ private extension ChatView {
                 modelSelector(using: viewModel)
             }
             ToolbarItem(placement: .primaryAction) {
-                HStack(spacing: 4) {
+                Menu {
                     if case .loaded(let loadedSt) = viewModel.state,
                        loadedSt.conversation != nil, !loadedSt.messages.isEmpty,
                        let url = makeExportURL(loadedSt) {
                         ShareLink(item: url) {
-                            Image(systemName: "square.and.arrow.up")
+                            Label(String(localized: "Export"), systemImage: "square.and.arrow.up")
                         }
-                        .accessibilityLabel(String(localized: "Export Conversation"))
                     }
-
+                    if case .loaded(let loadedSt) = viewModel.state,
+                       !loadedSt.messages.isEmpty {
+                        Button {
+                            showFavouritesSheet = true
+                        } label: {
+                            Label(String(localized: "Favourites"), systemImage: "star")
+                        }
+                        if loadedSt.messages.contains(where: { !$0.attachments.isEmpty }) {
+                            Button {
+                                showMediaGallery = true
+                            } label: {
+                                Label(String(localized: "Media & Files"), systemImage: "photo.on.rectangle")
+                            }
+                        }
+                    }
                     Button {
                         showModelParametersSheet = true
                     } label: {
-                        Image(systemName: "slider.horizontal.3")
+                        Label(String(localized: "Model Parameters"), systemImage: "slider.horizontal.3")
                     }
-                    .accessibilityLabel(String(localized: "Model Parameters"))
-
                     Button {
                         showSystemPromptSheet = true
                     } label: {
-                        Image(systemName: "text.bubble")
+                        Label(String(localized: "System Prompt"), systemImage: "text.bubble")
                     }
-                    .accessibilityLabel(String(localized: "System Prompt"))
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
+                .accessibilityLabel(String(localized: "More Options"))
             }
         }
         .sheet(isPresented: $showSystemPromptSheet) {
@@ -113,6 +129,25 @@ private extension ChatView {
                 viewModel: viewModel,
                 isPresented: $showModelParametersSheet
             )
+        }
+        .sheet(isPresented: $showFavouritesSheet) {
+            if case .loaded(let loadedSt) = viewModel.state {
+                ChatFavouritesView(
+                    messages: loadedSt.messages,
+                    onMessageSelected: { id in scrollToMessageId = id }
+                )
+#if os(macOS)
+                .frame(width: 500, height: 460)
+#endif
+            }
+        }
+        .sheet(isPresented: $showMediaGallery) {
+            if case .loaded(let loadedSt) = viewModel.state {
+                MediaFilesGalleryView(messages: loadedSt.messages) { scrollToMessageId = $0 }
+#if os(macOS)
+                    .frame(width: 500, height: 460)
+#endif
+            }
         }
         .sheet(item: $editingMessage) { message in
             editMessageSheet(
@@ -141,7 +176,7 @@ private extension ChatView {
             }
         }
     }
-    #endif
+#endif
 
     var iOSBody: some View {
         NavigationStack {
@@ -162,30 +197,43 @@ private extension ChatView {
                     modelSelector(using: viewModel)
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    HStack(spacing: 4) {
+                    Menu {
                         if case .loaded(let loadedSt) = viewModel.state,
                            loadedSt.conversation != nil, !loadedSt.messages.isEmpty,
                            let url = makeExportURL(loadedSt) {
                             ShareLink(item: url) {
-                                Image(systemName: "square.and.arrow.up")
+                                Label(String(localized: "Export"), systemImage: "square.and.arrow.up")
                             }
-                            .accessibilityLabel(String(localized: "Export Conversation"))
                         }
-
+                        if case .loaded(let loadedSt) = viewModel.state,
+                           !loadedSt.messages.isEmpty {
+                            Button {
+                                showFavouritesSheet = true
+                            } label: {
+                                Label(String(localized: "Favourites"), systemImage: "star")
+                            }
+                            if loadedSt.messages.contains(where: { !$0.attachments.isEmpty }) {
+                                Button {
+                                    showMediaGallery = true
+                                } label: {
+                                    Label(String(localized: "Media & Files"), systemImage: "photo.on.rectangle")
+                                }
+                            }
+                        }
                         Button {
                             showModelParametersSheet = true
                         } label: {
-                            Image(systemName: "slider.horizontal.3")
+                            Label(String(localized: "Model Parameters"), systemImage: "slider.horizontal.3")
                         }
-                        .accessibilityLabel(String(localized: "Model Parameters"))
-
                         Button {
                             showSystemPromptSheet = true
                         } label: {
-                            Image(systemName: "text.bubble")
+                            Label(String(localized: "System Prompt"), systemImage: "text.bubble")
                         }
-                        .accessibilityLabel(String(localized: "System Prompt"))
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
+                    .accessibilityLabel(String(localized: "More Options"))
                 }
             }
             .sheet(isPresented: $showSystemPromptSheet) {
@@ -199,6 +247,19 @@ private extension ChatView {
                     viewModel: viewModel,
                     isPresented: $showModelParametersSheet
                 )
+            }
+            .sheet(isPresented: $showFavouritesSheet) {
+                if case .loaded(let loadedSt) = viewModel.state {
+                    ChatFavouritesView(
+                        messages: loadedSt.messages,
+                        onMessageSelected: { id in scrollToMessageId = id }
+                    )
+                }
+            }
+            .sheet(isPresented: $showMediaGallery) {
+                if case .loaded(let loadedSt) = viewModel.state {
+                    MediaFilesGalleryView(messages: loadedSt.messages) { scrollToMessageId = $0 }
+                }
             }
             .sheet(item: $editingMessage) { message in
                 editMessageSheet(
@@ -238,7 +299,7 @@ private extension ChatView {
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 VStack(spacing: 0) {
                     errorBanner(loadedState.errorMessage)
-                    attachmentPreview(loadedState)
+                    attachmentPreview(loadedState, send: { viewModel.send($0) })
                     ChatInputBarView(
                         inputText: $inputText,
                         showImagePicker: $showImagePicker,
@@ -318,12 +379,15 @@ private extension ChatView {
             .onChange(of: loadedState.scrollToBottomTrigger) {
                 proxy.scrollTo("scroll-bottom")
             }
+            .onChange(of: scrollToMessageId) { _, newId in
+                guard let id = newId else { return }
+                withAnimation(.easeInOut(duration: 0.35)) { proxy.scrollTo(id, anchor: .center) }
+                scrollToMessageId = nil
+            }
             .task(id: loadedState.messages.isEmpty) {
                 guard !loadedState.messages.isEmpty else { return }
                 try? await Task.sleep(for: .milliseconds(120))
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    proxy.scrollTo("scroll-bottom")
-                }
+                withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo("scroll-bottom") }
             }
 #if os(iOS)
             .onReceive(
@@ -395,7 +459,10 @@ private extension ChatView {
                     } : nil,
                     onForkTapped: loadedState.conversation != nil ? {
                         viewModel.send(.forkFromMessage(message.id))
-                    } : nil
+                    } : nil,
+                    onFavouriteTapped: {
+                        viewModel.send(.toggleFavourite(message.id))
+                    }
                 )
                 .id(message.id)
                 .transition(.opacity)
@@ -426,65 +493,6 @@ private extension ChatView {
         .transition(.scale(scale: 0.8).combined(with: .opacity))
     }
 
-    // MARK: - Error Banner
-
-    @ViewBuilder
-    func errorBanner(_ errorMessage: String?) -> some View {
-        if let errorMessage {
-            HStack(spacing: 8) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                Text(errorMessage)
-                    .font(.caption)
-                Spacer()
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            .background(Color.red.opacity(0.85))
-            .foregroundStyle(.white)
-        }
-    }
-
-    // MARK: - Attachment Preview
-
-    @ViewBuilder
-    func attachmentPreview(_ loadedState: ChatViewModel.LoadedState) -> some View {
-        if !loadedState.pendingAttachments.isEmpty {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(loadedState.pendingAttachments) { attachment in
-                        attachmentThumbnail(attachment)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-            }
-        }
-    }
-
-    func attachmentThumbnail(_ attachment: ChatMessage.Attachment) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: attachment.type == .image ? "photo" : "doc.fill")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Text(attachment.fileName)
-                .font(.caption)
-                .lineLimit(1)
-                .foregroundStyle(.primary)
-
-            Button {
-                viewModel.send(.attachmentRemoved(attachment.id))
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .glassEffect(.regular, in: .capsule)
-    }
 }
 
 #Preview {
