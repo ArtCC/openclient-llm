@@ -37,6 +37,7 @@ final class ChatViewModel {
         case forkFromMessage(UUID)
         case branchedConversationConsumed
         case webSearchToggled
+        case toggleFavourite(UUID)
     }
 
     enum State: Equatable {
@@ -179,7 +180,7 @@ final class ChatViewModel {
         case .startRecordingTapped, .stopRecordingTapped, .cancelRecordingTapped:
             handleRecordingEvent(event)
         case .exportConversation, .exportDataConsumed, .regenerateLastResponse,
-             .editMessage, .forkFromMessage, .branchedConversationConsumed:
+             .editMessage, .forkFromMessage, .branchedConversationConsumed, .toggleFavourite:
             handlePhase6Event(event)
         case .webSearchToggled:
             toggleWebSearch()

@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.1.0-build-20] - 2026-04-10
+
+### Added
+
+- **Media & Files gallery** — "Media & Files" entry in the chat toolbar menu opens a sheet with two sections: images displayed in a `LazyVGrid` of square thumbnails (rendered from persisted `Data`, no network required) and documents listed by file name and date; tapping an image opens `ImagePreviewView`; tapping a document opens a `PDFPreviewView` powered by `PDFKitRepresentable` (iOS & macOS); both support a "Go to message" button that dismisses the sheet and scrolls to the originating message
+- **Favourite messages** — long-pressing any message shows a context menu option to mark/unmark it as a favourite (`isFavourite: Bool` in `ChatMessage`, persisted via `Codable` + `FileManager`); "Favourites" entry in the chat toolbar menu opens `ChatFavouritesView`, a sheet listing all favourited messages with role icon, text preview, and date; tapping a row scrolls directly to the message
+- **macOS menu bar companion** — persistent `NSStatusItem` (`message.circle.fill`) in the macOS menu bar that opens a 380×540 `NSPopover` containing a full `ChatView` with streaming; "Open in App" button activates the main window; state (model, API key, base URL) shared via existing managers; initialised through `AppDelegate` + `@NSApplicationDelegateAdaptor`
+
+### Changed
+
+- Chat toolbar unified: the three individual action buttons (`square.and.arrow.up`, `slider.horizontal.3`, `text.bubble`) replaced by a single `Menu` with `ellipsis.circle` label on both iOS and macOS — options listed alphabetically: Export, Favourites, Media & Files (conditional on attachments), Model Parameters, System Prompt
+- `scrollToFavouriteId` renamed to `scrollToMessageId` in `ChatView` to serve both Favourites and Media & Files scroll-to-message navigation
+
 ## [1.0.1-build-19] - 2026-04-09
 
 ### Added

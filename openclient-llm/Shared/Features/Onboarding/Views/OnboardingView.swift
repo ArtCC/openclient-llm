@@ -80,11 +80,11 @@ private extension OnboardingView {
                         Image(systemName: "chevron.left")
                     }
                     .accessibilityLabel(String(localized: "Back"))
-                    #if os(macOS)
+#if os(macOS)
                     .buttonStyle(.bordered)
-                    #else
+#else
                     .buttonStyle(.glass)
-                    #endif
+#endif
                 } else {
                     Image(systemName: "chevron.left").hidden()
                 }
@@ -100,11 +100,11 @@ private extension OnboardingView {
                             .font(.caption2)
                     }
                 }
-                #if os(macOS)
+#if os(macOS)
                 .buttonStyle(.bordered)
-                #else
+#else
                 .buttonStyle(.glass)
-                #endif
+#endif
             }
 
             stepIndicator(currentStep: loadedState.currentStep)
@@ -221,11 +221,7 @@ private extension OnboardingView {
                     .foregroundStyle(Color.appAccent)
                     .symbolEffect(.pulse)
                     .frame(width: 80, height: 80)
-                    #if os(macOS)
                     .background(Color.appAccent.opacity(0.12), in: .circle)
-                    #else
-                    .glassEffect(.regular.tint(Color.appAccent), in: .circle)
-                    #endif
 
                 VStack(spacing: 6) {
                     Text(String(localized: "Connect Your Server"))
@@ -249,10 +245,10 @@ private extension OnboardingView {
                     )
                     .textFieldStyle(.roundedBorder)
                     .textSelection(.enabled).textContentType(.URL).autocorrectionDisabled()
-                    #if os(iOS)
+#if os(iOS)
                     .textInputAutocapitalization(.never)
                     .keyboardType(.URL)
-                    #endif
+#endif
                     .onChange(of: serverURL) { _, newValue in
                         viewModel.send(.serverURLChanged(newValue))
                     }
@@ -304,8 +300,8 @@ private extension OnboardingView {
             .buttonStyle(.plain)
             .accessibilityLabel(
                 isAPIKeyVisible
-                    ? String(localized: "Hide API Key")
-                    : String(localized: "Show API Key")
+                ? String(localized: "Hide API Key")
+                : String(localized: "Show API Key")
             )
         }
         .onChange(of: apiKey) { _, newValue in
@@ -326,19 +322,19 @@ private extension OnboardingView {
                     }
                     Text(
                         loadedState.connectionStatus == .testing
-                            ? String(localized: "Testing...")
-                            : String(localized: "Test Connection")
+                        ? String(localized: "Testing...")
+                        : String(localized: "Test Connection")
                     )
                 }
                 .frame(maxWidth: .infinity)
             }
-            #if os(macOS)
+#if os(macOS)
             .buttonStyle(.bordered)
             .controlSize(.large)
-            #else
+#else
             .buttonStyle(.glass)
             .controlSize(.large)
-            #endif
+#endif
             .disabled(loadedState.serverURL.isEmpty || loadedState.connectionStatus == .testing)
 
             switch loadedState.connectionStatus {
@@ -406,11 +402,11 @@ private extension OnboardingView {
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
-                #if os(macOS)
+#if os(macOS)
                 .background(Color.appAccent.opacity(0.08), in: .capsule)
-                #else
+#else
                 .glassEffect(.regular, in: .capsule)
-                #endif
+#endif
             }
         }
     }
@@ -433,11 +429,11 @@ private extension OnboardingView {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action, label: label)
-            #if os(macOS)
+#if os(macOS)
             .buttonStyle(.borderedProminent)
-            #else
+#else
             .buttonStyle(.glassProminent)
-            #endif
+#endif
             .controlSize(.large)
             .disabled(isDisabled)
     }

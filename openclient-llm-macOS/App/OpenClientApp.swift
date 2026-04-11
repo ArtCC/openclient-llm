@@ -10,6 +10,10 @@ import SwiftUI
 
 @main
 struct OpenClientApp: App {
+    // MARK: - Properties
+
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     // MARK: - View
 
     var body: some Scene {

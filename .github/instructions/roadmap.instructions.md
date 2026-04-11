@@ -98,13 +98,14 @@ Goal: Deeper OS integration and quick actions.
 - [x] **App icon quick actions (iOS/iPadOS)**: Add Home Screen quick actions to the iOS and iPadOS app icon using `UIApplicationShortcutItem`. Actions: "New Chat" (creates a blank conversation and navigates directly to chat input) and "Search" (opens the conversation list with the search field already focused). Actions defined statically in `Info.plist` and/or dynamically at runtime via `UIApplication.shortcutItems`. Handled in the app delegate / scene delegate with a `ShortcutAction` enum (`newChat`, `search`) routed through the navigation state.
 - [x] **Spotlight search**: Index conversations with `CSSearchableItem` / `CoreSpotlight` so users can find past chats directly from Spotlight. Each conversation is indexed with its title and a snippet of the last message. Tapping a Spotlight result opens the app directly in that conversation via `NSUserActivity` continuation.
 
-## Phase 9 — RAG & Knowledge Base
+## Phase 9 — UI Polish & macOS Companion
 
-Goal: Let users build persistent knowledge bases from their documents and query them via LiteLLM RAG.
+Goal: Clean up the chat header, reduce toolbar clutter, and bring a quick-access companion to macOS.
 
-- [ ] **RAG: ingest documents into knowledge base**: Button in chat (or attachment flow) to send a PDF/text file to `POST /v1/rag/ingest`. The returned `vector_store_id` is stored per conversation. Falls back gracefully to the existing direct-attachment flow if the server returns an error (vector store not configured).
-- [ ] **RAG: knowledge base mode in conversation**: When a conversation has a `vector_store_id`, route messages through `POST /v1/rag/query` (with `retrieval_config`) instead of `/chat/completions`. Supports streaming. A visual indicator in the input bar shows RAG is active. The `rag/query` response follows the standard OpenAI chat completion format — no UI changes needed for message rendering.
-- [ ] **Knowledge base management**: Screen in Settings to list and delete the knowledge bases (vector store IDs) associated with conversations. Each entry shows conversation title, provider, and creation date.
+- [x] **Chat toolbar menu consolidation**: Replace the three individual action buttons on the right side of the chat header (`square.and.arrow.up`, `slider.horizontal.3`, `text.bubble`) with a single `Menu` button (`ellipsis.circle`). Menu options listed in alphabetical order: Export (ShareLink), Favourites, Media & Files, Model Parameters, System Prompt. "Media & Files" is only shown when the conversation has at least one attachment. Applies to both iOS and macOS. On macOS, use the native SwiftUI `Menu` behaviour; if a custom view is needed to match platform conventions it will be implemented as a dedicated component.
+- [x] **Favourite messages**: Long-pressing any message shows a context menu option to mark/unmark it as a favourite (`isFavorite: Bool` field added to `ChatMessage`, persisted via the existing `Codable` + `FileManager` layer). The "Favourites" entry in the chat toolbar menu opens a sheet listing all favourited messages in the current conversation. Each row shows the message role, a text preview, and the date. Tapping a row dismisses the sheet and scrolls directly to that message in the chat using the existing `ScrollViewReader` + `proxy.scrollTo(message.id, anchor: .center)` infrastructure.
+- [x] **macOS menu bar companion**: A persistent `NSStatusItem` in the macOS menu bar that opens a compact popover with a full quick-chat interface. Features: text input, streaming response display using the currently active model and server configuration, and an "Open in app" button to continue the conversation in the main window. The companion works whether the main app window is open or closed. State (active model, API key, base URL) is shared with the main app via the existing managers.
+- [x] **Media & Files gallery**: The "Media & Files" entry in the chat toolbar menu opens a sheet with two sections — images displayed in a `LazyVGrid` of square thumbnails (rendered directly from the persisted `Data`, no network required), and documents listed by `fileName` and date. Tapping an image opens the existing `ImagePreviewView`. Tapping a document opens a `QuickLook` / `PDFView` sheet. Both support a "Go to message" action that dismisses the sheet and scrolls to the originating message using `proxy.scrollTo(message.id, anchor: .center)`.
 
 ## Phase 10 — System Integration & Import
 
@@ -117,6 +118,6 @@ Goal: Allow other apps to send content to OpenClient LLM and let users bring dat
 - [ ] **Widget (iOS/iPadOS)**: Home Screen / Lock Screen widget using WidgetKit. Exact widget types, sizes, and content to be defined — needs further scoping before implementation.
 - [ ] **Live Activities / Dynamic Island (iOS)**: Show the streaming of an in-progress response on the Lock Screen and in the Dynamic Island while the user multitasks. Implemented via `ActivityKit` with a `ActivityAttributes` struct carrying the current partial response text and model name.
 
-## Current Phase: 9 — RAG & Knowledge Base
+## Current Phase: 9 — UI Polish & macOS Companion
 
 Focus exclusively on Phase 9 features. Do not over-engineer for future phases.
