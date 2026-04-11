@@ -15,6 +15,8 @@ struct MenuBarChatView: View {
 
     var onOpenInApp: () -> Void
 
+    @State private var chatId = UUID()
+
     // MARK: - View
 
     var body: some View {
@@ -22,6 +24,7 @@ struct MenuBarChatView: View {
             headerBar
             Divider()
             ChatView()
+                .id(chatId)
         }
         .frame(width: 380, height: 540)
     }
@@ -46,6 +49,15 @@ private extension MenuBarChatView {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
+            Button {
+                chatId = UUID()
+            } label: {
+                Image(systemName: "square.and.pencil")
+                    .font(.caption)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .help(String(localized: "New Chat"))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

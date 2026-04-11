@@ -58,7 +58,6 @@ final class MenuBarManager: NSObject {
             popover.performClose(sender)
         } else {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
-            NSApplication.shared.activate()
         }
     }
 }

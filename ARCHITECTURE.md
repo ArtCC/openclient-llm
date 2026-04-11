@@ -71,6 +71,7 @@ openclient-llm/                              # iOS target
 │   │   │       ├── ChatView.swift
 │   │   │       ├── ChatView+Attachments.swift        # errorBanner, attachmentPreview, attachmentThumbnail helpers
 │   │   │       ├── ChatView+EditExport.swift
+│   │   │       ├── ChatView+Menu.swift                # ChatMenuAction enum + menuActions(for:) sorted by localizedCompare
 │   │   │       ├── ChatView+ModelSelector.swift
 │   │   │       ├── CodeBlockView.swift
 │   │   │       ├── ConversationListView.swift
