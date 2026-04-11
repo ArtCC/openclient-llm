@@ -80,37 +80,8 @@ private extension ChatView {
             }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    if case .loaded(let loadedSt) = viewModel.state,
-                       loadedSt.conversation != nil, !loadedSt.messages.isEmpty,
-                       let url = makeExportURL(loadedSt) {
-                        ShareLink(item: url) {
-                            Label(String(localized: "Export"), systemImage: "square.and.arrow.up")
-                        }
-                    }
-                    if case .loaded(let loadedSt) = viewModel.state,
-                       !loadedSt.messages.isEmpty {
-                        Button {
-                            showFavouritesSheet = true
-                        } label: {
-                            Label(String(localized: "Favourites"), systemImage: "star")
-                        }
-                        if loadedSt.messages.contains(where: { !$0.attachments.isEmpty }) {
-                            Button {
-                                showMediaGallery = true
-                            } label: {
-                                Label(String(localized: "Media & Files"), systemImage: "photo.on.rectangle")
-                            }
-                        }
-                    }
-                    Button {
-                        showModelParametersSheet = true
-                    } label: {
-                        Label(String(localized: "Model Parameters"), systemImage: "slider.horizontal.3")
-                    }
-                    Button {
-                        showSystemPromptSheet = true
-                    } label: {
-                        Label(String(localized: "System Prompt"), systemImage: "text.bubble")
+                    if case .loaded(let loadedSt) = viewModel.state {
+                        menuContent(for: loadedSt)
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
@@ -198,37 +169,8 @@ private extension ChatView {
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Menu {
-                        if case .loaded(let loadedSt) = viewModel.state,
-                           loadedSt.conversation != nil, !loadedSt.messages.isEmpty,
-                           let url = makeExportURL(loadedSt) {
-                            ShareLink(item: url) {
-                                Label(String(localized: "Export"), systemImage: "square.and.arrow.up")
-                            }
-                        }
-                        if case .loaded(let loadedSt) = viewModel.state,
-                           !loadedSt.messages.isEmpty {
-                            Button {
-                                showFavouritesSheet = true
-                            } label: {
-                                Label(String(localized: "Favourites"), systemImage: "star")
-                            }
-                            if loadedSt.messages.contains(where: { !$0.attachments.isEmpty }) {
-                                Button {
-                                    showMediaGallery = true
-                                } label: {
-                                    Label(String(localized: "Media & Files"), systemImage: "photo.on.rectangle")
-                                }
-                            }
-                        }
-                        Button {
-                            showModelParametersSheet = true
-                        } label: {
-                            Label(String(localized: "Model Parameters"), systemImage: "slider.horizontal.3")
-                        }
-                        Button {
-                            showSystemPromptSheet = true
-                        } label: {
-                            Label(String(localized: "System Prompt"), systemImage: "text.bubble")
+                        if case .loaded(let loadedSt) = viewModel.state {
+                            menuContent(for: loadedSt)
                         }
                     } label: {
                         Image(systemName: "ellipsis.circle")
@@ -474,6 +416,36 @@ private extension ChatView {
         .padding(.horizontal, 16)
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Menu Content
+
+    @ViewBuilder
+    func menuContent(for loadedSt: ChatViewModel.LoadedState) -> some View {
+        ForEach(menuActions(for: loadedSt)) { action in
+            switch action {
+            case .export(let url):
+                ShareLink(item: url) {
+                    Label(action.title, systemImage: action.systemImage)
+                }
+            case .favourites:
+                Button { showFavouritesSheet = true } label: {
+                    Label(action.title, systemImage: action.systemImage)
+                }
+            case .mediaFiles:
+                Button { showMediaGallery = true } label: {
+                    Label(action.title, systemImage: action.systemImage)
+                }
+            case .modelParameters:
+                Button { showModelParametersSheet = true } label: {
+                    Label(action.title, systemImage: action.systemImage)
+                }
+            case .systemPrompt:
+                Button { showSystemPromptSheet = true } label: {
+                    Label(action.title, systemImage: action.systemImage)
+                }
+            }
+        }
     }
 
     // MARK: - Scroll Navigation

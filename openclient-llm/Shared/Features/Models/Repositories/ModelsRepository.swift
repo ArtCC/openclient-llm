@@ -112,6 +112,7 @@ private extension ModelsRepository {
         if modelInfo?.supportsParallelFunctionCalling == true { caps.append(.parallelFunctionCalling) }
         if modelInfo?.supportsResponseSchema == true { caps.append(.jsonSchema) }
         if modelInfo?.supportsWebSearch == true { caps.append(.webSearch) }
+        if modelInfo?.mode == LLMModel.Mode.imageGeneration.rawValue { caps.append(.imageGeneration) }
         return caps
     }
 
