@@ -127,8 +127,14 @@ final class SettingsViewModel {
 
 private extension SettingsViewModel {
     func loadSettings() {
+#if DEBUG
+        let savedServerURL = settingsManager.getServerBaseURL()
+        let getServerBaseURL = savedServerURL.isEmpty ? Constants.URLs.serverUrl : savedServerURL
+#else
+        let getServerBaseURL = settingsManager.getServerBaseURL()
+#endif
         let loadedState = LoadedState(
-            serverURL: settingsManager.getServerBaseURL(),
+            serverURL: getServerBaseURL,
             apiKey: settingsManager.getAPIKey(),
             isCloudSyncEnabled: settingsManager.getIsCloudSyncEnabled(),
             isCloudAvailable: cloudSyncManager.isCloudAvailable(),

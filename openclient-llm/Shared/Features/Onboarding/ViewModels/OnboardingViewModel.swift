@@ -32,8 +32,13 @@ final class OnboardingViewModel {
 
     struct LoadedState: Equatable {
         var currentStep: OnboardingStep = .welcome
+#if DEBUG
         var serverURL: String = ""
         var apiKey: String = ""
+#else
+        var serverURL: String = ""
+        var apiKey: String = ""
+#endif
         var connectionStatus: ConnectionStatus = .idle
         var showLiteLLMHint: Bool = false
     }

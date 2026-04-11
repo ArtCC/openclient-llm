@@ -240,7 +240,7 @@ private extension OnboardingView {
                         .font(.caption).fontWeight(.medium).foregroundStyle(.secondary)
 
                     TextField(
-                        "http://localhost:4000",
+                        Constants.URLs.serverUrl,
                         text: $serverURL
                     )
                     .textFieldStyle(.roundedBorder)
