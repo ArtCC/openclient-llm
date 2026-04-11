@@ -153,8 +153,20 @@ extension ChatViewModel {
             forkConversation(fromMessage: messageId)
         case .branchedConversationConsumed:
             clearBranchedConversation()
+        case .toggleFavourite(let id):
+            toggleFavourite(id)
         default:
             break
         }
+    }
+
+    func toggleFavourite(_ id: UUID) {
+        guard case .loaded(var loadedState) = state,
+              let index = loadedState.messages.firstIndex(where: { $0.id == id }) else { return }
+
+        loadedState.messages[index].isFavourite.toggle()
+        state = .loaded(loadedState)
+        persistConversation()
+        LogManager.debug("toggleFavourite id=\(id) isFavourite=\(loadedState.messages[index].isFavourite)")
     }
 }

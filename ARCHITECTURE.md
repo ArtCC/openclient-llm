@@ -64,17 +64,22 @@ openclient-llm/                              # iOS target
 │   │   │       ├── AttachmentPickerView.swift
 │   │   │       ├── CameraPickerView.swift
 │   │   │       ├── ChatEmptyStateView.swift
+│   │   │       ├── ChatFavouritesView.swift          # Sheet listing favourited messages; tap → scroll to message
 │   │   │       ├── ChatInputBarView.swift
 │   │   │       ├── ChatModelParametersView.swift
 │   │   │       ├── ChatSystemPromptView.swift
 │   │   │       ├── ChatView.swift
+│   │   │       ├── ChatView+Attachments.swift        # errorBanner, attachmentPreview, attachmentThumbnail helpers
 │   │   │       ├── ChatView+EditExport.swift
+│   │   │       ├── ChatView+Menu.swift                # ChatMenuAction enum + menuActions(for:) sorted by localizedCompare
 │   │   │       ├── ChatView+ModelSelector.swift
 │   │   │       ├── CodeBlockView.swift
 │   │   │       ├── ConversationListView.swift
 │   │   │       ├── ConversationTagsView.swift
 │   │   │       ├── ImagePreviewView.swift
+│   │   │       ├── MediaFilesGalleryView.swift        # Sheet with image grid + document list; PDFPreviewView included
 │   │   │       ├── MessageBubbleView.swift
+│   │   │       ├── MessageBubbleView+Previews.swift   # #Preview blocks extracted from MessageBubbleView
 │   │   │       ├── SearchConversationsView.swift
 │   │   │       └── WebSearchSourcesView.swift
 │   │   ├── Home/
@@ -201,9 +206,12 @@ openclient-llm/                              # iOS target
 
 openclient-llm-macOS/                        # macOS target
 ├── App/
-│   └── OpenClientApp.swift                  # macOS app entry point
+│   ├── AppDelegate.swift                    # NSApplicationDelegate — sets up MenuBarManager on launch
+│   └── OpenClientApp.swift                  # macOS app entry point; @NSApplicationDelegateAdaptor(AppDelegate.self)
 ├── Views/
-│   └── AppCommands.swift                    # macOS menu commands (⌘N New Chat)
+│   ├── AppCommands.swift                    # macOS menu commands (⌘N New Chat)
+│   ├── MenuBarChatView.swift                # Popover content: full ChatView + "Open in App" header button
+│   └── MenuBarManager.swift                 # NSStatusItem + NSPopover lifecycle; toggles on status bar icon tap
 └── Resources/
     ├── Info.plist
     ├── openclient-llm-macOS.entitlements
