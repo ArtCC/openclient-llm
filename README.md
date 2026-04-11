@@ -20,6 +20,15 @@ Native Apple client for OpenAI-compatible LLM servers. Works out of the box with
 
 [<img src="assets/app_store_black.svg" alt="Download on the App Store" height="65">](https://apps.apple.com/us/app/id6761379499)
 
+## Screenshots
+
+<p align="left">
+  <img src="assets/iPhone/1.png" width="200" alt="Models" />&nbsp;&nbsp;
+  <img src="assets/iPhone/2.png" width="200" alt="New Chat" />&nbsp;&nbsp;
+  <img src="assets/iPhone/3.png" width="200" alt="Chat" />&nbsp;&nbsp;
+  <img src="assets/iPhone/4.png" width="200" alt="Chats" />
+</p>
+
 ## Technologies
 
 | Technology | Purpose |
