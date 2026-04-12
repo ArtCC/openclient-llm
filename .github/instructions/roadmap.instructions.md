@@ -118,6 +118,6 @@ Goal: Allow other apps to send content to OpenClient LLM and let users bring dat
 - [ ] **Widget (iOS/iPadOS)**: Home Screen / Lock Screen widget using WidgetKit. Exact widget types, sizes, and content to be defined — needs further scoping before implementation.
 - [ ] **Live Activities / Dynamic Island (iOS)**: Show the streaming of an in-progress response on the Lock Screen and in the Dynamic Island while the user multitasks. Implemented via `ActivityKit` with a `ActivityAttributes` struct carrying the current partial response text and model name.
 
-## Current Phase: 9 — UI Polish & macOS Companion
+## Current Phase: 10 — System Integration & Import
 
-Focus exclusively on Phase 9 features. Do not over-engineer for future phases.
+Focus exclusively on Phase 10 features. Do not over-engineer for future phases.
