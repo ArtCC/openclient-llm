@@ -13,15 +13,15 @@ struct ConversationListView: View {
 
     @Environment(\.scenePhase) private var scenePhase
 
-    @State private var viewModel = ConversationListViewModel()
+    @State var viewModel = ConversationListViewModel()
     @State private var editingTagsConversation: Conversation?
     @State private var conversationToDelete: Conversation?
     @State private var renamingConversation: Conversation?
     @State private var renameText: String = ""
 
 #if os(macOS)
-    @State private var isMacSearchExpanded = false
-    @State private var macSearchText = ""
+    @State var isMacSearchExpanded = false
+    @State var macSearchText = ""
 #endif
 
     var activeConversationId: UUID?
