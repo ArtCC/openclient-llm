@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.1.1-build-21] - 2026-04-12
+
+### Added
+
+- **Rename conversation** — "Rename" option in the conversation list context menu (long-press on iOS/iPadOS, right-click on macOS) opens a native alert with a text field pre-filled with the current title; saving persists the new name immediately via `RenameConversationUseCase`
+- `RenameConversationUseCase` — new use case that updates `Conversation.title` and `updatedAt`, then persists to `ConversationRepository`
+
 ## [1.1.0-build-20] - 2026-04-10
 
 ### Added
