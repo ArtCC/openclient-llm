@@ -18,6 +18,7 @@ final class ConversationListViewModelTests: XCTestCase {
     var mockDeleteConversation: MockDeleteConversationUseCase!
     var mockPinConversation: MockPinConversationUseCase!
     var mockUpdateTags: MockUpdateConversationTagsUseCase!
+    var mockRenameConversation: MockRenameConversationUseCase!
     var mockFetchModels: MockFetchModelsUseCase!
     var mockSettingsManager: MockSettingsManager!
 
@@ -30,6 +31,7 @@ final class ConversationListViewModelTests: XCTestCase {
         mockDeleteConversation = MockDeleteConversationUseCase()
         mockPinConversation = MockPinConversationUseCase()
         mockUpdateTags = MockUpdateConversationTagsUseCase()
+        mockRenameConversation = MockRenameConversationUseCase()
         mockFetchModels = MockFetchModelsUseCase()
         mockSettingsManager = MockSettingsManager()
         sut = ConversationListViewModel(
@@ -37,6 +39,7 @@ final class ConversationListViewModelTests: XCTestCase {
             deleteConversationUseCase: mockDeleteConversation,
             pinConversationUseCase: mockPinConversation,
             updateConversationTagsUseCase: mockUpdateTags,
+            renameConversationUseCase: mockRenameConversation,
             fetchModelsUseCase: mockFetchModels,
             settingsManager: mockSettingsManager
         )
@@ -48,6 +51,7 @@ final class ConversationListViewModelTests: XCTestCase {
         mockDeleteConversation = nil
         mockPinConversation = nil
         mockUpdateTags = nil
+        mockRenameConversation = nil
         mockFetchModels = nil
         mockSettingsManager = nil
 

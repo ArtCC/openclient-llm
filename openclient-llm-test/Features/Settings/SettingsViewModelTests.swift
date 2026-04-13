@@ -427,7 +427,9 @@ final class SettingsViewModelTests: XCTestCase {
         // Given
         mockSettingsManager.serverBaseURL = "https://example.com"
         sut.send(.viewAppeared)
-        mockSettingsManager.serverBaseURL = ""
+        // Simulate that after reset the manager returns a different non-empty URL.
+        // Using a non-empty value avoids the #if DEBUG fallback to Constants.URLs.serverUrl.
+        mockSettingsManager.serverBaseURL = "https://after-reset.local"
 
         // When
         sut.send(.resetConfirmed)
@@ -437,7 +439,7 @@ final class SettingsViewModelTests: XCTestCase {
             XCTFail("Expected loaded state")
             return
         }
-        XCTAssertEqual(loadedState.serverURL, "")
+        XCTAssertEqual(loadedState.serverURL, "https://after-reset.local")
     }
 
     // MARK: - Tests — cloudSyncToggled both match

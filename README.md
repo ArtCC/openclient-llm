@@ -20,6 +20,8 @@ Native Apple client for OpenAI-compatible LLM servers. Works out of the box with
 
 [<img src="assets/app_store_black.svg" alt="Download on the App Store" height="65">](https://apps.apple.com/us/app/id6761379499)
 
+**macOS:** Download the latest signed and notarized `.dmg` directly from the [Releases](https://github.com/artcc/openclient-llm/releases) page.
+
 ## Screenshots
 
 <p align="left">

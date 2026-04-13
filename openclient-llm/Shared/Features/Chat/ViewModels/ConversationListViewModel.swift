@@ -23,6 +23,7 @@ final class ConversationListViewModel {
         case pinToggled(UUID)
         case tagsUpdated(UUID, [String])
         case tagFilterChanged(String?)
+        case titleEdited(UUID, String)
     }
 
     enum State: Equatable {
@@ -55,6 +56,7 @@ final class ConversationListViewModel {
     private let deleteConversationUseCase: DeleteConversationUseCaseProtocol
     private let pinConversationUseCase: PinConversationUseCaseProtocol
     private let updateConversationTagsUseCase: UpdateConversationTagsUseCaseProtocol
+    private let renameConversationUseCase: RenameConversationUseCaseProtocol
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
     private var errorDismissTask: Task<Void, Never>?
@@ -69,6 +71,7 @@ final class ConversationListViewModel {
         deleteConversationUseCase: DeleteConversationUseCaseProtocol = DeleteConversationUseCase(),
         pinConversationUseCase: PinConversationUseCaseProtocol = PinConversationUseCase(),
         updateConversationTagsUseCase: UpdateConversationTagsUseCaseProtocol = UpdateConversationTagsUseCase(),
+        renameConversationUseCase: RenameConversationUseCaseProtocol = RenameConversationUseCase(),
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager()
     ) {
@@ -77,6 +80,7 @@ final class ConversationListViewModel {
         self.deleteConversationUseCase = deleteConversationUseCase
         self.pinConversationUseCase = pinConversationUseCase
         self.updateConversationTagsUseCase = updateConversationTagsUseCase
+        self.renameConversationUseCase = renameConversationUseCase
         self.fetchModelsUseCase = fetchModelsUseCase
         self.settingsManager = settingsManager
         observeAppDataReset()
@@ -105,6 +109,8 @@ final class ConversationListViewModel {
             updateTags(id, tags: tags)
         case .tagFilterChanged(let tag):
             updateTagFilter(tag)
+        case .titleEdited(let id, let newTitle):
+            renameConversation(id, newTitle: newTitle)
         }
     }
 
@@ -269,6 +275,24 @@ private extension ConversationListViewModel {
         loadedState.activeTagFilter = tag
         applySearchFilter(&loadedState)
         state = .loaded(loadedState)
+    }
+
+    func renameConversation(_ id: UUID, newTitle: String) {
+        guard case .loaded(var loadedState) = state else { return }
+        let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        guard let index = loadedState.conversations.firstIndex(where: { $0.id == id }) else { return }
+        do {
+            try renameConversationUseCase.execute(id, newTitle: trimmed)
+            loadedState.conversations[index].title = trimmed
+            loadedState.conversations[index].updatedAt = Date()
+            applySearchFilter(&loadedState)
+            state = .loaded(loadedState)
+        } catch {
+            loadedState.errorMessage = error.localizedDescription
+            state = .loaded(loadedState)
+            scheduleErrorDismiss()
+        }
     }
 
     func scheduleErrorDismiss() {

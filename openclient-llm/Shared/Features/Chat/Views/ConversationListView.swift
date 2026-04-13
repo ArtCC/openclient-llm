@@ -13,13 +13,15 @@ struct ConversationListView: View {
 
     @Environment(\.scenePhase) private var scenePhase
 
-    @State private var viewModel = ConversationListViewModel()
+    @State var viewModel = ConversationListViewModel()
     @State private var editingTagsConversation: Conversation?
     @State private var conversationToDelete: Conversation?
+    @State private var renamingConversation: Conversation?
+    @State private var renameText: String = ""
 
 #if os(macOS)
-    @State private var isMacSearchExpanded = false
-    @State private var macSearchText = ""
+    @State var isMacSearchExpanded = false
+    @State var macSearchText = ""
 #endif
 
     var activeConversationId: UUID?
@@ -60,6 +62,26 @@ struct ConversationListView: View {
             ) { tags in
                 viewModel.send(.tagsUpdated(conversation.id, tags))
             }
+        }
+        .alert(
+            String(localized: "Rename Conversation"),
+            isPresented: Binding(
+                get: { renamingConversation != nil },
+                set: { if !$0 { renamingConversation = nil } }
+            )
+        ) {
+            TextField(String(localized: "Conversation name"), text: $renameText)
+            Button(String(localized: "Cancel"), role: .cancel) {
+                renamingConversation = nil
+            }
+            Button(String(localized: "Save")) {
+                if let conversation = renamingConversation {
+                    viewModel.send(.titleEdited(conversation.id, renameText))
+                    renamingConversation = nil
+                }
+            }
+        } message: {
+            Text(String(localized: "Enter a new name for this conversation."))
         }
         .alert(
             String(localized: "Delete Conversation"),
@@ -196,6 +218,13 @@ private extension ConversationListView {
                 conversation.isPinned ? String(localized: "Unpin") : String(localized: "Pin"),
                 systemImage: conversation.isPinned ? "pin.slash" : "pin"
             )
+        }
+
+        Button {
+            renameText = conversationTitle(conversation)
+            renamingConversation = conversation
+        } label: {
+            Label(String(localized: "Rename"), systemImage: "pencil")
         }
 
         Button {
@@ -416,64 +445,6 @@ private extension ConversationListView {
                 .foregroundStyle(.secondary)
         }
     }
-
-#if os(macOS)
-    @ToolbarContentBuilder
-    var macToolbarItems: some ToolbarContent {
-        ToolbarItem(placement: .automatic) {
-            macSearchToolbarItem
-        }
-        ToolbarItem(placement: .automatic) {
-            Button {
-                viewModel.send(.refreshTapped)
-            } label: {
-                Image(systemName: "arrow.clockwise")
-            }
-            .accessibilityLabel(String(localized: "Refresh"))
-        }
-    }
-
-    var macSearchToolbarItem: some View {
-        HStack(spacing: 4) {
-            if isMacSearchExpanded {
-                TextField(String(localized: "Search conversations..."), text: $macSearchText)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 180)
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .trailing).combined(with: .opacity),
-                        removal: .move(edge: .trailing).combined(with: .opacity)
-                    ))
-                    .onChange(of: macSearchText) { _, newValue in
-                        viewModel.send(.searchChanged(newValue))
-                    }
-                    .onSubmit {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            isMacSearchExpanded = false
-                        }
-                    }
-                    .onExitCommand {
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                            isMacSearchExpanded = false
-                            macSearchText = ""
-                            viewModel.send(.searchChanged(""))
-                        }
-                    }
-            }
-            Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    isMacSearchExpanded.toggle()
-                    if !isMacSearchExpanded {
-                        macSearchText = ""
-                        viewModel.send(.searchChanged(""))
-                    }
-                }
-            } label: {
-                Image(systemName: isMacSearchExpanded ? "xmark.circle.fill" : "magnifyingglass")
-            }
-            .help(String(localized: "Search"))
-        }
-    }
-#endif
 }
 
 #Preview {
