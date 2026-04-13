@@ -107,7 +107,14 @@ Goal: Clean up the chat header, reduce toolbar clutter, and bring a quick-access
 - [x] **macOS menu bar companion**: A persistent `NSStatusItem` in the macOS menu bar that opens a compact popover with a full quick-chat interface. Features: text input, streaming response display using the currently active model and server configuration, and an "Open in app" button to continue the conversation in the main window. The companion works whether the main app window is open or closed. State (active model, API key, base URL) is shared with the main app via the existing managers.
 - [x] **Media & Files gallery**: The "Media & Files" entry in the chat toolbar menu opens a sheet with two sections — images displayed in a `LazyVGrid` of square thumbnails (rendered directly from the persisted `Data`, no network required), and documents listed by `fileName` and date. Tapping an image opens the existing `ImagePreviewView`. Tapping a document opens a `QuickLook` / `PDFView` sheet. Both support a "Go to message" action that dismisses the sheet and scrolls to the originating message using `proxy.scrollTo(message.id, anchor: .center)`.
 
-## Phase 10 — System Integration & Import
+## Phase 10 — Memory
+
+Goal: Give users and models a persistent, editable memory layer that is always injected into the system prompt.
+
+- [ ] **User memory list**: New "Memory" section in Settings showing a list of memory items. Each item has content text, an enabled/disabled toggle, a source badge (user vs. model), and creation date. Users can add, edit, delete, and toggle any item. All items with `isEnabled == true` are injected into every system prompt as a `## Memory` block, alongside the existing user profile context. Storage: `NSUbiquitousKeyValueStore` (synced across devices when iCloud is enabled), falling back to `UserDefaults` when not. Data model: `MemoryItem` (id, content, isEnabled, createdAt, source: `.user` | `.model`), Codable + Sendable.
+- [ ] **Model memory tool**: Register a `save_memory(content: String)` tool in the existing agentic loop (Phase 7). When the model calls it, a new `MemoryItem` with `source: .model` is created and saved to the same store as user memory. The item appears immediately in the Memory list in Settings, where the user can review, edit, disable, or delete it.
+
+## Phase 11 — System Integration & Import
 
 Goal: Allow other apps to send content to OpenClient LLM and let users bring data from external sources.
 
@@ -115,9 +122,7 @@ Goal: Allow other apps to send content to OpenClient LLM and let users bring dat
 - [ ] **Drag & Drop between apps**: Accept drags from other apps directly into the chat input — text, images, files — especially useful on iPad and macOS where multitasking with Split View is common.
 - [ ] **Custom URL scheme (`openclient://`)**: URL scheme to open the app with prefilled content from external automations, Shortcuts, or third-party apps.
 - [ ] **Apple Shortcuts integration**: Define `AppIntents`/`NSUserActivity` so Shortcuts can execute actions such as "New conversation with message", "Search conversations", or "Send file to chat".
-- [ ] **Widget (iOS/iPadOS)**: Home Screen / Lock Screen widget using WidgetKit. Exact widget types, sizes, and content to be defined — needs further scoping before implementation.
-- [ ] **Live Activities / Dynamic Island (iOS)**: Show the streaming of an in-progress response on the Lock Screen and in the Dynamic Island while the user multitasks. Implemented via `ActivityKit` with a `ActivityAttributes` struct carrying the current partial response text and model name.
 
-## Current Phase: 10 — System Integration & Import
+## Current Phase: 10 — Memory
 
 Focus exclusively on Phase 10 features. Do not over-engineer for future phases.
