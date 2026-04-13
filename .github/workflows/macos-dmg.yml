@@ -3,6 +3,7 @@ name: macOS DMG
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: macos-dmg-${{ github.ref }}
