@@ -143,14 +143,7 @@ jobs:
             CODE_SIGN_IDENTITY="Developer ID Application" \
             PROVISIONING_PROFILE_SPECIFIER=OpenClient \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
-            2>&1 | tee xcodebuild.log | xcpretty
-          RESULT=${PIPESTATUS[0]}
-          if [ $RESULT -ne 0 ]; then
-            echo "::group::xcodebuild raw output (last 300 lines)"
-            tail -300 xcodebuild.log
-            echo "::endgroup::"
-            exit $RESULT
-          fi
+            2>&1 | xcpretty && exit ${PIPESTATUS[0]}
 
       - name: Export archive
         run: |
