@@ -110,8 +110,10 @@ private extension ChatViewModel {
         systemPrompt: String
     ) -> [ChatMessage] {
         let profileContext = getUserProfileContextUseCase.execute()
+        let memoryContext = getMemoryContextUseCase.execute()
         let effectiveSystemPrompt = buildEffectiveSystemPrompt(
             profileContext: profileContext,
+            memoryContext: memoryContext,
             conversationSystemPrompt: systemPrompt
         )
         var result = messages

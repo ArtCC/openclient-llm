@@ -11,16 +11,17 @@ import Foundation
 // MARK: - Internal helpers
 
 extension ChatViewModel {
-    func buildEffectiveSystemPrompt(profileContext: String, conversationSystemPrompt: String) -> String {
+    func buildEffectiveSystemPrompt(
+        profileContext: String,
+        memoryContext: String,
+        conversationSystemPrompt: String
+    ) -> String {
         let profile = profileContext.trimmingCharacters(in: .whitespacesAndNewlines)
+        let memory = memoryContext.trimmingCharacters(in: .whitespacesAndNewlines)
         let conversation = conversationSystemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        switch (profile.isEmpty, conversation.isEmpty) {
-        case (true, true): return ""
-        case (false, true): return profile
-        case (true, false): return conversation
-        case (false, false): return "\(profile)\n\n\(conversation)"
-        }
+        let parts = [profile, memory, conversation].filter { !$0.isEmpty }
+        return parts.joined(separator: "\n\n")
     }
 
     func persistConversation() {

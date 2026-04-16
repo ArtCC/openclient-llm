@@ -111,8 +111,8 @@ Goal: Clean up the chat header, reduce toolbar clutter, and bring a quick-access
 
 Goal: Give users and models a persistent, editable memory layer that is always injected into the system prompt.
 
-- [ ] **User memory list**: New "Memory" section in Settings showing a list of memory items. Each item has content text, an enabled/disabled toggle, a source badge (user vs. model), and creation date. Users can add, edit, delete, and toggle any item. All items with `isEnabled == true` are injected into every system prompt as a `## Memory` block, alongside the existing user profile context. Storage: `NSUbiquitousKeyValueStore` (synced across devices when iCloud is enabled), falling back to `UserDefaults` when not. Data model: `MemoryItem` (id, content, isEnabled, createdAt, source: `.user` | `.model`), Codable + Sendable.
-- [ ] **Model memory tool**: Register a `save_memory(content: String)` tool in the existing agentic loop (Phase 7). When the model calls it, a new `MemoryItem` with `source: .model` is created and saved to the same store as user memory. The item appears immediately in the Memory list in Settings, where the user can review, edit, disable, or delete it.
+- [x] **User memory list**: New "Memory" section in Settings showing a list of memory items. Each item has content text, an enabled/disabled toggle, a source badge (user vs. model), and creation date. Users can add, edit, delete, and toggle any item. All items with `isEnabled == true` are injected into every system prompt as a `## Memory` block, alongside the existing user profile context. Storage: `NSUbiquitousKeyValueStore` (synced across devices when iCloud is enabled), falling back to `UserDefaults` when not. Data model: `MemoryItem` (id, content, isEnabled, createdAt, source: `.user` | `.model`), Codable + Sendable.
+- [x] **Model memory tool**: Register a `save_memory(content: String)` tool in the existing agentic loop (Phase 7). When the model calls it, a new `MemoryItem` with `source: .model` is created and saved to the same store as user memory. The item appears immediately in the Memory list in Settings, where the user can review, edit, disable, or delete it.
 
 ## Phase 11 — System Integration & Import
 
@@ -123,6 +123,6 @@ Goal: Allow other apps to send content to OpenClient LLM and let users bring dat
 - [ ] **Custom URL scheme (`openclient://`)**: URL scheme to open the app with prefilled content from external automations, Shortcuts, or third-party apps.
 - [ ] **Apple Shortcuts integration**: Define `AppIntents`/`NSUserActivity` so Shortcuts can execute actions such as "New conversation with message", "Search conversations", or "Send file to chat".
 
-## Current Phase: 10 — Memory
+## Current Phase: 11 — System Integration & Import
 
-Focus exclusively on Phase 10 features. Do not over-engineer for future phases.
+Focus exclusively on Phase 11 features. Do not over-engineer for future phases.

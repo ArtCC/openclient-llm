@@ -24,7 +24,7 @@ extension ChatViewModel {
         let systemMessage = ChatMessage(role: .system, content: buildAgentSystemPrompt(systemPrompt))
         allMessages.insert(systemMessage, at: 0)
 
-        let registry = ToolRegistry.default(webSearchUseCase: webSearchUseCase)
+        let registry = ToolRegistry.default(webSearchUseCase: webSearchUseCase, memoryManager: MemoryManager())
 
         do {
             let stream = agentStreamUseCase.execute(
@@ -131,18 +131,23 @@ extension ChatViewModel {
 private extension ChatViewModel {
     func buildAgentSystemPrompt(_ conversationSystemPrompt: String) -> String {
         let profileContext = getUserProfileContextUseCase.execute()
+        let memoryContext = getMemoryContextUseCase.execute()
         let effectiveSystemPrompt = buildEffectiveSystemPrompt(
             profileContext: profileContext,
+            memoryContext: memoryContext,
             conversationSystemPrompt: conversationSystemPrompt
         )
         let toolInstructions = """
-        You have access to a `web_search` tool. Use it when your training knowledge is insufficient \
-        or likely outdated to answer the user's question accurately: current events, recent news, \
-        real-time data, prices, sports results, software versions, or any fact that may have changed \
-        after your training cutoff. If you can answer confidently from your training knowledge, \
-        respond directly without calling the tool. After receiving search results, incorporate them \
-        naturally into your answer and cite sources when relevant. Respond using whatever format best \
-        serves the answer (Markdown, lists, code blocks, tables, etc.).
+        You have access to the following tools:
+        - `web_search`: Use it when your training knowledge is insufficient or likely outdated to answer \
+        the user's question accurately: current events, recent news, real-time data, prices, sports results, \
+        software versions, or any fact that may have changed after your training cutoff. If you can answer \
+        confidently from your training knowledge, respond directly without calling the tool. After receiving \
+        search results, incorporate them naturally into your answer and cite sources when relevant.
+        - `save_memory`: Use it when the user shares important personal details, preferences, or context \
+        that should be remembered in future conversations. Call it proactively when you identify information \
+        worth remembering long-term.
+        Respond using whatever format best serves the answer (Markdown, lists, code blocks, tables, etc.).
         """
         return effectiveSystemPrompt.isEmpty
             ? toolInstructions

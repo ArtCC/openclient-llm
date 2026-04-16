@@ -34,7 +34,13 @@ struct ToolRegistry: Sendable {
 
     // MARK: - Factory
 
-    static func `default`(webSearchUseCase: WebSearchUseCaseProtocol = WebSearchUseCase()) -> ToolRegistry {
-        ToolRegistry(tools: [WebSearchTool(webSearchUseCase: webSearchUseCase)])
+    static func `default`(
+        webSearchUseCase: WebSearchUseCaseProtocol = WebSearchUseCase(),
+        memoryManager: MemoryManagerProtocol = MemoryManager()
+    ) -> ToolRegistry {
+        ToolRegistry(tools: [
+            WebSearchTool(webSearchUseCase: webSearchUseCase),
+            SaveMemoryTool(memoryManager: memoryManager)
+        ])
     }
 }

@@ -18,17 +18,20 @@ struct ResetAppDataUseCase: ResetAppDataUseCaseProtocol {
     private let settingsManager: SettingsManagerProtocol
     private let conversationRepository: ConversationRepositoryProtocol
     private let userProfileManager: UserProfileManagerProtocol
+    private let memoryManager: MemoryManagerProtocol
 
     // MARK: - Init
 
     init(
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         conversationRepository: ConversationRepositoryProtocol = ConversationRepository(),
-        userProfileManager: UserProfileManagerProtocol = UserProfileManager()
+        userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
+        memoryManager: MemoryManagerProtocol = MemoryManager()
     ) {
         self.settingsManager = settingsManager
         self.conversationRepository = conversationRepository
         self.userProfileManager = userProfileManager
+        self.memoryManager = memoryManager
     }
 
     // MARK: - Execute
@@ -38,5 +41,6 @@ struct ResetAppDataUseCase: ResetAppDataUseCaseProtocol {
         settingsManager.deleteAll()
         try? conversationRepository.deleteAll()
         userProfileManager.deleteLocalProfile()
+        memoryManager.deleteAll()
     }
 }

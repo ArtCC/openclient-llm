@@ -22,6 +22,7 @@ struct SettingsView: View {
     @State private var isAPIKeyVisible = false
     @State private var isShowingVotice = false
     @State private var isShowingUserProfile = false
+    @State private var isShowingMemory = false
     @State private var showResetAlert = false
     @State private var presentedWebURL: WebDestination?
     @FocusState private var focusedField: Field?
@@ -64,6 +65,9 @@ private extension SettingsView {
         }
         .sheet(isPresented: $isShowingUserProfile) {
             UserProfileView()
+        }
+        .sheet(isPresented: $isShowingMemory) {
+            MemoryView()
         }
         .alert(
             String(localized: "iCloud Sync Conflict"),
@@ -415,10 +419,17 @@ private extension SettingsView {
                 Label(String(localized: "Personal Context"), systemImage: "person.text.rectangle")
             }
             .buttonStyle(.plain)
+
+            Button {
+                isShowingMemory = true
+            } label: {
+                Label(String(localized: "Memory"), systemImage: "brain.head.profile")
+            }
+            .buttonStyle(.plain)
         } header: {
             Text(String(localized: "Personalization"))
         } footer: {
-            Text(String(localized: "Configure your name and personal context to personalise model responses."))
+            Text(String(localized: "Configure your personal context and memory items to personalise model responses."))
         }
     }
 

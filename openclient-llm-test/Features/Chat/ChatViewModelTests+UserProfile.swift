@@ -56,13 +56,18 @@ final class ChatViewModelUserProfileTests: XCTestCase {
     // MARK: - Tests — buildEffectiveSystemPrompt
 
     func test_buildEffectiveSystemPrompt_bothEmpty_returnsEmpty() {
-        let result = sut.buildEffectiveSystemPrompt(profileContext: "", conversationSystemPrompt: "")
+        let result = sut.buildEffectiveSystemPrompt(
+            profileContext: "",
+            memoryContext: "",
+            conversationSystemPrompt: ""
+        )
         XCTAssertEqual(result, "")
     }
 
     func test_buildEffectiveSystemPrompt_onlyProfile_returnsProfile() {
         let result = sut.buildEffectiveSystemPrompt(
             profileContext: "User is Alice.",
+            memoryContext: "",
             conversationSystemPrompt: ""
         )
         XCTAssertEqual(result, "User is Alice.")
@@ -71,6 +76,7 @@ final class ChatViewModelUserProfileTests: XCTestCase {
     func test_buildEffectiveSystemPrompt_onlyConversation_returnsConversation() {
         let result = sut.buildEffectiveSystemPrompt(
             profileContext: "",
+            memoryContext: "",
             conversationSystemPrompt: "You are a coding assistant."
         )
         XCTAssertEqual(result, "You are a coding assistant.")
@@ -79,6 +85,7 @@ final class ChatViewModelUserProfileTests: XCTestCase {
     func test_buildEffectiveSystemPrompt_both_combineWithNewlines() {
         let result = sut.buildEffectiveSystemPrompt(
             profileContext: "User is Alice.",
+            memoryContext: "",
             conversationSystemPrompt: "You are a coding assistant."
         )
         XCTAssertEqual(result, "User is Alice.\n\nYou are a coding assistant.")
@@ -87,9 +94,31 @@ final class ChatViewModelUserProfileTests: XCTestCase {
     func test_buildEffectiveSystemPrompt_trimsWhitespace() {
         let result = sut.buildEffectiveSystemPrompt(
             profileContext: "  User is Alice.  ",
+            memoryContext: "",
             conversationSystemPrompt: "  Be concise.  "
         )
         XCTAssertTrue(result.contains("User is Alice."))
         XCTAssertTrue(result.contains("Be concise."))
+    }
+
+    func test_buildEffectiveSystemPrompt_withMemory_includesAllParts() {
+        let result = sut.buildEffectiveSystemPrompt(
+            profileContext: "User is Alice.",
+            memoryContext: "## Memory\n- Prefers dark mode",
+            conversationSystemPrompt: "You are a coding assistant."
+        )
+        XCTAssertTrue(result.contains("User is Alice."))
+        XCTAssertTrue(result.contains("## Memory"))
+        XCTAssertTrue(result.contains("- Prefers dark mode"))
+        XCTAssertTrue(result.contains("You are a coding assistant."))
+    }
+
+    func test_buildEffectiveSystemPrompt_onlyMemory_returnsMemoryBlock() {
+        let result = sut.buildEffectiveSystemPrompt(
+            profileContext: "",
+            memoryContext: "## Memory\n- Item 1",
+            conversationSystemPrompt: ""
+        )
+        XCTAssertEqual(result, "## Memory\n- Item 1")
     }
 }
