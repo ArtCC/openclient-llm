@@ -8,7 +8,7 @@
 
 import SwiftUI
 #if os(iOS)
-import StoreKit
+import UIKit
 #endif
 
 // MARK: - Helpers
@@ -23,13 +23,12 @@ extension SettingsView {
     }
 
     func requestAppReview() {
+        let urlString = "itms-apps://itunes.apple.com/app/id\(Constants.App.appStoreId)?action=write-review"
+        guard let url = URL(string: urlString) else { return }
 #if os(iOS)
-        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene else { return }
-        AppStore.requestReview(in: windowScene)
+        UIApplication.shared.open(url)
 #else
-        if let url = URL(string: "macappstore://apps.apple.com/app/id\(Constants.App.appStoreId)?action=write-review") {
-            NSWorkspace.shared.open(url)
-        }
+        NSWorkspace.shared.open(url)
 #endif
     }
 }

@@ -11,6 +11,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 ### Added
 
+- Pinch-to-zoom gesture in `ImagePreviewView` (iOS/iPadOS): supports magnification up to 6×; double-tap resets zoom to 1×
 - **Memory list** — new "Memory" section in Settings (Personalization) showing all saved memory items; each item displays its content, an enabled/disabled toggle, a source badge (You / Model), and creation date; users can add, edit, delete, and toggle individual items
 - `MemoryItem` — new Codable + Sendable model with `id`, `content`, `isEnabled`, `createdAt`, and `source` (`.user` / `.model`) fields
 - `MemoryManager` — new manager for memory CRUD; stores items in `Memory.json` synced to iCloud Documents via `CloudSyncManager`, falling back to `UserDefaults`; posts `memoryDidChangeExternallyNotification` on cloud updates
@@ -21,11 +22,20 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 ### Changed
 
+- `UserProfileManager` migrated from `UserDefaults` blob to a `UserProfile.json` file in `DocumentDirectory`; one-time migration reads and removes the legacy `userProfile_data` key on first launch
+- `MemoryManager` migrated from `UserDefaults` blob to a `Memory.json` file in `DocumentDirectory`; one-time migration reads and removes the legacy `memory_items` key on first launch
+- Thinking disclosure in assistant messages now persists the user's open/close preference via `@AppStorage`; the block opens automatically during streaming and restores the saved preference once streaming ends
+- "Rate the app" action in Settings now opens the App Store write-review sheet directly via `itms-apps://` URL on both iOS and macOS, replacing the unreliable `AppStore.requestReview` API
 - `buildEffectiveSystemPrompt` now accepts a third `memoryContext` parameter; memory block is inserted between user profile context and the conversation system prompt
 - `ToolRegistry.default()` now accepts a `memoryManager` parameter and registers the `save_memory` tool alongside `web_search`
 - `CloudSyncManager` protocol and implementation extended with `saveMemoryToCloud`, `loadMemoryFromCloud`, and `deleteMemoryFromCloud` backed by `Documents/Memory.json` in the iCloud container
 - `ResetAppDataUseCase` now calls `memoryManager.deleteAll()` to wipe memory items on full data reset
 - Agent system prompt updated to document the `save_memory` tool and when the model should use it
+
+### Fixed
+
+- Trailing padding in assistant chat messages reduced; `Spacer(minLength: 40)` replaced with `Spacer(minLength: 0)` so content extends to the 16 pt container margin
+- Bottom padding added to the messages list so the last message breathes above the input bar
 
 ## [1.1.1-build-26] - 2026-04-16
 

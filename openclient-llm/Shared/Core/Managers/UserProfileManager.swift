@@ -20,9 +20,9 @@ protocol UserProfileManagerProtocol: Sendable {
 /// Manages the user's personal context with optional iCloud file-based sync.
 ///
 /// When iCloud sync is enabled the cloud `UserProfile.json` is the single source of truth.
-/// Local UserDefaults acts as a cache and is used when sync is disabled.
+/// Local storage is a JSON file in DocumentDirectory and is used when sync is disabled.
 ///
-/// Safety: UserDefaults is thread-safe per Apple documentation. CloudSyncManager
+/// Safety: FileManager operations are thread-safe for different paths. CloudSyncManager
 /// operations are file-based and called synchronously. The NSMetadataQuery is
 /// created and stopped on the main thread; the class is not Sendable-safe for
 /// mutable fields but those are only touched during init/deinit on main.
@@ -30,31 +30,38 @@ final class UserProfileManager: UserProfileManagerProtocol, @unchecked Sendable 
     // MARK: - Properties
 
     private enum Keys {
-        static let profileData = "userProfile_data"
+        static let legacyProfileData = "userProfile_data"
     }
+
+    private static let fileName = "UserProfile.json"
 
     /// Notification posted when iCloud pushes an external profile change.
     nonisolated static let profileDidChangeExternallyNotification = Notification.Name(
         "UserProfileManager.profileDidChangeExternally"
     )
 
-    private let defaults: UserDefaults
     private let settingsManager: SettingsManagerProtocol
     private let cloudSyncManager: CloudSyncManagerProtocol
     private nonisolated(unsafe) var metadataQuery: NSMetadataQuery?
     // Must be stored to keep the observer alive.
     private nonisolated(unsafe) var queryObserver: NSObjectProtocol?
 
+    private var localFileURL: URL? {
+        FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)
+            .first?
+            .appendingPathComponent(Self.fileName)
+    }
+
     // MARK: - Init
 
     init(
-        defaults: UserDefaults = .standard,
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager()
     ) {
-        self.defaults = defaults
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
+        migrateFromUserDefaultsIfNeeded()
         startMonitoringCloudFile()
     }
 
@@ -86,7 +93,8 @@ final class UserProfileManager: UserProfileManagerProtocol, @unchecked Sendable 
     }
 
     func getLocalProfile() -> UserProfile {
-        guard let data = defaults.data(forKey: Keys.profileData),
+        guard let url = localFileURL,
+              let data = try? Data(contentsOf: url),
               let profile = try? JSONDecoder().decode(UserProfile.self, from: data) else {
             return migrateLegacyKeysIfNeeded()
         }
@@ -109,7 +117,8 @@ final class UserProfileManager: UserProfileManagerProtocol, @unchecked Sendable 
     }
 
     func deleteLocalProfile() {
-        defaults.removeObject(forKey: Keys.profileData)
+        guard let url = localFileURL else { return }
+        try? FileManager.default.removeItem(at: url)
     }
 }
 
@@ -117,16 +126,30 @@ final class UserProfileManager: UserProfileManagerProtocol, @unchecked Sendable 
 
 private extension UserProfileManager {
     func saveToLocal(_ profile: UserProfile) {
-        guard let data = try? JSONEncoder().encode(profile) else { return }
-        defaults.set(data, forKey: Keys.profileData)
+        guard let url = localFileURL,
+              let data = try? JSONEncoder().encode(profile) else { return }
+        try? data.write(to: url, options: .atomic)
+    }
+
+    /// One-time migration from the old `userProfile_data` UserDefaults blob to the
+    /// new JSON file in DocumentDirectory.
+    func migrateFromUserDefaultsIfNeeded() {
+        guard let url = localFileURL, !FileManager.default.fileExists(atPath: url.path) else { return }
+        let defaults = UserDefaults.standard
+        if let data = defaults.data(forKey: Keys.legacyProfileData),
+           let profile = try? JSONDecoder().decode(UserProfile.self, from: data) {
+            saveToLocal(profile)
+            defaults.removeObject(forKey: Keys.legacyProfileData)
+        }
     }
 
     /// One-time migration from the legacy per-key NSUbiquitousKeyValueStore / UserDefaults
-    /// storage to the new single JSON format in UserDefaults.
+    /// storage to the new single JSON file in DocumentDirectory.
     func migrateLegacyKeysIfNeeded() -> UserProfile {
-        let legacyName = defaults.string(forKey: "userProfile_name")
-        let legacyDescription = defaults.string(forKey: "userProfile_description")
-        let legacyExtraInfo = defaults.string(forKey: "userProfile_extraInfo")
+        let legacyDefaults = UserDefaults.standard
+        let legacyName = legacyDefaults.string(forKey: "userProfile_name")
+        let legacyDescription = legacyDefaults.string(forKey: "userProfile_description")
+        let legacyExtraInfo = legacyDefaults.string(forKey: "userProfile_extraInfo")
 
         // Also check NSUbiquitousKeyValueStore for any data stored there.
         let cloud = NSUbiquitousKeyValueStore.default
@@ -143,9 +166,9 @@ private extension UserProfileManager {
         if !profile.isEmpty {
             saveToLocal(profile)
             // Clean up legacy keys.
-            defaults.removeObject(forKey: "userProfile_name")
-            defaults.removeObject(forKey: "userProfile_description")
-            defaults.removeObject(forKey: "userProfile_extraInfo")
+            legacyDefaults.removeObject(forKey: "userProfile_name")
+            legacyDefaults.removeObject(forKey: "userProfile_description")
+            legacyDefaults.removeObject(forKey: "userProfile_extraInfo")
             cloud.removeObject(forKey: "userProfile_name")
             cloud.removeObject(forKey: "userProfile_description")
             cloud.removeObject(forKey: "userProfile_extraInfo")

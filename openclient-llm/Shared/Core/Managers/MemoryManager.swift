@@ -19,9 +19,9 @@ protocol MemoryManagerProtocol: Sendable {
 /// Manages the persistent memory list with optional iCloud sync.
 ///
 /// When iCloud sync is enabled the cloud `Memory.json` is the single source of truth.
-/// Local UserDefaults acts as a cache and is used when sync is disabled.
+/// Local storage is a JSON file in DocumentDirectory and is used when sync is disabled.
 ///
-/// Safety: UserDefaults is thread-safe per Apple documentation. CloudSyncManager
+/// Safety: FileManager operations are thread-safe for different paths. CloudSyncManager
 /// operations are file-based and called synchronously on callers' threads.
 /// The class is @unchecked Sendable because `metadataQuery` and `queryObserver`
 /// are only touched on the main thread during init/deinit.
@@ -29,30 +29,37 @@ final class MemoryManager: MemoryManagerProtocol, @unchecked Sendable {
     // MARK: - Properties
 
     private enum Keys {
-        static let items = "memory_items"
+        static let legacyItems = "memory_items"
     }
+
+    private static let fileName = "Memory.json"
 
     /// Notification posted when iCloud pushes an external memory change.
     nonisolated static let memoryDidChangeExternallyNotification = Notification.Name(
         "MemoryManager.memoryDidChangeExternally"
     )
 
-    private let defaults: UserDefaults
     private let settingsManager: SettingsManagerProtocol
     private let cloudSyncManager: CloudSyncManagerProtocol
     private nonisolated(unsafe) var metadataQuery: NSMetadataQuery?
     private nonisolated(unsafe) var queryObserver: NSObjectProtocol?
 
+    private var localFileURL: URL? {
+        FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)
+            .first?
+            .appendingPathComponent(Self.fileName)
+    }
+
     // MARK: - Init
 
     init(
-        defaults: UserDefaults = .standard,
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager()
     ) {
-        self.defaults = defaults
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
+        migrateFromUserDefaultsIfNeeded()
         startMonitoringCloudFile()
     }
 
@@ -106,7 +113,8 @@ final class MemoryManager: MemoryManagerProtocol, @unchecked Sendable {
 
 private extension MemoryManager {
     func loadFromLocal() -> [MemoryItem] {
-        guard let data = defaults.data(forKey: Keys.items),
+        guard let url = localFileURL,
+              let data = try? Data(contentsOf: url),
               let items = try? makeDecoder().decode([MemoryItem].self, from: data) else {
             return []
         }
@@ -114,14 +122,27 @@ private extension MemoryManager {
     }
 
     func saveToLocal(_ items: [MemoryItem]) {
-        guard let data = try? makeEncoder().encode(items) else { return }
-        defaults.set(data, forKey: Keys.items)
+        guard let url = localFileURL,
+              let data = try? makeEncoder().encode(items) else { return }
+        try? data.write(to: url, options: .atomic)
     }
 
     func persist(_ items: [MemoryItem]) {
         saveToLocal(items)
         if settingsManager.getIsCloudSyncEnabled() {
             try? cloudSyncManager.saveMemoryToCloud(items)
+        }
+    }
+
+    /// One-time migration from the old `memory_items` UserDefaults blob to the
+    /// new JSON file in DocumentDirectory.
+    func migrateFromUserDefaultsIfNeeded() {
+        guard let url = localFileURL, !FileManager.default.fileExists(atPath: url.path) else { return }
+        let defaults = UserDefaults.standard
+        if let data = defaults.data(forKey: Keys.legacyItems),
+           let items = try? makeDecoder().decode([MemoryItem].self, from: data) {
+            saveToLocal(items)
+            defaults.removeObject(forKey: Keys.legacyItems)
         }
     }
 

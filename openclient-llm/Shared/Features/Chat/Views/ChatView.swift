@@ -378,6 +378,7 @@ private extension ChatView {
             }
         }
         .padding(.horizontal, 16)
+        .padding(.bottom, 15)
         .frame(maxWidth: 760)
         .frame(maxWidth: .infinity)
     }

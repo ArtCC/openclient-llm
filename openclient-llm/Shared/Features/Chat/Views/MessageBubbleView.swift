@@ -28,8 +28,10 @@ struct MessageBubbleView: View {
     var onRegenerateTapped: (() -> Void)?
     var onForkTapped: (() -> Void)?
     var onFavouriteTapped: (() -> Void)?
+    @AppStorage("thinkingDisclosureExpanded") private var userThinkingPreference: Bool = true
     @State private var cursorVisible: Bool = false
     @State private var isThinkingExpanded: Bool = true
+    @State private var programmaticExpansionChange: Bool = false
     @State private var parsedBlocks: [MessageBlock] = []
 
     // MARK: - View
@@ -127,24 +129,35 @@ private extension MessageBubbleView {
                 }
             }
 
-            Spacer(minLength: 40)
+            Spacer(minLength: 0)
         }
         .onAppear {
             parsedBlocks = MarkdownParser.parse(message.content)
+            programmaticExpansionChange = true
+            isThinkingExpanded = userThinkingPreference
         }
         .onChange(of: message.content) {
             parsedBlocks = MarkdownParser.parse(message.content)
+        }
+        .onChange(of: isThinkingExpanded) { _, newValue in
+            if programmaticExpansionChange {
+                programmaticExpansionChange = false
+            } else {
+                userThinkingPreference = newValue
+            }
         }
         .task(id: isStreaming) {
             guard isStreaming else {
                 cursorVisible = false
                 if message.reasoningContent != nil {
                     withAnimation(.easeInOut(duration: 0.4)) {
-                        isThinkingExpanded = false
+                        programmaticExpansionChange = true
+                        isThinkingExpanded = userThinkingPreference
                     }
                 }
                 return
             }
+            programmaticExpansionChange = true
             isThinkingExpanded = true
             while !Task.isCancelled {
                 cursorVisible.toggle()
