@@ -314,7 +314,8 @@ private extension MessageBubbleView {
                 switch block {
                 case .text(let content):
                     textBlockView(content, isLast: isLastBlock)
-
+                case .heading(let text, let level):
+                    headingBlockView(text, level: level)
                 case .codeBlock(let code, let language):
                     CodeBlockView(
                         code: isStreaming && isLastBlock
@@ -343,6 +344,24 @@ private extension MessageBubbleView {
         }()
 
         return Text(attributed)
+            .foregroundStyle(Color.primary)
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    func headingBlockView(_ text: String, level: Int) -> some View {
+        let font: Font = {
+            switch level {
+            case 1: return .title
+            case 2: return .title2
+            case 3: return .title3
+            default: return .headline
+            }
+        }()
+
+        return Text(text)
+            .font(font)
+            .fontWeight(.semibold)
             .foregroundStyle(Color.primary)
             .textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading)

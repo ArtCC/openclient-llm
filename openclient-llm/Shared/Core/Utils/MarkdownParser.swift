@@ -13,6 +13,7 @@ import Foundation
 enum MessageBlock: Equatable, Sendable {
     case text(String)
     case codeBlock(code: String, language: String?)
+    case heading(text: String, level: Int)
 }
 
 // MARK: - MarkdownParser
@@ -49,7 +50,19 @@ struct MarkdownParser: Sendable {
                 var textLines: [String] = []
 
                 while index < lines.count && !lines[index].hasPrefix("```") {
-                    textLines.append(lines[index])
+                    let currentLine = lines[index]
+
+                    if let (level, headingText) = extractHeading(from: currentLine) {
+                        let accumulated = textLines.joined(separator: "\n")
+                        if !accumulated.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            blocks.append(.text(accumulated))
+                        }
+                        textLines = []
+                        blocks.append(.heading(text: headingText, level: level))
+                    } else {
+                        textLines.append(currentLine)
+                    }
+
                     index += 1
                 }
 
@@ -72,5 +85,18 @@ private extension MarkdownParser {
         guard trimmed.count > 3 else { return nil }
         let lang = String(trimmed.dropFirst(3)).trimmingCharacters(in: .whitespaces)
         return lang.isEmpty ? nil : lang
+    }
+
+    static func extractHeading(from line: String) -> (Int, String)? {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        for level in 1...6 {
+            let prefix = String(repeating: "#", count: level) + " "
+            if trimmed.hasPrefix(prefix) {
+                let text = String(trimmed.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
+                guard !text.isEmpty else { return nil }
+                return (level, text)
+            }
+        }
+        return nil
     }
 }
