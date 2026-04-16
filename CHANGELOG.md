@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.1.1-build-26] - 2026-04-16
+
+### Added
+
+- `AttachmentRepository` — new repository responsible for saving, loading, and deleting attachment files to/from disk (`Documents/Attachments/<conversationId>/<attachmentId>.<ext>`); large binary data is no longer stored inline in conversation JSON
+- `AttachmentMigrationUseCase` — one-time migration that reads existing conversation JSON files, extracts base64-encoded attachment data, writes each payload to disk, and replaces the inline `data` field with a `fileRelativePath` reference; guarded by a `UserDefaults` flag so it only runs once
+- `ExportConversationUseCase` re-embeds attachment binary data as base64 in exported JSON for portability across devices
+
+### Changed
+
+- `ChatMessage.Attachment` persists a `fileRelativePath` instead of raw `Data`; `init(from:)` is tolerant of legacy JSON (missing `fileRelativePath`) to support in-place migration
+- `CloudSyncManager` copies attachment files to the iCloud Documents container alongside conversation JSON; deletion of a conversation or all data also removes the corresponding attachment folders from iCloud
+- `LaunchViewModel` runs `AttachmentMigrationUseCase` at startup before onboarding check
+
 ## [1.1.1-build-25] - 2026-04-13
 
 ### Added

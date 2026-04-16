@@ -128,14 +128,14 @@ private extension ChatView {
                 editingMessageText: $editingMessageText
             )
         }
-        .imagePicker(isPresented: $showImagePicker) { attachment in
-            viewModel.send(.attachmentAdded(attachment))
+        .imagePicker(isPresented: $showImagePicker) { data, fileName, type in
+            viewModel.send(.attachmentAdded(data: data, fileName: fileName, type: type))
         }
-        .documentPicker(isPresented: $showDocumentPicker) { attachment in
-            viewModel.send(.attachmentAdded(attachment))
+        .documentPicker(isPresented: $showDocumentPicker) { data, fileName, type in
+            viewModel.send(.attachmentAdded(data: data, fileName: fileName, type: type))
         }
-        .imageFilePicker(isPresented: $showImageFilePicker) { attachment in
-            viewModel.send(.attachmentAdded(attachment))
+        .imageFilePicker(isPresented: $showImageFilePicker) { data, fileName, type in
+            viewModel.send(.attachmentAdded(data: data, fileName: fileName, type: type))
         }
         .task {
             viewModel.onConversationUpdated = onConversationUpdated
@@ -222,15 +222,15 @@ private extension ChatView {
                 viewModel.send(.conversationLoaded(newConversation))
             }
         }
-        .imagePicker(isPresented: $showImagePicker) { attachment in
-            viewModel.send(.attachmentAdded(attachment))
+        .imagePicker(isPresented: $showImagePicker) { data, fileName, type in
+            viewModel.send(.attachmentAdded(data: data, fileName: fileName, type: type))
         }
-        .documentPicker(isPresented: $showDocumentPicker) { attachment in
-            viewModel.send(.attachmentAdded(attachment))
+        .documentPicker(isPresented: $showDocumentPicker) { data, fileName, type in
+            viewModel.send(.attachmentAdded(data: data, fileName: fileName, type: type))
         }
 #if os(iOS)
-        .cameraPicker(isPresented: $showCameraPicker) { attachment in
-            viewModel.send(.attachmentAdded(attachment))
+        .cameraPicker(isPresented: $showCameraPicker) { data, fileName, type in
+            viewModel.send(.attachmentAdded(data: data, fileName: fileName, type: type))
         }
 #endif
     }

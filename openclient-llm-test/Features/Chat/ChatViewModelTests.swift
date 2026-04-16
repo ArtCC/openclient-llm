@@ -26,6 +26,7 @@ final class ChatViewModelTests: XCTestCase {
     var mockGetConversationStarters: MockGetConversationStartersUseCase!
     var mockExportConversation: MockExportConversationUseCase!
     var mockBranchConversation: MockBranchConversationUseCase!
+    var mockAttachmentRepository: MockAttachmentRepository!
 
     // MARK: - Setup
 
@@ -44,8 +45,10 @@ final class ChatViewModelTests: XCTestCase {
         mockGetConversationStarters = MockGetConversationStartersUseCase()
         mockExportConversation = MockExportConversationUseCase()
         mockBranchConversation = MockBranchConversationUseCase()
+        mockAttachmentRepository = MockAttachmentRepository()
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
+            attachmentRepository: mockAttachmentRepository,
             streamMessageUseCase: mockStreamMessage,
             webSearchUseCase: mockWebSearch,
             saveConversationUseCase: mockSaveConversation,
@@ -74,6 +77,7 @@ final class ChatViewModelTests: XCTestCase {
         mockGetConversationStarters = nil
         mockExportConversation = nil
         mockBranchConversation = nil
+        mockAttachmentRepository = nil
 
         try await super.tearDown()
     }

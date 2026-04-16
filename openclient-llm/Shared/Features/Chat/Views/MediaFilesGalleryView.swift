@@ -28,7 +28,6 @@ struct MediaFilesGalleryView: View {
 
     @Environment(\.dismiss) private var dismiss
 
-    @State private var previewImage: ExpandedImage?
     @State private var previewDocument: MediaItem?
 
     private var imageItems: [MediaItem] {
@@ -70,11 +69,8 @@ struct MediaFilesGalleryView: View {
                 }
             }
         }
-        .sheet(item: $previewImage) { expanded in
-            ImagePreviewView(data: expanded.data)
-        }
         .sheet(item: $previewDocument) { item in
-            PDFPreviewView(data: item.attachment.data, fileName: item.attachment.fileName)
+            PDFPreviewView(attachment: item.attachment)
         }
     }
 }
@@ -128,14 +124,10 @@ private extension MediaFilesGalleryView {
 
     func imageThumbnail(_ item: MediaItem) -> some View {
         ZStack(alignment: .bottomTrailing) {
-            AttachmentThumbnailImage(data: item.attachment.data)
-                .frame(width: 90, height: 90)
+            AttachmentImageView(attachment: item.attachment, thumbnailSize: 90)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
             goToMessageButton(messageId: item.messageId)
                 .padding(4)
-        }
-        .onTapGesture {
-            previewImage = ExpandedImage(data: item.attachment.data)
         }
     }
 
@@ -177,69 +169,57 @@ private extension MediaFilesGalleryView {
     }
 }
 
-// MARK: - Platform Thumbnail
-
-private struct AttachmentThumbnailImage: View {
-    let data: Data
-
-    var body: some View {
-#if os(iOS)
-        if let image = UIImage(data: data) {
-            Image(uiImage: image)
-                .resizable()
-                .scaledToFill()
-        } else {
-            imagePlaceholder
-        }
-#elseif os(macOS)
-        if let image = NSImage(data: data) {
-            Image(nsImage: image)
-                .resizable()
-                .scaledToFill()
-        } else {
-            imagePlaceholder
-        }
-#endif
-    }
-
-    private var imagePlaceholder: some View {
-        Color.secondary.opacity(0.2)
-            .overlay {
-                Image(systemName: "photo")
-                    .foregroundStyle(.secondary)
-            }
-    }
-}
-
 // MARK: - PDF Preview
 
 struct PDFPreviewView: View {
     // MARK: - Properties
 
-    let data: Data
-    let fileName: String
+    let attachment: ChatMessage.Attachment
 
     @Environment(\.dismiss) private var dismiss
+    @State private var pdfData: Data?
+
+    private let repository: AttachmentRepositoryProtocol
+
+    // MARK: - Init
+
+    init(
+        attachment: ChatMessage.Attachment,
+        repository: AttachmentRepositoryProtocol = AttachmentRepository()
+    ) {
+        self.attachment = attachment
+        self.repository = repository
+    }
 
     // MARK: - View
 
     var body: some View {
         NavigationStack {
-            PDFKitRepresentable(data: data)
-                .navigationTitle(fileName)
-#if os(iOS)
-                .navigationBarTitleDisplayMode(.inline)
-#endif
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button {
-                            dismiss()
-                        } label: {
-                            Image(systemName: "xmark")
-                        }
-                        .accessibilityLabel(String(localized: "Close"))
-                    }
+            Group {
+                if let data = pdfData {
+                    PDFKitRepresentable(data: data)
+                } else {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
+            }
+            .navigationTitle(attachment.fileName)
+#if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+#endif
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                    }
+                    .accessibilityLabel(String(localized: "Close"))
+                }
+            }
+        }
+        .task(id: attachment.id) {
+            pdfData = try? repository.load(attachment: attachment)
         }
     }
 }

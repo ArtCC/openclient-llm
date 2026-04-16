@@ -29,6 +29,7 @@ final class LaunchViewModel {
     private let checkOnboardingUseCase: CheckOnboardingUseCaseProtocol
     private let resetAppDataUseCase: ResetAppDataUseCaseProtocol
     private let configureVoticeUseCase: ConfigureVoticeUseCaseProtocol
+    private let attachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol
 
     // MARK: - Init
 
@@ -36,12 +37,14 @@ final class LaunchViewModel {
         state: State = .loading,
         checkOnboardingUseCase: CheckOnboardingUseCaseProtocol = CheckOnboardingUseCase(),
         resetAppDataUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase(),
-        configureVoticeUseCase: ConfigureVoticeUseCaseProtocol = ConfigureVoticeUseCase()
+        configureVoticeUseCase: ConfigureVoticeUseCaseProtocol = ConfigureVoticeUseCase(),
+        attachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol = AttachmentMigrationUseCase()
     ) {
         self.state = state
         self.checkOnboardingUseCase = checkOnboardingUseCase
         self.resetAppDataUseCase = resetAppDataUseCase
         self.configureVoticeUseCase = configureVoticeUseCase
+        self.attachmentMigrationUseCase = attachmentMigrationUseCase
     }
 
     // MARK: - Input functions
@@ -50,6 +53,7 @@ final class LaunchViewModel {
         switch event {
         case .viewAppeared:
             configureVotice()
+            attachmentMigrationUseCase.execute()
 
             let isCompleted = checkOnboardingUseCase.execute()
             if !isCompleted {

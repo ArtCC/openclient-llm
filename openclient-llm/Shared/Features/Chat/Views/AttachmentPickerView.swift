@@ -14,7 +14,7 @@ struct ImagePickerModifier: ViewModifier {
     // MARK: - Properties
 
     @Binding var isPresented: Bool
-    let onAttachment: (ChatMessage.Attachment) -> Void
+    let onAttachmentData: (Data, String, ChatMessage.AttachmentType) -> Void
 
     @State private var selectedItem: PhotosPickerItem?
 
@@ -32,12 +32,7 @@ struct ImagePickerModifier: ViewModifier {
                 Task {
                     if let data = try? await newItem.loadTransferable(type: Data.self) {
                         let fileName = "photo_\(Date().timeIntervalSince1970).jpg"
-                        let attachment = ChatMessage.Attachment(
-                            type: .image,
-                            fileName: fileName,
-                            data: data
-                        )
-                        onAttachment(attachment)
+                        onAttachmentData(data, fileName, .image)
                     }
                     selectedItem = nil
                 }
@@ -49,7 +44,7 @@ struct DocumentPickerModifier: ViewModifier {
     // MARK: - Properties
 
     @Binding var isPresented: Bool
-    let onAttachment: (ChatMessage.Attachment) -> Void
+    let onAttachmentData: (Data, String, ChatMessage.AttachmentType) -> Void
 
     // MARK: - View
 
@@ -68,12 +63,7 @@ struct DocumentPickerModifier: ViewModifier {
                         if gotAccess { url.stopAccessingSecurityScopedResource() }
                     }
                     if let data = try? Data(contentsOf: url) {
-                        let attachment = ChatMessage.Attachment(
-                            type: .pdf,
-                            fileName: url.lastPathComponent,
-                            data: data
-                        )
-                        onAttachment(attachment)
+                        onAttachmentData(data, url.lastPathComponent, .pdf)
                     }
                 case .failure:
                     break
@@ -87,7 +77,7 @@ struct ImageFilePickerModifier: ViewModifier {
     // MARK: - Properties
 
     @Binding var isPresented: Bool
-    let onAttachment: (ChatMessage.Attachment) -> Void
+    let onAttachmentData: (Data, String, ChatMessage.AttachmentType) -> Void
 
     // MARK: - View
 
@@ -106,12 +96,7 @@ struct ImageFilePickerModifier: ViewModifier {
                         if gotAccess { url.stopAccessingSecurityScopedResource() }
                     }
                     if let data = try? Data(contentsOf: url) {
-                        let attachment = ChatMessage.Attachment(
-                            type: .image,
-                            fileName: url.lastPathComponent,
-                            data: data
-                        )
-                        onAttachment(attachment)
+                        onAttachmentData(data, url.lastPathComponent, .image)
                     }
                 case .failure:
                     break
@@ -124,24 +109,24 @@ struct ImageFilePickerModifier: ViewModifier {
 extension View {
     func imagePicker(
         isPresented: Binding<Bool>,
-        onAttachment: @escaping (ChatMessage.Attachment) -> Void
+        onAttachmentData: @escaping (Data, String, ChatMessage.AttachmentType) -> Void
     ) -> some View {
-        modifier(ImagePickerModifier(isPresented: isPresented, onAttachment: onAttachment))
+        modifier(ImagePickerModifier(isPresented: isPresented, onAttachmentData: onAttachmentData))
     }
 
     func documentPicker(
         isPresented: Binding<Bool>,
-        onAttachment: @escaping (ChatMessage.Attachment) -> Void
+        onAttachmentData: @escaping (Data, String, ChatMessage.AttachmentType) -> Void
     ) -> some View {
-        modifier(DocumentPickerModifier(isPresented: isPresented, onAttachment: onAttachment))
+        modifier(DocumentPickerModifier(isPresented: isPresented, onAttachmentData: onAttachmentData))
     }
 
 #if os(macOS)
     func imageFilePicker(
         isPresented: Binding<Bool>,
-        onAttachment: @escaping (ChatMessage.Attachment) -> Void
+        onAttachmentData: @escaping (Data, String, ChatMessage.AttachmentType) -> Void
     ) -> some View {
-        modifier(ImageFilePickerModifier(isPresented: isPresented, onAttachment: onAttachment))
+        modifier(ImageFilePickerModifier(isPresented: isPresented, onAttachmentData: onAttachmentData))
     }
 #endif
 }

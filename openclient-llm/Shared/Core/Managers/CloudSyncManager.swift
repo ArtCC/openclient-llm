@@ -50,10 +50,15 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = .prettyPrinted
 
+        let localDocuments = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+
         for conversation in conversations {
             let fileURL = cloudURL.appendingPathComponent("\(conversation.id.uuidString).json")
             let data = try encoder.encode(conversation)
             try data.write(to: fileURL, options: .atomic)
+
+            // Sync attachment files for this conversation
+            try syncAttachmentFiles(for: conversation, localDocuments: localDocuments)
         }
     }
 
@@ -122,14 +127,30 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
     func deleteConversationFromCloud(_ conversationId: UUID) throws {
         guard let cloudURL = cloudConversationsDirectory() else { return }
         let fileURL = cloudURL.appendingPathComponent("\(conversationId.uuidString).json")
-        guard fileManager.fileExists(atPath: fileURL.path) else { return }
-        try fileManager.removeItem(at: fileURL)
+        if fileManager.fileExists(atPath: fileURL.path) {
+            try fileManager.removeItem(at: fileURL)
+        }
+
+        // Remove cloud attachment folder for this conversation
+        if let cloudAttachments = cloudAttachmentsDirectory() {
+            let convAttachments = cloudAttachments.appendingPathComponent(conversationId.uuidString, isDirectory: true)
+            if fileManager.fileExists(atPath: convAttachments.path) {
+                try fileManager.removeItem(at: convAttachments)
+            }
+        }
     }
 
     func deleteAllFromCloud() throws {
         guard let cloudURL = cloudConversationsDirectory() else { return }
-        guard fileManager.fileExists(atPath: cloudURL.path) else { return }
-        try fileManager.removeItem(at: cloudURL)
+        if fileManager.fileExists(atPath: cloudURL.path) {
+            try fileManager.removeItem(at: cloudURL)
+        }
+
+        // Remove all cloud attachment files
+        if let cloudAttachments = cloudAttachmentsDirectory(),
+           fileManager.fileExists(atPath: cloudAttachments.path) {
+            try fileManager.removeItem(at: cloudAttachments)
+        }
     }
 
     func saveProfileToCloud(_ profile: UserProfile) throws {
@@ -261,6 +282,11 @@ private extension CloudSyncManager {
             .appendingPathComponent("Conversations", isDirectory: true)
     }
 
+    func cloudAttachmentsDirectory() -> URL? {
+        cloudDocumentsDirectory()?
+            .appendingPathComponent("Attachments", isDirectory: true)
+    }
+
     func cloudProfileFileURL() -> URL? {
         cloudDocumentsDirectory()?
             .appendingPathComponent("UserProfile.json")
@@ -279,5 +305,31 @@ private extension CloudSyncManager {
     func ensureDirectoryExists(at url: URL) throws {
         guard !fileManager.fileExists(atPath: url.path) else { return }
         try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
+    }
+
+    /// Copies attachment files referenced by `conversation` from local storage to iCloud.
+    func syncAttachmentFiles(for conversation: Conversation, localDocuments: URL) throws {
+        guard let cloudAttachments = cloudAttachmentsDirectory() else { return }
+
+        // Collect all attachments from all messages
+        let attachments = conversation.messages.flatMap { $0.attachments }
+        guard !attachments.isEmpty else { return }
+
+        let cloudConvFolder = cloudAttachments
+            .appendingPathComponent(conversation.id.uuidString, isDirectory: true)
+        try ensureDirectoryExists(at: cloudConvFolder)
+
+        for attachment in attachments where !attachment.fileRelativePath.isEmpty {
+            let localFile = localDocuments.appendingPathComponent(attachment.fileRelativePath)
+            guard fileManager.fileExists(atPath: localFile.path) else { continue }
+
+            let fileName = localFile.lastPathComponent
+            let cloudFile = cloudConvFolder.appendingPathComponent(fileName)
+
+            // Skip if already synced and same size (avoid unnecessary writes)
+            if fileManager.fileExists(atPath: cloudFile.path) { continue }
+
+            try fileManager.copyItem(at: localFile, to: cloudFile)
+        }
     }
 }

@@ -83,7 +83,10 @@ extension ChatViewModel {
 
         // All remaining events update the assistant message content
         guard let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) else { return }
+        applyAgentContentEvent(event, at: index, in: &state)
+    }
 
+    func applyAgentContentEvent(_ event: AgentEvent, at index: Int, in state: inout LoadedState) {
         switch event {
         case .token(let text):
             state.messages[index].content += text
@@ -92,12 +95,31 @@ extension ChatViewModel {
         case .usage(let usage):
             state.messages[index].tokenUsage = usage
         case .image(let imageData):
-            let attachment = ChatMessage.Attachment(
+            let folderId = state.conversation?.id ?? state.pendingSessionId
+            let attachmentId = UUID()
+            let placeholder = ChatMessage.Attachment(
+                id: attachmentId,
                 type: .image,
                 fileName: String(localized: "Generated Image"),
-                data: imageData
+                mimeType: "image/png",
+                fileRelativePath: ""
             )
-            state.messages[index].attachments.append(attachment)
+            if let relativePath = try? attachmentRepository.save(
+                data: imageData,
+                for: placeholder,
+                conversationId: folderId
+            ) {
+                let attachment = ChatMessage.Attachment(
+                    id: attachmentId,
+                    type: .image,
+                    fileName: String(localized: "Generated Image"),
+                    mimeType: "image/png",
+                    fileRelativePath: relativePath
+                )
+                state.messages[index].attachments.append(attachment)
+            } else {
+                LogManager.error("applyAgentEvent: failed to save generated image")
+            }
         default:
             break
         }

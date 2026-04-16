@@ -70,13 +70,23 @@ extension ChatMessage {
         case pdf
     }
 
+    /// An attachment associated with a chat message.
+    ///
+    /// Binary data is stored on disk (via `AttachmentRepository`) and referenced here
+    /// by `fileRelativePath`. The `data` property loads it from disk on demand and is
+    /// intentionally excluded from `Codable` serialisation.
     struct Attachment: Identifiable, Equatable, Sendable, Codable {
         // MARK: - Properties
 
         let id: UUID
         let type: AttachmentType
         let fileName: String
-        let data: Data
+        /// MIME type of the attachment (e.g. `"image/jpeg"`, `"application/pdf"`).
+        let mimeType: String
+        /// Path relative to `FileManager.documentDirectory`.
+        /// e.g. `"Attachments/<conversationId>/<attachmentId>.jpg"`
+        /// Empty string indicates a legacy attachment pending migration.
+        let fileRelativePath: String
 
         // MARK: - Init
 
@@ -84,12 +94,49 @@ extension ChatMessage {
             id: UUID = UUID(),
             type: AttachmentType,
             fileName: String,
-            data: Data
+            mimeType: String,
+            fileRelativePath: String
         ) {
             self.id = id
             self.type = type
             self.fileName = fileName
-            self.data = data
+            self.mimeType = mimeType
+            self.fileRelativePath = fileRelativePath
+        }
+
+        // MARK: - Decodable
+
+        /// Custom decoder that tolerates legacy JSON format (pre-v2) where
+        /// `fileRelativePath` and `mimeType` were absent and `data` held raw bytes.
+        /// The `data` key is intentionally ignored; `AttachmentMigrationUseCase`
+        /// handles extracting and persisting those bytes to disk.
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            id = try container.decode(UUID.self, forKey: .id)
+            let decodedType = try container.decode(AttachmentType.self, forKey: .type)
+            type = decodedType
+            let decodedFileName = try container.decode(String.self, forKey: .fileName)
+            fileName = decodedFileName
+            mimeType = try container.decodeIfPresent(String.self, forKey: .mimeType)
+                ?? Self.inferMimeType(for: decodedType, fileName: decodedFileName)
+            // Legacy attachments won't have this key; migration will populate it
+            fileRelativePath = try container.decodeIfPresent(String.self, forKey: .fileRelativePath) ?? ""
+        }
+
+        // MARK: - Helpers
+
+        static func inferMimeType(for type: AttachmentType, fileName: String) -> String {
+            switch type {
+            case .pdf: return "application/pdf"
+            case .image:
+                let ext = (fileName as NSString).pathExtension.lowercased()
+                switch ext {
+                case "png": return "image/png"
+                case "gif": return "image/gif"
+                case "webp": return "image/webp"
+                default: return "image/jpeg"
+                }
+            }
         }
     }
 }

@@ -30,7 +30,6 @@ struct MessageBubbleView: View {
     var onFavouriteTapped: (() -> Void)?
     @State private var cursorVisible: Bool = false
     @State private var isThinkingExpanded: Bool = true
-    @State private var expandedImageData: Data?
 
     // MARK: - View
 
@@ -165,41 +164,7 @@ private extension MessageBubbleView {
 
     @ViewBuilder
     func imageThumbnail(_ attachment: ChatMessage.Attachment) -> some View {
-        if let image = platformImage(from: attachment.data) {
-            #if os(iOS)
-            Image(uiImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 175, height: 175)
-                .clipShape(.rect(cornerRadius: 12))
-                .contentShape(.rect(cornerRadius: 12))
-                .onTapGesture { expandedImageData = attachment.data }
-                .contextMenu { imageSaveContextMenu(attachment.data) }
-                .sheet(item: Binding(
-                    get: { expandedImageData.map { ExpandedImage(data: $0) } },
-                    set: { if $0 == nil { expandedImageData = nil } }
-                )) { expanded in
-                    ImagePreviewView(data: expanded.data)
-                }
-            #elseif os(macOS)
-            Image(nsImage: image)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 175, height: 175)
-                .clipShape(.rect(cornerRadius: 12))
-                .contentShape(.rect(cornerRadius: 12))
-                .onTapGesture { expandedImageData = attachment.data }
-                .contextMenu { imageSaveContextMenu(attachment.data) }
-                .sheet(item: Binding(
-                    get: { expandedImageData.map { ExpandedImage(data: $0) } },
-                    set: { if $0 == nil { expandedImageData = nil } }
-                )) { expanded in
-                    ImagePreviewView(data: expanded.data)
-                }
-            #endif
-        } else {
-            documentCard(attachment)
-        }
+        AttachmentImageView(attachment: attachment)
     }
 
     func documentCard(_ attachment: ChatMessage.Attachment) -> some View {
@@ -223,16 +188,6 @@ private extension MessageBubbleView {
         .padding(.vertical, 8)
         .glassEffect(.regular, in: .rect(cornerRadius: 12))
     }
-
-    #if os(iOS)
-    func platformImage(from data: Data) -> UIImage? {
-        UIImage(data: data)
-    }
-    #elseif os(macOS)
-    func platformImage(from data: Data) -> NSImage? {
-        NSImage(data: data)
-    }
-    #endif
 
     // MARK: - Context Menu
 
@@ -440,49 +395,7 @@ private extension MessageBubbleView {
     // MARK: - Image Actions
 
     @ViewBuilder
-    func imageSaveContextMenu(_ data: Data) -> some View {
-#if os(iOS)
-        Button {
-            saveImageToPhotos(data)
-        } label: {
-            Label(String(localized: "Save to Photos"), systemImage: "photo.badge.plus")
-        }
-#elseif os(macOS)
-        Button {
-            saveImageToDownloads(data)
-        } label: {
-            Label(String(localized: "Save to Downloads"), systemImage: "arrow.down.circle")
-        }
-#endif
-        Button {
-            copyImageToClipboard(data)
-        } label: {
-            Label(String(localized: "Copy Image"), systemImage: "doc.on.doc")
-        }
-    }
-
-#if os(iOS)
-    func saveImageToPhotos(_ data: Data) {
-        guard let image = UIImage(data: data) else { return }
-        UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
-    }
-#elseif os(macOS)
-    func saveImageToDownloads(_ data: Data) {
-        let timestamp = Int(Date().timeIntervalSince1970)
-        guard let url = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)
-            .first?.appendingPathComponent("generated-image-\(timestamp).png") else { return }
-        try? data.write(to: url)
-    }
-#endif
-
-    func copyImageToClipboard(_ data: Data) {
-#if os(iOS)
-        guard let image = UIImage(data: data) else { return }
-        UIPasteboard.general.image = image
-#elseif os(macOS)
-        guard let image = NSImage(data: data) else { return }
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.writeObjects([image])
-#endif
+    func imageSaveContextMenu(_ attachment: ChatMessage.Attachment) -> some View {
+        EmptyView() // Context menu is handled inside AttachmentImageView
     }
 }
