@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.2.0-build-27] - 2026-04-16
+
+### Added
+
+- **Memory list** — new "Memory" section in Settings (Personalization) showing all saved memory items; each item displays its content, an enabled/disabled toggle, a source badge (You / Model), and creation date; users can add, edit, delete, and toggle individual items
+- `MemoryItem` — new Codable + Sendable model with `id`, `content`, `isEnabled`, `createdAt`, and `source` (`.user` / `.model`) fields
+- `MemoryManager` — new manager for memory CRUD; stores items in `Memory.json` synced to iCloud Documents via `CloudSyncManager`, falling back to `UserDefaults`; posts `memoryDidChangeExternallyNotification` on cloud updates
+- `GetMemoryContextUseCase` — builds a `## Memory` block from all enabled items and injects it into every conversation's system prompt alongside the existing user profile context
+- `save_memory` tool — new `ChatToolProtocol` tool registered in the agentic loop; when called by the model, creates a `MemoryItem` with `source: .model` and saves it to the memory store, making it visible immediately in the Memory settings screen
+- `MemoryView` / `MemoryItemEditorView` — SwiftUI views for browsing and editing memory items (list, empty state, add/edit sheet, source badge, swipe-to-delete on iOS, inline buttons on macOS)
+- `MemoryViewModel` — `@Observable @MainActor` ViewModel backing `MemoryView`; observes iCloud change notifications to keep the list in sync across devices
+
+### Changed
+
+- `buildEffectiveSystemPrompt` now accepts a third `memoryContext` parameter; memory block is inserted between user profile context and the conversation system prompt
+- `ToolRegistry.default()` now accepts a `memoryManager` parameter and registers the `save_memory` tool alongside `web_search`
+- `CloudSyncManager` protocol and implementation extended with `saveMemoryToCloud`, `loadMemoryFromCloud`, and `deleteMemoryFromCloud` backed by `Documents/Memory.json` in the iCloud container
+- `ResetAppDataUseCase` now calls `memoryManager.deleteAll()` to wipe memory items on full data reset
+- Agent system prompt updated to document the `save_memory` tool and when the model should use it
+
 ## [1.1.1-build-26] - 2026-04-16
 
 ### Added
