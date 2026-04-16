@@ -19,7 +19,8 @@ struct ChatView: View {
     @State private var shouldAutoScroll: Bool = true
     @State private var isNearBottom: Bool = true
     @State private var isNearTop: Bool = true
-    @State private var scrollPosition = ScrollPosition(idType: String.self)
+    @State private var scrollPosition = ScrollPosition(idType: UUID.self)
+    @State private var isScrollThrottled: Bool = false
     @State private var showSystemPromptSheet: Bool = false
     @State private var showModelParametersSheet: Bool = false
     @State private var showFavouritesSheet: Bool = false
@@ -266,35 +267,32 @@ private extension ChatView {
     func messagesScrollView(
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
-        ScrollViewReader { proxy in
-            scrollContent(loadedState, proxy: proxy)
-                .overlay(alignment: .topTrailing) {
-                    if !isNearTop && !loadedState.messages.isEmpty {
-                        scrollAnchorButton(isTop: true) {
-                            withAnimation(.easeInOut(duration: 0.35)) {
-                                scrollPosition.scrollTo(edge: .top)
-                            }
+        scrollContent(loadedState)
+            .overlay(alignment: .topTrailing) {
+                if !isNearTop && !loadedState.messages.isEmpty {
+                    scrollAnchorButton(isTop: true) {
+                        withAnimation(.easeInOut(duration: 0.35)) {
+                            scrollPosition.scrollTo(edge: .top)
                         }
                     }
                 }
-                .overlay(alignment: .bottomTrailing) {
-                    if !isNearBottom && !loadedState.messages.isEmpty {
-                        scrollAnchorButton(isTop: false) {
-                            withAnimation(.easeInOut(duration: 0.35)) {
-                                scrollPosition.scrollTo(edge: .bottom)
-                            }
-                            shouldAutoScroll = true
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if !isNearBottom && !loadedState.messages.isEmpty {
+                    scrollAnchorButton(isTop: false) {
+                        withAnimation(.easeInOut(duration: 0.35)) {
+                            scrollPosition.scrollTo(edge: .bottom)
                         }
+                        shouldAutoScroll = true
                     }
                 }
-                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearTop)
-                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearBottom)
-        }
+            }
+            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearTop)
+            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearBottom)
     }
 
     func scrollContent(
-        _ loadedState: ChatViewModel.LoadedState,
-        proxy: ScrollViewProxy
+        _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
         scrollViewContent(loadedState)
             .onScrollGeometryChange(for: Bool.self) {
@@ -310,42 +308,14 @@ private extension ChatView {
                     shouldAutoScroll = isNearBottom
                 }
             }
-            .onChange(of: loadedState.messages.count) {
-                shouldAutoScroll = true
-                proxy.scrollTo("scroll-bottom")
-            }
-            .onChange(of: loadedState.messages.last?.content) {
-                guard shouldAutoScroll else { return }
-                proxy.scrollTo("scroll-bottom")
-            }
-            .onChange(of: loadedState.scrollToBottomTrigger) {
-                proxy.scrollTo("scroll-bottom")
-            }
-            .onChange(of: scrollToMessageId) { _, newId in
-                guard let id = newId else { return }
-                withAnimation(.easeInOut(duration: 0.35)) { proxy.scrollTo(id, anchor: .center) }
-                scrollToMessageId = nil
-            }
-            .task(id: loadedState.messages.isEmpty) {
-                guard !loadedState.messages.isEmpty else { return }
-                try? await Task.sleep(for: .milliseconds(120))
-                withAnimation(.easeInOut(duration: 0.3)) { proxy.scrollTo("scroll-bottom") }
-            }
-#if os(iOS)
-            .onReceive(
-                NotificationCenter.default.publisher(
-                    for: UIResponder.keyboardWillShowNotification
-                )
-            ) { notification in
-                let duration = notification.userInfo?[
-                    UIResponder.keyboardAnimationDurationUserInfoKey
-                ] as? Double ?? 0.25
-                DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-                    proxy.scrollTo("scroll-bottom")
-                    shouldAutoScroll = true
-                }
-            }
-#endif
+            .modifier(ScrollTriggerModifier(
+                loadedState: loadedState,
+                scrollPosition: $scrollPosition,
+                isScrollThrottled: $isScrollThrottled,
+                scrollToMessageId: $scrollToMessageId,
+                shouldAutoScroll: $shouldAutoScroll,
+                isNearBottom: isNearBottom
+            ))
     }
 
     func scrollViewContent(
@@ -374,9 +344,6 @@ private extension ChatView {
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
         LazyVStack(spacing: 16) {
-            Color.clear
-                .frame(height: 1)
-                .id("scroll-top")
             ForEach(loadedState.messages) { message in
                 let isLast = message.id == loadedState.messages.last?.id
                 MessageBubbleView(
@@ -409,9 +376,6 @@ private extension ChatView {
                 .id(message.id)
                 .transition(.opacity)
             }
-            Color.clear
-                .frame(height: 1)
-                .id("scroll-bottom")
         }
         .padding(.horizontal, 16)
         .frame(maxWidth: 760)
@@ -465,6 +429,64 @@ private extension ChatView {
         .transition(.scale(scale: 0.8).combined(with: .opacity))
     }
 
+}
+
+private struct ScrollTriggerModifier: ViewModifier {
+    let loadedState: ChatViewModel.LoadedState
+    @Binding var scrollPosition: ScrollPosition
+    @Binding var isScrollThrottled: Bool
+    @Binding var scrollToMessageId: UUID?
+    @Binding var shouldAutoScroll: Bool
+    let isNearBottom: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: loadedState.messages.count) {
+                guard isNearBottom else { return }
+                shouldAutoScroll = true
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    scrollPosition.scrollTo(edge: .bottom)
+                }
+            }
+            .onChange(of: loadedState.messages.last?.content) {
+                guard shouldAutoScroll, !isScrollThrottled else { return }
+                isScrollThrottled = true
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(80))
+                    scrollPosition.scrollTo(edge: .bottom)
+                    isScrollThrottled = false
+                }
+            }
+            .onChange(of: scrollToMessageId) { _, newId in
+                guard let id = newId else { return }
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    scrollPosition.scrollTo(id: id)
+                }
+                scrollToMessageId = nil
+            }
+            .task(id: loadedState.conversation?.id) {
+                guard !loadedState.messages.isEmpty else { return }
+                try? await Task.sleep(for: .milliseconds(120))
+                guard !Task.isCancelled else { return }
+                scrollPosition.scrollTo(edge: .bottom)
+            }
+#if os(iOS)
+            .onReceive(
+                NotificationCenter.default.publisher(
+                    for: UIResponder.keyboardWillShowNotification
+                )
+            ) { notification in
+                let duration = notification.userInfo?[
+                    UIResponder.keyboardAnimationDurationUserInfoKey
+                ] as? Double ?? 0.25
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(duration))
+                    scrollPosition.scrollTo(edge: .bottom)
+                    shouldAutoScroll = true
+                }
+            }
+#endif
+    }
 }
 
 #Preview {

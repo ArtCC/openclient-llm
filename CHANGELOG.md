@@ -21,6 +21,15 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - `CloudSyncManager` copies attachment files to the iCloud Documents container alongside conversation JSON; deletion of a conversation or all data also removes the corresponding attachment folders from iCloud
 - `LaunchViewModel` runs `AttachmentMigrationUseCase` at startup before onboarding check
 
+### Fixed
+
+- Chat scroll system rewritten: replaced dual-API conflict (`ScrollViewReader` + `.scrollPosition`) with a single `ScrollPosition` instance, eliminating white-screen flashes and erratic jumps caused by iOS reconciling two competing scroll authorities
+- Auto-scroll during streaming now throttled to at most one update every 80 ms (down from ~50+ per second), preventing layout thrashing and mid-stream blank frames
+- `onChange(of: messages.count)` no longer forces scroll-to-bottom when the user has scrolled up to read previous messages — scroll is only triggered when the user is already near the bottom
+- Loading a conversation no longer produces a double-scroll bounce; a single `.task(id: conversation?.id)` trigger replaced the previous `scrollToBottomTrigger` toggle + `.task` race condition
+- Keyboard-show handler migrated from `DispatchQueue.main.asyncAfter` to `Task { @MainActor in }`, making it safe within Swift Concurrency's structured task lifecycle
+- `MarkdownParser.parse()` result cached in `@State` on `MessageBubbleView` and updated only when `message.content` changes, removing the repeated O(n²) re-parse on every SwiftUI render pass during streaming
+
 ## [1.1.1-build-25] - 2026-04-13
 
 ### Added
