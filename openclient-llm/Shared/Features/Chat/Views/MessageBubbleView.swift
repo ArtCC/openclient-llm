@@ -30,6 +30,7 @@ struct MessageBubbleView: View {
     var onFavouriteTapped: (() -> Void)?
     @State private var cursorVisible: Bool = false
     @State private var isThinkingExpanded: Bool = true
+    @State private var parsedBlocks: [MessageBlock] = []
 
     // MARK: - View
 
@@ -127,6 +128,12 @@ private extension MessageBubbleView {
             }
 
             Spacer(minLength: 40)
+        }
+        .onAppear {
+            parsedBlocks = MarkdownParser.parse(message.content)
+        }
+        .onChange(of: message.content) {
+            parsedBlocks = MarkdownParser.parse(message.content)
         }
         .task(id: isStreaming) {
             guard isStreaming else {
@@ -260,11 +267,9 @@ private extension MessageBubbleView {
     // MARK: - Blocks
 
     var blocksView: some View {
-        let blocks = MarkdownParser.parse(message.content)
-
-        return VStack(alignment: .leading, spacing: 8) {
-            ForEach(Array(blocks.enumerated()), id: \.offset) { index, block in
-                let isLastBlock = index == blocks.count - 1
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(Array(parsedBlocks.enumerated()), id: \.offset) { index, block in
+                let isLastBlock = index == parsedBlocks.count - 1
 
                 switch block {
                 case .text(let content):

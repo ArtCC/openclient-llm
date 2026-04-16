@@ -1,0 +1,52 @@
+name: Beta
+
+on:
+  push:
+    branches: [develop]
+
+concurrency:
+  group: beta-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  beta:
+    name: Prepare Beta
+    runs-on: macos-26
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Extract version and release notes
+        id: changelog
+        run: |
+          python3 - << 'PYEOF'
+          import re, sys
+
+          content = open('CHANGELOG.md').read()
+
+          # Version: first ## [X.Y.Z] or ## [X.Y.Z-suffix]
+          m = re.search(r'## \[([\d+\.\d+\.\d+][^\]]*)\]', content)
+          if not m:
+              print('::error::No version found in CHANGELOG.md')
+              sys.exit(1)
+          version = m.group(1)
+
+          # Notes: block between first ## [X.Y.Z] or ## [X.Y.Z-suffix] header and the next ## [
+          m_notes = re.search(
+              r'## \[[^\]]+\][^\n]*\n(.*?)(?=\n## \[|\Z)',
+              content, re.DOTALL
+          )
+          notes = m_notes.group(1).strip() if m_notes else ''
+
+          with open('RELEASE_VERSION', 'w') as f:
+              f.write(version)
+          with open('RELEASE_NOTES.md', 'w') as f:
+              f.write(notes)
+
+          print(f'Version: {version}')
+          PYEOF
+          echo "version=$(cat RELEASE_VERSION)" >> "$GITHUB_OUTPUT"

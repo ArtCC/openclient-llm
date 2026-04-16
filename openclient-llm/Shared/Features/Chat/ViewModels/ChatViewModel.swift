@@ -64,7 +64,6 @@ final class ChatViewModel {
         var recordingDuration: TimeInterval = 0
         var isTranscribing: Bool = false
         var showTokenUsage: Bool = true
-        var scrollToBottomTrigger: Bool = false
         var ttsModelId: String?
         var transcriptionModelId: String?
         var exportedData: Data?
@@ -284,9 +283,6 @@ private extension ChatViewModel {
         loadedState.pendingAttachments = []
         loadedState.inputText = ""
         loadedState.errorMessage = nil
-        if !conversation.messages.isEmpty {
-            loadedState.scrollToBottomTrigger.toggle()
-        }
         state = .loaded(loadedState)
     }
 
