@@ -117,19 +117,7 @@ private extension MemoryView {
 #if os(iOS)
     func iOSItemRow(_ item: MemoryItem) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 7.5) {
-                Text(item.content)
-                    .font(.body)
-                    .foregroundStyle(item.isEnabled ? .primary : .secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: 6) {
-                    sourceLabel(item.source)
-                    Text(item.createdAt.formatted(date: .abbreviated, time: .omitted))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            itemContent(item)
 
             Spacer()
 
@@ -160,19 +148,7 @@ private extension MemoryView {
 #if os(macOS)
     func macOSItemRow(_ item: MemoryItem) -> some View {
         HStack(alignment: .center, spacing: 12) {
-            VStack(alignment: .leading, spacing: 7.5) {
-                Text(item.content)
-                    .font(.body)
-                    .foregroundStyle(item.isEnabled ? .primary : .secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: 6) {
-                    sourceLabel(item.source)
-                    Text(item.createdAt.formatted(date: .abbreviated, time: .omitted))
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            itemContent(item)
 
             Spacer()
 
@@ -200,6 +176,22 @@ private extension MemoryView {
         .padding(.vertical, 8)
     }
 #endif
+
+    func itemContent(_ item: MemoryItem) -> some View {
+        VStack(alignment: .leading, spacing: 7.5) {
+            Text(item.content)
+                .font(.body)
+                .foregroundStyle(item.isEnabled ? .primary : .secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 6) {
+                sourceLabel(item.source)
+                Text(item.createdAt.formatted(date: .abbreviated, time: .omitted))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
 
     func sourceLabel(_ source: MemoryItem.Source) -> some View {
         let label: String
