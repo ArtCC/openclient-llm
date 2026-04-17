@@ -19,13 +19,13 @@ struct ModelsView: View {
     // MARK: - View
 
     var body: some View {
-        #if os(iOS)
+#if os(iOS)
         NavigationStack {
             content
         }
-        #else
+#else
         content
-        #endif
+#endif
     }
 }
 
@@ -117,11 +117,11 @@ private extension ModelsView {
                 }
             }
         }
-        #if os(iOS)
+#if os(iOS)
         .refreshable {
             await viewModel.refreshAsync()
         }
-        #endif
+#endif
     }
 
     func modelRow(_ model: LLMModel, loadedState: ModelsViewModel.LoadedState) -> some View {
@@ -146,11 +146,6 @@ private extension ModelsView {
                         }
 
                         Spacer()
-
-                        if isSelected {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(Color.appAccent)
-                        }
                     }
 
                     if !model.capabilities.isEmpty {
@@ -162,12 +157,18 @@ private extension ModelsView {
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity, alignment: .leading)
 
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Color.appAccent)
+                    .font(.title2)
+            }
+
             Button {
                 modelForDetail = model
             } label: {
                 Image(systemName: "info.circle")
                     .foregroundStyle(.secondary)
-                    .font(.body)
+                    .font(.title2)
             }
             .buttonStyle(.plain)
             .padding(.leading, 12)
@@ -337,7 +338,7 @@ private extension ModelsView {
                 Text(isPresetVoice && !ttsCustomModeActive.contains(model.id)
                      ? currentVoice.capitalized
                      : String(localized: "Custom…"))
-                    .font(.subheadline)
+                .font(.subheadline)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption2)
             }

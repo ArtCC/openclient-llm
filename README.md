@@ -35,10 +35,11 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 - Media & Files gallery: browse all attached images and documents in one place
 - iCloud sync across all your Apple devices
 - Export conversations to JSON
-- Token usage per message
+- Token usage per message and estimated conversation cost
 
 **Models**
 - Browse all available models with capability badges (vision, tools, JSON mode, image generation...)
+- Model detail sheet: context window, pricing (per token), provider, mode, and capabilities at a glance
 - Voice selector for Text-to-Speech models
 - Switch models per conversation
 
