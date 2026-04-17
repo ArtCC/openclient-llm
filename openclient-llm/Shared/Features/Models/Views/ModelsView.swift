@@ -153,6 +153,7 @@ private extension ModelsView {
                     }
                 }
                 .padding(.vertical, 4)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity, alignment: .leading)
