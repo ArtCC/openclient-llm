@@ -116,15 +116,8 @@ private extension MemoryView {
 
 #if os(iOS)
     func iOSItemRow(_ item: MemoryItem) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Toggle("", isOn: Binding(
-                get: { item.isEnabled },
-                set: { _ in viewModel.send(.toggleItem(id: item.id)) }
-            ))
-            .labelsHidden()
-            .padding(.top, 2)
-
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 7.5) {
                 Text(item.content)
                     .font(.body)
                     .foregroundStyle(item.isEnabled ? .primary : .secondary)
@@ -137,7 +130,17 @@ private extension MemoryView {
                         .foregroundStyle(.secondary)
                 }
             }
+
+            Spacer()
+
+            Toggle("", isOn: Binding(
+                get: { item.isEnabled },
+                set: { _ in viewModel.send(.toggleItem(id: item.id)) }
+            ))
+            .labelsHidden()
         }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 6)
         .contentShape(Rectangle())
         .contextMenu {
             Button {
@@ -156,15 +159,8 @@ private extension MemoryView {
 
 #if os(macOS)
     func macOSItemRow(_ item: MemoryItem) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            Toggle("", isOn: Binding(
-                get: { item.isEnabled },
-                set: { _ in viewModel.send(.toggleItem(id: item.id)) }
-            ))
-            .labelsHidden()
-            .padding(.top, 2)
-
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 7.5) {
                 Text(item.content)
                     .font(.body)
                     .foregroundStyle(item.isEnabled ? .primary : .secondary)
@@ -193,8 +189,15 @@ private extension MemoryView {
                 Image(systemName: "trash")
             }
             .buttonStyle(.borderless)
+
+            Toggle("", isOn: Binding(
+                get: { item.isEnabled },
+                set: { _ in viewModel.send(.toggleItem(id: item.id)) }
+            ))
+            .labelsHidden()
         }
-        .padding(.vertical, 4)
+        .padding(.horizontal, 4)
+        .padding(.vertical, 8)
     }
 #endif
 
@@ -213,12 +216,15 @@ private extension MemoryView {
             color = .purple
         }
 
-        return Label(label, systemImage: icon)
-            .font(.caption2)
-            .foregroundStyle(color)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(color.opacity(0.12), in: Capsule())
+        return HStack(spacing: 3) {
+            Image(systemName: icon)
+            Text(label)
+        }
+        .font(.caption2)
+        .foregroundStyle(color)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(color.opacity(0.12), in: Capsule())
     }
 }
 
@@ -260,8 +266,8 @@ private struct MemoryItemEditorView: View {
 #endif
             .navigationTitle(
                 initialContent.isEmpty
-                    ? String(localized: "New Memory")
-                    : String(localized: "Edit Memory")
+                ? String(localized: "New Memory")
+                : String(localized: "Edit Memory")
             )
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
