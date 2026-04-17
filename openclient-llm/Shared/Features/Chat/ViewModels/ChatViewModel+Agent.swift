@@ -11,32 +11,33 @@ import Foundation
 // MARK: - Agent streaming helpers
 
 extension ChatViewModel {
-    func performAgentStreaming(
-        messages: [ChatMessage],
-        model: String,
-        assistantMessageId: UUID,
-        systemPrompt: String,
-        parameters: ModelParameters
-    ) async {
-        LogManager.debug("performAgentStreaming model=\(model) messages=\(messages.count)")
+    func performAgentStreaming(_ context: SendMessageContext) async {
+        LogManager.debug("performAgentStreaming model=\(context.modelId) messages=\(context.messages.count)")
 
-        var allMessages = messages
-        let systemMessage = ChatMessage(role: .system, content: buildAgentSystemPrompt(systemPrompt))
-        allMessages.insert(systemMessage, at: 0)
+        var allMessages = context.messages
+        let agentSystemPrompt = buildAgentSystemPrompt(
+            context.systemPrompt,
+            webSearchEnabled: context.webSearchEnabled
+        )
+        allMessages.insert(ChatMessage(role: .system, content: agentSystemPrompt), at: 0)
 
-        let registry = ToolRegistry.default(webSearchUseCase: webSearchUseCase, memoryManager: MemoryManager())
+        let registry = ToolRegistry.default(
+            webSearchEnabled: context.webSearchEnabled,
+            webSearchUseCase: webSearchUseCase,
+            memoryManager: MemoryManager()
+        )
 
         do {
             let stream = agentStreamUseCase.execute(
                 messages: allMessages,
-                model: model,
-                parameters: parameters,
+                model: context.modelId,
+                parameters: context.parameters,
                 toolRegistry: registry
             )
 
             for try await event in stream {
                 guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
-                applyAgentEvent(event, to: &currentState, assistantMessageId: assistantMessageId)
+                applyAgentEvent(event, to: &currentState, assistantMessageId: context.assistantId)
                 state = .loaded(currentState)
             }
 
@@ -44,14 +45,14 @@ extension ChatViewModel {
             finalState.isStreaming = false
             finalState.isSearchingWeb = false
             state = .loaded(finalState)
-            LogManager.success("performAgentStreaming completed model=\(model)")
+            LogManager.success("performAgentStreaming completed model=\(context.modelId)")
             persistConversation()
             streamingBackgroundUseCase.end()
             await notifyStreamingCompletedUseCase.execute()
         } catch {
             guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
-            LogManager.error("performAgentStreaming error model=\(model): \(error)")
-            if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }),
+            LogManager.error("performAgentStreaming error model=\(context.modelId): \(error)")
+            if let index = currentState.messages.firstIndex(where: { $0.id == context.assistantId }),
                currentState.messages[index].content.isEmpty {
                 currentState.messages.remove(at: index)
             }
@@ -129,7 +130,7 @@ extension ChatViewModel {
 // MARK: - Private
 
 private extension ChatViewModel {
-    func buildAgentSystemPrompt(_ conversationSystemPrompt: String) -> String {
+    func buildAgentSystemPrompt(_ conversationSystemPrompt: String, webSearchEnabled: Bool) -> String {
         let profileContext = getUserProfileContextUseCase.execute()
         let memoryContext = getMemoryContextUseCase.execute()
         let effectiveSystemPrompt = buildEffectiveSystemPrompt(
@@ -137,16 +138,30 @@ private extension ChatViewModel {
             memoryContext: memoryContext,
             conversationSystemPrompt: conversationSystemPrompt
         )
+        var toolDescriptions = """
+        - `get_current_datetime`: Use it to get the current date, time, and timezone from the user's \
+        device. Call it whenever the user asks about the current date or time, or when the answer \
+        depends on knowing today's date.\n
+        """
+        if webSearchEnabled {
+            toolDescriptions += """
+            - `web_search`: Use it when your training knowledge is insufficient or likely outdated to answer \
+            the user's question accurately: current events, recent news, real-time data, prices, sports results, \
+            software versions, or any fact that may have changed after your training cutoff. If you can answer \
+            confidently from your training knowledge, respond directly without calling the tool. After receiving \
+            search results, incorporate them naturally into your answer and cite sources when relevant.\n
+            """
+        }
+        toolDescriptions += """
+        - `save_memory`: Use it when the user shares important personal details, preferences, or context \
+        that should be remembered in future conversations. Call it proactively when you identify \
+        information worth remembering long-term.\n
+        - `delete_memory`: Use it when the user asks to forget something, corrects outdated information, \
+        or explicitly requests a memory to be removed.
+        """
         let toolInstructions = """
         You have access to the following tools:
-        - `web_search`: Use it when your training knowledge is insufficient or likely outdated to answer \
-        the user's question accurately: current events, recent news, real-time data, prices, sports results, \
-        software versions, or any fact that may have changed after your training cutoff. If you can answer \
-        confidently from your training knowledge, respond directly without calling the tool. After receiving \
-        search results, incorporate them naturally into your answer and cite sources when relevant.
-        - `save_memory`: Use it when the user shares important personal details, preferences, or context \
-        that should be remembered in future conversations. Call it proactively when you identify information \
-        worth remembering long-term.
+        \(toolDescriptions)
         Respond using whatever format best serves the answer (Markdown, lists, code blocks, tables, etc.).
         """
         return effectiveSystemPrompt.isEmpty

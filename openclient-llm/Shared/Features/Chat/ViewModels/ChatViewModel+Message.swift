@@ -23,16 +23,9 @@ extension ChatViewModel {
     }
 
     func streamWithWebSearch(_ context: SendMessageContext) async {
-        let useAgentMode = context.webSearchEnabled
-            && context.modelCapabilities.contains(.functionCalling)
+        let useAgentMode = context.modelCapabilities.contains(.functionCalling)
         if useAgentMode {
-            await performAgentStreaming(
-                messages: context.messages,
-                model: context.modelId,
-                assistantMessageId: context.assistantId,
-                systemPrompt: context.systemPrompt,
-                parameters: context.parameters
-            )
+            await performAgentStreaming(context)
         } else {
             await performStreaming(
                 messages: context.messages,

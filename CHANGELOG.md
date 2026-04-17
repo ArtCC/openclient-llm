@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [1.2.0-build-28] - 2026-04-20
+## [1.2.0-build-29] - 2026-04-20
 
 ### Added
 
@@ -21,6 +21,8 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - `MemoryManager` — new manager for memory CRUD; stores items in `Memory.json` synced to iCloud Documents via `CloudSyncManager`, falling back to `UserDefaults`; posts `memoryDidChangeExternallyNotification` on cloud updates
 - `GetMemoryContextUseCase` — builds a `## Memory` block from all enabled items and injects it into every conversation's system prompt alongside the existing user profile context
 - `save_memory` tool — new `ChatToolProtocol` tool registered in the agentic loop; when called by the model, creates a `MemoryItem` with `source: .model` and saves it to the memory store, making it visible immediately in the Memory settings screen
+- `delete_memory` tool — new `ChatToolProtocol` tool registered in the agentic loop; when called by the model, finds the best-matching memory item by content (exact then substring, case-insensitive) and removes it; notifies the UI to refresh immediately
+- `get_current_datetime` tool — new `ChatToolProtocol` tool registered in the agentic loop; returns the current date, time, weekday, and timezone from the user's device using `Locale.current` and `TimeZone.current`; no external APIs required
 - `MemoryView` / `MemoryItemEditorView` — SwiftUI views for browsing and editing memory items (list, empty state, add/edit sheet, source badge, swipe-to-delete on iOS, inline buttons on macOS)
 - `MemoryViewModel` — `@Observable @MainActor` ViewModel backing `MemoryView`; observes iCloud change notifications to keep the list in sync across devices
 
@@ -31,7 +33,10 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - Thinking disclosure in assistant messages now persists the user's open/close preference via `@AppStorage`; the block opens automatically during streaming and restores the saved preference once streaming ends
 - "Rate the app" action in Settings now opens the App Store write-review sheet directly via `itms-apps://` URL on both iOS and macOS, replacing the unreliable `AppStore.requestReview` API
 - `buildEffectiveSystemPrompt` now accepts a third `memoryContext` parameter; memory block is inserted between user profile context and the conversation system prompt
-- `ToolRegistry.default()` now accepts a `memoryManager` parameter and registers the `save_memory` tool alongside `web_search`
+- `ToolRegistry.default()` now accepts a `webSearchEnabled` parameter; `save_memory`, `delete_memory`, and `get_current_datetime` are always registered; `web_search` is only included when the web search toggle is active
+- The agentic loop is now entered whenever the selected model has `.functionCalling` capability, regardless of whether web search is enabled; previously it required web search to be active
+- Agent system prompt updated to document the `save_memory`, `delete_memory`, and `get_current_datetime` tools; `web_search` instructions are only appended when the toggle is on
+- `LLMModel.Capability` gains a new `.text` case used as a fallback badge when a model exposes no specific capabilities; shown in both the model row and the detail sheet
 - `CloudSyncManager` protocol and implementation extended with `saveMemoryToCloud`, `loadMemoryFromCloud`, and `deleteMemoryFromCloud` backed by `Documents/Memory.json` in the iCloud container
 - `ResetAppDataUseCase` now calls `memoryManager.deleteAll()` to wipe memory items on full data reset
 - Agent system prompt updated to document the `save_memory` tool and when the model should use it
