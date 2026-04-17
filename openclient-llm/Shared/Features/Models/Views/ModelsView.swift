@@ -148,9 +148,7 @@ private extension ModelsView {
                         Spacer()
                     }
 
-                    if !model.capabilities.isEmpty {
-                        capabilityTags(model.capabilities)
-                    }
+                    capabilityTags(model.capabilities.isEmpty ? [.text] : model.capabilities)
                 }
                 .padding(.vertical, 4)
                 .contentShape(Rectangle())

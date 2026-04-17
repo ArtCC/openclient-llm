@@ -86,9 +86,7 @@ private extension ModelDetailView {
 
             providerModeSection
 
-            if !model.capabilities.isEmpty {
-                capabilitiesSection
-            }
+            capabilitiesSection
         }
         #if os(macOS)
         .formStyle(.grouped)
@@ -169,8 +167,9 @@ private extension ModelDetailView {
     }
 
     var capabilitiesSection: some View {
-        Section(String(localized: "Capabilities")) {
-            ForEach(model.capabilities.sorted { $0.label < $1.label }, id: \.self) { capability in
+        let capabilities = model.capabilities.isEmpty ? [LLMModel.Capability.text] : model.capabilities
+        return Section(String(localized: "Capabilities")) {
+            ForEach(capabilities.sorted { $0.label < $1.label }, id: \.self) { capability in
                 Label {
                     Text(capability.label)
                 } icon: {

@@ -172,6 +172,7 @@ extension LLMModel {
 
 extension LLMModel {
     enum Capability: String, Equatable, Sendable, CaseIterable {
+        case text
         case vision
         case functionCalling
         case parallelFunctionCalling
@@ -185,6 +186,8 @@ extension LLMModel {
 
         var label: String {
             switch self {
+            case .text:
+                String(localized: "tag.text")
             case .vision:
                 String(localized: "tag.vision")
             case .functionCalling:
@@ -206,6 +209,7 @@ extension LLMModel {
 
         var icon: String {
             switch self {
+            case .text: "text.bubble"
             case .vision: "eye"
             case .functionCalling: "wrench.and.screwdriver"
             case .parallelFunctionCalling: "square.stack.3d.up"
@@ -219,6 +223,7 @@ extension LLMModel {
 
         var color: Color {
             switch self {
+            case .text: .secondary
             case .vision: .purple
             case .functionCalling: .orange
             case .parallelFunctionCalling: .cyan
