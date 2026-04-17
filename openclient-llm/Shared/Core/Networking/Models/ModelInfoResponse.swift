@@ -28,6 +28,8 @@ nonisolated struct ModelInfoResponse: Decodable, Sendable {
         let maxTokens: Int?
         let maxInputTokens: Int?
         let maxOutputTokens: Int?
+        let inputCostPerToken: Double?
+        let outputCostPerToken: Double?
         let supportsVision: Bool?
         let supportsFunctionCalling: Bool?
         let supportsParallelFunctionCalling: Bool?

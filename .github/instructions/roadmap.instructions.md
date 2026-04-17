@@ -111,10 +111,17 @@ Goal: Clean up the chat header, reduce toolbar clutter, and bring a quick-access
 
 Goal: Give users and models a persistent, editable memory layer that is always injected into the system prompt.
 
-- [ ] **User memory list**: New "Memory" section in Settings showing a list of memory items. Each item has content text, an enabled/disabled toggle, a source badge (user vs. model), and creation date. Users can add, edit, delete, and toggle any item. All items with `isEnabled == true` are injected into every system prompt as a `## Memory` block, alongside the existing user profile context. Storage: `NSUbiquitousKeyValueStore` (synced across devices when iCloud is enabled), falling back to `UserDefaults` when not. Data model: `MemoryItem` (id, content, isEnabled, createdAt, source: `.user` | `.model`), Codable + Sendable.
-- [ ] **Model memory tool**: Register a `save_memory(content: String)` tool in the existing agentic loop (Phase 7). When the model calls it, a new `MemoryItem` with `source: .model` is created and saved to the same store as user memory. The item appears immediately in the Memory list in Settings, where the user can review, edit, disable, or delete it.
+- [x] **User memory list**: New "Memory" section in Settings showing a list of memory items. Each item has content text, an enabled/disabled toggle, a source badge (user vs. model), and creation date. Users can add, edit, delete, and toggle any item. All items with `isEnabled == true` are injected into every system prompt as a `## Memory` block, alongside the existing user profile context. Storage: `NSUbiquitousKeyValueStore` (synced across devices when iCloud is enabled), falling back to `UserDefaults` when not. Data model: `MemoryItem` (id, content, isEnabled, createdAt, source: `.user` | `.model`), Codable + Sendable.
+- [x] **Model memory tool**: Register a `save_memory(content: String)` tool in the existing agentic loop (Phase 7). When the model calls it, a new `MemoryItem` with `source: .model` is created and saved to the same store as user memory. The item appears immediately in the Memory list in Settings, where the user can review, edit, disable, or delete it.
 
-## Phase 11 — System Integration & Import
+## Phase 11 — Model Detail & Cost Intelligence
+
+Goal: Surface per-model metadata and give users visibility into conversation cost.
+
+- [x] **Model detail view**: Each model row in the Models screen gets a new info button (`ⓘ`) that opens a detail sheet without affecting the existing tap-to-select gesture. The `ⓘ` button is shown for all models. No additional network request is needed: `GET /model/info` is already called during model list fetch; the missing step is persisting `maxInputTokens`, `maxOutputTokens`, `inputCostPerToken`, and `outputCostPerToken` into `LLMModel` (they are currently discarded in `FetchModelsUseCase`). The detail sheet renders only rows with real data (non-nil, non-zero): context window, pricing, provider, mode, and capability badges. Rows with no data are simply omitted — no empty or zero-value fields shown.
+- [x] **Estimated conversation cost**: Running cost total displayed in the model parameters sheet, calculated from stored per-message token counts × `inputCostPerToken` / `outputCostPerToken` from the active model. Shown as a formatted currency string (e.g. `~$0.0042`). Hidden entirely when pricing data is unavailable (nil or zero — local/Ollama models).
+
+## Phase 12 — System Integration & Import
 
 Goal: Allow other apps to send content to OpenClient LLM and let users bring data from external sources.
 
@@ -122,7 +129,8 @@ Goal: Allow other apps to send content to OpenClient LLM and let users bring dat
 - [ ] **Drag & Drop between apps**: Accept drags from other apps directly into the chat input — text, images, files — especially useful on iPad and macOS where multitasking with Split View is common.
 - [ ] **Custom URL scheme (`openclient://`)**: URL scheme to open the app with prefilled content from external automations, Shortcuts, or third-party apps.
 - [ ] **Apple Shortcuts integration**: Define `AppIntents`/`NSUserActivity` so Shortcuts can execute actions such as "New conversation with message", "Search conversations", or "Send file to chat".
+- [ ] **Widget (iOS/iPadOS)**: WidgetKit home screen widget with a "New Chat" quick-action and a list of the most recent conversations. Tapping a conversation row opens the app directly in that conversation via deep link. Tapping "New Chat" creates a blank conversation. Uses `AppIntent` for interactive actions (iOS 17+).
 
-## Current Phase: 10 — Memory
+## Current Phase: 11 — Model Detail & Cost Intelligence
 
-Focus exclusively on Phase 10 features. Do not over-engineer for future phases.
+Focus exclusively on Phase 11 features. Do not over-engineer for future phases.

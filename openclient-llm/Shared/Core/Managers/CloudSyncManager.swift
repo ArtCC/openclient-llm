@@ -22,6 +22,9 @@ protocol CloudSyncManagerProtocol: Sendable {
     func loadTemplatesFromCloud() throws -> [PromptTemplate]
     func allCloudTemplateIds() -> Set<UUID>?
     func deleteTemplateFromCloud(_ templateId: UUID) throws
+    func saveMemoryToCloud(_ items: [MemoryItem]) throws
+    func loadMemoryFromCloud() throws -> [MemoryItem]?
+    func deleteMemoryFromCloud() throws
 }
 
 struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
@@ -272,6 +275,48 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
         guard fileManager.fileExists(atPath: fileURL.path) else { return }
         try fileManager.removeItem(at: fileURL)
     }
+
+    func saveMemoryToCloud(_ items: [MemoryItem]) throws {
+        guard let fileURL = cloudMemoryFileURL() else { return }
+
+        let directory = fileURL.deletingLastPathComponent()
+        try ensureDirectoryExists(at: directory)
+
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = .prettyPrinted
+        let data = try encoder.encode(items)
+        try data.write(to: fileURL, options: .atomic)
+    }
+
+    func loadMemoryFromCloud() throws -> [MemoryItem]? {
+        guard let fileURL = cloudMemoryFileURL() else { return nil }
+
+        let directory = fileURL.deletingLastPathComponent()
+        if fileManager.fileExists(atPath: directory.path) {
+            let files = try? fileManager.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.ubiquitousItemDownloadingStatusKey],
+                options: []
+            )
+            for url in files ?? [] where url.lastPathComponent.hasPrefix(".") && url.pathExtension == "icloud" {
+                try? fileManager.startDownloadingUbiquitousItem(at: url)
+            }
+        }
+
+        guard fileManager.fileExists(atPath: fileURL.path) else { return nil }
+
+        let data = try Data(contentsOf: fileURL)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode([MemoryItem].self, from: data)
+    }
+
+    func deleteMemoryFromCloud() throws {
+        guard let fileURL = cloudMemoryFileURL() else { return }
+        guard fileManager.fileExists(atPath: fileURL.path) else { return }
+        try fileManager.removeItem(at: fileURL)
+    }
 }
 
 // MARK: - Private
@@ -295,6 +340,11 @@ private extension CloudSyncManager {
     func cloudTemplatesDirectory() -> URL? {
         cloudDocumentsDirectory()?
             .appendingPathComponent("PromptTemplates", isDirectory: true)
+    }
+
+    func cloudMemoryFileURL() -> URL? {
+        cloudDocumentsDirectory()?
+            .appendingPathComponent("Memory.json")
     }
 
     func cloudDocumentsDirectory() -> URL? {

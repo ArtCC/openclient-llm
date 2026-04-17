@@ -92,6 +92,7 @@ final class ChatViewModel {
     let setWebSearchEnabledUseCase: SetWebSearchEnabledUseCaseProtocol
     private let resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol
     let getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol
+    let getMemoryContextUseCase: GetMemoryContextUseCaseProtocol
     private let getConversationStartersUseCase: GetConversationStartersUseCaseProtocol
     private let playAudioUseCase: any PlayAudioUseCaseProtocol
     let recordAudioUseCase: any RecordAudioUseCaseProtocol
@@ -123,6 +124,7 @@ final class ChatViewModel {
         setWebSearchEnabledUseCase: SetWebSearchEnabledUseCaseProtocol = SetWebSearchEnabledUseCase(),
         resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol = ResolveAudioModelIdsUseCase(),
         getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol = GetUserProfileContextUseCase(),
+        getMemoryContextUseCase: GetMemoryContextUseCaseProtocol = GetMemoryContextUseCase(),
         getConversationStartersUseCase: GetConversationStartersUseCaseProtocol = GetConversationStartersUseCase(),
         playAudioUseCase: any PlayAudioUseCaseProtocol = PlayAudioUseCase(),
         recordAudioUseCase: any RecordAudioUseCaseProtocol = RecordAudioUseCase(),
@@ -147,6 +149,7 @@ final class ChatViewModel {
         self.setWebSearchEnabledUseCase = setWebSearchEnabledUseCase
         self.resolveAudioModelIdsUseCase = resolveAudioModelIdsUseCase
         self.getUserProfileContextUseCase = getUserProfileContextUseCase
+        self.getMemoryContextUseCase = getMemoryContextUseCase
         self.getConversationStartersUseCase = getConversationStartersUseCase
         self.playAudioUseCase = playAudioUseCase
         self.recordAudioUseCase = recordAudioUseCase

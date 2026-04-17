@@ -46,6 +46,10 @@ struct FetchModelsUseCase: FetchModelsUseCaseProtocol {
                     updated.provider = info.provider
                     updated.mode = info.mode
                     updated.providerName = info.providerName
+                    updated.maxInputTokens = info.maxInputTokens
+                    updated.maxOutputTokens = info.maxOutputTokens
+                    updated.inputCostPerToken = info.inputCostPerToken
+                    updated.outputCostPerToken = info.outputCostPerToken
                 } else {
                     updated.provider = LLMModel.Provider.from(model.ownedBy)
                 }

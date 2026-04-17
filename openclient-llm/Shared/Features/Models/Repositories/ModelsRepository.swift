@@ -60,7 +60,11 @@ struct ModelsRepository: ModelsRepositoryProtocol {
                 capabilities: Self.capabilitiesFromModelInfo(info.modelInfo),
                 provider: LLMModel.Provider.from(inferredProvider),
                 mode: LLMModel.Mode(rawString: info.modelInfo?.mode),
-                providerName: LLMModel.Provider.displayName(from: inferredProvider)
+                providerName: LLMModel.Provider.displayName(from: inferredProvider),
+                maxInputTokens: info.modelInfo?.maxInputTokens,
+                maxOutputTokens: info.modelInfo?.maxOutputTokens,
+                inputCostPerToken: info.modelInfo?.inputCostPerToken,
+                outputCostPerToken: info.modelInfo?.outputCostPerToken
             )
         }
 

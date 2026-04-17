@@ -28,6 +28,10 @@ struct ImagePreviewView: View {
     let data: Data
 
     @Environment(\.dismiss) private var dismiss
+    @GestureState private var gestureScale: CGFloat = 1.0
+    @State private var steadyScale: CGFloat = 1.0
+
+    private var zoomScale: CGFloat { max(1.0, min(steadyScale * gestureScale, 6.0)) }
 
     // MARK: - View
 
@@ -39,8 +43,21 @@ struct ImagePreviewView: View {
                     Image(uiImage: image)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
+                        .scaleEffect(zoomScale)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .ignoresSafeArea(edges: .bottom)
+                        .gesture(
+                            MagnificationGesture()
+                                .updating($gestureScale) { value, state, _ in state = value }
+                                .onEnded { value in
+                                    steadyScale = max(1.0, min(steadyScale * value, 6.0))
+                                }
+                        )
+                        .onTapGesture(count: 2) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                steadyScale = 1.0
+                            }
+                        }
                 }
                 #elseif os(macOS)
                 if let image = NSImage(data: data) {

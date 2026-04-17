@@ -28,6 +28,9 @@ final class MockCloudSyncManager: CloudSyncManagerProtocol, @unchecked Sendable 
     var cloudTemplateIds: Set<UUID>?
     var syncedTemplates: [PromptTemplate] = []
     var deletedTemplateIds: [UUID] = []
+    var cloudMemoryItems: [MemoryItem]?
+    var savedMemoryItems: [MemoryItem]?
+    var deleteMemoryCalled: Bool = false
 
     // MARK: - Public
 
@@ -86,5 +89,18 @@ final class MockCloudSyncManager: CloudSyncManagerProtocol, @unchecked Sendable 
 
     func deleteTemplateFromCloud(_ templateId: UUID) throws {
         deletedTemplateIds.append(templateId)
+    }
+
+    func saveMemoryToCloud(_ items: [MemoryItem]) throws {
+        savedMemoryItems = items
+    }
+
+    func loadMemoryFromCloud() throws -> [MemoryItem]? {
+        cloudMemoryItems
+    }
+
+    func deleteMemoryFromCloud() throws {
+        deleteMemoryCalled = true
+        cloudMemoryItems = nil
     }
 }
