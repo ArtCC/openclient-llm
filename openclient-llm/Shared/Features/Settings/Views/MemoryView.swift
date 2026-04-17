@@ -243,27 +243,28 @@ private struct MemoryItemEditorView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section {
-                    TextField(
-                        String(localized: "e.g. User prefers concise answers"),
-                        text: $content,
-                        axis: .vertical
-                    )
-                    .lineLimit(4...)
-                    .autocorrectionDisabled()
-#if os(iOS)
-                    .textInputAutocapitalization(.sentences)
-#endif
-                } header: {
-                    Text(String(localized: "Memory Content"))
-                } footer: {
-                    Text(String(localized: "This will be injected into every conversation's system prompt."))
-                }
-            }
+            Group {
 #if os(macOS)
-            .formStyle(.grouped)
+                macOSEditorView
+#else
+                Form {
+                    Section {
+                        TextField(
+                            String(localized: "e.g. User prefers concise answers"),
+                            text: $content,
+                            axis: .vertical
+                        )
+                        .lineLimit(4...)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.sentences)
+                    } header: {
+                        Text(String(localized: "Memory Content"))
+                    } footer: {
+                        Text(String(localized: "This will be injected into every conversation's system prompt."))
+                    }
+                }
 #endif
+            }
             .navigationTitle(
                 initialContent.isEmpty
                 ? String(localized: "New Memory")
@@ -291,6 +292,50 @@ private struct MemoryItemEditorView: View {
             content = initialContent
         }
     }
+
+#if os(macOS)
+    var macOSEditorView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                macOSContentField
+            }
+            .padding(16)
+        }
+    }
+
+    var macOSContentField: some View {
+        macOSField(
+            header: String(localized: "Memory Content"),
+            footer: String(localized: "This will be injected into every conversation's system prompt.")
+        ) {
+            TextField(
+                String(localized: "e.g. User prefers concise answers"),
+                text: $content,
+                axis: .vertical
+            )
+            .textFieldStyle(.roundedBorder)
+            .lineLimit(4...)
+            .autocorrectionDisabled()
+        }
+    }
+
+    func macOSField<Content: View>(
+        header: String,
+        footer: String,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(header)
+                .font(.headline)
+                .foregroundStyle(.primary)
+            content()
+            Text(footer)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+#endif
 }
 
 #Preview {
