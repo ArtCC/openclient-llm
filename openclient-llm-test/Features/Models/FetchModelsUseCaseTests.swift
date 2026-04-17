@@ -189,4 +189,50 @@ final class FetchModelsUseCaseTests: XCTestCase {
         let gemma4 = result.first(where: { $0.id == "gemma4" })
         XCTAssertEqual(gemma4?.capabilities, [.vision, .functionCalling])
     }
+
+    func test_execute_mergesCostAndContextWindowFromModelInfo() async throws {
+        // Given
+        let models = [LLMModel(id: "gpt-4o", ownedBy: "openai")]
+        mockRepository.fetchModelsResult = .success(models)
+
+        let modelInfoList = [
+            LLMModel(
+                id: "gpt-4o",
+                maxInputTokens: 128_000,
+                maxOutputTokens: 16_384,
+                inputCostPerToken: 0.0000025,
+                outputCostPerToken: 0.00001
+            )
+        ]
+        mockRepository.fetchModelInfoResult = .success(modelInfoList)
+
+        // When
+        let result = try await sut.execute()
+
+        // Then
+        let model = result.first(where: { $0.id == "gpt-4o" })
+        XCTAssertEqual(model?.maxInputTokens, 128_000)
+        XCTAssertEqual(model?.maxOutputTokens, 16_384)
+        XCTAssertEqual(model?.inputCostPerToken, 0.0000025)
+        XCTAssertEqual(model?.outputCostPerToken, 0.00001)
+    }
+
+    func test_execute_costAndContextWindowNilWhenNotInModelInfo() async throws {
+        // Given
+        let models = [LLMModel(id: "llama3", ownedBy: "ollama")]
+        mockRepository.fetchModelsResult = .success(models)
+
+        let modelInfoList = [LLMModel(id: "llama3", capabilities: [.vision], provider: .local)]
+        mockRepository.fetchModelInfoResult = .success(modelInfoList)
+
+        // When
+        let result = try await sut.execute()
+
+        // Then
+        let model = result.first(where: { $0.id == "llama3" })
+        XCTAssertNil(model?.maxInputTokens)
+        XCTAssertNil(model?.maxOutputTokens)
+        XCTAssertNil(model?.inputCostPerToken)
+        XCTAssertNil(model?.outputCostPerToken)
+    }
 }

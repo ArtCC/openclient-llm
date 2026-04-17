@@ -14,6 +14,7 @@ struct ModelsView: View {
     @State private var viewModel = ModelsViewModel()
     @State private var ttsCustomVoiceTexts: [String: String] = [:]
     @State private var ttsCustomModeActive: Set<String> = []
+    @State private var modelForDetail: LLMModel?
 
     // MARK: - View
 
@@ -53,6 +54,9 @@ private extension ModelsView {
         }
         .task {
             viewModel.send(.viewAppeared)
+        }
+        .sheet(item: $modelForDetail) { model in
+            ModelDetailView(model: model)
         }
     }
 
@@ -123,36 +127,50 @@ private extension ModelsView {
     func modelRow(_ model: LLMModel, loadedState: ModelsViewModel.LoadedState) -> some View {
         let isSelected = model.id == loadedState.selectedModelId
 
-        return Button {
-            viewModel.send(.modelTapped(model))
-        } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 12) {
-                    providerLogo(model)
+        return HStack(spacing: 0) {
+            Button {
+                viewModel.send(.modelTapped(model))
+            } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 12) {
+                        providerLogo(model)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(model.id)
-                            .font(.body)
-                        if !model.providerName.isEmpty {
-                            Text(model.providerName)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(model.id)
+                                .font(.body)
+                            if !model.providerName.isEmpty {
+                                Text(model.providerName)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+
+                        Spacer()
+
+                        if isSelected {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(Color.appAccent)
                         }
                     }
 
-                    Spacer()
-
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(Color.appAccent)
+                    if !model.capabilities.isEmpty {
+                        capabilityTags(model.capabilities)
                     }
                 }
-
-                if !model.capabilities.isEmpty {
-                    capabilityTags(model.capabilities)
-                }
+                .padding(.vertical, 4)
             }
-            .padding(.vertical, 4)
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button {
+                modelForDetail = model
+            } label: {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(.secondary)
+                    .font(.body)
+            }
+            .buttonStyle(.plain)
+            .padding(.leading, 12)
         }
     }
 

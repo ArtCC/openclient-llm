@@ -96,6 +96,10 @@ private extension ChatModelParametersView {
 
     var form: some View {
         Form {
+            if let estimatedCost, estimatedCost > 0 {
+                costSection(estimatedCost)
+            }
+
             Section {
                 Toggle(isOn: $temperatureEnabled) {
                     Label(String(localized: "Temperature"), systemImage: "thermometer.medium")
@@ -164,6 +168,31 @@ private extension ChatModelParametersView {
         case 0.3...0.7: String(localized: "Balanced")
         case 0.7...1.2: String(localized: "Creative")
         default: String(localized: "Very creative")
+        }
+    }
+
+    var estimatedCost: Double? {
+        guard case .loaded(let loadedState) = viewModel.state,
+              let model = loadedState.selectedModel,
+              let inputRate = model.inputCostPerToken,
+              let outputRate = model.outputCostPerToken,
+              inputRate > 0 || outputRate > 0 else { return nil }
+
+        let total = loadedState.messages.compactMap(\.tokenUsage).reduce(0.0) { acc, usage in
+            acc + Double(usage.promptTokens) * inputRate + Double(usage.completionTokens) * outputRate
+        }
+        return total > 0 ? total : nil
+    }
+
+    func costSection(_ cost: Double) -> some View {
+        Section {
+            LabeledContent(String(localized: "Estimated cost")) {
+                Text("~$\(cost, specifier: "%.4f")")
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            }
+        } footer: {
+            Text(String(localized: "Approximate cost of this conversation based on token usage and model pricing."))
         }
     }
 

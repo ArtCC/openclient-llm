@@ -11,6 +11,10 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 ### Added
 
+- **Model detail sheet** — new `ModelDetailView` sheet accessible via an ⓘ button on each row in the Models screen; displays context window (max input / max output tokens), pricing (input / output cost per million tokens), provider, mode, and supported modalities; sections with no data are hidden automatically
+- **Estimated conversation cost** — new section in the Chat Model Parameters sheet showing the accumulated estimated cost of the current conversation, calculated from token usage (`promptTokens × inputCostPerToken + completionTokens × outputCostPerToken`) across all messages; hidden when pricing data is unavailable
+- `LLMModel` extended with four new optional fields: `maxInputTokens`, `maxOutputTokens`, `inputCostPerToken`, `outputCostPerToken`
+- `ModelsRepository` and `FetchModelsUseCase` now propagate cost and context-window data from `GET /model/info` into every `LLMModel` instance
 - Pinch-to-zoom gesture in `ImagePreviewView` (iOS/iPadOS): supports magnification up to 6×; double-tap resets zoom to 1×
 - **Memory list** — new "Memory" section in Settings (Personalization) showing all saved memory items; each item displays its content, an enabled/disabled toggle, a source badge (You / Model), and creation date; users can add, edit, delete, and toggle individual items
 - `MemoryItem` — new Codable + Sendable model with `id`, `content`, `isEnabled`, `createdAt`, and `source` (`.user` / `.model`) fields
