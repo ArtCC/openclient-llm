@@ -70,7 +70,9 @@ final class ChatViewModelUserProfileTests: XCTestCase {
             memoryContext: "",
             conversationSystemPrompt: ""
         )
-        XCTAssertEqual(result, "User is Alice.")
+        XCTAssertTrue(result.contains("User is Alice."))
+        XCTAssertTrue(result.contains("background information"))
+        XCTAssertFalse(result.contains("previous conversations"))
     }
 
     func test_buildEffectiveSystemPrompt_onlyConversation_returnsConversation() {
@@ -88,7 +90,9 @@ final class ChatViewModelUserProfileTests: XCTestCase {
             memoryContext: "",
             conversationSystemPrompt: "You are a coding assistant."
         )
-        XCTAssertEqual(result, "User is Alice.\n\nYou are a coding assistant.")
+        XCTAssertTrue(result.contains("User is Alice."))
+        XCTAssertTrue(result.contains("You are a coding assistant."))
+        XCTAssertTrue(result.contains("background information"))
     }
 
     func test_buildEffectiveSystemPrompt_trimsWhitespace() {
@@ -119,6 +123,9 @@ final class ChatViewModelUserProfileTests: XCTestCase {
             memoryContext: "## Memory\n- Item 1",
             conversationSystemPrompt: ""
         )
-        XCTAssertEqual(result, "## Memory\n- Item 1")
+        XCTAssertTrue(result.contains("## Memory"))
+        XCTAssertTrue(result.contains("- Item 1"))
+        XCTAssertTrue(result.contains("previous conversations"))
+        XCTAssertFalse(result.contains("background information"))
     }
 }

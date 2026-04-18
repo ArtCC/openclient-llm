@@ -153,9 +153,10 @@ private extension ChatViewModel {
             """
         }
         toolDescriptions += """
-        - `save_memory`: Use it when the user shares important personal details, preferences, or context \
-        that should be remembered in future conversations. Call it proactively when you identify \
-        information worth remembering long-term.\n
+        - `save_memory`: Use it when the user explicitly asks to remember something, or when the user \
+        shares a clear and durable personal fact (such as their name, profession, or a strong preference). \
+        Before calling this tool, always ask the user for confirmation first: "Should I remember this?" \
+        Never save without explicit user approval.\n
         - `delete_memory`: Use it when the user asks to forget something, corrects outdated information, \
         or explicitly requests a memory to be removed.
         """
