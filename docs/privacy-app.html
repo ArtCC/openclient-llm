@@ -27,37 +27,65 @@
     <div class="legal-content">
       <h2>Summary</h2>
       <p>OpenClient does <strong>not collect, store, transmit, or share any personal data</strong> to the developer.
-        The app runs entirely on your device and communicates only with the server you configure.</p>
+        The app runs entirely on your device and communicates only with the server you configure. No analytics,
+        telemetry, or crash reporting is sent to the developer.</p>
 
       <h2>No Developer Backend</h2>
       <p>OpenClient has no developer-operated server, backend, analytics service, or cloud infrastructure of any
         kind. There is no telemetry, no usage tracking, and no crash reporting sent to the developer. The developer
         never receives any data from your use of the app.</p>
 
-      <h2>Local-Only Architecture</h2>
-      <p>All app data — including your settings, conversation history, and preferences — is stored locally on your
-        device. If you enable iCloud sync, your user profile and preferences are stored in your personal iCloud
-        Key-Value
-        store, which is private to your Apple ID and not accessible by the developer. Nothing leaves your device except
-        the requests you explicitly send to the server you configure.</p>
+      <h2>Local &amp; iCloud Storage</h2>
+      <p>All app data is stored on your device or in your personal iCloud account. The developer has no access to
+        any of it. Specifically:</p>
+      <ul>
+        <li><strong>Conversation history</strong> — stored locally in the app's document directory. If iCloud Drive
+          is enabled, conversations are synced across your Apple devices via your personal iCloud Drive storage.</li>
+        <li><strong>Settings &amp; user profile</strong> — stored locally in UserDefaults. If iCloud is enabled,
+          profile data is synced via iCloud Key-Value Store, private to your Apple ID.</li>
+        <li><strong>Memory items</strong> — stored locally in UserDefaults. If iCloud is enabled, memory items are
+          synced via iCloud Key-Value Store, private to your Apple ID. This includes items created automatically by
+          models during conversations when agent memory tools are invoked.</li>
+        <li><strong>API keys &amp; server URL</strong> — stored exclusively in the device Keychain using the iOS/macOS
+          Security framework. Never transmitted to the developer.</li>
+        <li><strong>Spotlight index</strong> — conversation titles and message excerpts are indexed locally in
+          Spotlight to enable on-device search. This data does not leave your device.</li>
+      </ul>
+      <p>Nothing leaves your device except the requests you explicitly send to the server you configure.</p>
 
       <h2>Server Communication</h2>
-      <p>The app connects exclusively to the server URL that you provide. This can be an Ollama instance, a LiteLLM
-        proxy, or any other OpenAI-compatible backend. All network requests are sent directly from your device to your
-        server. The developer has no access to, knowledge of, or involvement in this communication.</p>
+      <p>The app connects exclusively to the server URL that you provide — an Ollama instance, a LiteLLM proxy, or
+        any other OpenAI-compatible backend. All requests are sent directly from your device to your server. This
+        includes:</p>
+      <ul>
+        <li>Chat messages and conversation context</li>
+        <li>Images and documents you attach to messages (Vision)</li>
+        <li>Audio data for voice transcription (Speech-to-Text via <code>/v1/audio/transcriptions</code>)</li>
+        <li>Text for speech synthesis (Text-to-Speech via <code>/v1/audio/speech</code>)</li>
+        <li>Prompts for image generation (<code>/v1/images/generations</code>)</li>
+        <li>Web search queries, which your LiteLLM server forwards to the search provider you have configured
+          server-side (e.g., Brave, Tavily, DuckDuckGo). The app never contacts search providers directly.</li>
+        <li>Tool call inputs and outputs when agent mode is active</li>
+      </ul>
+      <p>The developer has no access to, knowledge of, or involvement in this communication.</p>
 
-      <h2>API Keys &amp; Credentials</h2>
-      <p>Any API keys you configure in the App (for direct provider access) or on your self-hosted server are stored
-        securely in the device Keychain and never transmitted to the developer. The management of API keys, their
-        associated costs, and the terms of service of any LLM provider (OpenAI, Anthropic, Ollama, etc.) are entirely
-        your responsibility as the operator. OpenClient and its developer are not affiliated with any LLM provider.</p>
+      <h2>Shared &amp; Imported Content</h2>
+      <p>Content received via the Share Extension, custom URL scheme (<code>openclient://</code>), drag and drop,
+        or Apple Shortcuts is processed entirely on your device and sent only to your configured server. The developer
+        does not receive or have access to any shared content.</p>
 
-      <h2>Third-Party Services</h2>
-      <p>The app integrates the <strong>Votice SDK</strong> (developed by the same author) to support voice-related
-        features such as audio transcription and text-to-speech. This SDK communicates only with the server you
-        configure and does not send data to any external service. No advertising networks, tracking frameworks, or
-        third-party analytics are used. iCloud Key-Value storage is used optionally for syncing your user profile
-        across your own Apple devices; this data is private to your Apple ID.</p>
+      <h2>No Third-Party SDKs or Analytics</h2>
+      <p>OpenClient has <strong>zero external dependencies</strong> for runtime functionality. There are no
+        advertising networks, tracking frameworks, or analytics SDKs integrated in the app.
+        The only third-party tool used at build time is <strong>SwiftLint</strong>, a static code analysis tool that
+        runs during compilation and is never included in the shipped app binary.</p>
+      <p>The app integrates the <strong>Votice SDK</strong> — an open-source project by the same author — exclusively
+        to allow users to submit bug reports and feature requests from within the Settings screen. Reports are
+        <strong>fully anonymous</strong>: no user identity, account, device identifier, or personal data is attached
+        to a submission. When you use this feature, only the text you voluntarily enter is sent to the Votice service.
+        No other app data (conversations, API keys, server URL, memory, or attachments) is ever sent to Votice. Use
+        of this feature is entirely optional.
+      </p>
 
       <h2>Open Source &amp; Auditable</h2>
       <p>OpenClient is fully open source under the Apache 2.0 license. You can inspect, audit, and verify every
@@ -77,7 +105,7 @@
           href="https://github.com/ArtCC/openclient-llm/issues">GitHub repository</a>.</p>
     </div>
 
-    <p class="legal-updated">Last updated: April 1, 2026</p>
+    <p class="legal-updated">Last updated: April 20, 2026</p>
   </div>
 </body>
 

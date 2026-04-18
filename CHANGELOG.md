@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [1.4.0-build-34] - 2026-04-18
+## [1.3.0-build-34] - 2026-04-20
 
 ### Added
 
@@ -24,6 +24,11 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
   - `OpenClientShortcutsProvider` — `AppShortcutsProvider` declaring the three shortcuts with Siri phrases containing `\(.applicationName)` as required; automatically discovered by the runtime, no explicit registration needed
   - `OpenClientIntentError` — `LocalizedError` enum with `.unsupportedFileType` and `.fileWriteFailed` cases used by `SendFileToChatIntent`
   - `ShareExtensionStore` (Shared target) extended with `save(_:)` and `writeAttachmentData(_:fileName:)` write methods, mirroring the existing write-side store in the ShareExtension target; required for `SendFileToChatIntent` to persist file payloads from within the main app process
+
+### Changed
+
+- **Terms of Service updated** (`docs/terms.html`, `docs/terms-app.html`) — rewritten to reflect the full feature set of the app: Vision, Speech-to-Text, Text-to-Speech, image generation, web search (via LiteLLM proxy), agent mode, iCloud sync, persistent memory, Share Extension, URL scheme, drag & drop, Apple Shortcuts, and Spotlight indexing; new dedicated sections for "Free App, Third-Party API Costs", "iCloud & Local Data", and "Estimated Costs"; "No Affiliation" expanded with Groq, Brave, and Tavily; "Limitation of Liability" extended to cover inaccurate search results and unintended agent actions
+- **Privacy Policy updated** (`docs/privacy.html`, `docs/privacy-app.html`) — "Local-Only Architecture" replaced with a detailed "Local & iCloud Storage" section listing exactly what goes where (conversations to iCloud Drive, profile and memory to iCloud Key-Value Store, API keys to Keychain, Spotlight index local-only); "Server Communication" expanded with a full list of request types (chat, Vision, STT, TTS, image generation, web search, agent tool calls); new "Shared & Imported Content" section covering Share Extension, URL scheme, drag & drop, and Shortcuts; "Third-Party Services" section corrected — Votice SDK described accurately as an anonymous, opt-in feedback tool for bug reports and feature requests (not voice-related); Votice noted as an open-source project by the same author
 
 ### Added
 
