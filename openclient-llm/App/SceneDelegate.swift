@@ -6,7 +6,7 @@
 //  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
 //
 
-import UIKit
+import SwiftUI
 
 @MainActor
 final class SceneDelegate: NSObject, UIWindowSceneDelegate {
@@ -17,12 +17,14 @@ final class SceneDelegate: NSObject, UIWindowSceneDelegate {
         willConnectTo session: UISceneSession,
         options connectionOptions: UIScene.ConnectionOptions
     ) {
-        guard let item = connectionOptions.shortcutItem,
-              let action = ShortcutAction(rawValue: item.type) else {
-            return
+        if let item = connectionOptions.shortcutItem,
+           let action = ShortcutAction(rawValue: item.type) {
+            ShortcutManager.shared.pendingAction = action
         }
 
-        ShortcutManager.shared.pendingAction = action
+        for context in connectionOptions.urlContexts {
+            handle(url: context.url)
+        }
     }
 
     // MARK: - Quick Actions (Background Launch)
@@ -41,5 +43,32 @@ final class SceneDelegate: NSObject, UIWindowSceneDelegate {
         ShortcutManager.shared.pendingAction = action
 
         completionHandler(true)
+    }
+
+    // MARK: - URL Scheme (Warm Launch)
+
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        for context in URLContexts {
+            handle(url: context.url)
+        }
+    }
+}
+
+// MARK: - Private
+
+private extension SceneDelegate {
+    func handle(url: URL) {
+        guard url.scheme?.lowercased() == "openclient" else { return }
+
+        // Legacy share action — handled by ShareManager
+        if url.host?.lowercased() == "share" {
+            ShareManager.shared.hasPendingShare = true
+            return
+        }
+
+        // All other deep-link actions — routed through URLSchemeParser
+        if let action = URLSchemeParser.parse(url) {
+            URLSchemeManager.shared.pendingAction = action
+        }
     }
 }

@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.4.0-build-34] - 2026-04-18
+
+### Added
+
+- **Drag & Drop into chat** — the chat content area now accepts content dragged from other apps (Split View, Stage Manager, Finder on macOS); no new UI elements — the drop zone is the whole chat area and the system provides the standard drag-over highlight automatically:
+  - Plain text → pre-fills the message input field
+  - Images (JPEG / PNG / HEIC / generic) → added as a pending image attachment
+  - PDF files → added as a pending PDF attachment
+  - File URLs (e.g. from Finder) → inspected by extension; images and PDFs are handled, other types are silently ignored
+  - `ChatDropModifier` — `ViewModifier` applied to `loadedView` in `ChatView`; uses `.onDrop(of:)` with `NSItemProvider` async helpers wrapped in `withCheckedContinuation`; handles all four content families in a single modifier with no permanent layout changes
+- **Apple Shortcuts integration** — three `AppIntent`s registered with `AppShortcutsProvider` so actions are available in the Shortcuts app, accessible via Siri, and composable in multi-step automations:
+  - `NewConversationIntent` — opens the app and starts a new conversation; accepts an optional **Message** parameter that pre-fills the chat input (routes through the existing `URLSchemeManager.pendingAction = .chat(text:url:)` flow); without a message routes through `ShortcutManager.pendingAction = .newChat`
+  - `SearchConversationsIntent` — opens the app with the conversation search field active (routes through `ShortcutManager.pendingAction = .search`)
+  - `SendFileToChatIntent` — accepts an image or PDF file from Shortcuts, writes it to the App Group container via `ShareExtensionStore`, and triggers the existing Share Extension flow (`ShareManager.hasPendingShare = true`) so the file appears attached in a new conversation; unsupported file types throw a localized error
+  - `OpenClientShortcutsProvider` — `AppShortcutsProvider` declaring the three shortcuts with Siri phrases containing `\(.applicationName)` as required; automatically discovered by the runtime, no explicit registration needed
+  - `OpenClientIntentError` — `LocalizedError` enum with `.unsupportedFileType` and `.fileWriteFailed` cases used by `SendFileToChatIntent`
+  - `ShareExtensionStore` (Shared target) extended with `save(_:)` and `writeAttachmentData(_:fileName:)` write methods, mirroring the existing write-side store in the ShareExtension target; required for `SendFileToChatIntent` to persist file payloads from within the main app process
+
+### Added
+
+- **Custom URL scheme (`openclient://`)** — deep-link support for external apps, Apple Shortcuts, and browser links:
+  - `openclient://chat?text=<text>` — opens the app and pre-fills the message input with the given text
+  - `openclient://chat?url=<url>` — opens the app and pre-fills the message input with the given URL
+  - `openclient://conversation?id=<UUID>` — navigates directly to an existing conversation by ID
+  - `URLSchemeParser` — pure static parser that converts `openclient://` URLs into typed `URLSchemeAction` values
+  - `URLSchemeManager` — `@Observable @MainActor` singleton holding the pending deep-link action until `HomeViewModel` can process it
+  - `URLSchemeAction` — `Equatable & Sendable` enum with `.chat(text:url:)` and `.conversation(id:)` cases
+- **Help screen** — new **Help** entry in Settings (Support section) presenting a `HelpView` sheet with three sections: Share Extension usage, URL Scheme with copiable example URLs, and Apple Shortcuts integration guide
+- **Share Extension (iOS/iPadOS)** — system Share Extension (`openclient-llm-ShareExtension`) that receives text, URLs, images, and PDFs shared from any app (Safari, Telegram, Photos, Files…); creates a new conversation with the shared content already attached and opens the app directly via the `openclient://share` URL scheme
+
 ## [1.2.0-build-31] - 2026-04-18
 
 ### Added

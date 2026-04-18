@@ -11,6 +11,7 @@
 		8042FA6B2F7B01F800F0E933 /* VoticeSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 8042FA6A2F7B01F800F0E933 /* VoticeSDK */; };
 		8089F4112F7D000500465D6C /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 8089F4102F7D000500465D6C /* Secrets.xcconfig */; };
 		8089F4122F7D000500465D6C /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 8089F4102F7D000500465D6C /* Secrets.xcconfig */; };
+		8090B5C82F9365D7006E9DAE /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8090B5BE2F9365D6006E9DAE /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -21,13 +22,35 @@
 			remoteGlobalIDString = 805E798A2F79AC9B0070CBB3;
 			remoteInfo = "openclient-llm";
 		};
+		8090B5C62F9365D7006E9DAE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 805E79832F79AC9B0070CBB3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8090B5BD2F9365D6006E9DAE;
+			remoteInfo = ShareExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		8090B5C92F9365D7006E9DAE /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				8090B5C82F9365D7006E9DAE /* ShareExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		805E798B2F79AC9B0070CBB3 /* openclient-llm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "openclient-llm.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8080773A2F7A66EF009BC8C4 /* OpenClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8080774A2F7A67CD009BC8C4 /* openclient-llm-test.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "openclient-llm-test.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8089F4102F7D000500465D6C /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		8090B5BE2F9365D6006E9DAE /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -55,6 +78,13 @@
 			);
 			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
 		};
+		8090B5CD2F9365D7006E9DAE /* Exceptions for "ShareExtension" folder in "ShareExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 8090B5BD2F9365D6006E9DAE /* ShareExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -78,6 +108,14 @@
 		8080774B2F7A67CD009BC8C4 /* openclient-llm-test */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "openclient-llm-test";
+			sourceTree = "<group>";
+		};
+		8090B5BF2F9365D6006E9DAE /* ShareExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8090B5CD2F9365D7006E9DAE /* Exceptions for "ShareExtension" folder in "ShareExtension" target */,
+			);
+			path = ShareExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -106,6 +144,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8090B5BB2F9365D6006E9DAE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -115,6 +160,7 @@
 				800F26972F7A6352009A58C6 /* openclient-llm */,
 				8080773B2F7A66EF009BC8C4 /* openclient-llm-macOS */,
 				8080774B2F7A67CD009BC8C4 /* openclient-llm-test */,
+				8090B5BF2F9365D6006E9DAE /* ShareExtension */,
 				805E798C2F79AC9B0070CBB3 /* Products */,
 				8089F4102F7D000500465D6C /* Secrets.xcconfig */,
 			);
@@ -126,6 +172,7 @@
 				805E798B2F79AC9B0070CBB3 /* openclient-llm.app */,
 				8080773A2F7A66EF009BC8C4 /* OpenClient.app */,
 				8080774A2F7A67CD009BC8C4 /* openclient-llm-test.xctest */,
+				8090B5BE2F9365D6006E9DAE /* ShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -141,10 +188,12 @@
 				805E79882F79AC9B0070CBB3 /* Frameworks */,
 				805E79892F79AC9B0070CBB3 /* Resources */,
 				808077352F7A668A009BC8C4 /* SwiftLint */,
+				8090B5C92F9365D7006E9DAE /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				8090B5C72F9365D7006E9DAE /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				800F26972F7A6352009A58C6 /* openclient-llm */,
@@ -205,6 +254,28 @@
 			productReference = 8080774A2F7A67CD009BC8C4 /* openclient-llm-test.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		8090B5BD2F9365D6006E9DAE /* ShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8090B5CC2F9365D7006E9DAE /* Build configuration list for PBXNativeTarget "ShareExtension" */;
+			buildPhases = (
+				8090B5BA2F9365D6006E9DAE /* Sources */,
+				8090B5BB2F9365D6006E9DAE /* Frameworks */,
+				8090B5BC2F9365D6006E9DAE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				8090B5BF2F9365D6006E9DAE /* ShareExtension */,
+			);
+			name = ShareExtension;
+			packageProductDependencies = (
+			);
+			productName = ShareExtension;
+			productReference = 8090B5BE2F9365D6006E9DAE /* ShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -225,6 +296,9 @@
 					808077492F7A67CD009BC8C4 = {
 						CreatedOnToolsVersion = 26.4;
 						TestTargetID = 805E798A2F79AC9B0070CBB3;
+					};
+					8090B5BD2F9365D6006E9DAE = {
+						CreatedOnToolsVersion = 26.4;
 					};
 				};
 			};
@@ -258,6 +332,7 @@
 				805E798A2F79AC9B0070CBB3 /* openclient-llm */,
 				808077392F7A66EF009BC8C4 /* openclient-llm-macOS */,
 				808077492F7A67CD009BC8C4 /* openclient-llm-test */,
+				8090B5BD2F9365D6006E9DAE /* ShareExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -280,6 +355,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		808077482F7A67CD009BC8C4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8090B5BC2F9365D6006E9DAE /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -351,6 +433,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8090B5BA2F9365D6006E9DAE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -358,6 +447,11 @@
 			isa = PBXTargetDependency;
 			target = 805E798A2F79AC9B0070CBB3 /* openclient-llm */;
 			targetProxy = 8080774E2F7A67CD009BC8C4 /* PBXContainerItemProxy */;
+		};
+		8090B5C72F9365D7006E9DAE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8090B5BD2F9365D6006E9DAE /* ShareExtension */;
+			targetProxy = 8090B5C62F9365D7006E9DAE /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -519,7 +613,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -567,7 +661,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -624,7 +718,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = OpenClient;
 				REGISTER_APP_GROUPS = YES;
@@ -679,7 +773,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = OpenClient;
 				REGISTER_APP_GROUPS = YES;
@@ -738,6 +832,66 @@
 			};
 			name = Release;
 		};
+		8090B5CA2F9365D7006E9DAE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = Q4X55987WE;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.ShareExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		8090B5CB2F9365D7006E9DAE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = Q4X55987WE;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = ShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.3.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.ShareExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -773,6 +927,15 @@
 			buildConfigurations = (
 				808077512F7A67CD009BC8C4 /* Debug */,
 				808077522F7A67CD009BC8C4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8090B5CC2F9365D7006E9DAE /* Build configuration list for PBXNativeTarget "ShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8090B5CA2F9365D7006E9DAE /* Debug */,
+				8090B5CB2F9365D7006E9DAE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

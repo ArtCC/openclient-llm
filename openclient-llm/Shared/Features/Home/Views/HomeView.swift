@@ -63,6 +63,24 @@ struct HomeView: View {
             handleShortcutAction(action)
             viewModel.send(.shortcutActionConsumed)
         }
+        .task {
+            guard viewModel.hasPendingShare else { return }
+            try? await Task.sleep(for: .milliseconds(300))
+            viewModel.send(.shareItemReceived)
+        }
+        .onChange(of: viewModel.hasPendingShare) { _, isPending in
+            guard isPending else { return }
+            viewModel.send(.shareItemReceived)
+        }
+        .task {
+            guard viewModel.pendingURLSchemeAction != nil else { return }
+            try? await Task.sleep(for: .milliseconds(300))
+            viewModel.send(.urlSchemeActionReceived)
+        }
+        .onChange(of: viewModel.pendingURLSchemeAction) { _, action in
+            guard action != nil else { return }
+            viewModel.send(.urlSchemeActionReceived)
+        }
 #endif
     }
 }
@@ -129,9 +147,13 @@ private extension HomeView {
             .navigationDestination(item: $selectedConversation) { conversation in
                 ChatView(
                     conversation: conversation,
+                    shareItem: viewModel.pendingShareItem,
+                    urlSchemeText: viewModel.pendingURLSchemeText,
                     onForkCreated: { fork in
                         selectedConversation = fork
-                    }
+                    },
+                    onShareItemProcessed: { viewModel.send(.shareItemConsumed) },
+                    onURLSchemeTextProcessed: { viewModel.send(.urlSchemeTextConsumed) }
                 )
             }
         }
@@ -147,9 +169,13 @@ private extension HomeView {
             if let selectedConversation {
                 ChatView(
                     conversation: selectedConversation,
+                    shareItem: viewModel.pendingShareItem,
+                    urlSchemeText: viewModel.pendingURLSchemeText,
                     onForkCreated: { fork in
                         self.selectedConversation = fork
-                    }
+                    },
+                    onShareItemProcessed: { viewModel.send(.shareItemConsumed) },
+                    onURLSchemeTextProcessed: { viewModel.send(.urlSchemeTextConsumed) }
                 )
             } else {
                 ContentUnavailableView(
@@ -232,9 +258,13 @@ private extension HomeView {
                 .navigationDestination(item: $selectedConversation) { conversation in
                     ChatView(
                         conversation: conversation,
+                        shareItem: viewModel.pendingShareItem,
+                        urlSchemeText: viewModel.pendingURLSchemeText,
                         onForkCreated: { fork in
                             selectedConversation = fork
-                        }
+                        },
+                        onShareItemProcessed: { viewModel.send(.shareItemConsumed) },
+                        onURLSchemeTextProcessed: { viewModel.send(.urlSchemeTextConsumed) }
                     )
                 }
             }

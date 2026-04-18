@@ -9,7 +9,7 @@
 import SwiftUI
 #if os(iOS)
 import StoreKit
-import UIKit
+import SwiftUI
 #endif
 import VoticeSDK
 
@@ -23,6 +23,7 @@ struct SettingsView: View {
     @State private var isShowingVotice = false
     @State private var isShowingUserProfile = false
     @State private var isShowingMemory = false
+    @State private var isShowingHelp = false
     @State private var showResetAlert = false
     @State private var presentedWebURL: WebDestination?
     @FocusState private var focusedField: Field?
@@ -68,6 +69,12 @@ private extension SettingsView {
         }
         .sheet(isPresented: $isShowingMemory) {
             MemoryView()
+#if os(macOS)
+                .frame(width: 500, height: 460)
+#endif
+        }
+        .sheet(isPresented: $isShowingHelp) {
+            HelpView()
 #if os(macOS)
                 .frame(width: 500, height: 460)
 #endif
@@ -154,7 +161,8 @@ private extension SettingsView {
                 chatSection(loadedState)
                 notificationsSection(loadedState)
                 webSearchSection(loadedState)
-                feedbackSection()
+                feedbackSection(isShowingVotice: $isShowingVotice)
+                helpSection(isPresented: $isShowingHelp)
                 legalSection()
                 dangerSection()
             }
@@ -316,26 +324,6 @@ private extension SettingsView {
             Text(String(localized: "Web Search"))
         } footer: {
             Text(String(localized: "Tool name must match the search_tool_name configured in your LiteLLM config.yaml."))
-        }
-    }
-
-    func feedbackSection() -> some View {
-        Section {
-            Button {
-                requestAppReview()
-            } label: {
-                Label(String(localized: "Rate the App"), systemImage: "star")
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                isShowingVotice = true
-            } label: {
-                Label(String(localized: "Suggest Features"), systemImage: "lightbulb")
-            }
-            .buttonStyle(.plain)
-        } header: {
-            Text(String(localized: "Feedback"))
         }
     }
 
