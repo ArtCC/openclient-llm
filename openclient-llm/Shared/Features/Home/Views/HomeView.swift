@@ -19,7 +19,6 @@ struct HomeView: View {
 #endif
 
 #if os(iOS)
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab: AppTab = .chats
 #endif
 
@@ -127,16 +126,11 @@ private extension HomeView {
                 Label(String(localized: "Search"), systemImage: "magnifyingglass")
             }
         }
+        .tabViewStyle(.sidebarAdaptable)
     }
 
     var chatsTab: some View {
-        Group {
-            if horizontalSizeClass == .regular {
-                iPadChatsLayout
-            } else {
-                iPhoneChatsLayout
-            }
-        }
+        iPhoneChatsLayout
     }
 
     var iPhoneChatsLayout: some View {
@@ -154,34 +148,6 @@ private extension HomeView {
                     },
                     onShareItemProcessed: { viewModel.send(.shareItemConsumed) },
                     onURLSchemeTextProcessed: { viewModel.send(.urlSchemeTextConsumed) }
-                )
-            }
-        }
-    }
-
-    var iPadChatsLayout: some View {
-        NavigationSplitView {
-            ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
-                selectedConversation = conversation
-            }
-            .navigationSplitViewColumnWidth(320)
-        } detail: {
-            if let selectedConversation {
-                ChatView(
-                    conversation: selectedConversation,
-                    shareItem: viewModel.pendingShareItem,
-                    urlSchemeText: viewModel.pendingURLSchemeText,
-                    onForkCreated: { fork in
-                        self.selectedConversation = fork
-                    },
-                    onShareItemProcessed: { viewModel.send(.shareItemConsumed) },
-                    onURLSchemeTextProcessed: { viewModel.send(.urlSchemeTextConsumed) }
-                )
-            } else {
-                ContentUnavailableView(
-                    String(localized: "No Conversation Selected"),
-                    systemImage: "bubble.left.and.bubble.right",
-                    description: Text(String(localized: "Select or create a conversation to start chatting"))
                 )
             }
         }
