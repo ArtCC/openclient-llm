@@ -6,7 +6,7 @@
 //  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
 //
 
-import UIKit
+import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, UIApplicationDelegate {

@@ -9,7 +9,7 @@
 import SwiftUI
 #if os(iOS)
 import StoreKit
-import UIKit
+import SwiftUI
 #endif
 import VoticeSDK
 

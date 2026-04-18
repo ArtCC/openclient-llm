@@ -8,7 +8,7 @@
 
 import SwiftUI
 #if canImport(UIKit)
-import UIKit
+import SwiftUI
 #endif
 
 struct ChatView: View {
@@ -34,20 +34,26 @@ struct ChatView: View {
     @State private var editingMessageText: String = ""
 
     var conversation: Conversation?
+    var shareItem: ShareExtensionItem?
     var onConversationUpdated: (() -> Void)?
     var onForkCreated: ((Conversation) -> Void)?
+    var onShareItemProcessed: (() -> Void)?
 
     // MARK: - Init
 
     init(
         conversation: Conversation? = nil,
+        shareItem: ShareExtensionItem? = nil,
         onConversationUpdated: (() -> Void)? = nil,
-        onForkCreated: ((Conversation) -> Void)? = nil
+        onForkCreated: ((Conversation) -> Void)? = nil,
+        onShareItemProcessed: (() -> Void)? = nil
     ) {
         _viewModel = State(initialValue: ChatViewModel(conversation: conversation))
         self.conversation = conversation
+        self.shareItem = shareItem
         self.onConversationUpdated = onConversationUpdated
         self.onForkCreated = onForkCreated
+        self.onShareItemProcessed = onShareItemProcessed
     }
 
     // MARK: - View
@@ -141,6 +147,11 @@ private extension ChatView {
         .task {
             viewModel.onConversationUpdated = onConversationUpdated
             viewModel.send(.viewAppeared)
+            await processShareItemIfNeeded(
+                viewModel: viewModel,
+                shareItem: shareItem,
+                onShareItemProcessed: onShareItemProcessed
+            )
         }
         .onChange(of: conversation) { _, newConversation in
             if let newConversation {
@@ -217,6 +228,11 @@ private extension ChatView {
             viewModel.onConversationUpdated = onConversationUpdated
             viewModel.onForkCreated = onForkCreated
             viewModel.send(.viewAppeared)
+            await processShareItemIfNeeded(
+                viewModel: viewModel,
+                shareItem: shareItem,
+                onShareItemProcessed: onShareItemProcessed
+            )
         }
         .onChange(of: conversation) { _, newConversation in
             if let newConversation {
@@ -430,64 +446,6 @@ private extension ChatView {
         .transition(.scale(scale: 0.8).combined(with: .opacity))
     }
 
-}
-
-private struct ScrollTriggerModifier: ViewModifier {
-    let loadedState: ChatViewModel.LoadedState
-    @Binding var scrollPosition: ScrollPosition
-    @Binding var isScrollThrottled: Bool
-    @Binding var scrollToMessageId: UUID?
-    @Binding var shouldAutoScroll: Bool
-    let isNearBottom: Bool
-
-    func body(content: Content) -> some View {
-        content
-            .onChange(of: loadedState.messages.count) {
-                guard isNearBottom else { return }
-                shouldAutoScroll = true
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    scrollPosition.scrollTo(edge: .bottom)
-                }
-            }
-            .onChange(of: loadedState.messages.last?.content) {
-                guard shouldAutoScroll, !isScrollThrottled else { return }
-                isScrollThrottled = true
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(80))
-                    scrollPosition.scrollTo(edge: .bottom)
-                    isScrollThrottled = false
-                }
-            }
-            .onChange(of: scrollToMessageId) { _, newId in
-                guard let id = newId else { return }
-                withAnimation(.easeInOut(duration: 0.35)) {
-                    scrollPosition.scrollTo(id: id)
-                }
-                scrollToMessageId = nil
-            }
-            .task(id: loadedState.conversation?.id) {
-                guard !loadedState.messages.isEmpty else { return }
-                try? await Task.sleep(for: .milliseconds(120))
-                guard !Task.isCancelled else { return }
-                scrollPosition.scrollTo(edge: .bottom)
-            }
-#if os(iOS)
-            .onReceive(
-                NotificationCenter.default.publisher(
-                    for: UIResponder.keyboardWillShowNotification
-                )
-            ) { notification in
-                let duration = notification.userInfo?[
-                    UIResponder.keyboardAnimationDurationUserInfoKey
-                ] as? Double ?? 0.25
-                Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(duration))
-                    scrollPosition.scrollTo(edge: .bottom)
-                    shouldAutoScroll = true
-                }
-            }
-#endif
-    }
 }
 
 #Preview {

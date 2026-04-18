@@ -19,17 +19,25 @@ final class HomeViewModel {
         case shortcutActionConsumed
         case spotlightConversationRequested(UUID)
         case pendingConversationConsumed
+        case shareItemReceived
+        case shareItemConsumed
     }
 
     private(set) var pendingConversation: Conversation?
+    private(set) var pendingShareItem: ShareExtensionItem?
 
     var pendingShortcutAction: ShortcutAction? {
         shortcutManager.pendingAction
     }
 
+    var hasPendingShare: Bool {
+        shareManager.hasPendingShare
+    }
+
     private let getSelectedModelUseCase: GetSelectedModelUseCaseProtocol
     private let loadConversationsUseCase: LoadConversationsUseCaseProtocol
     private let shortcutManager: ShortcutManager
+    private let shareManager: ShareManager
     private let checkNotificationPermissionUseCase: NotificationStatusCheckProtocol
     private let notificationPermissionUseCase: NotificationPermissionUseCaseProtocol
 
@@ -39,12 +47,14 @@ final class HomeViewModel {
         getSelectedModelUseCase: GetSelectedModelUseCaseProtocol = GetSelectedModelUseCase(),
         loadConversationsUseCase: LoadConversationsUseCaseProtocol = LoadConversationsUseCase(),
         shortcutManager: ShortcutManager = .shared,
+        shareManager: ShareManager = .shared,
         checkNotificationPermissionUseCase: NotificationStatusCheckProtocol = CheckNotificationPermissionUseCase(),
         notificationPermissionUseCase: NotificationPermissionUseCaseProtocol = NotificationPermissionUseCase()
     ) {
         self.getSelectedModelUseCase = getSelectedModelUseCase
         self.loadConversationsUseCase = loadConversationsUseCase
         self.shortcutManager = shortcutManager
+        self.shareManager = shareManager
         self.checkNotificationPermissionUseCase = checkNotificationPermissionUseCase
         self.notificationPermissionUseCase = notificationPermissionUseCase
     }
@@ -64,6 +74,10 @@ final class HomeViewModel {
             resolveSpotlightConversation(id: id)
         case .pendingConversationConsumed:
             pendingConversation = nil
+        case .shareItemReceived:
+            resolveShareItem()
+        case .shareItemConsumed:
+            pendingShareItem = nil
         }
     }
 }
@@ -85,5 +99,12 @@ private extension HomeViewModel {
                   let conversation = conversations.first(where: { $0.id == id }) else { return }
             pendingConversation = conversation
         }
+    }
+
+    func resolveShareItem() {
+        shareManager.hasPendingShare = false
+        let modelId = getSelectedModelUseCase.execute()
+        pendingShareItem = try? ShareExtensionStore.load()
+        pendingConversation = Conversation(modelId: modelId)
     }
 }

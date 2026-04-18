@@ -63,6 +63,15 @@ struct HomeView: View {
             handleShortcutAction(action)
             viewModel.send(.shortcutActionConsumed)
         }
+        .task {
+            guard viewModel.hasPendingShare else { return }
+            try? await Task.sleep(for: .milliseconds(300))
+            viewModel.send(.shareItemReceived)
+        }
+        .onChange(of: viewModel.hasPendingShare) { _, isPending in
+            guard isPending else { return }
+            viewModel.send(.shareItemReceived)
+        }
 #endif
     }
 }
@@ -129,9 +138,11 @@ private extension HomeView {
             .navigationDestination(item: $selectedConversation) { conversation in
                 ChatView(
                     conversation: conversation,
+                    shareItem: viewModel.pendingShareItem,
                     onForkCreated: { fork in
                         selectedConversation = fork
-                    }
+                    },
+                    onShareItemProcessed: { viewModel.send(.shareItemConsumed) }
                 )
             }
         }
@@ -147,9 +158,11 @@ private extension HomeView {
             if let selectedConversation {
                 ChatView(
                     conversation: selectedConversation,
+                    shareItem: viewModel.pendingShareItem,
                     onForkCreated: { fork in
                         self.selectedConversation = fork
-                    }
+                    },
+                    onShareItemProcessed: { viewModel.send(.shareItemConsumed) }
                 )
             } else {
                 ContentUnavailableView(
@@ -232,9 +245,11 @@ private extension HomeView {
                 .navigationDestination(item: $selectedConversation) { conversation in
                     ChatView(
                         conversation: conversation,
+                        shareItem: viewModel.pendingShareItem,
                         onForkCreated: { fork in
                             selectedConversation = fork
-                        }
+                        },
+                        onShareItemProcessed: { viewModel.send(.shareItemConsumed) }
                     )
                 }
             }

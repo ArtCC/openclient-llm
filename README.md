@@ -33,6 +33,7 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 - Full conversation history with search, pins, and tags
 - Branch from any message to explore alternative responses; edit and regenerate
 - Media & Files gallery: browse all attached images and documents in one place
+- Share content from any app (Safari, Telegram, Photos, Files…) directly into a new conversation via the system Share sheet
 - iCloud sync across all your Apple devices
 - Export conversations to JSON
 - Token usage per message and estimated conversation cost

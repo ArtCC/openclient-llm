@@ -63,7 +63,8 @@ openclient-llm/                    # iOS target
 │   │   ├── Extensions/
 │   │   │   ├── Foundation/
 │   │   │   └── SwiftUI/
-│   │   ├── Managers/
+│   │   ├── Managers/              # ShareManager, SpotlightManager, ShortcutManager…
+│   │   ├── Models/                # ShareExtensionItem (shared with extension)
 │   │   ├── Networking/
 │   │   │   └── Models/
 │   │   ├── Utils/
@@ -75,6 +76,13 @@ openclient-llm-macOS/              # macOS target
 ├── App/
 ├── Views/
 └── Resources/
+
+ShareExtension/                    # iOS Share Extension target
+├── ShareViewController.swift      # SLComposeServiceViewController — extracts & saves payload
+├── ShareExtensionItem.swift       # Codable payload model (mirrors Shared/Core/Models/)
+├── ShareExtensionStore.swift      # Write-side: persists payload to App Group container
+├── ShareExtension.entitlements    # App Groups: group.com.artcc.openclient-llm
+└── Info.plist                     # NSExtensionActivationRule for text/URL/image/PDF
 
 openclient-llm-test/               # Unit tests
 ├── Core/
@@ -107,4 +115,31 @@ openclient-llm-test/               # Unit tests
 - **`Shared/`** — All business logic, models, networking, ViewModels, UseCases, Repositories, Managers. Referenced by both targets.
 - **`openclient-llm/`** (outside Shared) — iOS/iPadOS-specific views, app entry point, iOS resources.
 - **`openclient-llm-macOS/`** — macOS-specific views, app entry point, macOS resources. No shared logic duplicated here.
+- **`ShareExtension/`** — Share Extension target (iOS/iPadOS). Shares `ShareExtensionItem` model and `ShareExtensionStore` write-side with the main app via the App Group container (`group.com.artcc.openclient-llm`). Does not link against Shared code directly to keep the extension lightweight.
 - **`#if os(iOS)` / `#if os(macOS)`** — Used inside shared views for platform-specific UI variations.
+
+## Share Extension Data Flow
+
+```
+Other App (Telegram, Safari…)
+    └── Share Sheet → ShareViewController (extension)
+                          ├── Writes ShareExtensionItem JSON → App Group container
+                          ├── Writes attachment binaries   → App Group container/SharePending/
+                          └── Opens openclient://share
+
+openclient://share → SceneDelegate.handle(url:)
+    └── ShareManager.shared.hasPendingShare = true
+
+HomeView.onChange(hasPendingShare)
+    └── HomeViewModel.send(.shareItemReceived)
+            ├── ShareExtensionStore.load()   → reads JSON
+            ├── pendingShareItem = item
+            └── pendingConversation = Conversation(modelId: …)
+
+HomeView.onChange(pendingConversation)
+    └── ChatView(shareItem: item)
+            └── .task → processShareItemIfNeeded()
+                    ├── viewModel.send(.inputChanged(text/url))
+                    ├── viewModel.send(.attachmentAdded(…)) per binary
+                    └── ShareExtensionStore.clear()
+```

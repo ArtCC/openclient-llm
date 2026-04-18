@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.3.0-build-33] - 2026-04-18
+
+### Added
+
+- **Share Extension (iOS/iPadOS)** — system Share Extension (`openclient-llm-ShareExtension`) that receives text, URLs, images, and PDFs shared from any app (Safari, Telegram, Photos, Files…); creates a new conversation with the shared content already attached and opens the app directly via the `openclient://share` URL scheme
+
 ## [1.2.0-build-31] - 2026-04-18
 
 ### Added

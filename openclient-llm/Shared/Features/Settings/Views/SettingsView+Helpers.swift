@@ -8,7 +8,7 @@
 
 import SwiftUI
 #if os(iOS)
-import UIKit
+import SwiftUI
 #endif
 
 // MARK: - Helpers
