@@ -17,6 +17,15 @@ extension ChatView {
         onShareItemProcessed: (() -> Void)?
     ) async {
         guard let item = shareItem else { return }
+
+        // Wait until ChatViewModel finishes loading (it fetches models asynchronously).
+        // inputChanged / attachmentAdded are silently dropped while state == .loading.
+        for _ in 0..<60 {
+            if case .loaded = viewModel.state { break }
+            try? await Task.sleep(for: .milliseconds(100))
+        }
+        guard case .loaded = viewModel.state else { return }
+
         if let text = item.text {
             viewModel.send(.inputChanged(text))
         } else if let url = item.url {

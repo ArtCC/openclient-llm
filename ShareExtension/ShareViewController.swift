@@ -22,13 +22,15 @@ final class ShareViewController: SLComposeServiceViewController {
         let trimmedText = composedText?.isEmpty == false ? composedText : nil
         let inputItems = extensionContext?.inputItems as? [NSExtensionItem] ?? []
         let context = extensionContext
-        Task {
+        Task { @MainActor in
             let item = await buildShareItem(composedText: trimmedText, from: inputItems)
             try? ShareExtensionStore.save(item)
-            if let appURL = URL(string: "openclient://share") {
-                await context?.open(appURL)
+            context?.completeRequest(returningItems: []) { _ in
+                guard let appURL = URL(string: "openclient://share") else { return }
+                Task { @MainActor [weak self] in
+                    self?.openContainingApp(url: appURL)
+                }
             }
-            context?.completeRequest(returningItems: [], completionHandler: nil)
         }
     }
 
@@ -40,6 +42,20 @@ final class ShareViewController: SLComposeServiceViewController {
 // MARK: - Private
 
 private extension ShareViewController {
+    /// Opens the containing app by traversing the responder chain to reach UIApplication.
+    /// This is the reliable approach for Share Extensions — NSExtensionContext.open()
+    /// is only available for Action/Today extensions, not Share extensions.
+    func openContainingApp(url: URL) {
+        var responder: UIResponder? = self
+        while let current = responder {
+            if let app = current as? UIApplication {
+                app.open(url, options: [:], completionHandler: nil)
+                return
+            }
+            responder = current.next
+        }
+    }
+
     func buildShareItem(composedText: String?, from items: [NSExtensionItem]) async -> ShareExtensionItem {
         var attachments: [ShareExtensionItem.Attachment] = []
         var detectedURL: String?
