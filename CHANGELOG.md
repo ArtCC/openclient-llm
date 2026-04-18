@@ -25,8 +25,6 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
   - `OpenClientIntentError` — `LocalizedError` enum with `.unsupportedFileType` and `.fileWriteFailed` cases used by `SendFileToChatIntent`
   - `ShareExtensionStore` (Shared target) extended with `save(_:)` and `writeAttachmentData(_:fileName:)` write methods, mirroring the existing write-side store in the ShareExtension target; required for `SendFileToChatIntent` to persist file payloads from within the main app process
 
-
-
 ### Added
 
 - **Custom URL scheme (`openclient://`)** — deep-link support for external apps, Apple Shortcuts, and browser links:
