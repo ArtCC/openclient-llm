@@ -35,25 +35,31 @@ struct ChatView: View {
 
     var conversation: Conversation?
     var shareItem: ShareExtensionItem?
+    var urlSchemeText: String?
     var onConversationUpdated: (() -> Void)?
     var onForkCreated: ((Conversation) -> Void)?
     var onShareItemProcessed: (() -> Void)?
+    var onURLSchemeTextProcessed: (() -> Void)?
 
     // MARK: - Init
 
     init(
         conversation: Conversation? = nil,
         shareItem: ShareExtensionItem? = nil,
+        urlSchemeText: String? = nil,
         onConversationUpdated: (() -> Void)? = nil,
         onForkCreated: ((Conversation) -> Void)? = nil,
-        onShareItemProcessed: (() -> Void)? = nil
+        onShareItemProcessed: (() -> Void)? = nil,
+        onURLSchemeTextProcessed: (() -> Void)? = nil
     ) {
         _viewModel = State(initialValue: ChatViewModel(conversation: conversation))
         self.conversation = conversation
         self.shareItem = shareItem
+        self.urlSchemeText = urlSchemeText
         self.onConversationUpdated = onConversationUpdated
         self.onForkCreated = onForkCreated
         self.onShareItemProcessed = onShareItemProcessed
+        self.onURLSchemeTextProcessed = onURLSchemeTextProcessed
     }
 
     // MARK: - View
@@ -152,6 +158,11 @@ private extension ChatView {
                 shareItem: shareItem,
                 onShareItemProcessed: onShareItemProcessed
             )
+            await processURLSchemeTextIfNeeded(
+                viewModel: viewModel,
+                urlSchemeText: urlSchemeText,
+                onURLSchemeTextProcessed: onURLSchemeTextProcessed
+            )
         }
         .onChange(of: conversation) { _, newConversation in
             if let newConversation {
@@ -232,6 +243,11 @@ private extension ChatView {
                 viewModel: viewModel,
                 shareItem: shareItem,
                 onShareItemProcessed: onShareItemProcessed
+            )
+            await processURLSchemeTextIfNeeded(
+                viewModel: viewModel,
+                urlSchemeText: urlSchemeText,
+                onURLSchemeTextProcessed: onURLSchemeTextProcessed
             )
         }
         .onChange(of: conversation) { _, newConversation in

@@ -21,10 +21,13 @@ final class HomeViewModel {
         case pendingConversationConsumed
         case shareItemReceived
         case shareItemConsumed
+        case urlSchemeActionReceived
+        case urlSchemeTextConsumed
     }
 
     private(set) var pendingConversation: Conversation?
     private(set) var pendingShareItem: ShareExtensionItem?
+    private(set) var pendingURLSchemeText: String?
 
     var pendingShortcutAction: ShortcutAction? {
         shortcutManager.pendingAction
@@ -34,10 +37,15 @@ final class HomeViewModel {
         shareManager.hasPendingShare
     }
 
+    var pendingURLSchemeAction: URLSchemeAction? {
+        urlSchemeManager.pendingAction
+    }
+
     private let getSelectedModelUseCase: GetSelectedModelUseCaseProtocol
     private let loadConversationsUseCase: LoadConversationsUseCaseProtocol
     private let shortcutManager: ShortcutManager
     private let shareManager: ShareManager
+    private let urlSchemeManager: URLSchemeManager
     private let checkNotificationPermissionUseCase: NotificationStatusCheckProtocol
     private let notificationPermissionUseCase: NotificationPermissionUseCaseProtocol
 
@@ -48,6 +56,7 @@ final class HomeViewModel {
         loadConversationsUseCase: LoadConversationsUseCaseProtocol = LoadConversationsUseCase(),
         shortcutManager: ShortcutManager = .shared,
         shareManager: ShareManager = .shared,
+        urlSchemeManager: URLSchemeManager = .shared,
         checkNotificationPermissionUseCase: NotificationStatusCheckProtocol = CheckNotificationPermissionUseCase(),
         notificationPermissionUseCase: NotificationPermissionUseCaseProtocol = NotificationPermissionUseCase()
     ) {
@@ -55,6 +64,7 @@ final class HomeViewModel {
         self.loadConversationsUseCase = loadConversationsUseCase
         self.shortcutManager = shortcutManager
         self.shareManager = shareManager
+        self.urlSchemeManager = urlSchemeManager
         self.checkNotificationPermissionUseCase = checkNotificationPermissionUseCase
         self.notificationPermissionUseCase = notificationPermissionUseCase
     }
@@ -78,6 +88,10 @@ final class HomeViewModel {
             resolveShareItem()
         case .shareItemConsumed:
             pendingShareItem = nil
+        case .urlSchemeActionReceived:
+            resolveURLSchemeAction()
+        case .urlSchemeTextConsumed:
+            pendingURLSchemeText = nil
         }
     }
 }
@@ -106,5 +120,19 @@ private extension HomeViewModel {
         let modelId = getSelectedModelUseCase.execute()
         pendingShareItem = try? ShareExtensionStore.load()
         pendingConversation = Conversation(modelId: modelId)
+    }
+
+    func resolveURLSchemeAction() {
+        guard let action = urlSchemeManager.pendingAction else { return }
+        urlSchemeManager.pendingAction = nil
+        let modelId = getSelectedModelUseCase.execute()
+        switch action {
+        case .chat(let text, let url):
+            let parts = [text, url].compactMap { $0 }.filter { !$0.isEmpty }
+            pendingURLSchemeText = parts.isEmpty ? nil : parts.joined(separator: "\n")
+            pendingConversation = Conversation(modelId: modelId)
+        case .conversation(let id):
+            resolveSpotlightConversation(id: id)
+        }
     }
 }

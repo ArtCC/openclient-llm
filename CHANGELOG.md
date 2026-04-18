@@ -11,6 +11,14 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 ### Added
 
+- **Custom URL scheme (`openclient://`)** — deep-link support for external apps, Apple Shortcuts, and browser links:
+  - `openclient://chat?text=<text>` — opens the app and pre-fills the message input with the given text
+  - `openclient://chat?url=<url>` — opens the app and pre-fills the message input with the given URL
+  - `openclient://conversation?id=<UUID>` — navigates directly to an existing conversation by ID
+  - `URLSchemeParser` — pure static parser that converts `openclient://` URLs into typed `URLSchemeAction` values
+  - `URLSchemeManager` — `@Observable @MainActor` singleton holding the pending deep-link action until `HomeViewModel` can process it
+  - `URLSchemeAction` — `Equatable & Sendable` enum with `.chat(text:url:)` and `.conversation(id:)` cases
+- **Help screen** — new **Help** entry in Settings (Support section) presenting a `HelpView` sheet with three sections: Share Extension usage, URL Scheme with copiable example URLs, and Apple Shortcuts integration guide
 - **Share Extension (iOS/iPadOS)** — system Share Extension (`openclient-llm-ShareExtension`) that receives text, URLs, images, and PDFs shared from any app (Safari, Telegram, Photos, Files…); creates a new conversation with the shared content already attached and opens the app directly via the `openclient://share` URL scheme
 
 ## [1.2.0-build-31] - 2026-04-18

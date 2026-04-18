@@ -58,7 +58,17 @@ final class SceneDelegate: NSObject, UIWindowSceneDelegate {
 
 private extension SceneDelegate {
     func handle(url: URL) {
-        guard url.scheme == "openclient", url.host == "share" else { return }
-        ShareManager.shared.hasPendingShare = true
+        guard url.scheme?.lowercased() == "openclient" else { return }
+
+        // Legacy share action — handled by ShareManager
+        if url.host?.lowercased() == "share" {
+            ShareManager.shared.hasPendingShare = true
+            return
+        }
+
+        // All other deep-link actions — routed through URLSchemeParser
+        if let action = URLSchemeParser.parse(url) {
+            URLSchemeManager.shared.pendingAction = action
+        }
     }
 }
