@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [1.3.0-build-34] - 2026-04-20
+## [1.3.0-build-36] - 2026-04-20
 
 ### Added
 
@@ -29,6 +29,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 - **Terms of Service updated** (`docs/terms.html`, `docs/terms-app.html`) — rewritten to reflect the full feature set of the app: Vision, Speech-to-Text, Text-to-Speech, image generation, web search (via LiteLLM proxy), agent mode, iCloud sync, persistent memory, Share Extension, URL scheme, drag & drop, Apple Shortcuts, and Spotlight indexing; new dedicated sections for "Free App, Third-Party API Costs", "iCloud & Local Data", and "Estimated Costs"; "No Affiliation" expanded with Groq, Brave, and Tavily; "Limitation of Liability" extended to cover inaccurate search results and unintended agent actions
 - **Privacy Policy updated** (`docs/privacy.html`, `docs/privacy-app.html`) — "Local-Only Architecture" replaced with a detailed "Local & iCloud Storage" section listing exactly what goes where (conversations to iCloud Drive, profile and memory to iCloud Key-Value Store, API keys to Keychain, Spotlight index local-only); "Server Communication" expanded with a full list of request types (chat, Vision, STT, TTS, image generation, web search, agent tool calls); new "Shared & Imported Content" section covering Share Extension, URL scheme, drag & drop, and Shortcuts; "Third-Party Services" section corrected — Votice SDK described accurately as an anonymous, opt-in feedback tool for bug reports and feature requests (not voice-related); Votice noted as an open-source project by the same author
+- **Landing page redesign** (`docs/index.html`, `docs/css/style.css`) — full visual overhaul of the public website: sticky glass header with logo and Download CTA; hero section with radial glow, platform pill (iOS · iPadOS · macOS) below the app icon, and gradient title; feature grid updated to remove weak entries (Multi-platform, Liquid Glass Design, Multilingual) and replaced with Vision & Documents, Agent Mode, and Persistent Memory; sections with uppercase labels and wider container; footer simplified and centred
 
 ### Added
 
