@@ -22,6 +22,7 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 - Real-time streaming responses with Markdown and code block rendering
 - Collapsible Thinking block for reasoning models (DeepSeek, o1, Gemini Thinking, and more)
 - Attach photos, camera shots, and PDF documents for multimodal conversations
+- Drag and drop text, images, and files from any app directly into the chat (Split View, Stage Manager, Finder on macOS)
 - Dictate messages with Speech-to-Text; have responses read aloud with Text-to-Speech
 - Generate images directly from chat
 - Web search powered by your server's configured provider (Brave, Firecrawl, and more)
@@ -34,7 +35,8 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 - Branch from any message to explore alternative responses; edit and regenerate
 - Media & Files gallery: browse all attached images and documents in one place
 - Share content from any app (Safari, Telegram, Photos, Files…) directly into a new conversation via the system Share sheet
-- Deep-link into the app with `openclient://chat?text=…`, `openclient://chat?url=…`, or `openclient://conversation?id=…` for Apple Shortcuts and third-party automation
+- Deep-link into the app with `openclient://chat?text=…`, `openclient://chat?url=…`, or `openclient://conversation?id=…` for third-party automation
+- Apple Shortcuts integration: "New Chat", "Search Chats", and "Send File to Chat" actions available in the Shortcuts app and via Siri
 - iCloud sync across all your Apple devices
 - Export conversations to JSON
 - Token usage per message and estimated conversation cost
@@ -80,6 +82,7 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 | Keychain | Secure storage |
 | SwiftLint | Code linting |
 | SF Symbols | Iconography |
+| AppIntents | Apple Shortcuts & Siri integration |
 | Votice | In-app feedback & feature requests |
 
 This project was developed entirely with Xcode, Visual Studio Code and GitHub Copilot (with Claude Opus / Sonnet 4.6).

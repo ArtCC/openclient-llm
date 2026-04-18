@@ -292,6 +292,10 @@ private extension ChatView {
                     )
                 }
             }
+            .modifier(ChatDropModifier(
+                onText: { viewModel.send(.inputChanged($0)) },
+                onAttachment: { viewModel.send(.attachmentAdded(data: $0, fileName: $1, type: $2)) }
+            ))
     }
 
     // MARK: - Messages
