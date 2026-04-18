@@ -22,7 +22,7 @@ final class ChatViewModel {
         case suggestionTapped(String)
         case modelSelected(LLMModel)
         case systemPromptChanged(String)
-        case attachmentAdded(ChatMessage.Attachment)
+        case attachmentAdded(data: Data, fileName: String, type: ChatMessage.AttachmentType)
         case attachmentRemoved(UUID)
         case modelParametersChanged(ModelParameters)
         case speakMessageTapped(ChatMessage)
@@ -56,6 +56,7 @@ final class ChatViewModel {
         var errorMessage: String?
         var systemPrompt: String = ""
         var pendingAttachments: [ChatMessage.Attachment] = []
+        var pendingSessionId: UUID = UUID()
         var modelParameters: ModelParameters = .default
         var isSpeaking: Bool = false
         var speakingMessageId: UUID?
@@ -63,7 +64,6 @@ final class ChatViewModel {
         var recordingDuration: TimeInterval = 0
         var isTranscribing: Bool = false
         var showTokenUsage: Bool = true
-        var scrollToBottomTrigger: Bool = false
         var ttsModelId: String?
         var transcriptionModelId: String?
         var exportedData: Data?
@@ -78,6 +78,7 @@ final class ChatViewModel {
     var onForkCreated: ((Conversation) -> Void)?
 
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
+    let attachmentRepository: AttachmentRepositoryProtocol
     let streamMessageUseCase: StreamMessageUseCaseProtocol
     let agentStreamUseCase: AgentStreamUseCaseProtocol
     let webSearchUseCase: WebSearchUseCaseProtocol
@@ -91,6 +92,7 @@ final class ChatViewModel {
     let setWebSearchEnabledUseCase: SetWebSearchEnabledUseCaseProtocol
     private let resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol
     let getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol
+    let getMemoryContextUseCase: GetMemoryContextUseCaseProtocol
     private let getConversationStartersUseCase: GetConversationStartersUseCaseProtocol
     private let playAudioUseCase: any PlayAudioUseCaseProtocol
     let recordAudioUseCase: any RecordAudioUseCaseProtocol
@@ -108,6 +110,7 @@ final class ChatViewModel {
         conversation: Conversation? = nil,
         state: State = .loading,
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
+        attachmentRepository: AttachmentRepositoryProtocol = AttachmentRepository(),
         streamMessageUseCase: StreamMessageUseCaseProtocol = StreamMessageUseCase(),
         agentStreamUseCase: AgentStreamUseCaseProtocol = AgentStreamUseCase(),
         webSearchUseCase: WebSearchUseCaseProtocol = WebSearchUseCase(),
@@ -121,6 +124,7 @@ final class ChatViewModel {
         setWebSearchEnabledUseCase: SetWebSearchEnabledUseCaseProtocol = SetWebSearchEnabledUseCase(),
         resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol = ResolveAudioModelIdsUseCase(),
         getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol = GetUserProfileContextUseCase(),
+        getMemoryContextUseCase: GetMemoryContextUseCaseProtocol = GetMemoryContextUseCase(),
         getConversationStartersUseCase: GetConversationStartersUseCaseProtocol = GetConversationStartersUseCase(),
         playAudioUseCase: any PlayAudioUseCaseProtocol = PlayAudioUseCase(),
         recordAudioUseCase: any RecordAudioUseCaseProtocol = RecordAudioUseCase(),
@@ -131,6 +135,7 @@ final class ChatViewModel {
         self.state = state
         self.pendingConversation = conversation
         self.fetchModelsUseCase = fetchModelsUseCase
+        self.attachmentRepository = attachmentRepository
         self.streamMessageUseCase = streamMessageUseCase
         self.agentStreamUseCase = agentStreamUseCase
         self.webSearchUseCase = webSearchUseCase
@@ -144,6 +149,7 @@ final class ChatViewModel {
         self.setWebSearchEnabledUseCase = setWebSearchEnabledUseCase
         self.resolveAudioModelIdsUseCase = resolveAudioModelIdsUseCase
         self.getUserProfileContextUseCase = getUserProfileContextUseCase
+        self.getMemoryContextUseCase = getMemoryContextUseCase
         self.getConversationStartersUseCase = getConversationStartersUseCase
         self.playAudioUseCase = playAudioUseCase
         self.recordAudioUseCase = recordAudioUseCase
@@ -191,44 +197,13 @@ final class ChatViewModel {
 // MARK: - Private
 
 private extension ChatViewModel {
-    struct SendMessageContext {
-        let text: String
-        let messages: [ChatMessage]
-        let modelId: String
-        let assistantId: UUID
-        let systemPrompt: String
-        let parameters: ModelParameters
-        let webSearchEnabled: Bool
-        let modelCapabilities: [LLMModel.Capability]
-    }
-
-    func streamWithWebSearch(_ context: SendMessageContext) async {
-        let useAgentMode = context.webSearchEnabled
-            && context.modelCapabilities.contains(.functionCalling)
-        if useAgentMode {
-            await performAgentStreaming(
-                messages: context.messages,
-                model: context.modelId,
-                assistantMessageId: context.assistantId,
-                systemPrompt: context.systemPrompt,
-                parameters: context.parameters
-            )
-        } else {
-            await performStreaming(
-                messages: context.messages,
-                model: context.modelId,
-                assistantMessageId: context.assistantId,
-                systemPrompt: context.systemPrompt,
-                parameters: context.parameters
-            )
-        }
-    }
 
     func handleConfigurationEvent(_ event: Event) {
         switch event {
         case .modelSelected(let model): selectModel(model)
         case .systemPromptChanged(let prompt): updateSystemPrompt(prompt)
-        case .attachmentAdded(let attachment): addAttachment(attachment)
+        case .attachmentAdded(let data, let fileName, let type):
+            addAttachment(data: data, fileName: fileName, type: type)
         case .attachmentRemoved(let id): removeAttachment(id)
         case .modelParametersChanged(let parameters): updateModelParameters(parameters)
         case .speakMessageTapped(let message): speakMessage(message)
@@ -311,9 +286,6 @@ private extension ChatViewModel {
         loadedState.pendingAttachments = []
         loadedState.inputText = ""
         loadedState.errorMessage = nil
-        if !conversation.messages.isEmpty {
-            loadedState.scrollToBottomTrigger.toggle()
-        }
         state = .loaded(loadedState)
     }
 
@@ -356,16 +328,55 @@ private extension ChatViewModel {
         persistConversation()
     }
 
-    func addAttachment(_ attachment: ChatMessage.Attachment) {
+    func addAttachment(data: Data, fileName: String, type: ChatMessage.AttachmentType) {
         guard case .loaded(var loadedState) = state else { return }
-        loadedState.pendingAttachments.append(attachment)
-        state = .loaded(loadedState)
+        let mime = mimeType(for: type, fileName: fileName)
+        let folderId = loadedState.conversation?.id ?? loadedState.pendingSessionId
+        let attachmentId = UUID()
+        let placeholder = ChatMessage.Attachment(
+            id: attachmentId,
+            type: type,
+            fileName: fileName,
+            mimeType: mime,
+            fileRelativePath: ""
+        )
+        do {
+            let relativePath = try attachmentRepository.save(data: data, for: placeholder, conversationId: folderId)
+            let saved = ChatMessage.Attachment(
+                id: attachmentId,
+                type: type,
+                fileName: fileName,
+                mimeType: mime,
+                fileRelativePath: relativePath
+            )
+            loadedState.pendingAttachments.append(saved)
+            state = .loaded(loadedState)
+        } catch {
+            LogManager.error("addAttachment failed to save to disk: \(error)")
+        }
     }
 
     func removeAttachment(_ id: UUID) {
         guard case .loaded(var loadedState) = state else { return }
+        if let attachment = loadedState.pendingAttachments.first(where: { $0.id == id }) {
+            try? attachmentRepository.delete(attachment: attachment)
+        }
         loadedState.pendingAttachments.removeAll { $0.id == id }
         state = .loaded(loadedState)
+    }
+
+    func mimeType(for type: ChatMessage.AttachmentType, fileName: String) -> String {
+        switch type {
+        case .pdf: return "application/pdf"
+        case .image:
+            let ext = (fileName as NSString).pathExtension.lowercased()
+            switch ext {
+            case "png": return "image/png"
+            case "gif": return "image/gif"
+            case "webp": return "image/webp"
+            default: return "image/jpeg"
+            }
+        }
     }
 
     func stopStreaming() {
@@ -382,63 +393,6 @@ private extension ChatViewModel {
     func handleSuggestionTapped(_ prompt: String) {
         updateInput(prompt)
         sendMessage()
-    }
-
-    func sendMessage() {
-        guard case .loaded(var loadedState) = state else { return }
-        let text = loadedState.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, let model = loadedState.selectedModel, !loadedState.isStreaming else { return }
-        LogManager.info("sendMessage model=\(model.id) text=\"\(String(text.prefix(80)))\"")
-
-        let assistantId = prepareMessageState(text: text, model: model, loadedState: &loadedState)
-        let currentMessages = loadedState.messages.filter { $0.id != assistantId }
-        let systemPrompt = loadedState.systemPrompt
-        let parameters = loadedState.modelParameters
-        let webSearchEnabled = loadedState.isWebSearchEnabled
-        let modelCapabilities = model.capabilities
-
-        streamTask?.cancel()
-        streamingBackgroundUseCase.begin { [weak self] in
-            LogManager.warning("Background time expired — saving partial response")
-            self?.streamTask?.cancel()
-            self?.streamTask = nil
-            guard let self, case .loaded(var currentState) = self.state else { return }
-            currentState.isStreaming = false
-            self.state = .loaded(currentState)
-            self.persistConversation()
-            Task { await self.notifyStreamingCompletedUseCase.executeExpired() }
-        }
-        streamTask = Task {
-            await streamWithWebSearch(SendMessageContext(
-                text: text,
-                messages: currentMessages,
-                modelId: model.id,
-                assistantId: assistantId,
-                systemPrompt: systemPrompt,
-                parameters: parameters,
-                webSearchEnabled: webSearchEnabled,
-                modelCapabilities: modelCapabilities
-            ))
-        }
-    }
-
-    func prepareMessageState(text: String, model: LLMModel, loadedState: inout LoadedState) -> UUID {
-        if loadedState.conversation == nil {
-            loadedState.conversation = Conversation(modelId: model.id, systemPrompt: loadedState.systemPrompt)
-        }
-        let userMessage = ChatMessage(role: .user, content: text, attachments: loadedState.pendingAttachments)
-        loadedState.messages.append(userMessage)
-        loadedState.inputText = ""
-        loadedState.pendingAttachments = []
-        loadedState.isStreaming = true
-        loadedState.errorMessage = nil
-        let assistantMessage = ChatMessage(role: .assistant, content: "")
-        loadedState.messages.append(assistantMessage)
-        if loadedState.conversation?.title.isEmpty == true {
-            loadedState.conversation?.title = String(text.prefix(50))
-        }
-        state = .loaded(loadedState)
-        return assistantMessage.id
     }
 
     func speakMessage(_ message: ChatMessage) {

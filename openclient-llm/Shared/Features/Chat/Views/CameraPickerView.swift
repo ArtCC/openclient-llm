@@ -15,7 +15,7 @@ struct CameraPickerView: UIViewControllerRepresentable {
 
     @Binding var isPresented: Bool
 
-    let onAttachment: (ChatMessage.Attachment) -> Void
+    let onAttachmentData: (Data, String, ChatMessage.AttachmentType) -> Void
 
     // MARK: - UIViewControllerRepresentable
 
@@ -56,12 +56,7 @@ extension CameraPickerView {
             if let image = info[.originalImage] as? UIImage,
                let data = image.jpegData(compressionQuality: 0.8) {
                 let fileName = "camera_\(Date().timeIntervalSince1970).jpg"
-                let attachment = ChatMessage.Attachment(
-                    type: .image,
-                    fileName: fileName,
-                    data: data
-                )
-                parent.onAttachment(attachment)
+                parent.onAttachmentData(data, fileName, .image)
             }
             parent.isPresented = false
         }
@@ -79,14 +74,14 @@ struct CameraPickerModifier: ViewModifier {
 
     @Binding var isPresented: Bool
 
-    let onAttachment: (ChatMessage.Attachment) -> Void
+    let onAttachmentData: (Data, String, ChatMessage.AttachmentType) -> Void
 
     // MARK: - View
 
     func body(content: Content) -> some View {
         content
             .fullScreenCover(isPresented: $isPresented) {
-                CameraPickerView(isPresented: $isPresented, onAttachment: onAttachment)
+                CameraPickerView(isPresented: $isPresented, onAttachmentData: onAttachmentData)
                     .ignoresSafeArea()
             }
     }
@@ -95,9 +90,9 @@ struct CameraPickerModifier: ViewModifier {
 extension View {
     func cameraPicker(
         isPresented: Binding<Bool>,
-        onAttachment: @escaping (ChatMessage.Attachment) -> Void
+        onAttachmentData: @escaping (Data, String, ChatMessage.AttachmentType) -> Void
     ) -> some View {
-        modifier(CameraPickerModifier(isPresented: isPresented, onAttachment: onAttachment))
+        modifier(CameraPickerModifier(isPresented: isPresented, onAttachmentData: onAttachmentData))
     }
 }
 #endif

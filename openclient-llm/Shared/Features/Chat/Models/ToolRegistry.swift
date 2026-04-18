@@ -34,7 +34,19 @@ struct ToolRegistry: Sendable {
 
     // MARK: - Factory
 
-    static func `default`(webSearchUseCase: WebSearchUseCaseProtocol = WebSearchUseCase()) -> ToolRegistry {
-        ToolRegistry(tools: [WebSearchTool(webSearchUseCase: webSearchUseCase)])
+    static func `default`(
+        webSearchEnabled: Bool = true,
+        webSearchUseCase: WebSearchUseCaseProtocol = WebSearchUseCase(),
+        memoryManager: MemoryManagerProtocol = MemoryManager()
+    ) -> ToolRegistry {
+        var tools: [any ChatToolProtocol] = [
+            GetCurrentDatetimeTool(),
+            SaveMemoryTool(memoryManager: memoryManager),
+            DeleteMemoryTool(memoryManager: memoryManager)
+        ]
+        if webSearchEnabled {
+            tools.append(WebSearchTool(webSearchUseCase: webSearchUseCase))
+        }
+        return ToolRegistry(tools: tools)
     }
 }

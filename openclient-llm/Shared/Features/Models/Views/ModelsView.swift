@@ -14,17 +14,18 @@ struct ModelsView: View {
     @State private var viewModel = ModelsViewModel()
     @State private var ttsCustomVoiceTexts: [String: String] = [:]
     @State private var ttsCustomModeActive: Set<String> = []
+    @State private var modelForDetail: LLMModel?
 
     // MARK: - View
 
     var body: some View {
-        #if os(iOS)
+#if os(iOS)
         NavigationStack {
             content
         }
-        #else
+#else
         content
-        #endif
+#endif
     }
 }
 
@@ -53,6 +54,9 @@ private extension ModelsView {
         }
         .task {
             viewModel.send(.viewAppeared)
+        }
+        .sheet(item: $modelForDetail) { model in
+            ModelDetailView(model: model)
         }
     }
 
@@ -113,46 +117,60 @@ private extension ModelsView {
                 }
             }
         }
-        #if os(iOS)
+#if os(iOS)
         .refreshable {
             await viewModel.refreshAsync()
         }
-        #endif
+#endif
     }
 
     func modelRow(_ model: LLMModel, loadedState: ModelsViewModel.LoadedState) -> some View {
         let isSelected = model.id == loadedState.selectedModelId
 
-        return Button {
-            viewModel.send(.modelTapped(model))
-        } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 12) {
-                    providerLogo(model)
+        return HStack(spacing: 0) {
+            Button {
+                viewModel.send(.modelTapped(model))
+            } label: {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 12) {
+                        providerLogo(model)
 
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(model.id)
-                            .font(.body)
-                        if !model.providerName.isEmpty {
-                            Text(model.providerName)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(model.id)
+                                .font(.body)
+                            if !model.providerName.isEmpty {
+                                Text(model.providerName)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
+
+                        Spacer()
                     }
 
-                    Spacer()
-
-                    if isSelected {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(Color.appAccent)
-                    }
+                    capabilityTags(model.capabilities.isEmpty ? [.text] : model.capabilities)
                 }
-
-                if !model.capabilities.isEmpty {
-                    capabilityTags(model.capabilities)
-                }
+                .padding(.vertical, 4)
+                .contentShape(Rectangle())
             }
-            .padding(.vertical, 4)
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if isSelected {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(Color.appAccent)
+                    .font(.title2)
+            }
+
+            Button {
+                modelForDetail = model
+            } label: {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(.secondary)
+                    .font(.title2)
+            }
+            .buttonStyle(.plain)
+            .padding(.leading, 12)
         }
     }
 
@@ -319,7 +337,7 @@ private extension ModelsView {
                 Text(isPresetVoice && !ttsCustomModeActive.contains(model.id)
                      ? currentVoice.capitalized
                      : String(localized: "Custom…"))
-                    .font(.subheadline)
+                .font(.subheadline)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption2)
             }

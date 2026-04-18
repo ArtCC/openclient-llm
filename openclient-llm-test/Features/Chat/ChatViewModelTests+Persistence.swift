@@ -105,17 +105,13 @@ extension ChatViewModelTests {
     func test_send_attachmentAdded_addsToState() async throws {
         // Given
         mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockAttachmentRepository.saveResult = .success("Attachments/pending/test-id.jpg")
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
-        let attachment = ChatMessage.Attachment(
-            type: .image,
-            fileName: "test.jpg",
-            data: Data()
-        )
-
         // When
-        sut.send(.attachmentAdded(attachment))
+        sut.send(.attachmentAdded(data: Data([0xFF, 0xD8]), fileName: "test.jpg", type: .image))
+        try await Task.sleep(for: .milliseconds(50))
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -129,40 +125,41 @@ extension ChatViewModelTests {
     func test_send_attachmentRemoved_removesFromState() async throws {
         // Given
         mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockAttachmentRepository.saveResult = .success("Attachments/pending/test-id.jpg")
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
-        let attachment = ChatMessage.Attachment(
-            type: .image,
-            fileName: "test.jpg",
-            data: Data()
-        )
-        sut.send(.attachmentAdded(attachment))
+        sut.send(.attachmentAdded(data: Data([0xFF, 0xD8]), fileName: "test.jpg", type: .image))
+        try await Task.sleep(for: .milliseconds(50))
+
+        guard case .loaded(let loadedState) = sut.state,
+              let addedAttachment = loadedState.pendingAttachments.first else {
+            XCTFail("Expected loaded state with attachment")
+            return
+        }
 
         // When
-        sut.send(.attachmentRemoved(attachment.id))
+        sut.send(.attachmentRemoved(addedAttachment.id))
 
         // Then
-        guard case .loaded(let loadedState) = sut.state else {
+        guard case .loaded(let finalState) = sut.state else {
             XCTFail("Expected loaded state")
             return
         }
-        XCTAssertTrue(loadedState.pendingAttachments.isEmpty)
+        XCTAssertTrue(finalState.pendingAttachments.isEmpty)
     }
 
     func test_send_sendTapped_clearsAttachments() async throws {
         // Given
         mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
         mockStreamMessage.chunks = [.token("Response")]
+        mockAttachmentRepository.saveResult = .success("Attachments/pending/test-id.jpg")
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
-        let attachment = ChatMessage.Attachment(
-            type: .image,
-            fileName: "test.jpg",
-            data: Data()
-        )
-        sut.send(.attachmentAdded(attachment))
+        sut.send(.attachmentAdded(data: Data([0xFF, 0xD8]), fileName: "test.jpg", type: .image))
+        try await Task.sleep(for: .milliseconds(50))
+
         sut.send(.inputChanged("Describe this image"))
 
         // When

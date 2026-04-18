@@ -22,19 +22,22 @@ struct ConversationRepository: ConversationRepositoryProtocol {
     private let directoryURL: URL
     private let settingsManager: SettingsManagerProtocol
     private let cloudSyncManager: CloudSyncManagerProtocol
+    private let attachmentRepository: AttachmentRepositoryProtocol
 
     // MARK: - Init
 
     init(
         fileManager: FileManager = .default,
         settingsManager: SettingsManagerProtocol = SettingsManager(),
-        cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager()
+        cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
+        attachmentRepository: AttachmentRepositoryProtocol = AttachmentRepository()
     ) {
         self.fileManager = fileManager
         let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
         self.directoryURL = documentsURL.appendingPathComponent("Conversations", isDirectory: true)
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
+        self.attachmentRepository = attachmentRepository
     }
 
     // MARK: - Public
@@ -84,7 +87,12 @@ struct ConversationRepository: ConversationRepositoryProtocol {
 
     func delete(_ conversationId: UUID) throws {
         LogManager.debug("delete conversation id=\(conversationId)")
+        // Load conversation before deleting so we can clean up its attachment files
         let fileURL = directoryURL.appendingPathComponent("\(conversationId.uuidString).json")
+        if let data = try? Data(contentsOf: fileURL),
+           let conversation = try? JSONDecoder.iso8601.decode(Conversation.self, from: data) {
+            deleteAttachments(for: conversation)
+        }
         guard fileManager.fileExists(atPath: fileURL.path) else { return }
         try fileManager.removeItem(at: fileURL)
         LogManager.success("delete conversation id=\(conversationId) done")
@@ -99,6 +107,7 @@ struct ConversationRepository: ConversationRepositoryProtocol {
         guard fileManager.fileExists(atPath: directoryURL.path) else { return }
         try fileManager.removeItem(at: directoryURL)
         try ensureDirectoryExists()
+        try? attachmentRepository.deleteAll()
         LogManager.success("deleteAll conversations done")
 
         if settingsManager.getIsCloudSyncEnabled() {
@@ -196,4 +205,23 @@ private extension ConversationRepository {
             }
         }
     }
+
+    /// Deletes all attachment files referenced by the messages of a conversation.
+    func deleteAttachments(for conversation: Conversation) {
+        for message in conversation.messages {
+            for attachment in message.attachments {
+                try? attachmentRepository.delete(attachment: attachment)
+            }
+        }
+    }
+}
+
+// MARK: - JSONDecoder convenience
+
+private extension JSONDecoder {
+    static let iso8601: JSONDecoder = {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
+    }()
 }

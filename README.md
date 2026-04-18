@@ -6,7 +6,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-iOS%2026+%20|%20iPadOS%2026+%20|%20macOS%2026+-blue?style=flat-square" alt="Platform" />
-    <img src="https://img.shields.io/badge/Xcode-26+-blue?style=flat-square&logo=xcode" alt="Xcode" />
+  <img src="https://img.shields.io/badge/Xcode-26+-blue?style=flat-square&logo=xcode" alt="Xcode" />
   <img src="https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift" alt="Swift" />
   <img src="https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift" alt="SwiftUI" />
   <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square" alt="License" />
@@ -14,7 +14,42 @@
 
 ## Description
 
-Native Apple client for OpenAI-compatible LLM servers. Works out of the box with [LiteLLM](https://github.com/BerriAI/litellm) — a self-hosted proxy that connects to any LLM provider (Ollama, OpenAI, Anthropic, Groq, and more) — and also directly with [Ollama](https://ollama.com) using its built-in OpenAI-compatible endpoint (`/v1`). Just point the app at your server and start chatting.
+OpenClient connects you directly to your own AI server — no subscriptions, no data collection, no third parties.
+
+Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollama.com), and any OpenAI-compatible server. Point the app at your URL and start chatting with any model: GPT, Claude, Llama, Gemini, Mistral, and hundreds more.
+
+**Chat**
+- Real-time streaming responses with Markdown and code block rendering
+- Collapsible Thinking block for reasoning models (DeepSeek, o1, Gemini Thinking, and more)
+- Attach photos, camera shots, and PDF documents for multimodal conversations
+- Dictate messages with Speech-to-Text; have responses read aloud with Text-to-Speech
+- Generate images directly from chat
+- Web search powered by your server's configured provider (Brave, Firecrawl, and more)
+- Agentic tool-calling loop for models that support function calling
+- Favourite any message to bookmark it and jump back instantly
+- Custom system prompt and model parameters (temperature, max tokens, top-p) per conversation
+
+**Conversations**
+- Full conversation history with search, pins, and tags
+- Branch from any message to explore alternative responses; edit and regenerate
+- Media & Files gallery: browse all attached images and documents in one place
+- iCloud sync across all your Apple devices
+- Export conversations to JSON
+- Token usage per message and estimated conversation cost
+
+**Models**
+- Browse all available models with capability badges (vision, tools, JSON mode, image generation...)
+- Model detail sheet: context window, pricing (per token), provider, mode, and capabilities at a glance
+- Voice selector for Text-to-Speech models
+- Switch models per conversation
+
+**Personalization**
+- Prompt template library: save and reuse system prompts for any workflow
+- User profile: set your name and context so every model addresses you personally
+- Memory: save facts and preferences (manually or let the model save them automatically); injected into every conversation's system prompt and synced via iCloud
+
+**macOS**
+- Menu bar companion for instant access without opening the main window
 
 🌐 [Project website](https://www.arturocarreterocalvo.com/openclient-llm/)
 
@@ -43,6 +78,7 @@ Native Apple client for OpenAI-compatible LLM servers. Works out of the box with
 | Keychain | Secure storage |
 | SwiftLint | Code linting |
 | SF Symbols | Iconography |
+| Votice | In-app feedback & feature requests |
 
 This project was developed entirely with Xcode, Visual Studio Code and GitHub Copilot (with Claude Opus / Sonnet 4.6).
 

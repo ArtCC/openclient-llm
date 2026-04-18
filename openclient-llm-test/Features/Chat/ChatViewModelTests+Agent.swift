@@ -54,11 +54,11 @@ extension ChatViewModelTests {
         XCTAssertEqual(lastAssistant?.content, "Agent answer")
     }
 
-    func test_sendMessage_withFunctionCallingModel_webSearchDisabled_usesRegularStreaming() async throws {
-        // Given
+    func test_sendMessage_withFunctionCallingModel_webSearchDisabled_usesAgentStreaming() async throws {
+        // Given — model has functionCalling; agent mode is entered regardless of web search toggle
         let mockAgent = MockAgentStreamUseCase()
-        mockAgent.events = [.token("Should not appear")]
-        mockStreamMessage.chunks = [.token("Regular response")]
+        mockAgent.events = [.token("Agent answer")]
+        mockStreamMessage.chunks = [.token("Should not appear")]
         let modelWithFunctionCalling = LLMModel(id: "gpt-4", capabilities: [.functionCalling])
         mockFetchModels.result = .success([modelWithFunctionCalling])
 
@@ -84,7 +84,7 @@ extension ChatViewModelTests {
         sutWithAgent.send(.sendTapped)
         try await Task.sleep(for: .milliseconds(200))
 
-        // Then
+        // Then — agent is used because model has functionCalling, even without web search
         guard case .loaded(let loadedState) = sutWithAgent.state else {
             XCTFail("Expected loaded state")
             return
@@ -92,7 +92,7 @@ extension ChatViewModelTests {
         let assistantMessages = loadedState.messages.filter { $0.role == .assistant }
         XCTAssertFalse(assistantMessages.isEmpty)
         let lastAssistant = assistantMessages.last
-        XCTAssertEqual(lastAssistant?.content, "Regular response")
+        XCTAssertEqual(lastAssistant?.content, "Agent answer")
     }
 
     func test_sendMessage_noCapabilitiesModel_andWebSearch_usesRegularStreaming() async throws {

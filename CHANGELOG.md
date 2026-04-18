@@ -7,6 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.2.0-build-31] - 2026-04-18
+
+### Added
+
+- **Model detail sheet** — new `ModelDetailView` sheet accessible via an ⓘ button on each row in the Models screen; displays context window (max input / max output tokens), pricing (input / output cost per million tokens), provider, mode, and supported modalities; sections with no data are hidden automatically
+- **Estimated conversation cost** — new section in the Chat Model Parameters sheet showing the accumulated estimated cost of the current conversation, calculated from token usage (`promptTokens × inputCostPerToken + completionTokens × outputCostPerToken`) across all messages; hidden when pricing data is unavailable
+- `LLMModel` extended with four new optional fields: `maxInputTokens`, `maxOutputTokens`, `inputCostPerToken`, `outputCostPerToken`
+- `ModelsRepository` and `FetchModelsUseCase` now propagate cost and context-window data from `GET /model/info` into every `LLMModel` instance
+- Pinch-to-zoom gesture in `ImagePreviewView` (iOS/iPadOS): supports magnification up to 6×; double-tap resets zoom to 1×
+- **Memory list** — new "Memory" section in Settings (Personalization) showing all saved memory items; each item displays its content, an enabled/disabled toggle, a source badge (You / Model), and creation date; users can add, edit, delete, and toggle individual items
+- `MemoryItem` — new Codable + Sendable model with `id`, `content`, `isEnabled`, `createdAt`, and `source` (`.user` / `.model`) fields
+- `MemoryManager` — new manager for memory CRUD; stores items in `Memory.json` synced to iCloud Documents via `CloudSyncManager`, falling back to `UserDefaults`; posts `memoryDidChangeExternallyNotification` on cloud updates
+- `GetMemoryContextUseCase` — builds a `## Memory` block from all enabled items and injects it into every conversation's system prompt alongside the existing user profile context
+- `save_memory` tool — new `ChatToolProtocol` tool registered in the agentic loop; when called by the model, creates a `MemoryItem` with `source: .model` and saves it to the memory store, making it visible immediately in the Memory settings screen
+- `delete_memory` tool — new `ChatToolProtocol` tool registered in the agentic loop; when called by the model, finds the best-matching memory item by content (exact then substring, case-insensitive) and removes it; notifies the UI to refresh immediately
+- `get_current_datetime` tool — new `ChatToolProtocol` tool registered in the agentic loop; returns the current date, time, weekday, and timezone from the user's device using `Locale.current` and `TimeZone.current`; no external APIs required
+- `MemoryView` / `MemoryItemEditorView` — SwiftUI views for browsing and editing memory items (list, empty state, add/edit sheet, source badge, swipe-to-delete on iOS, inline buttons on macOS)
+- `MemoryViewModel` — `@Observable @MainActor` ViewModel backing `MemoryView`; observes iCloud change notifications to keep the list in sync across devices
+
+### Changed
+
+- `UserProfileManager` migrated from `UserDefaults` blob to a `UserProfile.json` file in `DocumentDirectory`; one-time migration reads and removes the legacy `userProfile_data` key on first launch
+- `MemoryManager` migrated from `UserDefaults` blob to a `Memory.json` file in `DocumentDirectory`; one-time migration reads and removes the legacy `memory_items` key on first launch
+- Thinking disclosure in assistant messages now persists the user's open/close preference via `@AppStorage`; the block opens automatically during streaming and restores the saved preference once streaming ends
+- "Rate the app" action in Settings now opens the App Store write-review sheet directly via `itms-apps://` URL on both iOS and macOS, replacing the unreliable `AppStore.requestReview` API
+- `buildEffectiveSystemPrompt` now accepts a third `memoryContext` parameter; memory block is inserted between user profile context and the conversation system prompt
+- `ToolRegistry.default()` now accepts a `webSearchEnabled` parameter; `save_memory`, `delete_memory`, and `get_current_datetime` are always registered; `web_search` is only included when the web search toggle is active
+- The agentic loop is now entered whenever the selected model has `.functionCalling` capability, regardless of whether web search is enabled; previously it required web search to be active
+- Agent system prompt updated to document the `save_memory`, `delete_memory`, and `get_current_datetime` tools; `web_search` instructions are only appended when the toggle is on
+- `LLMModel.Capability` gains a new `.text` case used as a fallback badge when a model exposes no specific capabilities; shown in both the model row and the detail sheet
+- `CloudSyncManager` protocol and implementation extended with `saveMemoryToCloud`, `loadMemoryFromCloud`, and `deleteMemoryFromCloud` backed by `Documents/Memory.json` in the iCloud container
+- `ResetAppDataUseCase` now calls `memoryManager.deleteAll()` to wipe memory items on full data reset
+- Agent system prompt updated to document the `save_memory` tool and when the model should use it
+
+### Fixed
+
+- Trailing padding in assistant chat messages reduced; `Spacer(minLength: 40)` replaced with `Spacer(minLength: 0)` so content extends to the 16 pt container margin
+- Bottom padding added to the messages list so the last message breathes above the input bar
+
+## [1.1.1-build-26] - 2026-04-16
+
+### Added
+
+- `AttachmentRepository` — new repository responsible for saving, loading, and deleting attachment files to/from disk (`Documents/Attachments/<conversationId>/<attachmentId>.<ext>`); large binary data is no longer stored inline in conversation JSON
+- `AttachmentMigrationUseCase` — one-time migration that reads existing conversation JSON files, extracts base64-encoded attachment data, writes each payload to disk, and replaces the inline `data` field with a `fileRelativePath` reference; guarded by a `UserDefaults` flag so it only runs once
+- `ExportConversationUseCase` re-embeds attachment binary data as base64 in exported JSON for portability across devices
+
+### Changed
+
+- `ChatMessage.Attachment` persists a `fileRelativePath` instead of raw `Data`; `init(from:)` is tolerant of legacy JSON (missing `fileRelativePath`) to support in-place migration
+- `CloudSyncManager` copies attachment files to the iCloud Documents container alongside conversation JSON; deletion of a conversation or all data also removes the corresponding attachment folders from iCloud
+- `LaunchViewModel` runs `AttachmentMigrationUseCase` at startup before onboarding check
+
+### Fixed
+
+- Chat scroll system rewritten: replaced dual-API conflict (`ScrollViewReader` + `.scrollPosition`) with a single `ScrollPosition` instance, eliminating white-screen flashes and erratic jumps caused by iOS reconciling two competing scroll authorities
+- Auto-scroll during streaming now throttled to at most one update every 80 ms (down from ~50+ per second), preventing layout thrashing and mid-stream blank frames
+- `onChange(of: messages.count)` no longer forces scroll-to-bottom when the user has scrolled up to read previous messages — scroll is only triggered when the user is already near the bottom
+- Loading a conversation no longer produces a double-scroll bounce; a single `.task(id: conversation?.id)` trigger replaced the previous `scrollToBottomTrigger` toggle + `.task` race condition
+- Keyboard-show handler migrated from `DispatchQueue.main.asyncAfter` to `Task { @MainActor in }`, making it safe within Swift Concurrency's structured task lifecycle
+- `MarkdownParser.parse()` result cached in `@State` on `MessageBubbleView` and updated only when `message.content` changes, removing the repeated O(n²) re-parse on every SwiftUI render pass during streaming
+
 ## [1.1.1-build-25] - 2026-04-13
 
 ### Added

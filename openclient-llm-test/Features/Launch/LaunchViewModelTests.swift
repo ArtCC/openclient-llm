@@ -16,6 +16,7 @@ final class LaunchViewModelTests: XCTestCase {
     private var sut: LaunchViewModel!
     private var mockUseCase: MockCheckOnboardingUseCase!
     private var mockResetAppData: MockResetAppDataUseCase!
+    private var mockAttachmentMigration: MockAttachmentMigrationUseCase!
 
     // MARK: - Setup
 
@@ -24,9 +25,11 @@ final class LaunchViewModelTests: XCTestCase {
 
         mockUseCase = MockCheckOnboardingUseCase()
         mockResetAppData = MockResetAppDataUseCase()
+        mockAttachmentMigration = MockAttachmentMigrationUseCase()
         sut = LaunchViewModel(
             checkOnboardingUseCase: mockUseCase,
-            resetAppDataUseCase: mockResetAppData
+            resetAppDataUseCase: mockResetAppData,
+            attachmentMigrationUseCase: mockAttachmentMigration
         )
     }
 
@@ -34,6 +37,7 @@ final class LaunchViewModelTests: XCTestCase {
         sut = nil
         mockUseCase = nil
         mockResetAppData = nil
+        mockAttachmentMigration = nil
 
         try await super.tearDown()
     }
@@ -94,7 +98,8 @@ final class LaunchViewModelTests: XCTestCase {
         sut = LaunchViewModel(
             state: .onboarding,
             checkOnboardingUseCase: mockUseCase,
-            resetAppDataUseCase: mockResetAppData
+            resetAppDataUseCase: mockResetAppData,
+            attachmentMigrationUseCase: mockAttachmentMigration
         )
 
         // When
@@ -102,5 +107,16 @@ final class LaunchViewModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sut.state, .home)
+    }
+
+    func test_send_viewAppeared_triggersAttachmentMigration() {
+        // Given
+        mockUseCase.result = true
+
+        // When
+        sut.send(.viewAppeared)
+
+        // Then
+        XCTAssertEqual(mockAttachmentMigration.executeCallCount, 1)
     }
 }

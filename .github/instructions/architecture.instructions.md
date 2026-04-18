@@ -136,6 +136,7 @@ extension ChatMessage: CustomStringConvertible {
 ### General Rules
 
 - Do **not** initialize stored optional properties with `= nil` — optionals are already `nil` by default. Use `var foo: String?` instead of `var foo: String? = nil`. Note: default values in function/init parameters (`func bar(baz: String? = nil)`) are intentional and required to make the parameter omissible at the call site.
+- **Never duplicate code** — follow the DRY (Don't Repeat Yourself) principle throughout the codebase. If the same logic or UI appears in more than one place, extract it into a shared function, computed property, or type. This applies especially when differentiating between iOS and macOS with `#if os(iOS)` / `#if os(macOS)`: always extract any sub-view or logic that is identical across platforms into a shared helper, and only branch platform-specifically for what truly differs.
 - Use Swift strict concurrency (`Sendable`, `@MainActor` where needed)
 - Prefer `async/await` over Combine for async operations
 - Use `@Observable` macro (Observation framework) — never use `ObservableObject` or `@Published`

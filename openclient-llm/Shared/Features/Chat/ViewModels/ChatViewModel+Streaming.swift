@@ -72,12 +72,31 @@ extension ChatViewModel {
             }
         case .image(let imageData):
             if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
-                let attachment = ChatMessage.Attachment(
+                let folderId = state.conversation?.id ?? state.pendingSessionId
+                let attachmentId = UUID()
+                let placeholder = ChatMessage.Attachment(
+                    id: attachmentId,
                     type: .image,
                     fileName: String(localized: "Generated Image"),
-                    data: imageData
+                    mimeType: "image/png",
+                    fileRelativePath: ""
                 )
-                state.messages[index].attachments.append(attachment)
+                if let relativePath = try? attachmentRepository.save(
+                    data: imageData,
+                    for: placeholder,
+                    conversationId: folderId
+                ) {
+                    let attachment = ChatMessage.Attachment(
+                        id: attachmentId,
+                        type: .image,
+                        fileName: String(localized: "Generated Image"),
+                        mimeType: "image/png",
+                        fileRelativePath: relativePath
+                    )
+                    state.messages[index].attachments.append(attachment)
+                } else {
+                    LogManager.error("applyStreamChunk: failed to save generated image")
+                }
             }
         }
     }
@@ -91,8 +110,10 @@ private extension ChatViewModel {
         systemPrompt: String
     ) -> [ChatMessage] {
         let profileContext = getUserProfileContextUseCase.execute()
+        let memoryContext = getMemoryContextUseCase.execute()
         let effectiveSystemPrompt = buildEffectiveSystemPrompt(
             profileContext: profileContext,
+            memoryContext: memoryContext,
             conversationSystemPrompt: systemPrompt
         )
         var result = messages

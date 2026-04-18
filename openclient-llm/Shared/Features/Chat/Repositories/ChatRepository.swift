@@ -39,11 +39,16 @@ struct ChatRepository: ChatRepositoryProtocol {
     // MARK: - Properties
 
     private let apiClient: APIClientProtocol
+    private let attachmentRepository: AttachmentRepositoryProtocol
 
     // MARK: - Init
 
-    init(apiClient: APIClientProtocol = APIClient()) {
+    init(
+        apiClient: APIClientProtocol = APIClient(),
+        attachmentRepository: AttachmentRepositoryProtocol = AttachmentRepository()
+    ) {
         self.apiClient = apiClient
+        self.attachmentRepository = attachmentRepository
     }
 
     // MARK: - Public
@@ -238,13 +243,16 @@ private extension ChatRepository {
         }
 
         for attachment in message.attachments {
+            guard let data = try? attachmentRepository.load(attachment: attachment) else {
+                LogManager.warning("buildCompletionMessage: could not load attachment \(attachment.id) — skipping")
+                continue
+            }
             switch attachment.type {
             case .image:
-                let base64 = attachment.data.base64EncodedString()
-                let mimeType = imageMimeType(for: attachment.fileName)
-                parts.append(.imageBase64(base64, mimeType: mimeType))
+                let base64 = data.base64EncodedString()
+                parts.append(.imageBase64(base64, mimeType: attachment.mimeType))
             case .pdf:
-                let pdfText = extractPDFText(from: attachment.data)
+                let pdfText = extractPDFText(from: data)
                 if !pdfText.isEmpty {
                     parts.append(.text("[Document: \(attachment.fileName)]\n\(pdfText)"))
                 }
@@ -255,16 +263,6 @@ private extension ChatRepository {
             role: message.role.rawValue,
             content: .multimodal(parts)
         )
-    }
-
-    func imageMimeType(for fileName: String) -> String {
-        let ext = (fileName as NSString).pathExtension.lowercased()
-        switch ext {
-        case "png": return "image/png"
-        case "gif": return "image/gif"
-        case "webp": return "image/webp"
-        default: return "image/jpeg"
-        }
     }
 
     func extractPDFText(from data: Data) -> String {

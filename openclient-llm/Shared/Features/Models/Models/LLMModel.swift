@@ -17,6 +17,10 @@ struct LLMModel: Identifiable, Equatable, Sendable {
     var provider: Provider
     var mode: Mode
     var providerName: String
+    var maxInputTokens: Int?
+    var maxOutputTokens: Int?
+    var inputCostPerToken: Double?
+    var outputCostPerToken: Double?
 
     // MARK: - Init
 
@@ -26,7 +30,11 @@ struct LLMModel: Identifiable, Equatable, Sendable {
         capabilities: [Capability] = [],
         provider: Provider = .cloud,
         mode: Mode = .chat,
-        providerName: String = ""
+        providerName: String = "",
+        maxInputTokens: Int? = nil,
+        maxOutputTokens: Int? = nil,
+        inputCostPerToken: Double? = nil,
+        outputCostPerToken: Double? = nil
     ) {
         self.id = id
         self.ownedBy = ownedBy
@@ -34,6 +42,10 @@ struct LLMModel: Identifiable, Equatable, Sendable {
         self.provider = provider
         self.mode = mode
         self.providerName = providerName
+        self.maxInputTokens = maxInputTokens
+        self.maxOutputTokens = maxOutputTokens
+        self.inputCostPerToken = inputCostPerToken
+        self.outputCostPerToken = outputCostPerToken
     }
 
     var logoImageName: String? {
@@ -160,6 +172,7 @@ extension LLMModel {
 
 extension LLMModel {
     enum Capability: String, Equatable, Sendable, CaseIterable {
+        case text
         case vision
         case functionCalling
         case parallelFunctionCalling
@@ -173,6 +186,8 @@ extension LLMModel {
 
         var label: String {
             switch self {
+            case .text:
+                String(localized: "tag.text")
             case .vision:
                 String(localized: "tag.vision")
             case .functionCalling:
@@ -194,6 +209,7 @@ extension LLMModel {
 
         var icon: String {
             switch self {
+            case .text: "text.bubble"
             case .vision: "eye"
             case .functionCalling: "wrench.and.screwdriver"
             case .parallelFunctionCalling: "square.stack.3d.up"
@@ -207,6 +223,7 @@ extension LLMModel {
 
         var color: Color {
             switch self {
+            case .text: .secondary
             case .vision: .purple
             case .functionCalling: .orange
             case .parallelFunctionCalling: .cyan

@@ -22,6 +22,7 @@ struct SettingsView: View {
     @State private var isAPIKeyVisible = false
     @State private var isShowingVotice = false
     @State private var isShowingUserProfile = false
+    @State private var isShowingMemory = false
     @State private var showResetAlert = false
     @State private var presentedWebURL: WebDestination?
     @FocusState private var focusedField: Field?
@@ -31,13 +32,13 @@ struct SettingsView: View {
     // MARK: - View
 
     var body: some View {
-        #if os(iOS)
+#if os(iOS)
         NavigationStack {
             settingsContent
         }
-        #else
+#else
         settingsContent
-        #endif
+#endif
     }
 }
 
@@ -64,6 +65,12 @@ private extension SettingsView {
         }
         .sheet(isPresented: $isShowingUserProfile) {
             UserProfileView()
+        }
+        .sheet(isPresented: $isShowingMemory) {
+            MemoryView()
+#if os(macOS)
+                .frame(width: 500, height: 460)
+#endif
         }
         .alert(
             String(localized: "iCloud Sync Conflict"),
@@ -381,7 +388,7 @@ private extension SettingsView {
             case .denied:
                 Label(String(localized: "Notifications disabled"), systemImage: "bell.slash")
                     .foregroundStyle(.secondary)
-                #if os(iOS)
+#if os(iOS)
                 Button {
                     guard let url = URL(string: UIApplication.openNotificationSettingsURLString) else { return }
                     UIApplication.shared.open(url)
@@ -389,7 +396,7 @@ private extension SettingsView {
                     Label(String(localized: "Open Settings"), systemImage: "arrow.up.right.square")
                 }
                 .buttonStyle(.plain)
-                #endif
+#endif
             case .notDetermined:
                 Label(String(localized: "Notifications not authorized"), systemImage: "bell.badge.slash")
                     .foregroundStyle(.secondary)
@@ -415,10 +422,17 @@ private extension SettingsView {
                 Label(String(localized: "Personal Context"), systemImage: "person.text.rectangle")
             }
             .buttonStyle(.plain)
+
+            Button {
+                isShowingMemory = true
+            } label: {
+                Label(String(localized: "Memory"), systemImage: "brain.head.profile")
+            }
+            .buttonStyle(.plain)
         } header: {
             Text(String(localized: "Personalization"))
         } footer: {
-            Text(String(localized: "Configure your name and personal context to personalise model responses."))
+            Text(String(localized: "Configure your personal context and memory items to personalise model responses."))
         }
     }
 
