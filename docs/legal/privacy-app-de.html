@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Datenschutzerklärung — OpenClient</title>
+  <meta name="description"
+    content="Datenschutzerklärung von OpenClient, nativer Apple-Client für Ollama, LiteLLM und jeden OpenAI-kompatiblen Server.">
+  <link rel="icon" type="image/png" href="../assets/icon_radius.png">
+  <link rel="apple-touch-icon" href="../assets/icon_radius.png">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .container {
+      padding-top: 24px;
+      padding-bottom: 24px;
+    }
+
+    .legal-updated {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container legal">
+    <div class="legal-content">
+      <h2>Zusammenfassung</h2>
+      <p>OpenClient <strong>sammelt, speichert, überträgt oder teilt keine personenbezogenen Daten</strong> mit dem
+        Entwickler.
+        Die App läuft vollständig auf Ihrem Gerät und kommuniziert nur mit dem Server, den Sie konfigurieren. Es werden
+        keine Analysen,
+        Telemetriedaten oder Absturzberichte an den Entwickler gesendet.</p>
+
+      <h2>Kein Entwickler-Backend</h2>
+      <p>OpenClient verfügt über keinen vom Entwickler betriebenen Server, kein Backend, keinen Analysedienst und keine
+        Cloud-Infrastruktur. Es gibt keine Telemetrie, keine Nutzungsverfolgung und keine Absturzberichte, die an den
+        Entwickler gesendet werden. Der Entwickler erhält niemals Daten aus Ihrer Nutzung der App.</p>
+
+      <h2>Lokaler und iCloud-Speicher</h2>
+      <p>Alle App-Daten werden auf Ihrem Gerät oder in Ihrem persönlichen iCloud-Konto gespeichert. Der Entwickler hat
+        keinen Zugriff darauf. Im Einzelnen:</p>
+      <ul>
+        <li><strong>Gesprächsverlauf</strong> — lokal im Dokumentenverzeichnis der App gespeichert. Wenn iCloud Drive
+          aktiviert ist, werden Gespräche über Ihren persönlichen iCloud Drive-Speicher zwischen Ihren Apple-Geräten
+          synchronisiert.</li>
+        <li><strong>Einstellungen und Benutzerprofil</strong> — lokal in UserDefaults gespeichert. Wenn iCloud aktiviert
+          ist, werden Profildaten über den iCloud Key-Value Store synchronisiert, der für Ihre Apple-ID privat ist.</li>
+        <li><strong>Speicherelemente</strong> — lokal in UserDefaults gespeichert. Wenn iCloud aktiviert ist, werden
+          Speicherelemente über den iCloud Key-Value Store synchronisiert, der für Ihre Apple-ID privat ist. Dazu
+          gehören Elemente, die während Gesprächen automatisch von Modellen erstellt werden, wenn
+          Agenten-Speicherwerkzeuge aufgerufen werden.</li>
+        <li><strong>API-Schlüssel und Server-URL</strong> — ausschließlich im Geräteschlüsselbund über das iOS/macOS
+          Security-Framework gespeichert. Werden niemals an den Entwickler übertragen.</li>
+        <li><strong>Spotlight-Index</strong> — Gesprächstitel und Nachrichtenausschnitte werden lokal in Spotlight
+          indiziert, um die gerätebasierte Suche zu ermöglichen. Diese Daten verlassen Ihr Gerät nicht.</li>
+      </ul>
+      <p>Nichts verlässt Ihr Gerät außer den Anfragen, die Sie explizit an den von Ihnen konfigurierten Server senden.
+      </p>
+
+      <h2>Serverkommunikation</h2>
+      <p>Die App verbindet sich ausschließlich mit der Server-URL, die Sie angeben — eine Ollama-Instanz, einen
+        LiteLLM-Proxy oder ein anderes OpenAI-kompatibles Backend. Alle Anfragen werden direkt von Ihrem Gerät an Ihren
+        Server gesendet. Dazu gehören:</p>
+      <ul>
+        <li>Chat-Nachrichten und Gesprächskontext</li>
+        <li>Bilder und Dokumente, die Nachrichten angehängt werden (Vision)</li>
+        <li>Audiodaten für die Sprachtranskription (Speech-to-Text über <code>/v1/audio/transcriptions</code>)</li>
+        <li>Text für die Sprachsynthese (Text-to-Speech über <code>/v1/audio/speech</code>)</li>
+        <li>Eingabeaufforderungen für die Bildgenerierung (<code>/v1/images/generations</code>)</li>
+        <li>Websuchanfragen, die Ihr LiteLLM-Server an den serverseitig konfigurierten Suchanbieter weiterleitet (z. B.
+          Brave, Tavily, DuckDuckGo). Die App kontaktiert Suchanbieter niemals direkt.</li>
+        <li>Tool-Call-Eingaben und -Ausgaben, wenn der Agentenmodus aktiv ist</li>
+      </ul>
+      <p>Der Entwickler hat keinen Zugang zu, kein Wissen über und keine Beteiligung an dieser Kommunikation.</p>
+
+      <h2>Geteilte und importierte Inhalte</h2>
+      <p>Inhalte, die über die Erweiterung „Teilen", das benutzerdefinierte URL-Schema (<code>openclient://</code>),
+        Drag &amp; Drop oder Apple Kurzbefehle empfangen werden, werden vollständig auf Ihrem Gerät verarbeitet und nur
+        an Ihren konfigurierten Server gesendet. Der Entwickler empfängt keine geteilten Inhalte und hat keinen Zugriff
+        darauf.</p>
+
+      <h2>Keine Drittanbieter-SDKs oder Analysen</h2>
+      <p>OpenClient hat <strong>keinerlei externe Abhängigkeiten</strong> für seine Laufzeitfunktionalität. Es sind
+        keine Werbenetzwerke, Tracking-Frameworks oder Analyse-SDKs in der App integriert.
+        Das einzige Drittanbieter-Tool, das zur Kompilierzeit verwendet wird, ist <strong>SwiftLint</strong>, ein
+        statisches Code-Analysetool, das während der Kompilierung ausgeführt wird und niemals in der veröffentlichten
+        App enthalten ist.</p>
+      <p>Die App integriert das <strong>Votice SDK</strong> — ein Open-Source-Projekt desselben Autors — ausschließlich
+        um Benutzern zu ermöglichen, Fehlerberichte und Funktionsanfragen über den Einstellungsbildschirm einzureichen.
+        Berichte sind <strong>vollständig anonym</strong>: An eine Einsendung wird keine Benutzeridentität, kein Konto,
+        kein Gerätekennzeichen und keine persönlichen Daten angehängt. Wenn Sie diese Funktion nutzen, wird nur der
+        Text, den Sie freiwillig eingeben, an den Votice-Dienst gesendet. Keine anderen App-Daten (Gespräche,
+        API-Schlüssel, Server-URL, Speicher oder Anhänge) werden jemals an Votice gesendet. Die Nutzung dieser Funktion
+        ist völlig optional.</p>
+
+      <h2>Open Source und überprüfbar</h2>
+      <p>OpenClient ist vollständig Open Source unter der Apache 2.0-Lizenz. Sie können jede Codezeile im <a
+          href="https://github.com/ArtCC/openclient-llm">GitHub-Repository</a> inspizieren, prüfen und verifizieren.
+        Diese Transparenz ermöglicht es Ihnen zu bestätigen, dass keine Datenerfassung stattfindet.</p>
+
+      <h2>Datenschutz für Kinder</h2>
+      <p>Die App sammelt wissentlich keine Informationen von irgendjemandem, einschließlich Kindern unter 13 Jahren. Da
+        überhaupt keine Daten gesammelt werden, besteht kein Risiko, Kinderdaten zu erfassen.</p>
+
+      <h2>Änderungen dieser Richtlinie</h2>
+      <p>Wenn diese Richtlinie aktualisiert wird, werden die Änderungen auf dieser Seite mit einem aktualisierten
+        Überarbeitungsdatum veröffentlicht. Da die App keine Daten sammelt, sind bedeutende Änderungen unwahrscheinlich.
+      </p>
+
+      <h2>Kontakt</h2>
+      <p>Wenn Sie Fragen zu dieser Richtlinie haben, können Sie ein Issue im <a
+          href="https://github.com/ArtCC/openclient-llm/issues">GitHub-Repository</a> öffnen.</p>
+    </div>
+
+    <p class="legal-updated">Zuletzt aktualisiert: 20. April 2026</p>
+  </div>
+</body>
+
+</html>
