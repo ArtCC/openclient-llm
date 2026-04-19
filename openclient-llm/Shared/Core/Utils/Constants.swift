@@ -12,7 +12,7 @@ enum Constants {
     // MARK: - App
 
     enum App {
-        static let appStoreId = "6761379499"
+        static let appStoreId = "id6761379499"
     }
 
     // MARK: - URLs
