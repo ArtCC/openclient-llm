@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>プライバシーポリシー — OpenClient</title>
+  <meta name="description" content="OpenClientのプライバシーポリシー。Ollama、LiteLLM、OpenAI互換サーバー対応のネイティブAppleクライアントです。">
+  <link rel="icon" type="image/png" href="../assets/icon_radius.png">
+  <link rel="apple-touch-icon" href="../assets/icon_radius.png">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .container {
+      padding-top: 24px;
+      padding-bottom: 24px;
+    }
+
+    .legal-updated {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container legal">
+    <div class="legal-content">
+      <h2>概要</h2>
+      <p>OpenClientは開発者に対して<strong>個人データの収集、保存、送信、共有を一切行いません</strong>。
+        アプリはお使いのデバイス上で完全に動作し、設定したサーバーとのみ通信します。開発者に対して分析情報、
+        テレメトリー、クラッシュレポートは送信されません。</p>
+
+      <h2>開発者サーバーなし</h2>
+      <p>
+        OpenClientには、開発者が運営するサーバー、バックエンド、分析サービス、クラウドインフラが存在しません。開発者へのテレメトリー、使用状況の追跡、クラッシュレポートは一切ありません。開発者はアプリの使用状況に関するいかなるデータも受け取りません。
+      </p>
+
+      <h2>ローカルおよびiCloudストレージ</h2>
+      <p>すべてのアプリデータは、お使いのデバイスまたは個人のiCloudアカウントに保存されます。開発者はいずれにもアクセスできません。具体的には：</p>
+      <ul>
+        <li><strong>会話履歴</strong> — アプリのドキュメントディレクトリにローカル保存されます。iCloud Driveが有効な場合、会話は個人のiCloud
+          Driveストレージを通じてAppleデバイス間で同期されます。</li>
+        <li><strong>設定とユーザープロフィール</strong> — UserDefaultsにローカル保存されます。iCloudが有効な場合、プロフィールデータはApple IDに紐付いたプライベートなiCloud
+          Key-Value Storeを通じて同期されます。</li>
+        <li><strong>メモリアイテム</strong> — UserDefaultsにローカル保存されます。iCloudが有効な場合、メモリアイテムはApple IDに紐付いたプライベートなiCloud Key-Value
+          Storeを通じて同期されます。これには、エージェントのメモリツールが呼び出された際に会話中にモデルが自動的に作成したアイテムも含まれます。</li>
+        <li><strong>APIキーとサーバーURL</strong> — iOS/macOSのSecurityフレームワークを通じてデバイスのキーチェーンのみに保存されます。開発者には送信されません。</li>
+        <li><strong>Spotlightインデックス</strong> —
+          デバイス内検索を可能にするため、会話タイトルとメッセージの抜粋がSpotlightにローカルでインデックス化されます。このデータはデバイスから外に出ることはありません。</li>
+      </ul>
+      <p>設定したサーバーに明示的に送信するリクエスト以外、デバイスから何も出ることはありません。</p>
+
+      <h2>サーバーとの通信</h2>
+      <p>
+        アプリはお客様が提供するサーバーURL（OllamaインスタンスやLiteLLMプロキシ、またはOpenAI互換の他のバックエンド）にのみ接続します。すべてのリクエストはお使いのデバイスからサーバーに直接送信されます。これには以下が含まれます：
+      </p>
+      <ul>
+        <li>チャットメッセージと会話コンテキスト</li>
+        <li>メッセージに添付された画像やドキュメント（Vision）</li>
+        <li>音声文字起こし用の音声データ（<code>/v1/audio/transcriptions</code>経由のSpeech-to-Text）</li>
+        <li>音声合成用のテキスト（<code>/v1/audio/speech</code>経由のText-to-Speech）</li>
+        <li>画像生成用のプロンプト（<code>/v1/images/generations</code>）</li>
+        <li>ウェブ検索クエリ（LiteLLMサーバーがサーバー側で設定した検索プロバイダー（Brave、Tavily、DuckDuckGoなど）に転送します。アプリが検索プロバイダーに直接接続することはありません）</li>
+        <li>エージェントモードが有効な場合のツール呼び出しの入出力</li>
+      </ul>
+      <p>開発者はこの通信へのアクセス、知識、関与を一切持ちません。</p>
+
+      <h2>共有およびインポートされたコンテンツ</h2>
+      <p>
+        共有拡張機能、カスタムURLスキーム（<code>openclient://</code>）、ドラッグ＆ドロップ、またはAppleショートカットを通じて受け取ったコンテンツは、デバイス上で完全に処理され、設定されたサーバーにのみ送信されます。開発者は共有されたコンテンツを受け取ることも、アクセスすることもありません。
+      </p>
+
+      <h2>サードパーティSDKや分析なし</h2>
+      <p>OpenClientはランタイム機能において<strong>外部依存関係がゼロ</strong>です。広告ネットワーク、トラッキングフレームワーク、分析SDKはアプリに統合されていません。
+        コンパイル時に使用される唯一のサードパーティツールは<strong>SwiftLint</strong>です。これはビルド中に実行される静的コード解析ツールであり、公開されたアプリのバイナリには含まれません。</p>
+      <p>アプリは同じ作者によるオープンソースプロジェクト<strong>Votice
+          SDK</strong>を統合しています。これは設定画面からバグレポートや機能リクエストを送信するためのみに使用されます。レポートは<strong>完全に匿名</strong>です。ユーザーのID、アカウント、デバイス識別子、個人データは送信に添付されません。この機能を使用する場合、自発的に入力したテキストのみがVoticeサービスに送信されます。他のアプリデータ（会話、APIキー、サーバーURL、メモリ、添付ファイル）がVoticeに送信されることはありません。この機能の使用は完全に任意です。
+      </p>
+
+      <h2>オープンソースと監査可能性</h2>
+      <p>OpenClientはApache 2.0ライセンスの下で完全にオープンソースです。<a
+          href="https://github.com/ArtCC/openclient-llm">GitHubリポジトリ</a>のすべてのコードを検査、監査、確認できます。この透明性により、データ収集が行われていないことを確認できます。
+      </p>
+
+      <h2>子どものプライバシー</h2>
+      <p>アプリは13歳未満の子どもを含む誰からも意図的に情報を収集しません。データは収集されないため、子どものデータが収集されるリスクはありません。</p>
+
+      <h2>このポリシーの変更</h2>
+      <p>このポリシーが更新された場合、変更は更新された改訂日とともにこのページに掲載されます。アプリはデータを収集しないため、重大な変更は起こりにくいです。</p>
+
+      <h2>お問い合わせ</h2>
+      <p>このポリシーについてご質問がある場合は、<a href="https://github.com/ArtCC/openclient-llm/issues">GitHubリポジトリ</a>でissueを開いてください。</p>
+    </div>
+
+    <p class="legal-updated">最終更新日：2026年4月20日</p>
+  </div>
+</body>
+
+</html>

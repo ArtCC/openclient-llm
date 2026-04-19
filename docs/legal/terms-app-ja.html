@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>利用規約 — OpenClient</title>
+  <meta name="description" content="OpenClientの利用規約。Ollama、LiteLLM、OpenAI互換サーバー対応のネイティブAppleクライアントです。">
+  <link rel="icon" type="image/png" href="../assets/icon_radius.png">
+  <link rel="apple-touch-icon" href="../assets/icon_radius.png">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .container {
+      padding-top: 24px;
+      padding-bottom: 24px;
+    }
+
+    .legal-updated {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container legal">
+    <div class="legal-content">
+      <h2>同意</h2>
+      <p>OpenClient（「本アプリ」）をダウンロード、インストール、または使用することで、これらの規約に同意したものとみなされます。同意しない場合は、本アプリを使用しないでください。</p>
+
+      <h2>アプリの機能</h2>
+      <p>OpenClientは、iOS、iPadOS、macOS向けのネイティブAppleクライアントで、お客様が提供するOpenAI互換サーバー（
+        <a href="https://ollama.com" style="color: var(--accent); text-decoration: none;">Ollama</a>、
+        <a href="https://docs.litellm.ai/" style="color: var(--accent); text-decoration: none;">LiteLLM</a>、またはOpenAI
+        APIを実装したその他のセルフホストもしくはサードパーティのバックエンド）に接続します。本アプリでは、テキスト会話、画像・ドキュメント解析（Vision）、音声文字起こし（Speech-to-Text）、テキスト読み上げ、画像生成、ウェブ検索、エージェントツール呼び出しループが利用できます。これらはすべて設定したサーバーのみで処理されます。本アプリはLLMサーバー、AIモデル、検索プロバイダーをホスト、運営、制御しません。
+      </p>
+      <p>追加機能には以下が含まれます：</p>
+      <ul>
+        <li><strong>会話の同期：</strong>会話はデバイスにローカル保存され、iCloudが有効な場合はiCloud Driveを通じてAppleデバイス間で同期されます。</li>
+        <li><strong>メモリ：</strong>永続的なメモリアイテムはiCloud Key-Value
+          Store（利用可能な場合）またはUserDefaultsにローカル保存され、コンテキストとして会話に注入されます。モデルは会話中に自律的にメモリアイテムを作成することもできます。</li>
+        <li>
+          <strong>ウェブ検索：</strong>有効な場合、本アプリはLiteLLMサーバーを経由して、そのサーバーで設定された検索プロバイダー（Brave、Tavily、DuckDuckGoなど）に検索クエリを送信します。本アプリが検索プロバイダーに直接接続することはありません。
+        </li>
+        <li><strong>エージェントモード：</strong>本アプリは、モデルが登録済みツールを呼び出し、最終応答を生成する前にその出力を受け取るエージェントツール呼び出しループをサポートします。</li>
+        <li>
+          <strong>共有拡張機能とショートカット：</strong>本アプリはiOS/iPadOSの共有拡張機能、カスタムURLスキーム（<code>openclient://</code>）、ドラッグ＆ドロップ、またはAppleショートカットを通じて他のアプリからコンテンツを受け取ることができます。
+        </li>
+        <li><strong>Spotlight：</strong>会話タイトルとメッセージの抜粋が素早い検索のためにSpotlightにローカルでインデックス化されます。このデータはデバイスから外に出ることはありません。
+        </li>
+      </ul>
+
+      <h2>無料アプリ、サードパーティAPIコスト</h2>
+      <p>OpenClientは<strong>ダウンロードおよび使用が無料</strong>です。本アプリ自体にサブスクリプション、アプリ内購入、隠れた料金は一切ありません。</p>
+      <p>
+        ただし、OpenAI、Anthropic、Groqなどの有料LLMプロバイダーに本アプリを接続すると、<strong>そのプロバイダーからAPI使用量（消費トークン数、生成画像、文字起こし音声など）に基づいて直接請求が発生する場合があります</strong>。これらのコストは本アプリとは完全に独立しており、OpenClientの開発者はそれらに対して可視性、管理、責任を持ちません。
+      </p>
+      <p>ローカルおよびセルフホストモデル（例：自分のハードウェアで動作するOllama）は通常リクエストごとのコストが発生しませんが、運営するインフラに対する責任はお客様にあります。</p>
+
+      <h2>お客様の責任</h2>
+      <ul>
+        <li><strong>サーバーとインフラ：</strong>ご自身のサーバーおよび接続する上流LLMプロバイダーの設定、保守、セキュリティはお客様の責任です。</li>
+        <li>
+          <strong>APIキーとコスト：</strong>本アプリまたはサーバーに設定するAPIキーはお客様の責任です。LLMプロバイダー（OpenAI、Anthropic、Groq、Ollamaなど）を通じて発生するコストは、オペレーターとして完全にお客様の責任です。OpenClientの開発者はサードパーティサービスの料金に対して関与や責任を持ちません。
+        </li>
+        <li><strong>コンテンツ：</strong>本アプリを通じて送信するコンテンツおよび受け取る回答については、お客様が唯一の責任者です。開発者は会話を監視、モデレート、保存しません。</li>
+        <li>
+          <strong>ウェブ検索コンテンツ：</strong>ウェブ検索機能を通じて送信するクエリおよび結果に基づいて取った行動についてはお客様が責任を負います。結果はLiteLLMサーバーを通じてサードパーティサービスから提供されます。その正確性、可用性、法的コンプライアンスは開発者の管理外です。
+        </li>
+        <li>
+          <strong>メモリ：</strong>モデルが自律的に作成したものを含め、本アプリが保存したメモリアイテムのレビューと管理はお客様の責任です。保存されたコンテンツが期待通りであることを確認するために、設定でメモリを定期的に確認してください。
+        </li>
+        <li>
+          <strong>共有・インポートされたコンテンツ：</strong>共有拡張機能、URLスキーム、ドラッグ＆ドロップ、またはAppleショートカットを通じて本アプリに送信されるコンテンツについてはお客様が責任を負います。
+        </li>
+        <li><strong>コンプライアンス：</strong>適用されるすべての法律および接続するLLMや検索プロバイダーの利用規約に従って本アプリを使用することに同意します。</li>
+      </ul>
+
+      <h2>ローカルデータとiCloud</h2>
+      <p>本アプリはファイルシステムを使用してデバイスにローカルで会話履歴を保存します。デバイスの設定でiCloudが有効な場合、以下のデータがiCloudと同期される場合があります：</p>
+      <ul>
+        <li>会話ファイル（iCloud Drive経由）</li>
+        <li>ユーザープロフィール設定（iCloud Key-Value Store経由）</li>
+        <li>メモリアイテム（iCloud Key-Value Store経由）</li>
+      </ul>
+      <p>
+        iCloud同期が有効かどうかは、デバイスのiCloud設定でコントロールできます。開発者はiCloudアカウントに保存されたデータにはアクセスしません。iCloud同期を無効にすると、データはローカルのみに保存され、デバイス間で共有されません。
+      </p>
+
+      <h2>推定コスト</h2>
+      <p>
+        本アプリは、LiteLLMサーバーが提供するトークン使用量と価格メタデータから計算された会話の推定コストを表示する場合があります。これらの数値はあくまで概算です。実際の料金はLLMプロバイダーまたはAPI使用プランによってのみ決定されます。開発者は表示された推定値と実際の請求との間の相違に対して責任を負いません。
+      </p>
+
+      <h2>オープンソースライセンス</h2>
+      <p>本アプリのソースコードは<a href="https://github.com/ArtCC/openclient-llm/blob/main/LICENSE"
+          style="color: var(--accent); text-decoration: none;">Apache
+          2.0ライセンス</a>の下で利用可能です。そのライセンスの条件に従ってコードを検査、変更、再配布できます。プロジェクトのオープンソースの性質により、これらの規約とプライバシーポリシーのすべての主張を確認できます。
+      </p>
+
+      <h2>保証なし</h2>
+      <p>
+        本アプリは<strong>「現状のまま」</strong>提供され、商品性、特定目的への適合性、非侵害性を含む（ただしこれらに限定されない）明示的または黙示的ないかなる保証もありません。開発者は本アプリがエラーなし、中断なし、またはすべてのサーバー設定と互換性があることを保証しません。
+      </p>
+
+      <h2>責任の制限</h2>
+      <p>
+        適用法の最大限許可される範囲内で、開発者は本アプリの使用から生じる間接的、偶発的、特別、結果的、または懲罰的損害、あるいはデータ、収益、利益の損失について責任を負いません。これには、サードパーティAPIプロバイダーを通じて発生したコスト、サーバーの設定ミスによるデータ損失、不正確な検索結果、またはエージェントモードでモデルが実行した意図しないアクションが含まれますが、これらに限定されません。
+      </p>
+
+      <h2>提携なし</h2>
+      <p>
+        OpenClientは独立したオープンソースプロジェクトです。LiteLLM、OpenAI、Anthropic、Ollama、Groq、Brave、Tavily、Apple、またはアプリやドキュメントに記載されているその他の企業やサービスとは提携、承認、スポンサー関係にありません。
+      </p>
+
+      <h2>規約の変更</h2>
+      <p>これらの規約は随時更新される場合があります。変更は更新された改訂日とともにこのページに掲載されます。変更後も本アプリを継続して使用することは、新しい規約への同意を意味します。</p>
+
+      <h2>お問い合わせ</h2>
+      <p>これらの規約についてご質問がある場合は、<a href="https://github.com/ArtCC/openclient-llm/issues">GitHubリポジトリ</a>でissueを開いてください。</p>
+    </div>
+
+    <p class="legal-updated">最終更新日：2026年4月20日</p>
+  </div>
+</body>
+
+</html>

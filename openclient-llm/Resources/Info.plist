@@ -33,5 +33,16 @@
 	<string>$(VOTICE_API_SECRET)</string>
 	<key>VOTICE_APP_ID</key>
 	<string>$(VOTICE_APP_ID)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.artcc.openclient-llm</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>openclient</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

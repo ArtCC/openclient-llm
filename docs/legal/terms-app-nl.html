@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gebruiksvoorwaarden — OpenClient</title>
+  <meta name="description"
+    content="Gebruiksvoorwaarden van OpenClient, een native Apple-client voor Ollama, LiteLLM en elke OpenAI-compatibele server.">
+  <link rel="icon" type="image/png" href="../assets/icon_radius.png">
+  <link rel="apple-touch-icon" href="../assets/icon_radius.png">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .container {
+      padding-top: 24px;
+      padding-bottom: 24px;
+    }
+
+    .legal-updated {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container legal">
+    <div class="legal-content">
+      <h2>Acceptatie</h2>
+      <p>Door OpenClient («de App») te downloaden, te installeren of te gebruiken, gaat u akkoord met deze voorwaarden.
+        Als u het er niet mee eens bent, gebruik de App dan niet.</p>
+
+      <h2>Wat de app doet</h2>
+      <p>OpenClient is een native Apple-client voor iOS, iPadOS en macOS die verbinding maakt met elke
+        OpenAI-compatibele server die u opgeeft — zoals
+        <a href="https://ollama.com" style="color: var(--accent); text-decoration: none;">Ollama</a>,
+        <a href="https://docs.litellm.ai/" style="color: var(--accent); text-decoration: none;">LiteLLM</a> of een
+        andere zelf-gehoste of externe backend die de OpenAI API implementeert. De App maakt tekstgesprekken, analyse
+        van afbeeldingen en documenten (Vision), spraaktranscriptie (Speech-to-Text), tekst-naar-spraakweergave,
+        afbeeldingsgeneratie, webzoeken en een agentische gereedschapsoproeplus mogelijk — allemaal uitsluitend verwerkt
+        door de server die u configureert. De App host, beheert of beheert geen LLM-server, AI-model of zoekprovider.
+      </p>
+      <p>Aanvullende mogelijkheden zijn onder meer:</p>
+      <ul>
+        <li><strong>Gesprekssynchronisatie:</strong> Gesprekken worden lokaal op uw apparaat opgeslagen en, als iCloud
+          is ingeschakeld, gesynchroniseerd tussen uw Apple-apparaten via iCloud Drive.</li>
+        <li><strong>Geheugen:</strong> Persistente geheugenitems worden opgeslagen in iCloud Key-Value Store (indien
+          beschikbaar) of lokaal in UserDefaults, en als context in gesprekken geïnjecteerd. Modellen kunnen ook
+          autonoom geheugenitems aanmaken tijdens een gesprek.</li>
+        <li><strong>Webzoeken:</strong> Wanneer ingeschakeld, stuurt de App zoekopdrachten via uw LiteLLM-server naar de
+          zoekprovider die op die server is geconfigureerd (bijv. Brave, Tavily, DuckDuckGo). De App neemt nooit
+          rechtstreeks contact op met zoekproviders.</li>
+        <li><strong>Agentmodus:</strong> De App ondersteunt een agentische gereedschapsoproeplus waarbij het model
+          geregistreerde gereedschappen kan aanroepen en hun uitvoer kan ontvangen voordat een definitief antwoord wordt
+          gegenereerd.</li>
+        <li><strong>Deel-extensie en snelkoppelingen:</strong> De App kan inhoud ontvangen van andere apps via de
+          iOS/iPadOS Deel-extensie, een aangepast URL-schema (<code>openclient://</code>), slepen en neerzetten of
+          Apple-snelkoppelingen.</li>
+        <li><strong>Spotlight:</strong> Gesprekstitels en berichtfragmenten worden lokaal geïndexeerd in Spotlight voor
+          snelle zoekopdrachten. Deze gegevens verlaten uw apparaat niet.</li>
+      </ul>
+
+      <h2>Gratis app, kosten van API van derden</h2>
+      <p>OpenClient is <strong>gratis te downloaden en te gebruiken</strong>. De App zelf heeft geen abonnementen,
+        in-app aankopen of verborgen kosten van welke aard dan ook.</p>
+      <p>Het verbinden van de App met een betaalde LLM-provider — zoals OpenAI, Anthropic, Groq of een andere
+        cloudgebaseerde service — <strong>kan echter kosten met zich meebrengen die rechtstreeks door die provider
+          worden gefactureerd</strong> op basis van uw API-gebruik (verbruikte tokens, gegenereerde afbeeldingen,
+        getranscribeerde audio, enz.). Deze kosten zijn volledig onafhankelijk van de App en de ontwikkelaar van
+        OpenClient heeft er geen inzicht in, controle over of verantwoordelijkheid voor.</p>
+      <p>Lokale en zelf-gehoste modellen (bijv. Ollama op uw eigen hardware) brengen doorgaans geen kosten per verzoek
+        met zich mee, maar u bent verantwoordelijk voor de infrastructuur die u beheert.</p>
+
+      <h2>Uw verantwoordelijkheden</h2>
+      <ul>
+        <li><strong>Server en infrastructuur:</strong> U bent verantwoordelijk voor het configureren, onderhouden en
+          beveiligen van uw eigen server en eventuele upstream LLM-providers waarmee verbinding wordt gemaakt.</li>
+        <li><strong>API-sleutels en kosten:</strong> Eventuele API-sleutels die u in de App of op uw server
+          configureert, zijn uw verantwoordelijkheid. Kosten die via LLM-providers (OpenAI, Anthropic, Groq, Ollama,
+          enz.) worden gemaakt, zijn volledig uw verantwoordelijkheid als beheerder. De ontwikkelaar van OpenClient
+          heeft geen betrokkenheid bij of verantwoordelijkheid voor kosten van externe diensten.</li>
+        <li><strong>Inhoud:</strong> U bent als enige verantwoordelijk voor de inhoud die u via de App verzendt en de
+          antwoorden die u ontvangt. De ontwikkelaar bewaakt, modereert of slaat geen gesprekken op.</li>
+        <li><strong>Webzoekinhoud:</strong> U bent verantwoordelijk voor de zoekopdrachten die u via de webzoekfunctie
+          verzendt en voor eventuele acties die u op basis van de resultaten onderneemt. Resultaten worden geleverd door
+          externe diensten via uw LiteLLM-server; de nauwkeurigheid, beschikbaarheid en juridische naleving ervan vallen
+          buiten de controle van de ontwikkelaar.</li>
+        <li><strong>Geheugen:</strong> U bent verantwoordelijk voor het beoordelen en beheren van de geheugenitems die
+          door de App worden opgeslagen, inclusief items die autonoom door modellen zijn aangemaakt. Controleer uw
+          geheugen regelmatig in Instellingen om ervoor te zorgen dat de opgeslagen inhoud aan uw verwachtingen voldoet.
+        </li>
+        <li><strong>Gedeelde en geïmporteerde inhoud:</strong> U bent verantwoordelijk voor eventuele inhoud die via de
+          Deel-extensie, het URL-schema, slepen en neerzetten of Apple-snelkoppelingen naar de App wordt gestuurd.</li>
+        <li><strong>Naleving:</strong> U gaat ermee akkoord de App te gebruiken in overeenstemming met alle
+          toepasselijke wetten en de servicevoorwaarden van elke LLM- of zoekprovider waarmee u verbinding maakt.</li>
+      </ul>
+
+      <h2>Lokale gegevens en iCloud</h2>
+      <p>De App slaat gespreksgeschiedenis lokaal op uw apparaat op via het bestandssysteem. Als iCloud is ingeschakeld
+        in de instellingen van uw apparaat, kunnen de volgende gegevens worden gesynchroniseerd met iCloud:</p>
+      <ul>
+        <li>Gespreksbestanden (via iCloud Drive)</li>
+        <li>Gebruikersprofielinstellingen (via iCloud Key-Value Store)</li>
+        <li>Geheugenitems (via iCloud Key-Value Store)</li>
+      </ul>
+      <p>U bepaalt of iCloud-synchronisatie actief is via de iCloud-instellingen van uw apparaat. De ontwikkelaar heeft
+        geen toegang tot gegevens die in uw iCloud-account zijn opgeslagen. Het uitschakelen van iCloud-synchronisatie
+        betekent dat gegevens alleen lokaal blijven en niet tussen apparaten worden gedeeld.</p>
+
+      <h2>Geschatte kosten</h2>
+      <p>De App kan geschatte gesprekskosten weergeven die worden berekend op basis van tokengebruik en prijsmetadata
+        die uw LiteLLM-server verstrekt. Deze cijfers zijn slechts benaderingen; de werkelijke kosten worden uitsluitend
+        bepaald door uw LLM-provider of API-gebruiksplan. De ontwikkelaar is niet verantwoordelijk voor eventuele
+        discrepanties tussen weergegeven schattingen en werkelijke facturering.</p>
+
+      <h2>Open-sourcelicentie</h2>
+      <p>De broncode van de App is beschikbaar onder de <a
+          href="https://github.com/ArtCC/openclient-llm/blob/main/LICENSE"
+          style="color: var(--accent); text-decoration: none;">Apache 2.0-licentie</a>. U kunt de code inspecteren,
+        wijzigen en herdistribueren onder de voorwaarden van die licentie. De open-sourceaard van het project stelt u in
+        staat alle claims in deze voorwaarden en het Privacybeleid te verifiëren.</p>
+
+      <h2>Geen garantie</h2>
+      <p>De App wordt geleverd <strong>«zoals ze is»</strong> zonder enige garantie, expliciet of impliciet, inclusief
+        maar niet beperkt tot garanties van verkoopbaarheid, geschiktheid voor een bepaald doel of niet-inbreuk. De
+        ontwikkelaar garandeert niet dat de App foutloos, ononderbroken of compatibel is met alle serverconfiguraties.
+      </p>
+
+      <h2>Beperking van aansprakelijkheid</h2>
+      <p>Voor zover maximaal toegestaan door het toepasselijk recht is de ontwikkelaar niet aansprakelijk voor
+        indirecte, incidentele, bijzondere, gevolgschade of punitieve schade, of enig verlies van gegevens, inkomsten of
+        winst, voortvloeiend uit uw gebruik van de App. Dit omvat, zonder beperking, kosten die via externe
+        API-providers zijn gemaakt, gegevensverlies als gevolg van een onjuiste serverconfiguratie, onnauwkeurige
+        zoekresultaten of onbedoelde acties die door modellen in agentmodus worden uitgevoerd.</p>
+
+      <h2>Geen affiliatie</h2>
+      <p>OpenClient is een onafhankelijk open-sourceproject. Het is niet gelieerd aan, goedgekeurd door of gesponsord
+        door LiteLLM, OpenAI, Anthropic, Ollama, Groq, Brave, Tavily, Apple of enig ander bedrijf of dienst die in de
+        App of de documentatie wordt vermeld.</p>
+
+      <h2>Wijzigingen in deze voorwaarden</h2>
+      <p>Deze voorwaarden kunnen van tijd tot tijd worden bijgewerkt. Wijzigingen worden op deze pagina gepubliceerd met
+        een bijgewerkte herzieningsdatum. Voortgezet gebruik van de App na wijzigingen geldt als acceptatie van de
+        nieuwe voorwaarden.</p>
+
+      <h2>Contact</h2>
+      <p>Als u vragen heeft over deze voorwaarden, kunt u een issue openen in de <a
+          href="https://github.com/ArtCC/openclient-llm/issues">GitHub-repository</a>.</p>
+    </div>
+
+    <p class="legal-updated">Laatst bijgewerkt: 20 april 2026</p>
+  </div>
+</body>
+
+</html>

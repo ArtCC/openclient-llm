@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — OpenClient</title>
+  <meta name="description"
+    content="Privacy Policy for OpenClient, a native Apple client for Ollama, LiteLLM, and any OpenAI-compatible server.">
+  <link rel="icon" type="image/png" href="../assets/icon_radius.png">
+  <link rel="apple-touch-icon" href="../assets/icon_radius.png">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .container {
+      padding-top: 24px;
+      padding-bottom: 24px;
+    }
+
+    .legal-updated {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container legal">
+    <div class="legal-content">
+      <h2>Summary</h2>
+      <p>OpenClient does <strong>not collect, store, transmit, or share any personal data</strong> to the developer.
+        The app runs entirely on your device and communicates only with the server you configure. No analytics,
+        telemetry, or crash reporting is sent to the developer.</p>
+
+      <h2>No Developer Backend</h2>
+      <p>OpenClient has no developer-operated server, backend, analytics service, or cloud infrastructure of any
+        kind. There is no telemetry, no usage tracking, and no crash reporting sent to the developer. The developer
+        never receives any data from your use of the app.</p>
+
+      <h2>Local &amp; iCloud Storage</h2>
+      <p>All app data is stored on your device or in your personal iCloud account. The developer has no access to
+        any of it. Specifically:</p>
+      <ul>
+        <li><strong>Conversation history</strong> — stored locally in the app's document directory. If iCloud Drive
+          is enabled, conversations are synced across your Apple devices via your personal iCloud Drive storage.</li>
+        <li><strong>Settings &amp; user profile</strong> — stored locally in UserDefaults. If iCloud is enabled,
+          profile data is synced via iCloud Key-Value Store, private to your Apple ID.</li>
+        <li><strong>Memory items</strong> — stored locally in UserDefaults. If iCloud is enabled, memory items are
+          synced via iCloud Key-Value Store, private to your Apple ID. This includes items created automatically by
+          models during conversations when agent memory tools are invoked.</li>
+        <li><strong>API keys &amp; server URL</strong> — stored exclusively in the device Keychain using the iOS/macOS
+          Security framework. Never transmitted to the developer.</li>
+        <li><strong>Spotlight index</strong> — conversation titles and message excerpts are indexed locally in
+          Spotlight to enable on-device search. This data does not leave your device.</li>
+      </ul>
+      <p>Nothing leaves your device except the requests you explicitly send to the server you configure.</p>
+
+      <h2>Server Communication</h2>
+      <p>The app connects exclusively to the server URL that you provide — an Ollama instance, a LiteLLM proxy, or
+        any other OpenAI-compatible backend. All requests are sent directly from your device to your server. This
+        includes:</p>
+      <ul>
+        <li>Chat messages and conversation context</li>
+        <li>Images and documents you attach to messages (Vision)</li>
+        <li>Audio data for voice transcription (Speech-to-Text via <code>/v1/audio/transcriptions</code>)</li>
+        <li>Text for speech synthesis (Text-to-Speech via <code>/v1/audio/speech</code>)</li>
+        <li>Prompts for image generation (<code>/v1/images/generations</code>)</li>
+        <li>Web search queries, which your LiteLLM server forwards to the search provider you have configured
+          server-side (e.g., Brave, Tavily, DuckDuckGo). The app never contacts search providers directly.</li>
+        <li>Tool call inputs and outputs when agent mode is active</li>
+      </ul>
+      <p>The developer has no access to, knowledge of, or involvement in this communication.</p>
+
+      <h2>Shared &amp; Imported Content</h2>
+      <p>Content received via the Share Extension, custom URL scheme (<code>openclient://</code>), drag and drop,
+        or Apple Shortcuts is processed entirely on your device and sent only to your configured server. The developer
+        does not receive or have access to any shared content.</p>
+
+      <h2>No Third-Party SDKs or Analytics</h2>
+      <p>OpenClient has <strong>zero external dependencies</strong> for runtime functionality. There are no
+        advertising networks, tracking frameworks, or analytics SDKs integrated in the app.
+        The only third-party tool used at build time is <strong>SwiftLint</strong>, a static code analysis tool that
+        runs during compilation and is never included in the shipped app binary.</p>
+      <p>The app integrates the <strong>Votice SDK</strong> — an open-source project by the same author — exclusively
+        to allow users to submit bug reports and feature requests from within the Settings screen. Reports are
+        <strong>fully anonymous</strong>: no user identity, account, device identifier, or personal data is attached
+        to a submission. When you use this feature, only the text you voluntarily enter is sent to the Votice service.
+        No other app data (conversations, API keys, server URL, memory, or attachments) is ever sent to Votice. Use
+        of this feature is entirely optional.
+      </p>
+
+      <h2>Open Source &amp; Auditable</h2>
+      <p>OpenClient is fully open source under the Apache 2.0 license. You can inspect, audit, and verify every
+        line of code in the <a href="https://github.com/ArtCC/openclient-llm">GitHub repository</a>. This transparency
+        ensures you can confirm that no data collection exists.</p>
+
+      <h2>Children's Privacy</h2>
+      <p>The app does not knowingly collect any information from anyone, including children under 13. Since no data is
+        collected at all, there is no risk of collecting children's data.</p>
+
+      <h2>Changes to This Policy</h2>
+      <p>If this policy is updated, the changes will be published on this page with an updated revision date. Since the
+        app collects no data, meaningful changes are unlikely.</p>
+
+      <h2>Contact</h2>
+      <p>If you have questions about this policy, you can open an issue on the <a
+          href="https://github.com/ArtCC/openclient-llm/issues">GitHub repository</a>.</p>
+    </div>
+
+    <p class="legal-updated">Last updated: April 20, 2026</p>
+  </div>
+</body>
+
+</html>

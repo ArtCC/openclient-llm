@@ -27,7 +27,7 @@ final class MenuBarManager: NSObject {
         if let button = item.button {
             button.image = NSImage(
                 systemSymbolName: "message.circle.fill",
-                accessibilityDescription: String(localized: "OpenClient LLM")
+                accessibilityDescription: String(localized: "OpenClient")
             )
             button.action = #selector(togglePopover(_:))
             button.target = self

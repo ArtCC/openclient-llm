@@ -18,9 +18,33 @@ enum Constants {
     // MARK: - URLs
 
     enum URLs {
+        private static let supportedLegalLanguages: Set<String> = [
+            "de",
+            "el",
+            "en",
+            "es",
+            "fr",
+            "ja",
+            "it",
+            "nl",
+            "pt",
+            "sv"
+        ]
+
+        private static var legalLanguageCode: String {
+            let code = Locale.current.language.languageCode?.identifier ?? "en"
+            return supportedLegalLanguages.contains(code) ? code : "en"
+        }
+
+        static var termsOfUse: URL? {
+            URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/legal/terms-app-\(legalLanguageCode)")
+        }
+
+        static var privacyPolicy: URL? {
+            URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/legal/privacy-app-\(legalLanguageCode)")
+        }
+
         static let authorGitHub = URL(string: "https://github.com/ArtCC")
-        static let termsOfUse = URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/terms-app")
         static let serverUrl = "http://localhost:4000"
-        static let privacyPolicy = URL(string: "https://www.arturocarreterocalvo.com/openclient-llm/privacy-app")
     }
 }

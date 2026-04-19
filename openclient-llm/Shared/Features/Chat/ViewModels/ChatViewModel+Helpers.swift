@@ -22,6 +22,13 @@ extension ChatViewModel {
 
         var parts: [String] = []
 
+        parts.append("""
+        Respond in plain, natural language. \
+        Never output raw JSON, XML, or other structured data formats in your responses \
+        unless the user explicitly asks for it \
+        (e.g. "give me a JSON", "format as JSON", "return structured data").
+        """)
+
         if !profile.isEmpty {
             parts.append("""
             The following is background information about the user. \

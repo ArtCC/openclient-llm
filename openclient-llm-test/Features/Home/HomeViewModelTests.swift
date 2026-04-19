@@ -123,4 +123,53 @@ final class HomeViewModelTests: XCTestCase {
 
         XCTAssertNil(sut.pendingConversation)
     }
+
+    // MARK: - shareItemReceived
+
+    func test_send_shareItemReceived_setsPendingConversationWithSelectedModel() {
+        mockGetSelectedModel.modelId = "gpt-4o"
+
+        sut.send(.shareItemReceived)
+
+        XCTAssertEqual(sut.pendingConversation?.modelId, "gpt-4o")
+    }
+
+    func test_send_shareItemReceived_clearsPendingShareFlag() {
+        ShareManager.shared.hasPendingShare = true
+        sut = HomeViewModel(
+            getSelectedModelUseCase: mockGetSelectedModel,
+            loadConversationsUseCase: mockLoadConversations,
+            shareManager: ShareManager.shared
+        )
+
+        sut.send(.shareItemReceived)
+
+        XCTAssertFalse(sut.hasPendingShare)
+        ShareManager.shared.hasPendingShare = false
+    }
+
+    func test_hasPendingShare_reflectsShareManager() {
+        ShareManager.shared.hasPendingShare = true
+
+        XCTAssertTrue(sut.hasPendingShare)
+
+        ShareManager.shared.hasPendingShare = false
+        XCTAssertFalse(sut.hasPendingShare)
+    }
+
+    // MARK: - shareItemConsumed
+
+    func test_send_shareItemConsumed_clearsPendingShareItem() {
+        sut.send(.shareItemReceived)
+
+        sut.send(.shareItemConsumed)
+
+        XCTAssertNil(sut.pendingShareItem)
+    }
+
+    func test_send_shareItemConsumed_whenNilAlready_remainsNil() {
+        sut.send(.shareItemConsumed)
+
+        XCTAssertNil(sut.pendingShareItem)
+    }
 }

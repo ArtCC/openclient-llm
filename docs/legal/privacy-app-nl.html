@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacybeleid — OpenClient</title>
+  <meta name="description"
+    content="Privacybeleid van OpenClient, een native Apple-client voor Ollama, LiteLLM en elke OpenAI-compatibele server.">
+  <link rel="icon" type="image/png" href="../assets/icon_radius.png">
+  <link rel="apple-touch-icon" href="../assets/icon_radius.png">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .container {
+      padding-top: 24px;
+      padding-bottom: 24px;
+    }
+
+    .legal-updated {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container legal">
+    <div class="legal-content">
+      <h2>Samenvatting</h2>
+      <p>OpenClient <strong>verzamelt, slaat op, verzendt noch deelt persoonlijke gegevens</strong> met de ontwikkelaar.
+        De app werkt volledig op uw apparaat en communiceert alleen met de server die u configureert. Er worden geen
+        analyses,
+        telemetrie of crashrapporten naar de ontwikkelaar gestuurd.</p>
+
+      <h2>Geen server van de ontwikkelaar</h2>
+      <p>OpenClient heeft geen server, backend, analyseservice of cloudinfrastructuur die door de ontwikkelaar wordt
+        beheerd. Er is geen telemetrie, gebruiksregistratie of crashrapporten die naar de ontwikkelaar worden gestuurd.
+        De ontwikkelaar ontvangt nooit gegevens over uw gebruik van de app.</p>
+
+      <h2>Lokale opslag en iCloud</h2>
+      <p>Alle app-gegevens worden opgeslagen op uw apparaat of in uw persoonlijke iCloud-account. De ontwikkelaar heeft
+        geen toegang tot beide. Specifiek:</p>
+      <ul>
+        <li><strong>Gespreksgeschiedenis</strong> — lokaal opgeslagen in de documentenmap van de app. Als iCloud Drive
+          is ingeschakeld, worden gesprekken gesynchroniseerd tussen uw Apple-apparaten via uw persoonlijke iCloud
+          Drive-opslag.</li>
+        <li><strong>Instellingen en gebruikersprofiel</strong> — lokaal opgeslagen in UserDefaults. Als iCloud is
+          ingeschakeld, worden profielgegevens gesynchroniseerd via iCloud Key-Value Store, privé voor uw Apple ID.</li>
+        <li><strong>Geheugenitems</strong> — lokaal opgeslagen in UserDefaults. Als iCloud is ingeschakeld, worden
+          geheugenitems gesynchroniseerd via iCloud Key-Value Store, privé voor uw Apple ID. Dit omvat items die
+          automatisch door modellen zijn aangemaakt tijdens gesprekken wanneer de geheugentools van de agent worden
+          aangeroepen.</li>
+        <li><strong>API-sleutels en server-URL</strong> — uitsluitend opgeslagen in de Sleutelhanger van het apparaat
+          via het iOS/macOS Security-framework. Nooit verzonden naar de ontwikkelaar.</li>
+        <li><strong>Spotlight-index</strong> — gesprekstitels en berichtfragmenten worden lokaal geïndexeerd in
+          Spotlight voor zoeken op het apparaat. Deze gegevens verlaten uw apparaat niet.</li>
+      </ul>
+      <p>Niets verlaat uw apparaat, behalve de verzoeken die u expliciet naar de server stuurt die u configureert.</p>
+
+      <h2>Communicatie met de server</h2>
+      <p>De app verbindt uitsluitend met de server-URL die u opgeeft — een Ollama-instantie, een LiteLLM-proxy of een
+        andere OpenAI-compatibele backend. Alle verzoeken worden rechtstreeks van uw apparaat naar uw server verstuurd.
+        Dit omvat:</p>
+      <ul>
+        <li>Chatberichten en gesprekscontext</li>
+        <li>Afbeeldingen en documenten die aan berichten zijn toegevoegd (Vision)</li>
+        <li>Audiogegevens voor spraakomzetting naar tekst (Speech-to-Text via <code>/v1/audio/transcriptions</code>)
+        </li>
+        <li>Tekst voor spraaksynthese (Text-to-Speech via <code>/v1/audio/speech</code>)</li>
+        <li>Prompts voor afbeeldingsgeneratie (<code>/v1/images/generations</code>)</li>
+        <li>Webzoekopdrachten, die uw LiteLLM-server doorstuurt naar de zoekprovider die u aan de serverzijde hebt
+          geconfigureerd (bijv. Brave, Tavily, DuckDuckGo). De app neemt nooit rechtstreeks contact op met
+          zoekproviders.</li>
+        <li>In- en uitvoer van gereedschapsoproepen wanneer de agentmodus actief is</li>
+      </ul>
+      <p>De ontwikkelaar heeft geen toegang tot, kennis van of betrokkenheid bij deze communicatie.</p>
+
+      <h2>Gedeelde en geïmporteerde inhoud</h2>
+      <p>Inhoud die wordt ontvangen via de Deel-extensie, het aangepaste URL-schema (<code>openclient://</code>), slepen
+        en neerzetten of Apple-snelkoppelingen wordt volledig op uw apparaat verwerkt en alleen naar de geconfigureerde
+        server gestuurd. De ontwikkelaar ontvangt geen gedeelde inhoud en heeft er geen toegang toe.</p>
+
+      <h2>Geen SDK's van derden of analyses</h2>
+      <p>OpenClient heeft <strong>nul externe afhankelijkheden</strong> voor zijn runtimefunctionaliteit. Er zijn geen
+        advertentienetwerken, trackingframeworks of analyse-SDK's geïntegreerd in de app.
+        Het enige externe hulpmiddel dat tijdens het compileren wordt gebruikt, is <strong>SwiftLint</strong>, een
+        statisch codeanalyseprogramma dat tijdens het bouwen wordt uitgevoerd en nooit wordt opgenomen in het binaire
+        bestand van de gepubliceerde app.</p>
+      <p>De app integreert de <strong>Votice SDK</strong> — een open-sourceproject van dezelfde auteur — uitsluitend om
+        gebruikers in staat te stellen foutrapporten en functieverzoeken in te dienen vanuit het Instellingen-scherm.
+        Rapporten zijn <strong>volledig anoniem</strong>: er worden geen gebruikersidentiteit, account, apparaat-ID of
+        persoonlijke gegevens bij een indiening gevoegd. Wanneer u deze functie gebruikt, wordt alleen de tekst die u
+        vrijwillig invoert naar de Votice-service gestuurd. Geen andere app-gegevens (gesprekken, API-sleutels,
+        server-URL, geheugen of bijlagen) worden ooit naar Votice gestuurd. Het gebruik van deze functie is volledig
+        optioneel.</p>
+
+      <h2>Open source en controleerbaar</h2>
+      <p>OpenClient is volledig open source onder de Apache 2.0-licentie. U kunt elke regel code in de <a
+          href="https://github.com/ArtCC/openclient-llm">GitHub-repository</a> inspecteren, controleren en verifiëren.
+        Deze transparantie stelt u in staat te bevestigen dat er geen gegevensverzameling plaatsvindt.</p>
+
+      <h2>Privacy van kinderen</h2>
+      <p>De app verzamelt bewust geen informatie van iemand, inclusief kinderen jonger dan 13 jaar. Omdat er geen
+        gegevens worden verzameld, bestaat er geen risico op het verzamelen van gegevens van kinderen.</p>
+
+      <h2>Wijzigingen in dit beleid</h2>
+      <p>Als dit beleid wordt bijgewerkt, worden de wijzigingen op deze pagina gepubliceerd met een bijgewerkte
+        herzieningsdatum. Aangezien de app geen gegevens verzamelt, zijn ingrijpende wijzigingen onwaarschijnlijk.</p>
+
+      <h2>Contact</h2>
+      <p>Als u vragen heeft over dit beleid, kunt u een issue openen in de <a
+          href="https://github.com/ArtCC/openclient-llm/issues">GitHub-repository</a>.</p>
+    </div>
+
+    <p class="legal-updated">Laatst bijgewerkt: 20 april 2026</p>
+  </div>
+</body>
+
+</html>

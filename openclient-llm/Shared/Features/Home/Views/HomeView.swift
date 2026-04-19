@@ -19,7 +19,6 @@ struct HomeView: View {
 #endif
 
 #if os(iOS)
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab: AppTab = .chats
 #endif
 
@@ -62,6 +61,24 @@ struct HomeView: View {
             guard let action else { return }
             handleShortcutAction(action)
             viewModel.send(.shortcutActionConsumed)
+        }
+        .task {
+            guard viewModel.hasPendingShare else { return }
+            try? await Task.sleep(for: .milliseconds(300))
+            viewModel.send(.shareItemReceived)
+        }
+        .onChange(of: viewModel.hasPendingShare) { _, isPending in
+            guard isPending else { return }
+            viewModel.send(.shareItemReceived)
+        }
+        .task {
+            guard viewModel.pendingURLSchemeAction != nil else { return }
+            try? await Task.sleep(for: .milliseconds(300))
+            viewModel.send(.urlSchemeActionReceived)
+        }
+        .onChange(of: viewModel.pendingURLSchemeAction) { _, action in
+            guard action != nil else { return }
+            viewModel.send(.urlSchemeActionReceived)
         }
 #endif
     }
@@ -109,16 +126,11 @@ private extension HomeView {
                 Label(String(localized: "Search"), systemImage: "magnifyingglass")
             }
         }
+        .tabViewStyle(.sidebarAdaptable)
     }
 
     var chatsTab: some View {
-        Group {
-            if horizontalSizeClass == .regular {
-                iPadChatsLayout
-            } else {
-                iPhoneChatsLayout
-            }
-        }
+        iPhoneChatsLayout
     }
 
     var iPhoneChatsLayout: some View {
@@ -129,33 +141,13 @@ private extension HomeView {
             .navigationDestination(item: $selectedConversation) { conversation in
                 ChatView(
                     conversation: conversation,
+                    shareItem: viewModel.pendingShareItem,
+                    urlSchemeText: viewModel.pendingURLSchemeText,
                     onForkCreated: { fork in
                         selectedConversation = fork
-                    }
-                )
-            }
-        }
-    }
-
-    var iPadChatsLayout: some View {
-        NavigationSplitView {
-            ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
-                selectedConversation = conversation
-            }
-            .navigationSplitViewColumnWidth(320)
-        } detail: {
-            if let selectedConversation {
-                ChatView(
-                    conversation: selectedConversation,
-                    onForkCreated: { fork in
-                        self.selectedConversation = fork
-                    }
-                )
-            } else {
-                ContentUnavailableView(
-                    String(localized: "No Conversation Selected"),
-                    systemImage: "bubble.left.and.bubble.right",
-                    description: Text(String(localized: "Select or create a conversation to start chatting"))
+                    },
+                    onShareItemProcessed: { viewModel.send(.shareItemConsumed) },
+                    onURLSchemeTextProcessed: { viewModel.send(.urlSchemeTextConsumed) }
                 )
             }
         }
@@ -232,9 +224,13 @@ private extension HomeView {
                 .navigationDestination(item: $selectedConversation) { conversation in
                     ChatView(
                         conversation: conversation,
+                        shareItem: viewModel.pendingShareItem,
+                        urlSchemeText: viewModel.pendingURLSchemeText,
                         onForkCreated: { fork in
                             selectedConversation = fork
-                        }
+                        },
+                        onShareItemProcessed: { viewModel.send(.shareItemConsumed) },
+                        onURLSchemeTextProcessed: { viewModel.send(.urlSchemeTextConsumed) }
                     )
                 }
             }

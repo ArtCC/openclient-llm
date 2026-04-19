@@ -18,7 +18,7 @@ protocol BackgroundTaskManagerProtocol {
 // MARK: - BackgroundTaskManager
 
 #if os(iOS)
-import UIKit
+import SwiftUI
 
 @MainActor
 final class BackgroundTaskManager: BackgroundTaskManagerProtocol {

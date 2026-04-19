@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service — OpenClient</title>
+  <meta name="description"
+    content="Terms of Service for OpenClient, a native Apple client for Ollama, LiteLLM, and any OpenAI-compatible server.">
+  <link rel="icon" type="image/png" href="../assets/icon_radius.png">
+  <link rel="apple-touch-icon" href="../assets/icon_radius.png">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .container {
+      padding-top: 24px;
+      padding-bottom: 24px;
+    }
+
+    .legal-updated {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container legal">
+    <div class="legal-content">
+      <h2>Acceptance</h2>
+      <p>By downloading, installing, or using OpenClient ("the App"), you agree to these terms. If you do not agree,
+        do not use the App.</p>
+
+      <h2>What the App Does</h2>
+      <p>OpenClient is a native Apple client for iOS, iPadOS, and macOS that connects to any OpenAI-compatible server
+        you provide — such as
+        <a href="https://ollama.com" style="color: var(--accent); text-decoration: none;">Ollama</a>,
+        <a href="https://docs.litellm.ai/" style="color: var(--accent); text-decoration: none;">LiteLLM</a>, or any
+        other self-hosted or third-party backend that implements the OpenAI API. The App enables text conversations,
+        image and document analysis (Vision), voice transcription (Speech-to-Text), text-to-speech playback, image
+        generation, web search, and an agentic tool-calling loop — all processed exclusively by the server you
+        configure. The App does not host, operate, or control any LLM server, AI model, or search provider.
+      </p>
+      <p>Additional capabilities include:</p>
+      <ul>
+        <li><strong>Conversation sync:</strong> Conversations are stored locally on your device and, if iCloud is
+          enabled, synced across your Apple devices via iCloud Drive.</li>
+        <li><strong>Memory:</strong> Persistent memory items are stored in iCloud Key-Value Store (when available) or
+          locally in UserDefaults, and are injected into conversations as context. Models may also create memory items
+          autonomously during a conversation.</li>
+        <li><strong>Web search:</strong> When enabled, the App sends search queries through your LiteLLM server to the
+          search provider configured on that server (e.g., Brave, Tavily, DuckDuckGo). The App never contacts search
+          providers directly.</li>
+        <li><strong>Agent mode:</strong> The App supports an agentic tool-calling loop in which the model may invoke
+          registered tools and receive their outputs before generating a final response.</li>
+        <li><strong>Share Extension &amp; Shortcuts:</strong> The App can receive content from other apps via the
+          iOS/iPadOS Share Extension, a custom URL scheme (<code>openclient://</code>), drag and drop, or Apple
+          Shortcuts.</li>
+        <li><strong>Spotlight:</strong> Conversation titles and message excerpts are indexed locally in Spotlight for
+          quick search. This data does not leave your device.</li>
+      </ul>
+
+      <h2>Free App, Third-Party API Costs</h2>
+      <p>OpenClient is <strong>free to download and use</strong>. The App itself has no subscription, in-app purchases,
+        or hidden fees of any kind.</p>
+      <p>However, connecting the App to a paid LLM provider — such as OpenAI, Anthropic, Groq, or any other
+        cloud-based service — <strong>may incur charges billed directly by that provider</strong> based on your API
+        usage (tokens consumed, images generated, audio transcribed, etc.). These costs are entirely independent of the
+        App and the developer of OpenClient has no visibility into, control over, or liability for them.</p>
+      <p>Local and self-hosted models (e.g., Ollama running on your own hardware) generally involve no per-request
+        cost, but you are responsible for the infrastructure you operate.</p>
+
+      <h2>Your Responsibilities</h2>
+      <ul>
+        <li><strong>Server &amp; infrastructure:</strong> You are responsible for setting up, maintaining, and securing
+          your own server and any upstream LLM providers it connects to.</li>
+        <li><strong>API keys &amp; costs:</strong> Any API keys you configure in the App or on your server are your
+          responsibility. Costs incurred through LLM providers (OpenAI, Anthropic, Groq, Ollama, etc.) are entirely
+          your responsibility as the operator. The developer of OpenClient has no involvement in, or liability for,
+          charges from third-party services.</li>
+        <li><strong>Content:</strong> You are solely responsible for the content you send through the App and the
+          responses you receive. The developer does not monitor, moderate, or store any conversations.</li>
+        <li><strong>Web search content:</strong> You are responsible for the queries you send through the web search
+          feature and any actions taken based on search results. Results are provided by third-party services via your
+          LiteLLM server; their accuracy, availability, and legal compliance are outside the developer's control.</li>
+        <li><strong>Memory:</strong> You are responsible for reviewing and managing memory items stored by the App,
+          including those created autonomously by models. Review your memory regularly in Settings to ensure stored
+          content reflects your expectations.</li>
+        <li><strong>Shared and imported content:</strong> You are responsible for any content sent to the App via the
+          Share Extension, URL scheme, drag and drop, or Apple Shortcuts.</li>
+        <li><strong>Compliance:</strong> You agree to use the App in compliance with all applicable laws and the terms
+          of service of any LLM provider or search provider you connect to.</li>
+      </ul>
+
+      <h2>iCloud &amp; Local Data</h2>
+      <p>The App stores conversation history locally on your device using the file system. If iCloud is enabled in your
+        device settings, the following data may be synced to iCloud:</p>
+      <ul>
+        <li>Conversation files (via iCloud Drive)</li>
+        <li>User profile settings (via iCloud Key-Value Store)</li>
+        <li>Memory items (via iCloud Key-Value Store)</li>
+      </ul>
+      <p>You control whether iCloud sync is active through your device's iCloud settings. The developer does not access
+        any data stored in your iCloud account. Disabling iCloud sync means data remains local only and is not shared
+        across devices.</p>
+
+      <h2>Estimated Costs</h2>
+      <p>The App may display estimated conversation costs calculated from token usage and pricing metadata supplied by
+        your LiteLLM server. These figures are approximations only; actual charges are determined exclusively by your
+        LLM provider or API usage plan. The developer is not responsible for any discrepancies between displayed
+        estimates and actual billing.</p>
+
+      <h2>Open Source License</h2>
+      <p>The App's source code is available under the <a
+          href="https://github.com/ArtCC/openclient-llm/blob/main/LICENSE"
+          style="color: var(--accent); text-decoration: none;">Apache License 2.0</a>. You may inspect, modify, and
+        redistribute the code under the terms of that license. The open-source nature of the project allows you to
+        verify all claims made in these terms and in the Privacy Policy.</p>
+
+      <h2>No Warranty</h2>
+      <p>The App is provided <strong>"as is"</strong> without warranty of any kind, express or implied, including but
+        not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement. The
+        developer does not guarantee that the App will be error-free, uninterrupted, or compatible with every server
+        configuration.</p>
+
+      <h2>Limitation of Liability</h2>
+      <p>To the maximum extent permitted by applicable law, the developer shall not be liable for any indirect,
+        incidental, special, consequential, or punitive damages, or any loss of data, revenue, or profits, arising from
+        your use of the App. This includes, without limitation, costs incurred through third-party API providers, data
+        loss resulting from server misconfiguration, inaccurate search results, or unintended actions performed by
+        models in agent mode.</p>
+
+      <h2>No Affiliation</h2>
+      <p>OpenClient is an independent open-source project. It is not affiliated with, endorsed by, or sponsored by
+        LiteLLM, OpenAI, Anthropic, Ollama, Groq, Brave, Tavily, Apple, or any other company or service mentioned in
+        the App or its documentation.</p>
+
+      <h2>Changes to These Terms</h2>
+      <p>These terms may be updated from time to time. Changes will be published on this page with an updated revision
+        date. Continued use of the App after changes constitutes acceptance of the new terms.</p>
+
+      <h2>Contact</h2>
+      <p>If you have questions about these terms, you can open an issue on the <a
+          href="https://github.com/ArtCC/openclient-llm/issues">GitHub repository</a>.</p>
+    </div>
+
+    <p class="legal-updated">Last updated: April 20, 2026</p>
+  </div>
+</body>
+
+</html>

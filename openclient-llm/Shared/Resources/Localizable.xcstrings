@@ -728,6 +728,71 @@
         }
       }
     },
+    "Add an **Open URLs** action." : {
+      "comment" : "Step 2 of creating a shortcut using the Shortcuts app.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge eine Aktion **URLs öffnen** hinzu."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Προσθέστε μια ενέργεια **Άνοιγμα URL**."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add an **Open URLs** action"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Agregar una acción **Abrir URLs**."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une action **Ouvrir des URL**."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi un’azione **Apri URL**."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**URLを開く**アクションを追加してください。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg een **Open URL's**-actie toe."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar uma ação **Abrir URLs**."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lägg till en åtgärd för **Öppna URL:er**."
+          }
+        }
+      }
+    },
     "Add tag..." : {
       "comment" : "A placeholder for a text field that adds a tag to a conversation.",
       "localizations" : {
@@ -1504,6 +1569,71 @@
         }
       }
     },
+    "Apple Shortcuts" : {
+      "comment" : "A heading for the Apple Shortcuts section.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Kurzbefehle"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Συντομεύσεις Apple"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple Shortcuts"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atajos de Apple"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raccourcis Apple"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scorciatoie Apple"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appleショートカット"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple-snelkoppelingen"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atalhos Apple"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apple-genvägar"
+          }
+        }
+      }
+    },
     "Approximate cost of this conversation based on token usage and model pricing." : {
       "comment" : "A description of the cost of a conversation.",
       "localizations" : {
@@ -1951,6 +2081,71 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Författare"
+          }
+        }
+      }
+    },
+    "Automate OpenClient with the Shortcuts app using the URL scheme actions above." : {
+      "comment" : "A description of how to use the Shortcuts app to open OpenClient.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatisieren Sie OpenClient mit der Kurzbefehle-App unter Verwendung der oben genannten URL-Schema-Aktionen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αυτοματοποιήστε το OpenClient με την εφαρμογή Συντομεύσεις χρησιμοποιώντας τις παραπάνω ενέργειες σχήματος URL."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automate OpenClient with the Shortcuts app using the URL scheme actions above."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatiza OpenClient con la app Atajos usando las acciones del esquema de URL mencionadas arriba."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatisez OpenClient avec l’app Raccourcis en utilisant les actions du schéma d’URL ci-dessus."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatizza OpenClient con l’app Comandi usando le azioni dello schema URL sopra."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "上記のURLスキームアクションを使って、ショートカットアプリでOpenClientを自動化します。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatiseer OpenClient met de Opdrachten-app via de bovenstaande URL-scheme-acties."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatize o OpenClient com a app Atalhos usando as ações do esquema URL acima."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatisera OpenClient med appen Genvägar med hjälp av URL-schemakommandona ovan."
           }
         }
       }
@@ -4083,6 +4278,70 @@
         }
       }
     },
+    "Copy URL" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL kopieren"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αντιγραφή URL"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy URL"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar URL"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copier l’URL"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copia URL"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URLをコピー"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL kopiëren"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar URL"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopiera URL"
+          }
+        }
+      }
+    },
     "Could not connect to the server." : {
       "localizations" : {
         "de" : {
@@ -4335,6 +4594,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kunde inte läsa serverns svar."
+          }
+        }
+      }
+    },
+    "Could not write file to the shared container" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datei konnte nicht im gemeinsamen Container gespeichert werden"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Δεν ήταν δυνατή η εγγραφή του αρχείου στον κοινόχρηστο φάκελο"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not write file to the shared container"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo escribir el archivo en el contenedor compartido"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d’écrire le fichier dans le conteneur partagé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile scrivere il file nel contenitore condiviso"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有コンテナにファイルを書き込めませんでした"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kon bestand niet naar de gedeelde container schrijven"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não foi possível gravar o ficheiro no contentor partilhado"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kunde inte skriva fil till den delade behållaren"
           }
         }
       }
@@ -4922,7 +5245,6 @@
     },
     "Deleted from memory: %@" : {
       "comment" : "A notification that a memory item has been deleted. The argument is the content of the memory item.",
-      "isCommentAutoGenerated" : true,
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6672,6 +6994,71 @@
         }
       }
     },
+    "Enter a URL such as `openclient://chat?text=Summarise this`." : {
+      "comment" : "Step 3 in the process of creating a shortcut to open the OpenClient app with a specific URL.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geben Sie eine URL ein, z. B. `openclient://chat?text=Summarise this`."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Εισαγάγετε μια διεύθυνση URL όπως `openclient://chat?text=Summarise this`"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a URL such as `openclient://chat?text=Summarise this`"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Introduce una URL como `openclient://chat?text=Summarise this`."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entrez une URL telle que `openclient://chat?text=Summarise this`."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inserisci un URL come `openclient://chat?text=Summarise this`"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "`openclient://chat?text=Summarise this` のようなURLを入力してください"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voer een URL in zoals `openclient://chat?text=Summarise this`."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Introduza um URL como `openclient://chat?text=Summarise this`"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ange en URL som `openclient://chat?text=Summarise this`"
+          }
+        }
+      }
+    },
     "Enter your LiteLLM proxy URL, the gateway to any AI model." : {
       "comment" : "A description of the purpose of the server URL field.",
       "localizations" : {
@@ -7317,6 +7704,70 @@
         }
       }
     },
+    "File" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datei"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αρχείο"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archivo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fichier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "File"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイル"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestand"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ficheiro"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fil"
+          }
+        }
+      }
+    },
     "Focused" : {
       "localizations" : {
         "de" : {
@@ -7766,6 +8217,71 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "GPT, Claude, Gemini, Llama med flera via LiteLLM, Ollama, LM Studio..."
+          }
+        }
+      }
+    },
+    "Help" : {
+      "comment" : "The title of the help screen.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hilfe"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Βοήθεια"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Help"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ayuda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aide"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aiuto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ヘルプ"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Help"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajuda"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hjälp"
           }
         }
       }
@@ -9969,6 +10485,70 @@
         }
       }
     },
+    "Message" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nachricht"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Μήνυμα"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mensaje"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Messaggio"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メッセージ"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bericht"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mensagem"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meddelande"
+          }
+        }
+      }
+    },
     "Message..." : {
       "localizations" : {
         "de" : {
@@ -10486,6 +11066,136 @@
         }
       }
     },
+    "New chat with a URL" : {
+      "comment" : "A description of how to open a chat with a URL using the URL scheme.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neuer Chat mit einer URL"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Νέα συνομιλία με URL"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New chat using a URL"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nueva conversación con una URL"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelle conversation avec une URL"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova chat con un URL"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URLで新しいチャットを開始"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuw gesprek met een URL"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova conversa com um URL"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny chatt med en URL"
+          }
+        }
+      }
+    },
+    "New chat with text" : {
+      "comment" : "A description of how to open a new chat with a text message.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neuer Chat mit Text"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Νέα συνομιλία με κείμενο"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New chat with text"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuevo chat con texto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelle conversation avec texte"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova chat con testo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テキストで新しいチャットを開始"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuw gesprek met tekst"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova conversa com texto"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny chatt med text"
+          }
+        }
+      }
+    },
     "New comment" : {
       "localizations" : {
         "de" : {
@@ -10546,6 +11256,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ny kommentar"
+          }
+        }
+      }
+    },
+    "New Conversation" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neues Gespräch"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Νέα Συνομιλία"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New Conversation"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nueva conversación"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelle conversation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nuova conversazione"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新しい会話"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuw gesprek"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova Conversa"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ny konversation"
           }
         }
       }
@@ -10869,70 +11643,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Inga kommentarer än. Var den första att kommentera!"
-          }
-        }
-      }
-    },
-    "No Conversation Selected" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Keine Unterhaltung ausgewählt"
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Δεν έχει επιλεγεί συνομιλία"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No Conversation Selected"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ninguna conversación seleccionada"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune conversation sélectionnée"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nessuna conversazione selezionata"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "会話が選択されていません"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geen gesprek geselecteerd"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nenhuma Conversa Selecionada"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ingen konversation vald"
           }
         }
       }
@@ -12164,6 +12874,200 @@
         }
       }
     },
+    "Only images and PDFs are supported" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur Bilder und PDFs werden unterstützt"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Υποστηρίζονται μόνο εικόνες και αρχεία PDF"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only images and PDFs are supported"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo se admiten imágenes y PDFs"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seules les images et les PDF sont pris en charge"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sono supportate solo immagini e PDF"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像とPDFのみ対応しています"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alleen afbeeldingen en PDF's worden ondersteund"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apenas imagens e PDFs são suportados"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Endast bilder och PDF-filer stöds"
+          }
+        }
+      }
+    },
+    "Open **Shortcuts** and create a new shortcut." : {
+      "comment" : "Step 1 of creating a shortcut using the Shortcuts app.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne **Kurzbefehle** und erstelle einen neuen Kurzbefehl."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Άνοιξε τις **Συντομεύσεις** και δημιούργησε μια νέα συντόμευση."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open **Shortcuts** and create a new shortcut."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre **Atajos** y crea un nuevo atajo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez **Raccourcis** et créez un nouveau raccourci."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri **Comandi** e crea un nuovo comando."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "**ショートカット**を開き、新しいショートカットを作成します。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open **Opdrachten** en maak een nieuwe opdracht aan."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abra as **Atalhos** e crie um novo atalho."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öppna **Genvägar** och skapa en ny genväg."
+          }
+        }
+      }
+    },
+    "Open a conversation by ID" : {
+      "comment" : "A description of how to open a conversation by its ID using the URL scheme.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Unterhaltung über die ID öffnen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Άνοιγμα συνομιλίας με βάση το αναγνωριστικό"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open a conversation by ID"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir una conversación por ID"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir une conversation par ID"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri una conversazione tramite ID"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IDで会話を開く"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open een gesprek via ID"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir uma conversa pelo ID"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öppna en konversation med ID"
+          }
+        }
+      }
+    },
     "Open in App" : {
       "comment" : "A button that opens the app.",
       "localizations" : {
@@ -12359,6 +13263,70 @@
         }
       }
     },
+    "Open the app from Shortcuts, other apps, or a browser using `openclient://`." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnen Sie die App über Kurzbefehle, andere Apps oder einen Browser mit `openclient://`."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Άνοιξε την εφαρμογή από Συντομεύσεις, άλλες εφαρμογές ή πρόγραμμα περιήγησης χρησιμοποιώντας `openclient://`."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the app from Shortcuts, other apps, or a browser using `openclient://`."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre la app desde Atajos, otras apps o un navegador usando `openclient://`."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez l’application depuis Raccourcis, d’autres applications ou un navigateur en utilisant `openclient://`."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri l’app da Comandi, altre app o un browser usando `openclient://`."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ショートカット、他のアプリ、またはブラウザから `openclient://` を使ってアプリを開く"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open de app via Opdrachten, andere apps of een browser met `openclient://`."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abra a app a partir de Atalhos, outras apps ou um navegador usando `openclient://`."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öppna appen från Genvägar, andra appar eller en webbläsare med `openclient://`."
+          }
+        }
+      }
+    },
     "OpenClient" : {
       "comment" : "The name of the app.",
       "localizations" : {
@@ -12489,67 +13457,130 @@
         }
       }
     },
-    "OpenClient LLM" : {
-      "comment" : "Accessibility description of the menu bar icon.",
+    "Opens OpenClient and starts a new conversation." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OpenClient LLM"
+            "value" : "Öffnet OpenClient und startet eine neue Unterhaltung."
           }
         },
         "el" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OpenClient LLM"
+            "value" : "Ανοίγει το OpenClient και ξεκινά μια νέα συνομιλία."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OpenClient LLM menu bar icon"
+            "value" : "Opens OpenClient and starts a new conversation."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OpenClient LLM"
+            "value" : "Abre OpenClient y comienza una nueva conversación."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OpenClient LLM"
+            "value" : "Ouvre OpenClient et démarre une nouvelle conversation."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OpenClient LLM"
+            "value" : "Apre OpenClient e avvia una nuova conversazione."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OpenClient LLM"
+            "value" : "OpenClientを開き、新しい会話を開始します。"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OpenClient LLM"
+            "value" : "Opent OpenClient en start een nieuw gesprek."
           }
         },
         "pt-PT" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OpenClient LLM"
+            "value" : "Abre o OpenClient e inicia uma nova conversa."
           }
         },
         "sv" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OpenClient LLM"
+            "value" : "Öppnar OpenClient och startar en ny konversation."
+          }
+        }
+      }
+    },
+    "Opens OpenClient with the conversation search field active." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnet OpenClient mit aktivem Suchfeld für Konversationen."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ανοίγει το OpenClient με ενεργό το πεδίο αναζήτησης συνομιλίας."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens OpenClient with the conversation search field active."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre OpenClient con el campo de búsqueda de conversación activo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre OpenClient avec le champ de recherche de conversation actif."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apre OpenClient con il campo di ricerca conversazioni attivo."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OpenClientを会話検索フィールドがアクティブな状態で開く。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opent OpenClient met het zoekveld voor gesprekken actief."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre o OpenClient com o campo de pesquisa da conversa ativo."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öppnar OpenClient med sökfältet för konversation aktivt."
           }
         }
       }
@@ -15017,6 +16048,70 @@
         }
       }
     },
+    "Scroll the share sheet and tap **OpenClient**." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blättern Sie im Freigabeblatt und tippen Sie auf **OpenClient**."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Κύλιση στο φύλλο κοινής χρήσης και πατήστε **OpenClient**."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll the share sheet and tap **OpenClient**."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desplaza la hoja para compartir y toca **OpenClient**."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites défiler la feuille de partage et appuyez sur **OpenClient**."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scorri il foglio di condivisione e tocca **OpenClient**."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有シートをスクロールして**OpenClient**をタップしてください。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scroll door het deelvenster en tik op **OpenClient**."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desloque a folha de partilha e toque em **OpenClient**."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bläddra i delningsmenyn och tryck på **OpenClient**."
+          }
+        }
+      }
+    },
     "Search" : {
       "comment" : "A title for a screen that searches for conversations.",
       "localizations" : {
@@ -15078,6 +16173,134 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sökning"
+          }
+        }
+      }
+    },
+    "Search Chats" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chats durchsuchen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αναζήτηση συνομιλιών"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Chats"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar chats"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher dans les discussions"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca chat"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "チャットを検索"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek chats"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar Conversas"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sök chattar"
+          }
+        }
+      }
+    },
+    "Search Conversations" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konversationen suchen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αναζήτηση συνομιλιών"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Conversations"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Buscar conversaciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rechercher des conversations"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca conversazioni"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "会話を検索"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gesprekken zoeken"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar Conversas"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sök konversationer"
           }
         }
       }
@@ -15340,70 +16563,6 @@
         }
       }
     },
-    "Select or create a conversation to start chatting" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wähle eine Unterhaltung oder erstelle eine neue, um zu chatten"
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Επιλέξτε ή δημιουργήστε μια συνομιλία για να ξεκινήσετε τη συζήτηση"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Select or create a conversation to start chatting"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecciona o crea una conversación para empezar a chatear"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sélectionnez ou créez une conversation pour commencer à discuter"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seleziona o crea una conversazione per iniziare a chattare"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "チャットを始める会話を選択または作成してください"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecteer of maak een gesprek om te beginnen met chatten"
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Selecione ou crie uma conversa para começar a conversar"
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Välj eller skapa en konversation för att börja chatta"
-          }
-        }
-      }
-    },
     "Send" : {
       "localizations" : {
         "de" : {
@@ -15464,6 +16623,135 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Skicka"
+          }
+        }
+      }
+    },
+    "Send File to Chat" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datei an Chat senden"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αποστολή αρχείου στη συνομιλία"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send File to Chat"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar archivo al chat"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer le fichier au chat"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia file alla chat"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ファイルをチャットに送信"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestand naar chat verzenden"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar ficheiro para o chat"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skicka fil till chatt"
+          }
+        }
+      }
+    },
+    "Sends an image or PDF to a new OpenClient conversation." : {
+      "comment" : "Description of the intent that sends an image or PDF to a new OpenClient conversation.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sendet ein Bild oder PDF an eine neue OpenClient-Konversation."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Στέλνει μια εικόνα ή PDF σε μια νέα συνομιλία OpenClient."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sends an image or PDF to a new OpenClient conversation"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envía una imagen o PDF a una nueva conversación de OpenClient."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoie une image ou un PDF dans une nouvelle conversation OpenClient."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia un'immagine o un PDF a una nuova conversazione OpenClient."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "画像またはPDFを新しいOpenClientの会話に送信します。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verzendt een afbeelding of PDF naar een nieuw OpenClient-gesprek."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envia uma imagem ou PDF para uma nova conversa OpenClient."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skickar en bild eller PDF till en ny OpenClient-konversation."
           }
         }
       }
@@ -15913,6 +17201,136 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dela"
+          }
+        }
+      }
+    },
+    "Share Extension" : {
+      "comment" : "A section that describes how to use the share extension to share content with the app.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Freigabeerweiterung"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Επέκταση Κοινοποίησης"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share Extension"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extensión para compartir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extension de partage"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estensione di condivisione"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "共有エクステンション"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deeluitbreiding"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Extensão de Partilha"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dela-tillägg"
+          }
+        }
+      }
+    },
+    "Share text, links, images, or PDFs from any app into OpenClient." : {
+      "comment" : "A description of how to use the share extension.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Teile Text, Links, Bilder oder PDFs aus jeder App mit OpenClient."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Μοιραστείτε κείμενο, συνδέσμους, εικόνες ή αρχεία PDF από οποιαδήποτε εφαρμογή στο OpenClient."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share text, links, images, or PDFs from any app to OpenClient."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comparte texto, enlaces, imágenes o PDFs desde cualquier aplicación en OpenClient."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partagez du texte, des liens, des images ou des PDF depuis n’importe quelle application vers OpenClient."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Condividi testo, link, immagini o PDF da qualsiasi app in OpenClient."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任意のアプリからテキスト、リンク、画像、PDFをOpenClientに共有する"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deel tekst, links, afbeeldingen of PDF's vanuit elke app met OpenClient."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Partilhe texto, links, imagens ou PDFs de qualquer aplicação para o OpenClient."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dela text, länkar, bilder eller PDF-filer från vilken app som helst till OpenClient."
           }
         }
       }
@@ -17525,6 +18943,71 @@
         }
       }
     },
+    "Support" : {
+      "comment" : "A heading for the support options in the settings.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Υποστήριξη"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soporte"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Assistance"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supporto"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "サポート"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ondersteuning"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suporte"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support"
+          }
+        }
+      }
+    },
     "Swipe left to remove a tag." : {
       "comment" : "A footer displayed under the list of tags.",
       "localizations" : {
@@ -18046,7 +19529,6 @@
     },
     "tag.text" : {
       "comment" : "Label for a text-related capability of an LLM model.",
-      "isCommentAutoGenerated" : true,
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -18564,6 +20046,70 @@
         }
       }
     },
+    "Tap the Share button in any app." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippen Sie in einer beliebigen App auf die Teilen-Taste."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πατήστε το κουμπί Κοινή χρήση σε οποιαδήποτε εφαρμογή."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the Share button in any app."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca el botón Compartir en cualquier app."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appuyez sur le bouton Partager dans n’importe quelle application."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca il pulsante Condividi in qualsiasi app."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "任意のアプリで共有ボタンをタップしてください。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op de Deel-knop in een app."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque no botão Partilhar em qualquer aplicação."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck på dela-knappen i valfri app."
+          }
+        }
+      }
+    },
     "Temperature" : {
       "localizations" : {
         "de" : {
@@ -18881,6 +20427,70 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Text-till-tal"
+          }
+        }
+      }
+    },
+    "The app opens with a new conversation pre-filled with your content." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die App öffnet sich mit einer neuen Unterhaltung, die mit Ihrem Inhalt vorausgefüllt ist."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Η εφαρμογή ανοίγει με μια νέα συνομιλία προγεμισμένη με το περιεχόμενό σας."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The app opens with a new conversation pre-filled with your content."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La app se abre con una nueva conversación prellenada con tu contenido."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’application s’ouvre avec une nouvelle conversation préremplie avec votre contenu."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L’app si apre con una nuova conversazione precompilata con i tuoi contenuti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "アプリはあなたの内容が事前入力された新しい会話で開きます。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De app opent met een nieuw gesprek vooraf ingevuld met jouw inhoud."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A app abre com uma nova conversa preenchida com o seu conteúdo."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Appen öppnas med en ny konversation förifylld med ditt innehåll."
           }
         }
       }
@@ -20688,6 +22298,71 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ta bort fästning"
+          }
+        }
+      }
+    },
+    "URL Scheme" : {
+      "comment" : "A label that describes the URL scheme feature.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL-Schema"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Σχήμα URL"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL Scheme"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esquema de URL"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schéma d’URL"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schema URL"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URLスキーム"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL-schema"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esquema URL"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "URL-schema"
           }
         }
       }

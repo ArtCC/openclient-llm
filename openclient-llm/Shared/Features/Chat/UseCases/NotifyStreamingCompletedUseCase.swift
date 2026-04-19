@@ -9,7 +9,7 @@
 import Foundation
 
 #if os(iOS)
-import UIKit
+import SwiftUI
 #endif
 
 // MARK: - NotifyStreamingCompletedUseCaseProtocol

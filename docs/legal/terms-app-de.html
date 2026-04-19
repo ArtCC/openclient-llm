@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nutzungsbedingungen — OpenClient</title>
+  <meta name="description"
+    content="Nutzungsbedingungen von OpenClient, nativer Apple-Client für Ollama, LiteLLM und jeden OpenAI-kompatiblen Server.">
+  <link rel="icon" type="image/png" href="../assets/icon_radius.png">
+  <link rel="apple-touch-icon" href="../assets/icon_radius.png">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    .container {
+      padding-top: 24px;
+      padding-bottom: 24px;
+    }
+
+    .legal-updated {
+      margin-bottom: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container legal">
+    <div class="legal-content">
+      <h2>Akzeptanz</h2>
+      <p>Durch das Herunterladen, Installieren oder Verwenden von OpenClient („die App") stimmen Sie diesen Bedingungen
+        zu. Wenn Sie nicht einverstanden sind, verwenden Sie die App nicht.</p>
+
+      <h2>Was die App macht</h2>
+      <p>OpenClient ist ein nativer Apple-Client für iOS, iPadOS und macOS, der sich mit jedem OpenAI-kompatiblen Server
+        verbindet, den Sie bereitstellen — wie
+        <a href="https://ollama.com" style="color: var(--accent); text-decoration: none;">Ollama</a>,
+        <a href="https://docs.litellm.ai/" style="color: var(--accent); text-decoration: none;">LiteLLM</a> oder ein
+        anderes selbst gehostetes oder Drittanbieter-Backend, das die OpenAI-API implementiert. Die App ermöglicht
+        Textgespräche, Bild- und Dokumentenanalyse (Vision), Sprachtranskription (Speech-to-Text),
+        Text-zu-Sprache-Wiedergabe, Bildgenerierung, Websuche und eine agentische Tool-Calling-Schleife — alles
+        ausschließlich vom Server verarbeitet, den Sie konfigurieren. Die App hostet, betreibt oder kontrolliert keinen
+        LLM-Server, kein KI-Modell und keinen Suchanbieter.
+      </p>
+      <p>Zusätzliche Funktionen umfassen:</p>
+      <ul>
+        <li><strong>Gesprächssynchronisierung:</strong> Gespräche werden lokal auf Ihrem Gerät gespeichert und, wenn
+          iCloud aktiviert ist, über iCloud Drive zwischen Ihren Apple-Geräten synchronisiert.</li>
+        <li><strong>Speicher:</strong> Persistente Speicherelemente werden im iCloud Key-Value Store (wenn verfügbar)
+          oder lokal in UserDefaults gespeichert und als Kontext in Gespräche eingefügt. Modelle können während eines
+          Gesprächs auch autonom Speicherelemente erstellen.</li>
+        <li><strong>Websuche:</strong> Wenn aktiviert, sendet die App Suchanfragen über Ihren LiteLLM-Server an den auf
+          diesem Server konfigurierten Suchanbieter (z. B. Brave, Tavily, DuckDuckGo). Die App kontaktiert Suchanbieter
+          niemals direkt.</li>
+        <li><strong>Agentenmodus:</strong> Die App unterstützt eine agentische Tool-Calling-Schleife, in der das Modell
+          registrierte Tools aufrufen und ihre Ausgaben empfangen kann, bevor es eine endgültige Antwort generiert.</li>
+        <li><strong>Teilen-Erweiterung und Kurzbefehle:</strong> Die App kann Inhalte von anderen Apps über die
+          iOS/iPadOS-Teilen-Erweiterung, ein benutzerdefiniertes URL-Schema (<code>openclient://</code>), Drag &amp;
+          Drop oder Apple Kurzbefehle empfangen.</li>
+        <li><strong>Spotlight:</strong> Gesprächstitel und Nachrichtenausschnitte werden lokal in Spotlight indiziert
+          für die schnelle Suche. Diese Daten verlassen Ihr Gerät nicht.</li>
+      </ul>
+
+      <h2>Kostenlose App, Kosten für Drittanbieter-APIs</h2>
+      <p>OpenClient ist <strong>kostenlos herunterzuladen und zu verwenden</strong>. Die App selbst hat kein Abonnement,
+        keine In-App-Käufe oder versteckte Gebühren jeglicher Art.</p>
+      <p>Das Verbinden der App mit einem kostenpflichtigen LLM-Anbieter — wie OpenAI, Anthropic, Groq oder einem anderen
+        cloudbasierten Dienst — <strong>kann jedoch Gebühren verursachen, die direkt von diesem Anbieter berechnet
+          werden</strong>, basierend auf Ihrer API-Nutzung (verbrauchte Token, generierte Bilder, transkribiertes Audio
+        usw.). Diese Kosten sind vollständig unabhängig von der App, und der Entwickler von OpenClient hat keine
+        Sichtbarkeit, Kontrolle oder Haftung dafür.</p>
+      <p>Lokale und selbst gehostete Modelle (z. B. Ollama auf Ihrer eigenen Hardware) verursachen in der Regel keine
+        Kosten pro Anfrage, aber Sie sind für die von Ihnen betriebene Infrastruktur verantwortlich.</p>
+
+      <h2>Ihre Verantwortlichkeiten</h2>
+      <ul>
+        <li><strong>Server und Infrastruktur:</strong> Sie sind verantwortlich für die Einrichtung, Wartung und
+          Sicherung Ihres eigenen Servers und aller vorgelagerten LLM-Anbieter, mit denen er sich verbindet.</li>
+        <li><strong>API-Schlüssel und Kosten:</strong> Alle API-Schlüssel, die Sie in der App oder auf Ihrem Server
+          konfigurieren, liegen in Ihrer Verantwortung. Kosten, die durch LLM-Anbieter entstehen (OpenAI, Anthropic,
+          Groq, Ollama usw.), liegen vollständig in Ihrer Verantwortung als Betreiber. Der Entwickler von OpenClient hat
+          keine Beteiligung an oder Haftung für Gebühren von Drittanbieterdiensten.</li>
+        <li><strong>Inhalt:</strong> Sie sind allein verantwortlich für den Inhalt, den Sie über die App senden, und die
+          Antworten, die Sie erhalten. Der Entwickler überwacht, moderiert oder speichert keine Gespräche.</li>
+        <li><strong>Websuchinhalte:</strong> Sie sind verantwortlich für die Anfragen, die Sie über die Websuchfunktion
+          senden, und für alle Maßnahmen, die auf der Grundlage der Suchergebnisse getroffen werden. Die Ergebnisse
+          werden von Drittanbieterdiensten über Ihren LiteLLM-Server bereitgestellt; ihre Genauigkeit, Verfügbarkeit und
+          rechtliche Konformität liegen außerhalb der Kontrolle des Entwicklers.</li>
+        <li><strong>Speicher:</strong> Sie sind verantwortlich für die Überprüfung und Verwaltung der von der App
+          gespeicherten Speicherelemente, einschließlich derjenigen, die autonom von Modellen erstellt wurden.
+          Überprüfen Sie Ihren Speicher regelmäßig in den Einstellungen, um sicherzustellen, dass der gespeicherte
+          Inhalt Ihren Erwartungen entspricht.</li>
+        <li><strong>Geteilte und importierte Inhalte:</strong> Sie sind verantwortlich für alle Inhalte, die über die
+          Teilen-Erweiterung, das URL-Schema, Drag &amp; Drop oder Apple Kurzbefehle an die App gesendet werden.</li>
+        <li><strong>Compliance:</strong> Sie erklären sich bereit, die App in Übereinstimmung mit allen geltenden
+          Gesetzen und den Nutzungsbedingungen aller LLM- oder Suchanbieter zu verwenden, mit denen Sie sich verbinden.
+        </li>
+      </ul>
+
+      <h2>Lokale Daten und iCloud</h2>
+      <p>Die App speichert den Gesprächsverlauf lokal auf Ihrem Gerät über das Dateisystem. Wenn iCloud in den
+        Geräteeinstellungen aktiviert ist, können folgende Daten mit iCloud synchronisiert werden:</p>
+      <ul>
+        <li>Gesprächsdateien (über iCloud Drive)</li>
+        <li>Benutzerprofileinstellungen (über iCloud Key-Value Store)</li>
+        <li>Speicherelemente (über iCloud Key-Value Store)</li>
+      </ul>
+      <p>Sie steuern, ob die iCloud-Synchronisierung über die iCloud-Einstellungen Ihres Geräts aktiv ist. Der
+        Entwickler greift auf keine in Ihrem iCloud-Konto gespeicherten Daten zu. Das Deaktivieren der
+        iCloud-Synchronisierung bedeutet, dass Daten nur lokal verbleiben und nicht zwischen Geräten geteilt werden.</p>
+
+      <h2>Geschätzte Kosten</h2>
+      <p>Die App kann geschätzte Gesprächskosten anzeigen, die anhand der Token-Nutzung und der von Ihrem LiteLLM-Server
+        bereitgestellten Preismetadaten berechnet werden. Diese Zahlen sind nur Schätzungen; tatsächliche Gebühren
+        werden ausschließlich von Ihrem LLM-Anbieter oder API-Nutzungsplan bestimmt. Der Entwickler ist nicht
+        verantwortlich für Abweichungen zwischen angezeigten Schätzungen und der tatsächlichen Abrechnung.</p>
+
+      <h2>Open-Source-Lizenz</h2>
+      <p>Der Quellcode der App ist unter der <a href="https://github.com/ArtCC/openclient-llm/blob/main/LICENSE"
+          style="color: var(--accent); text-decoration: none;">Apache Lizenz 2.0</a> verfügbar. Sie können den Code
+        gemäß den Bedingungen dieser Lizenz inspizieren, modifizieren und weitergeben. Die Open-Source-Natur des
+        Projekts ermöglicht es Ihnen, alle in diesen Bedingungen und in der Datenschutzerklärung gemachten Aussagen zu
+        überprüfen.</p>
+
+      <h2>Keine Gewährleistung</h2>
+      <p>Die App wird <strong>„wie besehen"</strong> ohne jegliche Gewährleistung bereitgestellt, weder ausdrücklich
+        noch stillschweigend, einschließlich, aber nicht beschränkt auf Gewährleistungen der Marktgängigkeit, Eignung
+        für einen bestimmten Zweck oder Nichtverletzung. Der Entwickler garantiert nicht, dass die App fehlerfrei,
+        ununterbrochen oder mit jeder Serverkonfiguration kompatibel ist.</p>
+
+      <h2>Haftungsbeschränkung</h2>
+      <p>Im größtmöglichen gesetzlich zulässigen Umfang haftet der Entwickler nicht für indirekte, zufällige, besondere,
+        Folge- oder Strafschäden oder Verluste von Daten, Einnahmen oder Gewinnen, die aus Ihrer Nutzung der App
+        entstehen. Dazu gehören, ohne Einschränkung, Kosten durch Drittanbieter-API-Anbieter, Datenverluste durch
+        Fehlkonfiguration des Servers, ungenaue Suchergebnisse oder unbeabsichtigte Aktionen, die von Modellen im
+        Agentenmodus durchgeführt werden.</p>
+
+      <h2>Keine Zugehörigkeit</h2>
+      <p>OpenClient ist ein unabhängiges Open-Source-Projekt. Es ist nicht verbunden mit, befürwortet oder gesponsert
+        von LiteLLM, OpenAI, Anthropic, Ollama, Groq, Brave, Tavily, Apple oder einem anderen Unternehmen oder Dienst,
+        der in der App oder ihrer Dokumentation erwähnt wird.</p>
+
+      <h2>Änderungen dieser Bedingungen</h2>
+      <p>Diese Bedingungen können von Zeit zu Zeit aktualisiert werden. Änderungen werden auf dieser Seite mit einem
+        aktualisierten Überarbeitungsdatum veröffentlicht. Die weitere Nutzung der App nach Änderungen gilt als
+        Zustimmung zu den neuen Bedingungen.</p>
+
+      <h2>Kontakt</h2>
+      <p>Wenn Sie Fragen zu diesen Bedingungen haben, können Sie ein Issue im <a
+          href="https://github.com/ArtCC/openclient-llm/issues">GitHub-Repository</a> öffnen.</p>
+    </div>
+
+    <p class="legal-updated">Zuletzt aktualisiert: 20. April 2026</p>
+  </div>
+</body>
+
+</html>
