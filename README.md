@@ -113,14 +113,20 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full project tree and layer respo
 
 - Xcode 26+
 - iOS 26+ / macOS 26+
-- A running [LiteLLM](https://docs.litellm.ai/) server (local or remote), **or** a running [Ollama](https://ollama.com) instance (v0.1.24+ for OpenAI-compatible `/v1` endpoint)
+- A running [LiteLLM](https://docs.litellm.ai/) server — recommended backend; proxies [Ollama](https://ollama.com) and cloud providers (OpenAI, Anthropic, Google…) under a single endpoint. See [LiteLLM.md](LiteLLM.md).
+- **Or** a running [Ollama](https://ollama.com) instance directly (OpenAI-compatible `/v1` endpoint). See [Ollama.md](Ollama.md). Note: using Ollama through LiteLLM is preferred as it unlocks multi-provider support, virtual keys, and cost tracking.
 
 ### Self-hosting guides
 
-If you need to set up the backend on your own server, these guides cover Docker Compose configurations, reference `.env` files, and common operational commands:
+OpenClient works with any OpenAI-compatible server. The two most common setups are:
+
+- **Ollama only** — run open-source models locally on your own hardware.
+- **LiteLLM + Ollama** — add a proxy layer to combine local models with cloud providers (OpenAI, Anthropic, Google…) under a single endpoint.
+
+The guides below cover Docker Compose configurations, reference `.env` files, and common operational commands:
 
 - [Ollama.md](Ollama.md) — Run Ollama with Docker (CPU and NVIDIA GPU)
-- [LiteLLM.md](LiteLLM.md) — Run LiteLLM with Docker (Postgres, Traefik, local + cloud models)
+- [LiteLLM.md](LiteLLM.md) — Run LiteLLM with Docker (Postgres, local + cloud models)
 
 ## License
 
@@ -130,7 +136,9 @@ This project is licensed under the [Apache License 2.0](LICENSE).
 
 Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to report issues, propose features, and submit pull requests.
 
-You can also suggest features and report bugs directly from within the app — go to **Settings** and use the built-in feedback option powered by [Votice](https://github.com/ArtCC/votice-sdk), another open source project by the same author.
+## Feedback
+
+To suggest features or report bugs from within the app, go to **Settings** and use the built-in feedback option powered by [Votice](https://github.com/ArtCC/votice-sdk), another open source project by the same author.
 
 ## Author
 
