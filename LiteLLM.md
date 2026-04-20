@@ -1,6 +1,6 @@
 # Running LiteLLM with Docker
 
-This guide shows how to self-host [LiteLLM](https://docs.litellm.ai) as an OpenAI-compatible proxy using Docker Compose so you can use it as a backend with OpenClient LLM. It covers the full stack: Postgres for persistence, Traefik as a reverse proxy, a reference `config.yaml` with both local (Ollama) and cloud models, and common operational commands.
+This guide shows how to self-host [LiteLLM](https://docs.litellm.ai) as an OpenAI-compatible proxy using Docker Compose so you can use it as a backend with OpenClient LLM. It covers the full stack: Postgres for persistence, a reference `config.yaml` with both local (Ollama) and cloud models, and common operational commands.
 
 ## Reference
 
@@ -22,8 +22,6 @@ services:
       POSTGRES_DB: litellm
     volumes:
       - /opt/docker/litellm/pgdata:/var/lib/postgresql/data
-    networks:
-      - proxy
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U litellm -d litellm"]
       interval: 10s
@@ -41,15 +39,6 @@ services:
       - /opt/docker/litellm/config.yaml:/app/config.yaml
     ports:
       - "4000:4000"
-    networks:
-      - proxy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=proxy"
-      - "traefik.http.routers.litellm.rule=Host(`litellm.yourdomain.com`)"
-      - "traefik.http.routers.litellm.entrypoints=websecure"
-      - "traefik.http.routers.litellm.tls.certresolver=le"
-      - "traefik.http.services.litellm.loadbalancer.server.port=4000"
     environment:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
       DATABASE_URL: ${DATABASE_URL}
@@ -62,10 +51,6 @@ services:
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     extra_hosts:
       - "host.docker.internal:host-gateway"
-
-networks:
-  proxy:
-    external: true
 ```
 
 ## Reference .env
@@ -88,56 +73,35 @@ Create at `/opt/docker/litellm/config.yaml`:
 
 ```yaml
 model_list:
-  # Ollama — Google
-  - model_name: gemma4:e4b
-    litellm_params:
-      model: ollama/gemma4:e4b
-      api_base: http://your_ollama_ip_server:11434
-
-  # APIs cloud
-  # OpenAI
-  - model_name: gpt-5.4
-    litellm_params:
-      model: openai/gpt-5.4
-      api_key: os.environ/OPENAI_API_KEY
-
-  - model_name: gpt-4o-mini-tts
-    litellm_params:
-      model: openai/gpt-4o-mini-tts
-      api_key: os.environ/OPENAI_API_KEY
-
-  - model_name: gpt-4o-mini-transcribe
-    litellm_params:
-      model: openai/gpt-4o-mini-transcribe
-      api_key: os.environ/OPENAI_API_KEY
-
   # Anthropic
-  - model_name: claude-opus-4-6
-    litellm_params:
-      model: anthropic/claude-opus-4-6
-      api_key: os.environ/ANTHROPIC_API_KEY
-
   - model_name: claude-sonnet-4-6
     litellm_params:
       model: anthropic/claude-sonnet-4-6
       api_key: os.environ/ANTHROPIC_API_KEY
-
-  # Google
-  - model_name: gemini-3.1-pro-preview
-    litellm_params:
-      model: gemini/gemini-3.1-pro-preview
-      api_key: os.environ/GOOGLE_API_KEY
-
-  - model_name: gemini-3-pro-image-preview
-    litellm_params:
-      model: gemini/gemini-3-pro-image-preview
-      api_key: os.environ/GOOGLE_API_KEY
 
   # DeepSeek
   - model_name: deepseek-chat
     litellm_params:
       model: deepseek/deepseek-chat
       api_key: os.environ/DEEPSEEK_API_KEY
+
+  # Google
+  - model_name: gemini-2.5-pro
+    litellm_params:
+      model: gemini/gemini-2.5-pro
+      api_key: os.environ/GOOGLE_API_KEY
+
+  # Ollama
+  - model_name: gemma4:e4b
+    litellm_params:
+      model: ollama/gemma4:e4b
+      api_base: http://your_ollama_ip_server:11434
+
+  # OpenAI
+  - model_name: gpt-4o
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: os.environ/OPENAI_API_KEY
 
 search_tools:
   - search_tool_name: brave-search
