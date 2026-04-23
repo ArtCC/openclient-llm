@@ -24,6 +24,8 @@ struct NewChatControlIntent: AppIntent {
     // MARK: - Perform
 
     func perform() async throws -> some IntentResult {
-        .result()
+        UserDefaults(suiteName: "group.com.artcc.openclient-llm")?
+            .set(true, forKey: "pendingNewChatFromWidget")
+        return .result()
     }
 }

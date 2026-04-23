@@ -85,6 +85,13 @@
 			);
 			target = 80E6877C2F9A24A000AC491E /* WidgetsExtension */;
 		};
+		80701AF92F9A351B003A6C33 /* Exceptions for "Widgets" folder in "openclient-llm" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				NewChatControlIntent.swift,
+			);
+			target = 805E798A2F79AC9B0070CBB3 /* openclient-llm */;
+		};
 		80850B982F7ABA9B00021598 /* Exceptions for "openclient-llm" folder in "openclient-llm" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -150,6 +157,7 @@
 		80E687832F9A24A000AC491E /* Widgets */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				80701AF92F9A351B003A6C33 /* Exceptions for "Widgets" folder in "openclient-llm" target */,
 				80E687952F9A24A200AC491E /* Exceptions for "Widgets" folder in "WidgetsExtension" target */,
 			);
 			path = Widgets;

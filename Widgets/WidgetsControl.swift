@@ -25,7 +25,7 @@ struct NewChatControlWidget: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: Self.kind) {
             ControlWidgetButton(action: NewChatControlIntent()) {
-                Label("New Chat", systemImage: "bubble.left.fill")
+                Label("New Chat", systemImage: "bubble.left.and.bubble.right")
             }
         }
         .displayName("New Chat")
