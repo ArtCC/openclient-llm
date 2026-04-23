@@ -1,6 +1,6 @@
 //
-//  widgetsControl.swift
-//  widgets
+//  WidgetsControl.swift
+//  Widgets
 //
 //  Created by Arturo Carretero Calvo on 23/04/2026.
 //  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
@@ -10,7 +10,7 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-struct widgetsControl: ControlWidget {
+struct WidgetsControl: ControlWidget {
     static let kind: String = "com.artcc.openclient-llm.widgets"
 
     var body: some ControlWidgetConfiguration {
@@ -31,7 +31,7 @@ struct widgetsControl: ControlWidget {
     }
 }
 
-extension widgetsControl {
+extension WidgetsControl {
     struct Value {
         var isRunning: Bool
         var name: String
@@ -39,12 +39,12 @@ extension widgetsControl {
 
     struct Provider: AppIntentControlValueProvider {
         func previewValue(configuration: TimerConfiguration) -> Value {
-            widgetsControl.Value(isRunning: false, name: configuration.timerName)
+            WidgetsControl.Value(isRunning: false, name: configuration.timerName)
         }
 
         func currentValue(configuration: TimerConfiguration) async throws -> Value {
             let isRunning = true // Check if the timer is running
-            return widgetsControl.Value(isRunning: isRunning, name: configuration.timerName)
+            return WidgetsControl.Value(isRunning: isRunning, name: configuration.timerName)
         }
     }
 }

@@ -1,6 +1,6 @@
 //
 //  AppIntent.swift
-//  widgets
+//  Widgets
 //
 //  Created by Arturo Carretero Calvo on 23/04/2026.
 //  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
