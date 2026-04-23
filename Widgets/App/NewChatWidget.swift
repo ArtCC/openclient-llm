@@ -38,11 +38,6 @@ private struct NewChatWidgetView: View {
         if let url = URL(string: "openclient://new-chat") {
             Link(destination: url) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("OpenClient")
-                        .font(.caption2)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.secondary)
-                    Spacer()
                     ZStack {
                         RoundedRectangle(cornerRadius: 14)
                             .fill(Color.accentColor)
@@ -52,11 +47,24 @@ private struct NewChatWidgetView: View {
                             .foregroundStyle(.white)
                     }
                     Spacer()
-                    Text(String(localized: "New Chat"))
-                        .font(.headline)
-                        .foregroundStyle(.primary)
+                    HStack(alignment: .bottom) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(String(localized: "New Chat"))
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.primary)
+                            Text("Start a conversation")
+                                .multilineTextAlignment(.leading)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.tertiary)
+                    }
                 }
-                .padding(14)
+                .padding(2.5)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             }
         }

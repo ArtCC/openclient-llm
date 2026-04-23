@@ -37,11 +37,6 @@ private struct SearchWidgetView: View {
         if let url = URL(string: "openclient://search") {
             Link(destination: url) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("OpenClient")
-                        .font(.caption2)
-                        .fontWeight(.medium)
-                        .foregroundStyle(.secondary)
-                    Spacer()
                     ZStack {
                         RoundedRectangle(cornerRadius: 14)
                             .fill(Color.accentColor)
@@ -51,11 +46,24 @@ private struct SearchWidgetView: View {
                             .foregroundStyle(.white)
                     }
                     Spacer()
-                    Text(String(localized: "Search"))
-                        .font(.headline)
-                        .foregroundStyle(.primary)
+                    HStack(alignment: .bottom) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(String(localized: "Search"))
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.primary)
+                            Text("Find past conversations")
+                                .multilineTextAlignment(.leading)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.tertiary)
+                    }
                 }
-                .padding(14)
+                .padding(2.5)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             }
         }
