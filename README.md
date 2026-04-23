@@ -37,6 +37,7 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 - Share content from any app (Safari, Telegram, Photos, Files…) directly into a new conversation via the system Share sheet
 - Deep-link into the app with `openclient://chat?text=…`, `openclient://chat?url=…`, or `openclient://conversation?id=…` for third-party automation
 - Apple Shortcuts integration: "New Chat", "Search Chats", and "Send File to Chat" actions available in the Shortcuts app and via Siri
+- Control Center toggle (iOS 18+): add a "New Chat" button to the iOS Control Center for instant one-tap access from any screen or the lock screen
 - iCloud sync across all your Apple devices
 - Export conversations to JSON
 - Token usage per message and estimated conversation cost
@@ -82,7 +83,8 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 | Keychain | Secure storage |
 | SwiftLint | Code linting |
 | SF Symbols | Iconography |
-| AppIntents | Apple Shortcuts & Siri integration |
+| AppIntents | Apple Shortcuts, Siri & Control Center integration |
+| WidgetKit | Control Center toggle |
 | Votice | In-app feedback & feature requests |
 
 This project was developed entirely with Xcode, Visual Studio Code and GitHub Copilot (with Claude Opus / Sonnet 4.6).

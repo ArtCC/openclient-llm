@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.4.0-build-44] - 2026-04-23
+
+### Added
+
+- **Control Center toggle (iOS 18+)** — new `NewChatControlWidget` (`ControlWidget`) in the `WidgetsExtension` target; adds a "New Chat" button with a `bubble.left.fill` SF Symbol to the iOS Control Center; powered by `NewChatControlIntent` (`AppIntent`, `openAppWhenRun = true`); the user adds it manually via Settings → Control Center → Customize Controls
+
 ## [1.3.1-build-42] - 2026-04-20
 
 ### Fixed

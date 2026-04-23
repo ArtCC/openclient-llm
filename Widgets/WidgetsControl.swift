@@ -10,69 +10,25 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-struct WidgetsControl: ControlWidget {
-    static let kind: String = "com.artcc.openclient-llm.widgets"
+// MARK: - NewChatControlWidget
+
+/// Control Center widget (iOS 18+) that provides a one-tap shortcut to open
+/// OpenClient in a blank new conversation.
+/// The user adds it manually via Settings → Control Center → Customize Controls.
+struct NewChatControlWidget: ControlWidget {
+    // MARK: - Properties
+
+    static let kind: String = "com.artcc.openclient-llm.control.new-chat"
+
+    // MARK: - Body
 
     var body: some ControlWidgetConfiguration {
-        AppIntentControlConfiguration(
-            kind: Self.kind,
-            provider: Provider()
-        ) { value in
-            ControlWidgetToggle(
-                "Start Timer",
-                isOn: value.isRunning,
-                action: StartTimerIntent(value.name)
-            ) { isRunning in
-                Label(isRunning ? "On" : "Off", systemImage: "timer")
+        StaticControlConfiguration(kind: Self.kind) {
+            ControlWidgetButton(action: NewChatControlIntent()) {
+                Label("New Chat", systemImage: "bubble.left.fill")
             }
         }
-        .displayName("Timer")
-        .description("A an example control that runs a timer.")
-    }
-}
-
-extension WidgetsControl {
-    struct Value {
-        var isRunning: Bool
-        var name: String
-    }
-
-    struct Provider: AppIntentControlValueProvider {
-        func previewValue(configuration: TimerConfiguration) -> Value {
-            WidgetsControl.Value(isRunning: false, name: configuration.timerName)
-        }
-
-        func currentValue(configuration: TimerConfiguration) async throws -> Value {
-            let isRunning = true // Check if the timer is running
-            return WidgetsControl.Value(isRunning: isRunning, name: configuration.timerName)
-        }
-    }
-}
-
-struct TimerConfiguration: ControlConfigurationIntent {
-    static let title: LocalizedStringResource = "Timer Name Configuration"
-
-    @Parameter(title: "Timer Name", default: "Timer")
-    var timerName: String
-}
-
-struct StartTimerIntent: SetValueIntent {
-    static let title: LocalizedStringResource = "Start a timer"
-
-    @Parameter(title: "Timer Name")
-    var name: String
-
-    @Parameter(title: "Timer is running")
-    var value: Bool
-
-    init() {}
-
-    init(_ name: String) {
-        self.name = name
-    }
-
-    func perform() async throws -> some IntentResult {
-        // Start the timer…
-        return .result()
+        .displayName("New Chat")
+        .description("Opens a new conversation in OpenClient.")
     }
 }

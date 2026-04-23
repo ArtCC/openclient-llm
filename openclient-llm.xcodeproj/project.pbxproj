@@ -78,6 +78,13 @@
 			);
 			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
 		};
+		8041CF052F9A2CAC00CF6455 /* Exceptions for "openclient-llm" folder in "WidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shared/Resources/Localizable.xcstrings,
+			);
+			target = 80E6877C2F9A24A000AC491E /* WidgetsExtension */;
+		};
 		80850B982F7ABA9B00021598 /* Exceptions for "openclient-llm" folder in "openclient-llm" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -114,6 +121,7 @@
 			exceptions = (
 				80850B982F7ABA9B00021598 /* Exceptions for "openclient-llm" folder in "openclient-llm" target */,
 				80126ECB2F7A748E00A5557C /* Exceptions for "openclient-llm" folder in "openclient-llm-macOS" target */,
+				8041CF052F9A2CAC00CF6455 /* Exceptions for "openclient-llm" folder in "WidgetsExtension" target */,
 			);
 			path = "openclient-llm";
 			sourceTree = "<group>";
@@ -709,7 +717,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -757,7 +765,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -814,7 +822,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = OpenClient;
 				REGISTER_APP_GROUPS = YES;
@@ -869,7 +877,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = OpenClient;
 				REGISTER_APP_GROUPS = YES;
@@ -946,7 +954,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -977,7 +985,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1010,7 +1018,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1042,7 +1050,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
