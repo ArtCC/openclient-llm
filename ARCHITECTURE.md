@@ -78,18 +78,28 @@ openclient-llm-macOS/              # macOS target
 └── Resources/
 
 ShareExtension/                    # iOS Share Extension target
-├── ShareViewController.swift      # SLComposeServiceViewController — extracts & saves payload
-├── ShareExtensionItem.swift       # Codable payload model (mirrors Shared/Core/Models/)
-├── ShareExtensionStore.swift      # Write-side: persists payload to App Group container
-├── ShareExtension.entitlements    # App Groups: group.com.artcc.openclient-llm
-└── Info.plist                     # NSExtensionActivationRule for text/URL/image/PDF
+├── App/
+│   ├── ShareViewController.swift  # Entry point (SLComposeServiceViewController)
+│   └── Models/
+│       ├── ShareExtensionItem.swift
+│       └── ShareExtensionStore.swift
+└── Resources/
 
 Widgets/                           # WidgetsExtension target (iOS 18+)
-├── NewChatControlIntent.swift     # AppIntent (openAppWhenRun = true) for Control Center button
-├── WidgetsControl.swift           # NewChatControlWidget — StaticControlConfiguration + ControlWidgetButton
-├── WidgetsBundle.swift            # @main WidgetBundle registering all widgets
-├── Assets.xcassets/
-└── Info.plist
+├── App/
+│   ├── WidgetsBundle.swift        # @main entry point
+│   ├── Controls/
+│   │   ├── WidgetsControl.swift   # Control Center widget (NewChatControlWidget)
+│   │   └── NewChatControlIntent.swift
+│   ├── Models/
+│   │   ├── AppGroupStore.swift    # Reads/writes App Group shared container
+│   │   └── WidgetConversation.swift
+│   └── Widgets/
+│       ├── NewChatWidget.swift
+│       ├── SearchWidget.swift
+│       ├── QuickActionsWidget.swift
+│       └── ConversationsOverviewWidget.swift
+└── Resources/
 
 openclient-llm-test/               # Unit tests
 ├── Core/

@@ -12,6 +12,12 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 ### Added
 
 - **Control Center toggle (iOS 18+)** — new `NewChatControlWidget` (`ControlWidget`) in the `WidgetsExtension` target; adds a "New Chat" button with a `bubble.left.fill` SF Symbol to the iOS Control Center; powered by `NewChatControlIntent` (`AppIntent`, `openAppWhenRun = true`); the user adds it manually via Settings → Control Center → Customize Controls
+- **WidgetKit widgets** — four home-screen widgets available in the widget gallery under "OpenClient":
+  - `NewChatWidget` (small) — one-tap shortcut to open a new blank conversation; deep-links via `openclient://new-chat`
+  - `SearchWidget` (small) — one-tap shortcut to open the search screen; deep-links via `openclient://search`
+  - `QuickActionsWidget` (medium) — two-row widget with "New Chat" and "Search" actions side by side, each with icon, label, subtitle, and chevron
+  - `ConversationsOverviewWidget` (medium / large) — shows the 2 (medium) or 5 (large) most recent conversations with title, relative timestamp, message preview, and a model-color dot; header includes a "New Chat" shortcut; data synced from the main app via App Group (`group.com.artcc.openclient-llm`)
+- **App Group data sync** — `AppGroupStore` writes a `[WidgetConversation]` snapshot to the shared `UserDefaults` suite after every conversation save, delete, or delete-all; `WidgetCenter.shared.reloadAllTimelines()` is called automatically so widgets update without user action
 
 ## [1.3.1-build-42] - 2026-04-20
 

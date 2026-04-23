@@ -38,6 +38,7 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 - Deep-link into the app with `openclient://chat?text=…`, `openclient://chat?url=…`, or `openclient://conversation?id=…` for third-party automation
 - Apple Shortcuts integration: "New Chat", "Search Chats", and "Send File to Chat" actions available in the Shortcuts app and via Siri
 - Control Center toggle (iOS 18+): add a "New Chat" button to the iOS Control Center for instant one-tap access from any screen or the lock screen
+- Home-screen widgets: New Chat (small), Search (small), Quick Actions (medium), and Recent Conversations (medium/large) — tap any widget to jump directly into the app
 - iCloud sync across all your Apple devices
 - Export conversations to JSON
 - Token usage per message and estimated conversation cost
@@ -84,7 +85,7 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 | SwiftLint | Code linting |
 | SF Symbols | Iconography |
 | AppIntents | Apple Shortcuts, Siri & Control Center integration |
-| WidgetKit | Control Center toggle |
+| WidgetKit | Control Center toggle and home-screen widgets (New Chat, Search, Quick Actions, Recent Conversations) |
 | Votice | In-app feedback & feature requests |
 
 This project was developed entirely with Xcode, Visual Studio Code and GitHub Copilot (with Claude Opus / Sonnet 4.6).
