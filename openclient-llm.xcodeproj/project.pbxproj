@@ -88,17 +88,17 @@
 		80701AF92F9A351B003A6C33 /* Exceptions for "Widgets" folder in "openclient-llm" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				AppGroupStore.swift,
-				NewChatControlIntent.swift,
-				WidgetConversation.swift,
+				App/AppGroupStore.swift,
+				App/NewChatControlIntent.swift,
+				App/WidgetConversation.swift,
 			);
 			target = 805E798A2F79AC9B0070CBB3 /* openclient-llm */;
 		};
 		80701BFA2F9A3520003A6C44 /* Exceptions for "Widgets" folder in "openclient-llm-macOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				AppGroupStore.swift,
-				WidgetConversation.swift,
+				App/AppGroupStore.swift,
+				App/WidgetConversation.swift,
 			);
 			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
 		};
