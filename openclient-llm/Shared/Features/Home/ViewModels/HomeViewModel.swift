@@ -127,6 +127,10 @@ private extension HomeViewModel {
         urlSchemeManager.pendingAction = nil
         let modelId = getSelectedModelUseCase.execute()
         switch action {
+        case .newChat:
+            pendingConversation = Conversation(modelId: modelId)
+        case .search:
+            shortcutManager.pendingAction = .search
         case .chat(let text, let url):
             let parts = [text, url].compactMap { $0 }.filter { !$0.isEmpty }
             pendingURLSchemeText = parts.isEmpty ? nil : parts.joined(separator: "\n")
