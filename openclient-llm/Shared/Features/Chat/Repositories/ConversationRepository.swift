@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import WidgetKit
 
 protocol ConversationRepositoryProtocol: Sendable {
     func loadAll() throws -> [Conversation]
@@ -83,6 +84,8 @@ struct ConversationRepository: ConversationRepositoryProtocol {
         if settingsManager.getIsCloudSyncEnabled() {
             try? cloudSyncManager.syncConversationsToCloud([conversation])
         }
+
+        updateWidgetSnapshot()
     }
 
     func delete(_ conversationId: UUID) throws {
@@ -100,6 +103,8 @@ struct ConversationRepository: ConversationRepositoryProtocol {
         if settingsManager.getIsCloudSyncEnabled() {
             try? cloudSyncManager.deleteConversationFromCloud(conversationId)
         }
+
+        updateWidgetSnapshot()
     }
 
     func deleteAll() throws {
@@ -113,6 +118,9 @@ struct ConversationRepository: ConversationRepositoryProtocol {
         if settingsManager.getIsCloudSyncEnabled() {
             try? cloudSyncManager.deleteAllFromCloud()
         }
+
+        AppGroupStore.clearConversations()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }
 
@@ -213,6 +221,25 @@ private extension ConversationRepository {
                 try? attachmentRepository.delete(attachment: attachment)
             }
         }
+    }
+
+    /// Rebuilds the App Group widget snapshot from the current local conversations
+    /// and signals WidgetKit to reload all timelines.
+    func updateWidgetSnapshot() {
+        let conversations = (try? loadLocalConversations()) ?? []
+        let sorted = conversations.sorted { $0.updatedAt > $1.updatedAt }
+        let widgetConversations = sorted.prefix(6).map { conversation in
+            WidgetConversation(
+                id: conversation.id,
+                title: conversation.title.isEmpty ? String(localized: "New Chat") : conversation.title,
+                modelId: conversation.modelId,
+                lastMessagePreview: conversation.messages.last?.content
+                    .trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
+                updatedAt: conversation.updatedAt
+            )
+        }
+        AppGroupStore.saveConversations(Array(widgetConversations))
+        WidgetCenter.shared.reloadAllTimelines()
     }
 }
 

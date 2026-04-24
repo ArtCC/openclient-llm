@@ -55,6 +55,7 @@ struct LLMModel: Identifiable, Equatable, Sendable {
         case "Ollama": "ollama"
         case "Google": "gemini"
         case "DeepSeek": "deepseek"
+        case "vLLM": "vllm"
         default: nil
         }
     }
@@ -93,7 +94,7 @@ extension LLMModel {
         // MARK: - Static
 
         static func from(_ providerString: String?) -> Provider {
-            let localProviders: Set<String> = ["ollama", "lm_studio", "llamacpp"]
+            let localProviders: Set<String> = ["ollama", "lm_studio", "llamacpp", "hosted_vllm", "vllm"]
             guard let value = providerString?.lowercased() else { return .cloud }
             return localProviders.contains(value) ? .local : .cloud
         }
@@ -116,6 +117,8 @@ extension LLMModel {
                 "bedrock": "AWS Bedrock",
                 "lm_studio": "LM Studio",
                 "llamacpp": "llama.cpp",
+                "hosted_vllm": "vLLM",
+                "vllm": "vLLM",
                 "replicate": "Replicate",
                 "huggingface": "Hugging Face",
                 "together_ai": "Together AI",

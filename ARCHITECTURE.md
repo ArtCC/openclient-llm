@@ -78,11 +78,28 @@ openclient-llm-macOS/              # macOS target
 └── Resources/
 
 ShareExtension/                    # iOS Share Extension target
-├── ShareViewController.swift      # SLComposeServiceViewController — extracts & saves payload
-├── ShareExtensionItem.swift       # Codable payload model (mirrors Shared/Core/Models/)
-├── ShareExtensionStore.swift      # Write-side: persists payload to App Group container
-├── ShareExtension.entitlements    # App Groups: group.com.artcc.openclient-llm
-└── Info.plist                     # NSExtensionActivationRule for text/URL/image/PDF
+├── App/
+│   ├── ShareViewController.swift  # Entry point (SLComposeServiceViewController)
+│   └── Models/
+│       ├── ShareExtensionItem.swift
+│       └── ShareExtensionStore.swift
+└── Resources/
+
+Widgets/                           # WidgetsExtension target (iOS 18+)
+├── App/
+│   ├── WidgetsBundle.swift        # @main entry point
+│   ├── Controls/
+│   │   ├── WidgetsControl.swift   # Control Center widget (NewChatControlWidget)
+│   │   └── NewChatControlIntent.swift
+│   ├── Models/
+│   │   ├── AppGroupStore.swift    # Reads/writes App Group shared container
+│   │   └── WidgetConversation.swift
+│   └── Widgets/
+│       ├── NewChatWidget.swift
+│       ├── SearchWidget.swift
+│       ├── QuickActionsWidget.swift
+│       └── ConversationsOverviewWidget.swift
+└── Resources/
 
 openclient-llm-test/               # Unit tests
 ├── Core/
@@ -116,6 +133,7 @@ openclient-llm-test/               # Unit tests
 - **`openclient-llm/`** (outside Shared) — iOS/iPadOS-specific views, app entry point, iOS resources.
 - **`openclient-llm-macOS/`** — macOS-specific views, app entry point, macOS resources. No shared logic duplicated here.
 - **`ShareExtension/`** — Share Extension target (iOS/iPadOS). Shares `ShareExtensionItem` model and `ShareExtensionStore` write-side with the main app via the App Group container (`group.com.artcc.openclient-llm`). Does not link against Shared code directly to keep the extension lightweight.
+- **`Widgets/`** — WidgetsExtension target (iOS 18+). Contains WidgetKit widgets and Control Center controls. Shares the App Group (`group.com.artcc.openclient-llm`) with the main app to read conversation data and settings. Does not link against Shared code directly.
 - **`#if os(iOS)` / `#if os(macOS)`** — Used inside shared views for platform-specific UI variations.
 
 ## Share Extension Data Flow

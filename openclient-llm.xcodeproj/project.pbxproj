@@ -12,6 +12,9 @@
 		8089F4112F7D000500465D6C /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 8089F4102F7D000500465D6C /* Secrets.xcconfig */; };
 		8089F4122F7D000500465D6C /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 8089F4102F7D000500465D6C /* Secrets.xcconfig */; };
 		8090B5C82F9365D7006E9DAE /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8090B5BE2F9365D6006E9DAE /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		80E687802F9A24A000AC491E /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E6877F2F9A24A000AC491E /* WidgetKit.framework */; };
+		80E687822F9A24A000AC491E /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E687812F9A24A000AC491E /* SwiftUI.framework */; };
+		80E687912F9A24A200AC491E /* WidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 80E6877D2F9A24A000AC491E /* WidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -29,6 +32,13 @@
 			remoteGlobalIDString = 8090B5BD2F9365D6006E9DAE;
 			remoteInfo = ShareExtension;
 		};
+		80E6878F2F9A24A200AC491E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 805E79832F79AC9B0070CBB3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 80E6877C2F9A24A000AC491E;
+			remoteInfo = widgetsExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -38,6 +48,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
+				80E687912F9A24A200AC491E /* WidgetsExtension.appex in Embed Foundation Extensions */,
 				8090B5C82F9365D7006E9DAE /* ShareExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
@@ -51,6 +62,9 @@
 		8080774A2F7A67CD009BC8C4 /* openclient-llm-test.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "openclient-llm-test.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8089F4102F7D000500465D6C /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		8090B5BE2F9365D6006E9DAE /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		80E6877D2F9A24A000AC491E /* WidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		80E6877F2F9A24A000AC491E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		80E687812F9A24A000AC491E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -63,6 +77,29 @@
 				Resources/Info.plist,
 			);
 			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
+		};
+		803F259D2F9A56C3005118C9 /* Exceptions for "Widgets" folder in "openclient-llm" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/Models/AppGroupStore.swift,
+				App/Models/WidgetConversation.swift,
+			);
+			target = 805E798A2F79AC9B0070CBB3 /* openclient-llm */;
+		};
+		803F25A12F9A56F2005118C9 /* Exceptions for "Widgets" folder in "openclient-llm-macOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/Models/AppGroupStore.swift,
+				App/Models/WidgetConversation.swift,
+			);
+			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
+		};
+		8041CF052F9A2CAC00CF6455 /* Exceptions for "openclient-llm" folder in "WidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shared/Resources/Localizable.xcstrings,
+			);
+			target = 80E6877C2F9A24A000AC491E /* WidgetsExtension */;
 		};
 		80850B982F7ABA9B00021598 /* Exceptions for "openclient-llm" folder in "openclient-llm" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -81,9 +118,16 @@
 		8090B5CD2F9365D7006E9DAE /* Exceptions for "ShareExtension" folder in "ShareExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Info.plist,
+				Resources/Info.plist,
 			);
 			target = 8090B5BD2F9365D6006E9DAE /* ShareExtension */;
+		};
+		80E687952F9A24A200AC491E /* Exceptions for "Widgets" folder in "WidgetsExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Resources/Info.plist,
+			);
+			target = 80E6877C2F9A24A000AC491E /* WidgetsExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -93,6 +137,7 @@
 			exceptions = (
 				80850B982F7ABA9B00021598 /* Exceptions for "openclient-llm" folder in "openclient-llm" target */,
 				80126ECB2F7A748E00A5557C /* Exceptions for "openclient-llm" folder in "openclient-llm-macOS" target */,
+				8041CF052F9A2CAC00CF6455 /* Exceptions for "openclient-llm" folder in "WidgetsExtension" target */,
 			);
 			path = "openclient-llm";
 			sourceTree = "<group>";
@@ -116,6 +161,16 @@
 				8090B5CD2F9365D7006E9DAE /* Exceptions for "ShareExtension" folder in "ShareExtension" target */,
 			);
 			path = ShareExtension;
+			sourceTree = "<group>";
+		};
+		80E687832F9A24A000AC491E /* Widgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				803F259D2F9A56C3005118C9 /* Exceptions for "Widgets" folder in "openclient-llm" target */,
+				803F25A12F9A56F2005118C9 /* Exceptions for "Widgets" folder in "openclient-llm-macOS" target */,
+				80E687952F9A24A200AC491E /* Exceptions for "Widgets" folder in "WidgetsExtension" target */,
+			);
+			path = Widgets;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -151,6 +206,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		80E6877A2F9A24A000AC491E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				80E687822F9A24A000AC491E /* SwiftUI.framework in Frameworks */,
+				80E687802F9A24A000AC491E /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -161,6 +225,8 @@
 				8080773B2F7A66EF009BC8C4 /* openclient-llm-macOS */,
 				8080774B2F7A67CD009BC8C4 /* openclient-llm-test */,
 				8090B5BF2F9365D6006E9DAE /* ShareExtension */,
+				80E687832F9A24A000AC491E /* Widgets */,
+				80E6877E2F9A24A000AC491E /* Frameworks */,
 				805E798C2F79AC9B0070CBB3 /* Products */,
 				8089F4102F7D000500465D6C /* Secrets.xcconfig */,
 			);
@@ -173,8 +239,18 @@
 				8080773A2F7A66EF009BC8C4 /* OpenClient.app */,
 				8080774A2F7A67CD009BC8C4 /* openclient-llm-test.xctest */,
 				8090B5BE2F9365D6006E9DAE /* ShareExtension.appex */,
+				80E6877D2F9A24A000AC491E /* WidgetsExtension.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		80E6877E2F9A24A000AC491E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				80E6877F2F9A24A000AC491E /* WidgetKit.framework */,
+				80E687812F9A24A000AC491E /* SwiftUI.framework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -194,6 +270,7 @@
 			);
 			dependencies = (
 				8090B5C72F9365D7006E9DAE /* PBXTargetDependency */,
+				80E687902F9A24A200AC491E /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				800F26972F7A6352009A58C6 /* openclient-llm */,
@@ -276,6 +353,28 @@
 			productReference = 8090B5BE2F9365D6006E9DAE /* ShareExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		80E6877C2F9A24A000AC491E /* WidgetsExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 80E687942F9A24A200AC491E /* Build configuration list for PBXNativeTarget "WidgetsExtension" */;
+			buildPhases = (
+				80E687792F9A24A000AC491E /* Sources */,
+				80E6877A2F9A24A000AC491E /* Frameworks */,
+				80E6877B2F9A24A000AC491E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				80E687832F9A24A000AC491E /* Widgets */,
+			);
+			name = WidgetsExtension;
+			packageProductDependencies = (
+			);
+			productName = widgetsExtension;
+			productReference = 80E6877D2F9A24A000AC491E /* WidgetsExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -299,6 +398,9 @@
 					};
 					8090B5BD2F9365D6006E9DAE = {
 						CreatedOnToolsVersion = 26.4;
+					};
+					80E6877C2F9A24A000AC491E = {
+						CreatedOnToolsVersion = 26.4.1;
 					};
 				};
 			};
@@ -333,6 +435,7 @@
 				808077392F7A66EF009BC8C4 /* openclient-llm-macOS */,
 				808077492F7A67CD009BC8C4 /* openclient-llm-test */,
 				8090B5BD2F9365D6006E9DAE /* ShareExtension */,
+				80E6877C2F9A24A000AC491E /* WidgetsExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -362,6 +465,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		8090B5BC2F9365D6006E9DAE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		80E6877B2F9A24A000AC491E /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -440,6 +550,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		80E687792F9A24A000AC491E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -452,6 +569,11 @@
 			isa = PBXTargetDependency;
 			target = 8090B5BD2F9365D6006E9DAE /* ShareExtension */;
 			targetProxy = 8090B5C62F9365D7006E9DAE /* PBXContainerItemProxy */;
+		};
+		80E687902F9A24A200AC491E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 80E6877C2F9A24A000AC491E /* WidgetsExtension */;
+			targetProxy = 80E6878F2F9A24A200AC491E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -613,7 +735,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -661,7 +783,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -718,7 +840,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = OpenClient;
 				REGISTER_APP_GROUPS = YES;
@@ -773,7 +895,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = OpenClient;
 				REGISTER_APP_GROUPS = YES;
@@ -835,13 +957,13 @@
 		8090B5CA2F9365D7006E9DAE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/Resources/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = Q4X55987WE;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ShareExtension/Info.plist;
+				INFOPLIST_FILE = ShareExtension/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ShareExtension;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -850,7 +972,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -866,13 +988,13 @@
 		8090B5CB2F9365D7006E9DAE /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/Resources/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = Q4X55987WE;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = ShareExtension/Info.plist;
+				INFOPLIST_FILE = ShareExtension/Resources/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = ShareExtension;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -881,8 +1003,73 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.3.1;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.ShareExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		80E687922F9A24A200AC491E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = Widgets/Resources/WidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = Q4X55987WE;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Widgets/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = WidgetsExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		80E687932F9A24A200AC491E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = Widgets/Resources/WidgetsExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Q4X55987WE;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Widgets/Resources/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = WidgetsExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -938,6 +1125,15 @@
 			buildConfigurations = (
 				8090B5CA2F9365D7006E9DAE /* Debug */,
 				8090B5CB2F9365D7006E9DAE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		80E687942F9A24A200AC491E /* Build configuration list for PBXNativeTarget "WidgetsExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				80E687922F9A24A200AC491E /* Debug */,
+				80E687932F9A24A200AC491E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

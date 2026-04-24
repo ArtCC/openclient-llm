@@ -21,6 +21,10 @@ enum URLSchemeParser {
         guard url.scheme?.lowercased() == "openclient" else { return nil }
 
         switch url.host?.lowercased() {
+        case "new-chat":
+            return .newChat
+        case "search":
+            return .search
         case "chat":
             return parseChat(url)
         case "conversation":

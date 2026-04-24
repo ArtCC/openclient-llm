@@ -165,11 +165,7 @@ private extension HomeView {
     func handleShortcutAction(_ action: ShortcutAction) {
         switch action {
         case .newChat:
-            selectedTab = .chats
-            Task {
-                try? await Task.sleep(for: .milliseconds(350))
-                viewModel.send(.newChatShortcutTriggered)
-            }
+            viewModel.send(.newChatShortcutTriggered)
         case .search:
             selectedTab = .search
         }

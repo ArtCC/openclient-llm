@@ -45,6 +45,16 @@ final class SceneDelegate: NSObject, UIWindowSceneDelegate {
         completionHandler(true)
     }
 
+    // MARK: - Foreground Transition
+
+    func sceneDidBecomeActive(_ scene: UIScene) {
+        let defaults = UserDefaults(suiteName: "group.com.artcc.openclient-llm")
+        if defaults?.bool(forKey: "pendingNewChatFromWidget") == true {
+            defaults?.removeObject(forKey: "pendingNewChatFromWidget")
+            ShortcutManager.shared.pendingAction = .newChat
+        }
+    }
+
     // MARK: - URL Scheme (Warm Launch)
 
     func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
