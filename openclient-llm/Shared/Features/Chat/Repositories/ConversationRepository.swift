@@ -228,7 +228,7 @@ private extension ConversationRepository {
     func updateWidgetSnapshot() {
         let conversations = (try? loadLocalConversations()) ?? []
         let sorted = conversations.sorted { $0.updatedAt > $1.updatedAt }
-        let widgetConversations = sorted.prefix(5).map { conversation in
+        let widgetConversations = sorted.prefix(6).map { conversation in
             WidgetConversation(
                 id: conversation.id,
                 title: conversation.title.isEmpty ? String(localized: "New Chat") : conversation.title,

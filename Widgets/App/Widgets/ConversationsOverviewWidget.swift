@@ -11,7 +11,7 @@ import WidgetKit
 
 // MARK: - ConversationsOverviewWidget
 
-/// Large WidgetKit widget that shows up to 5 recent conversations.
+/// Large WidgetKit widget that shows up to 6 recent conversations (systemLarge) or 2 (systemMedium).
 /// Each row links directly to the conversation via `openclient://conversation?id=`.
 /// The header includes a "New Chat" link button.
 /// Data is read from the shared App Group container written by the main app.
@@ -127,7 +127,7 @@ private extension ConversationsOverviewWidgetView {
     }
 
     var conversationsList: some View {
-        let maxItems = family == .systemMedium ? 2 : 5
+        let maxItems = family == .systemMedium ? 2 : 6
         return VStack(spacing: 0) {
             ForEach(Array(entry.conversations.prefix(maxItems).enumerated()), id: \.element.id) { index, conversation in
                 if index > 0 {

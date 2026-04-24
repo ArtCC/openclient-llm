@@ -182,6 +182,8 @@ private extension ModelsRepository {
         guard let param = modelParam else { return nil }
         if param.hasPrefix("ollama_chat/") { return "ollama_chat" }
         if param.hasPrefix("ollama/") { return "ollama" }
+        if param.hasPrefix("hosted_vllm/") { return "hosted_vllm" }
+        if param.hasPrefix("vllm/") { return "vllm" }
         if param.hasPrefix("openai/") { return "openai" }
         if param.hasPrefix("anthropic/") { return "anthropic" }
         if param.hasPrefix("gemini/") { return "gemini" }

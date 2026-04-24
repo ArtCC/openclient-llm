@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [1.4.0-build-44] - 2026-04-23
+## [1.4.0-build-45] - 2026-04-24
 
 ### Added
 
@@ -16,8 +16,13 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
   - `NewChatWidget` (small) — one-tap shortcut to open a new blank conversation; deep-links via `openclient://new-chat`
   - `SearchWidget` (small) — one-tap shortcut to open the search screen; deep-links via `openclient://search`
   - `QuickActionsWidget` (medium) — two-row widget with "New Chat" and "Search" actions side by side, each with icon, label, subtitle, and chevron
-  - `ConversationsOverviewWidget` (medium / large) — shows the 2 (medium) or 5 (large) most recent conversations with title, relative timestamp, message preview, and a model-color dot; header includes a "New Chat" shortcut; data synced from the main app via App Group (`group.com.artcc.openclient-llm`)
+  - `ConversationsOverviewWidget` (medium / large) — shows the 2 (medium) or 6 (large) most recent conversations with title, relative timestamp, message preview, and a model-color dot; header includes a "New Chat" shortcut; data synced from the main app via App Group (`group.com.artcc.openclient-llm`)
 - **App Group data sync** — `AppGroupStore` writes a `[WidgetConversation]` snapshot to the shared `UserDefaults` suite after every conversation save, delete, or delete-all; `WidgetCenter.shared.reloadAllTimelines()` is called automatically so widgets update without user action
+- **vLLM provider support** — models served via `hosted_vllm/` or `vllm/` prefixes are now recognised as local providers; correctly classified as Local, displayed with the name "vLLM" and the vLLM logo, and their capabilities (including function calling) are read from the LiteLLM `/model/info` response
+
+### Fixed
+
+- **`ConversationsOverviewWidget` missing row** — `ConversationRepository.updateWidgetSnapshot()` was calling `.prefix(5)` while the large widget expected up to 6 entries; synced both sides to 6 so the systemLarge widget no longer shows an empty gap at the bottom
 
 ## [1.3.1-build-42] - 2026-04-20
 
