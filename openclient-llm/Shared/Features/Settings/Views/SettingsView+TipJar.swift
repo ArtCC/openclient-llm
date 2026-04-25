@@ -7,20 +7,3 @@
 //
 
 import SwiftUI
-
-// MARK: - Tip Jar
-
-extension SettingsView {
-    func tipJarSection(isPresented: Binding<Bool>) -> some View {
-        Section {
-            Button {
-                isPresented.wrappedValue = true
-            } label: {
-                Label(String(localized: "Buy Me a Coffee"), systemImage: "cup.and.saucer")
-            }
-            .buttonStyle(.plain)
-        } header: {
-            Text(String(localized: "Buy Me a Coffee"))
-        }
-    }
-}

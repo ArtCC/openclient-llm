@@ -20,11 +20,11 @@ struct SettingsView: View {
     @State private var serverURL: String = ""
     @State private var apiKey: String = ""
     @State private var isAPIKeyVisible = false
-    @State private var isShowingVotice = false
+    @State var isShowingVotice = false
     @State private var isShowingUserProfile = false
     @State private var isShowingMemory = false
-    @State private var isShowingHelp = false
-    @State private var isShowingTipJar = false
+    @State var isShowingHelp = false
+    @State var isShowingTipJar = false
     @State private var showResetAlert = false
     @State private var presentedWebURL: WebDestination?
     @FocusState private var focusedField: Field?
@@ -166,14 +166,8 @@ private extension SettingsView {
                 cloudSyncSection(loadedState)
                 personalizationSection()
                 chatSection(loadedState)
-#if os(iOS)
-                privacySection(loadedState)
-#endif
-                notificationsSection(loadedState)
                 webSearchSection(loadedState)
-                tipJarSection(isPresented: $isShowingTipJar)
-                feedbackSection(isShowingVotice: $isShowingVotice)
-                helpSection(isPresented: $isShowingHelp)
+                supportSection()
                 legalSection()
                 dangerSection()
             }
@@ -334,15 +328,14 @@ private extension SettingsView {
             )) {
                 Label(String(localized: "Show Token Usage"), systemImage: "number")
             }
-        } header: {
-            Text(String(localized: "Chat"))
-        } footer: {
-            Text(String(localized: "Show token count below each assistant response."))
-        }
-    }
-
-    func notificationsSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
-        Section {
+#if os(iOS)
+            Toggle(isOn: Binding(
+                get: { loadedState.isPrivacyScreenEnabled },
+                set: { viewModel.send(.privacyScreenToggled($0)) }
+            )) {
+                Label(String(localized: "Hide Content in App Switcher"), systemImage: "lock.shield")
+            }
+#endif
             switch loadedState.notificationPermissionStatus {
             case .authorized:
                 Label(String(localized: "Notifications enabled"), systemImage: "checkmark.circle.fill")
@@ -370,7 +363,7 @@ private extension SettingsView {
                 .buttonStyle(.plain)
             }
         } header: {
-            Text(String(localized: "Notifications"))
+            Text(String(localized: "Chat"))
         } footer: {
             Text(String(localized: "Sent when a response finishes while the app is in the background."))
         }
