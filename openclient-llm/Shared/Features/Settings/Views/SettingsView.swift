@@ -83,7 +83,7 @@ private extension SettingsView {
         .sheet(isPresented: $isShowingTipJar) {
             TipJarView()
 #if os(macOS)
-                .frame(width: 400, height: 520)
+                .frame(width: 500, height: 460)
 #endif
         }
         .alert(
