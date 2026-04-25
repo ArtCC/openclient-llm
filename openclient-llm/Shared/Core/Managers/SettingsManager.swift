@@ -33,6 +33,8 @@ protocol SettingsManagerProtocol: Sendable {
     func setWebSearchToolName(_ value: String)
     func getWebSearchMaxResults() -> Int
     func setWebSearchMaxResults(_ value: Int)
+    func getAvailableSearchTools() -> [SearchToolItem]
+    func setAvailableSearchTools(_ tools: [SearchToolItem])
     func deleteAll()
 }
 
@@ -51,6 +53,7 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         static let selectedSTTModelId = "selectedSTTModelId"
         static let webSearchToolName = "webSearchToolName"
         static let webSearchMaxResults = "webSearchMaxResults"
+        static let availableSearchTools = "availableSearchTools"
 
         static func ttsVoiceKey(forModelId modelId: String) -> String {
             "tts_voice_\(modelId)"
@@ -160,7 +163,7 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     }
 
     func getWebSearchToolName() -> String {
-        defaults.string(forKey: Keys.webSearchToolName) ?? "brave-search"
+        defaults.string(forKey: Keys.webSearchToolName) ?? ""
     }
 
     func setWebSearchToolName(_ value: String) {
@@ -176,6 +179,19 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         defaults.set(value, forKey: Keys.webSearchMaxResults)
     }
 
+    func getAvailableSearchTools() -> [SearchToolItem] {
+        guard let data = defaults.data(forKey: Keys.availableSearchTools),
+              let tools = try? JSONDecoder().decode([SearchToolItem].self, from: data) else {
+            return []
+        }
+        return tools
+    }
+
+    func setAvailableSearchTools(_ tools: [SearchToolItem]) {
+        guard let data = try? JSONEncoder().encode(tools) else { return }
+        defaults.set(data, forKey: Keys.availableSearchTools)
+    }
+
     func deleteAll() {
         defaults.removeObject(forKey: Keys.isOnboardingCompleted)
         defaults.removeObject(forKey: Keys.selectedModelId)
@@ -186,6 +202,7 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         defaults.removeObject(forKey: Keys.selectedSTTModelId)
         defaults.removeObject(forKey: Keys.webSearchToolName)
         defaults.removeObject(forKey: Keys.webSearchMaxResults)
+        defaults.removeObject(forKey: Keys.availableSearchTools)
         defaults.removeObject(forKey: LegacyKeys.serverBaseURL)
         defaults.removeObject(forKey: LegacyKeys.apiKey)
         keychainManager.deleteAll()

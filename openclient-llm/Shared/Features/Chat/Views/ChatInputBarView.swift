@@ -242,7 +242,11 @@ private extension ChatInputBarView {
             Image(systemName: loadedState.isWebSearchEnabled ? "globe.badge.chevron.backward" : "globe")
                 .font(.title2)
                 .foregroundStyle(
-                    webSearchColor(enabled: loadedState.isWebSearchEnabled, supported: modelSupportsWebSearch)
+                    webSearchColor(
+                        enabled: loadedState.isWebSearchEnabled,
+                        supported: modelSupportsWebSearch,
+                        configured: loadedState.isWebSearchToolConfigured
+                    )
                 )
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Circle())
@@ -315,8 +319,8 @@ private extension ChatInputBarView {
         }
     }
 
-    func webSearchColor(enabled: Bool, supported: Bool) -> Color {
-        guard supported else { return .red }
+    func webSearchColor(enabled: Bool, supported: Bool, configured: Bool) -> Color {
+        guard configured && supported else { return .red }
         return enabled ? Color.appAccent : .secondary
     }
 }

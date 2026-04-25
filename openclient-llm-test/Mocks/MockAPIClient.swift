@@ -94,4 +94,14 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         }
         return result
     }
+
+    func fetchSearchTools() async throws -> SearchToolsResponse {
+        if let error = requestError {
+            throw error
+        }
+        guard let result = requestResult as? SearchToolsResponse else {
+            throw APIError.decodingError
+        }
+        return result
+    }
 }

@@ -25,6 +25,7 @@ final class SettingsViewModel {
         case showTokenUsageToggled(Bool)
         case webSearchToolNameChanged(String)
         case webSearchMaxResultsChanged(Int)
+        case fetchSearchToolsTapped
         case resetConfirmed
         case requestNotificationPermissionTapped
         case notificationStatusRefresh
@@ -44,8 +45,11 @@ final class SettingsViewModel {
         var isCloudAvailable: Bool = false
         var showTokenUsage: Bool = true
         var showCloudSyncConflictAlert: Bool = false
-        var webSearchToolName: String = "brave-search"
+        var webSearchToolName: String = ""
         var webSearchMaxResults: Int = 10
+        var availableSearchTools: [SearchToolItem] = []
+        var isLoadingSearchTools: Bool = false
+        var searchToolsError: String?
         var showLiteLLMHint: Bool = false
         var notificationPermissionStatus: NotificationPermissionStatus = .notDetermined
     }
@@ -62,6 +66,7 @@ final class SettingsViewModel {
     private let saveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol
     private let testServerConnectionUseCase: TestServerConnectionUseCaseProtocol
     private let checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol
+    private let fetchSearchToolsUseCase: FetchSearchToolsUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
     private let cloudSyncManager: CloudSyncManagerProtocol
     private let userProfileManager: UserProfileManagerProtocol
@@ -76,6 +81,7 @@ final class SettingsViewModel {
         saveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol = SaveServerConfigurationUseCase(),
         testServerConnectionUseCase: TestServerConnectionUseCaseProtocol = TestServerConnectionUseCase(),
         checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol = CheckLiteLLMHealthUseCase(),
+        fetchSearchToolsUseCase: FetchSearchToolsUseCaseProtocol = FetchSearchToolsUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
         userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
@@ -87,6 +93,7 @@ final class SettingsViewModel {
         self.saveServerConfigurationUseCase = saveServerConfigurationUseCase
         self.testServerConnectionUseCase = testServerConnectionUseCase
         self.checkLiteLLMHealthUseCase = checkLiteLLMHealthUseCase
+        self.fetchSearchToolsUseCase = fetchSearchToolsUseCase
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
         self.userProfileManager = userProfileManager
@@ -113,7 +120,7 @@ final class SettingsViewModel {
             handleCloudSyncEvent(event)
         case .showTokenUsageToggled(let show):
             toggleShowTokenUsage(show)
-        case .webSearchToolNameChanged, .webSearchMaxResultsChanged:
+        case .webSearchToolNameChanged, .webSearchMaxResultsChanged, .fetchSearchToolsTapped:
             handleWebSearchEvent(event)
         case .resetConfirmed:
             resetApp()
@@ -140,7 +147,8 @@ private extension SettingsViewModel {
             isCloudAvailable: cloudSyncManager.isCloudAvailable(),
             showTokenUsage: settingsManager.getShowTokenUsage(),
             webSearchToolName: settingsManager.getWebSearchToolName(),
-            webSearchMaxResults: settingsManager.getWebSearchMaxResults()
+            webSearchMaxResults: settingsManager.getWebSearchMaxResults(),
+            availableSearchTools: settingsManager.getAvailableSearchTools()
         )
         state = .loaded(loadedState)
         let serverURL = loadedState.serverURL
@@ -298,8 +306,41 @@ private extension SettingsViewModel {
             updateWebSearchToolName(name)
         case .webSearchMaxResultsChanged(let count):
             updateWebSearchMaxResults(count)
+        case .fetchSearchToolsTapped:
+            fetchSearchTools()
         default:
             break
+        }
+    }
+
+    func fetchSearchTools() {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.isLoadingSearchTools = true
+        loadedState.searchToolsError = nil
+        state = .loaded(loadedState)
+
+        Task {
+            do {
+                let tools = try await fetchSearchToolsUseCase.execute()
+                guard case .loaded(var currentState) = state else { return }
+                settingsManager.setAvailableSearchTools(tools)
+                currentState.availableSearchTools = tools
+                currentState.isLoadingSearchTools = false
+                // Auto-select the first tool if the current name doesn't match any returned tool
+                if !tools.isEmpty,
+                   !tools.contains(where: { $0.searchToolName == currentState.webSearchToolName }) {
+                    let firstName = tools[0].searchToolName
+                    settingsManager.setWebSearchToolName(firstName)
+                    currentState.webSearchToolName = firstName
+                }
+                state = .loaded(currentState)
+            } catch {
+                guard case .loaded(var currentState) = state else { return }
+                currentState.isLoadingSearchTools = false
+                currentState.searchToolsError = error.localizedDescription
+                state = .loaded(currentState)
+                LogManager.error("FetchSearchTools failed: \(error)")
+            }
         }
     }
 
