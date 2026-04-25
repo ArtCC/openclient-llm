@@ -16,7 +16,7 @@ import VoticeSDK
 struct SettingsView: View {
     // MARK: - Properties
 
-    @State private var viewModel = SettingsViewModel()
+    @State var viewModel = SettingsViewModel()
     @State private var serverURL: String = ""
     @State private var apiKey: String = ""
     @State private var isAPIKeyVisible = false
@@ -24,6 +24,7 @@ struct SettingsView: View {
     @State private var isShowingUserProfile = false
     @State private var isShowingMemory = false
     @State private var isShowingHelp = false
+    @State private var isShowingTipJar = false
     @State private var showResetAlert = false
     @State private var presentedWebURL: WebDestination?
     @FocusState private var focusedField: Field?
@@ -75,6 +76,12 @@ private extension SettingsView {
         }
         .sheet(isPresented: $isShowingHelp) {
             HelpView()
+#if os(macOS)
+                .frame(width: 500, height: 460)
+#endif
+        }
+        .sheet(isPresented: $isShowingTipJar) {
+            TipJarView()
 #if os(macOS)
                 .frame(width: 500, height: 460)
 #endif
@@ -159,8 +166,12 @@ private extension SettingsView {
                 cloudSyncSection(loadedState)
                 personalizationSection()
                 chatSection(loadedState)
+#if os(iOS)
+                privacySection(loadedState)
+#endif
                 notificationsSection(loadedState)
                 webSearchSection(loadedState)
+                tipJarSection(isPresented: $isShowingTipJar)
                 feedbackSection(isShowingVotice: $isShowingVotice)
                 helpSection(isPresented: $isShowingHelp)
                 legalSection()
@@ -287,43 +298,6 @@ private extension SettingsView {
         case .failure(let message):
             Label(message, systemImage: "xmark.circle.fill")
                 .foregroundStyle(.red)
-        }
-    }
-
-    func webSearchSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
-        Section {
-            TextField(
-                String(localized: "Search Tool Name"),
-                text: Binding(
-                    get: { loadedState.webSearchToolName },
-                    set: { viewModel.send(.webSearchToolNameChanged($0)) }
-                )
-            )
-            .textSelection(.enabled)
-            .autocorrectionDisabled()
-#if os(iOS)
-            .textInputAutocapitalization(.never)
-            .keyboardType(.asciiCapable)
-#endif
-
-            Stepper(
-                value: Binding(
-                    get: { loadedState.webSearchMaxResults },
-                    set: { viewModel.send(.webSearchMaxResultsChanged($0)) }
-                ),
-                in: 1...20
-            ) {
-                HStack {
-                    Text(String(localized: "Results"))
-                    Spacer()
-                    Text("\(loadedState.webSearchMaxResults)")
-                        .foregroundStyle(.secondary)
-                }
-            }
-        } header: {
-            Text(String(localized: "Web Search"))
-        } footer: {
-            Text(String(localized: "Tool name must match the search_tool_name configured in your LiteLLM config.yaml."))
         }
     }
 

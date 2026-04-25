@@ -69,6 +69,7 @@ final class ChatViewModel {
         var exportedData: Data?
         var branchedConversation: Conversation?
         var isWebSearchEnabled: Bool = false
+        var isWebSearchToolConfigured: Bool = false
         var isSearchingWeb: Bool = false
     }
 
@@ -253,7 +254,8 @@ private extension ChatViewModel {
                 showTokenUsage: getChatPreferencesUseCase.getShowTokenUsage(),
                 ttsModelId: audioModelIds.ttsModelId,
                 transcriptionModelId: audioModelIds.transcriptionModelId,
-                isWebSearchEnabled: getChatPreferencesUseCase.getIsWebSearchEnabled()
+                isWebSearchEnabled: getChatPreferencesUseCase.getIsWebSearchEnabled(),
+                isWebSearchToolConfigured: !getChatPreferencesUseCase.getWebSearchToolName().isEmpty
             ))
         } catch {
             LogManager.error("fetchAndBuildInitialState failed: \(error)")
@@ -265,7 +267,8 @@ private extension ChatViewModel {
                 errorMessage: error.localizedDescription,
                 systemPrompt: pending?.systemPrompt ?? "",
                 modelParameters: pending?.modelParameters ?? .default,
-                isWebSearchEnabled: getChatPreferencesUseCase.getIsWebSearchEnabled()
+                isWebSearchEnabled: getChatPreferencesUseCase.getIsWebSearchEnabled(),
+                isWebSearchToolConfigured: !getChatPreferencesUseCase.getWebSearchToolName().isEmpty
             ))
             scheduleErrorDismiss()
         }

@@ -9,12 +9,16 @@
 /* Begin PBXBuildFile section */
 		8042FA682F7B01E800F0E933 /* VoticeSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 8042FA672F7B01E800F0E933 /* VoticeSDK */; };
 		8042FA6B2F7B01F800F0E933 /* VoticeSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 8042FA6A2F7B01F800F0E933 /* VoticeSDK */; };
+		8084C87F2F9CC4D300F4BDC3 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 8084C87E2F9CC4D300F4BDC3 /* ConfettiSwiftUI */; };
+		8084C8812F9CC4DD00F4BDC3 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 8084C8802F9CC4DD00F4BDC3 /* ConfettiSwiftUI */; };
 		8089F4112F7D000500465D6C /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 8089F4102F7D000500465D6C /* Secrets.xcconfig */; };
 		8089F4122F7D000500465D6C /* Secrets.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 8089F4102F7D000500465D6C /* Secrets.xcconfig */; };
 		8090B5C82F9365D7006E9DAE /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8090B5BE2F9365D6006E9DAE /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		80E687802F9A24A000AC491E /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E6877F2F9A24A000AC491E /* WidgetKit.framework */; };
 		80E687822F9A24A000AC491E /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E687812F9A24A000AC491E /* SwiftUI.framework */; };
 		80E687912F9A24A200AC491E /* WidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 80E6877D2F9A24A000AC491E /* WidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		80FEAFD82F9D11C300ED2905 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80FEAFD72F9D11C300ED2905 /* StoreKit.framework */; };
+		80FEAFDA2F9D11D300ED2905 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80FEAFD92F9D11D300ED2905 /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -65,6 +69,8 @@
 		80E6877D2F9A24A000AC491E /* WidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		80E6877F2F9A24A000AC491E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		80E687812F9A24A000AC491E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		80FEAFD72F9D11C300ED2905 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		80FEAFD92F9D11D300ED2905 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk/System/Library/Frameworks/StoreKit.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -180,6 +186,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				80FEAFD82F9D11C300ED2905 /* StoreKit.framework in Frameworks */,
+				8084C87F2F9CC4D300F4BDC3 /* ConfettiSwiftUI in Frameworks */,
 				8042FA682F7B01E800F0E933 /* VoticeSDK in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -188,6 +196,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				80FEAFDA2F9D11D300ED2905 /* StoreKit.framework in Frameworks */,
+				8084C8812F9CC4DD00F4BDC3 /* ConfettiSwiftUI in Frameworks */,
 				8042FA6B2F7B01F800F0E933 /* VoticeSDK in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -247,6 +257,8 @@
 		80E6877E2F9A24A000AC491E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				80FEAFD92F9D11D300ED2905 /* StoreKit.framework */,
+				80FEAFD72F9D11C300ED2905 /* StoreKit.framework */,
 				80E6877F2F9A24A000AC491E /* WidgetKit.framework */,
 				80E687812F9A24A000AC491E /* SwiftUI.framework */,
 			);
@@ -278,6 +290,7 @@
 			name = "openclient-llm";
 			packageProductDependencies = (
 				8042FA672F7B01E800F0E933 /* VoticeSDK */,
+				8084C87E2F9CC4D300F4BDC3 /* ConfettiSwiftUI */,
 			);
 			productName = "openclient-llm";
 			productReference = 805E798B2F79AC9B0070CBB3 /* openclient-llm.app */;
@@ -303,6 +316,7 @@
 			name = "openclient-llm-macOS";
 			packageProductDependencies = (
 				8042FA6A2F7B01F800F0E933 /* VoticeSDK */,
+				8084C8802F9CC4DD00F4BDC3 /* ConfettiSwiftUI */,
 			);
 			productName = "openclient-llm-macOS";
 			productReference = 8080773A2F7A66EF009BC8C4 /* OpenClient.app */;
@@ -425,6 +439,7 @@
 			packageReferences = (
 				808077342F7A6664009BC8C4 /* XCRemoteSwiftPackageReference "SwiftLintPlugins" */,
 				8042FA662F7B01E800F0E933 /* XCRemoteSwiftPackageReference "votice-sdk" */,
+				8084C87D2F9CC4D300F4BDC3 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 805E798C2F79AC9B0070CBB3 /* Products */;
@@ -735,7 +750,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -783,7 +798,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -840,7 +855,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = OpenClient;
 				REGISTER_APP_GROUPS = YES;
@@ -895,7 +910,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = OpenClient;
 				REGISTER_APP_GROUPS = YES;
@@ -972,7 +987,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1003,7 +1018,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1036,7 +1051,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1068,7 +1083,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.1;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1157,6 +1172,14 @@
 				minimumVersion = 0.63.2;
 			};
 		};
+		8084C87D2F9CC4D300F4BDC3 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/simibac/ConfettiSwiftUI";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1169,6 +1192,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 8042FA662F7B01E800F0E933 /* XCRemoteSwiftPackageReference "votice-sdk" */;
 			productName = VoticeSDK;
+		};
+		8084C87E2F9CC4D300F4BDC3 /* ConfettiSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8084C87D2F9CC4D300F4BDC3 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */;
+			productName = ConfettiSwiftUI;
+		};
+		8084C8802F9CC4DD00F4BDC3 /* ConfettiSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 8084C87D2F9CC4D300F4BDC3 /* XCRemoteSwiftPackageReference "ConfettiSwiftUI" */;
+			productName = ConfettiSwiftUI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

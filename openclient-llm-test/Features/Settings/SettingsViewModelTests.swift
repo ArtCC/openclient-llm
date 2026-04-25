@@ -13,14 +13,15 @@ import XCTest
 final class SettingsViewModelTests: XCTestCase {
     // MARK: - Properties
 
-    private var sut: SettingsViewModel!
+    var sut: SettingsViewModel!
     private var mockSaveServerConfig: MockSaveServerConfigurationUseCase!
     private var mockTestConnection: MockTestServerConnectionUseCase!
     private var mockCheckLiteLLMHealth: MockCheckLiteLLMHealthUseCase!
-    private var mockSettingsManager: MockSettingsManager!
+    var mockSettingsManager: MockSettingsManager!
     private var mockCloudSyncManager: MockCloudSyncManager!
     private var mockUserProfileManager: MockUserProfileManager!
     private var mockResetUseCase: MockResetAppDataUseCase!
+    var mockFetchSearchTools: MockFetchSearchToolsUseCase!
 
     // MARK: - Setup
 
@@ -34,10 +35,12 @@ final class SettingsViewModelTests: XCTestCase {
         mockCloudSyncManager = MockCloudSyncManager()
         mockUserProfileManager = MockUserProfileManager()
         mockResetUseCase = MockResetAppDataUseCase()
+        mockFetchSearchTools = MockFetchSearchToolsUseCase()
         sut = SettingsViewModel(
             saveServerConfigurationUseCase: mockSaveServerConfig,
             testServerConnectionUseCase: mockTestConnection,
             checkLiteLLMHealthUseCase: mockCheckLiteLLMHealth,
+            fetchSearchToolsUseCase: mockFetchSearchTools,
             settingsManager: mockSettingsManager,
             cloudSyncManager: mockCloudSyncManager,
             userProfileManager: mockUserProfileManager,
@@ -54,6 +57,7 @@ final class SettingsViewModelTests: XCTestCase {
         mockCloudSyncManager = nil
         mockUserProfileManager = nil
         mockResetUseCase = nil
+        mockFetchSearchTools = nil
 
         try await super.tearDown()
     }

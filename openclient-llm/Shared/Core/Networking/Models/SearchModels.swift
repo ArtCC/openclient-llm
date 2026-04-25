@@ -27,3 +27,18 @@ nonisolated struct LiteLLMSearchResult: Codable, Equatable, Sendable {
     let snippet: String
     let date: String?
 }
+
+// MARK: - Search Tools
+
+nonisolated struct SearchToolItem: Codable, Equatable, Identifiable, Sendable {
+    let searchToolName: String
+    let searchProvider: String
+    let description: String?
+
+    var id: String { searchToolName }
+}
+
+nonisolated struct SearchToolsResponse: Codable, Sendable {
+    let object: String
+    let data: [SearchToolItem]
+}

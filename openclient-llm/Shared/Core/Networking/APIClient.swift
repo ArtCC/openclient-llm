@@ -38,6 +38,7 @@ protocol APIClientProtocol: Sendable {
         toolName: String,
         body: LiteLLMSearchRequest
     ) async throws -> LiteLLMSearchResponse
+    func fetchSearchTools() async throws -> SearchToolsResponse
 }
 
 enum HTTPMethod: String, Sendable {
@@ -78,8 +79,12 @@ struct APIClient: APIClientProtocol, Sendable {
                 LogManager.error("HTTP \(http.statusCode) /\(endpoint) body: \(String(body.prefix(500)))")
             }
             try validateResponse(response)
+
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             LogManager.network("← \(method.rawValue) /\(endpoint) [\(statusCode)] \(data.count) bytes")
+
+            let rawBody = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
+            LogManager.debug("RAW RESPONSE /\(endpoint):\n\(rawBody)")
 
             do {
                 let decoder = JSONDecoder()
@@ -219,6 +224,10 @@ struct APIClient: APIClientProtocol, Sendable {
     ) async throws -> LiteLLMSearchResponse {
         let endpoint = "v1/search/\(toolName)"
         return try await request(endpoint: endpoint, method: .post, body: body)
+    }
+
+    func fetchSearchTools() async throws -> SearchToolsResponse {
+        try await request(endpoint: "v1/search/tools", method: .get, body: nil)
     }
 
     func rawDataRequest(

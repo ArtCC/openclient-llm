@@ -15,6 +15,10 @@ struct OpenClientApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     @State private var shortcutManager = ShortcutManager.shared
+    @State private var isObscured = false
+    @Environment(\.scenePhase) private var scenePhase
+
+    private let settingsManager: SettingsManagerProtocol = SettingsManager()
 
     // MARK: - View
 
@@ -22,6 +26,23 @@ struct OpenClientApp: App {
         WindowGroup {
             LaunchView()
                 .environment(shortcutManager)
+                .overlay {
+                    if isObscured {
+                        PrivacyScreenView()
+                            .animation(.easeInOut(duration: 0.2), value: isObscured)
+                    }
+                }
+                .onChange(of: scenePhase) { _, newPhase in
+                    guard settingsManager.getIsPrivacyScreenEnabled() else { return }
+                    switch newPhase {
+                    case .active:
+                        isObscured = false
+                    case .inactive, .background:
+                        isObscured = true
+                    @unknown default:
+                        break
+                    }
+                }
         }
     }
 }
