@@ -159,6 +159,9 @@ private extension SettingsView {
                 cloudSyncSection(loadedState)
                 personalizationSection()
                 chatSection(loadedState)
+#if os(iOS)
+                privacySection(loadedState)
+#endif
                 notificationsSection(loadedState)
                 webSearchSection(loadedState)
                 feedbackSection(isShowingVotice: $isShowingVotice)

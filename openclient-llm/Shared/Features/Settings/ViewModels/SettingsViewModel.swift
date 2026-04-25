@@ -29,6 +29,7 @@ final class SettingsViewModel {
         case resetConfirmed
         case requestNotificationPermissionTapped
         case notificationStatusRefresh
+        case privacyScreenToggled(Bool)
     }
 
     enum State: Equatable {
@@ -52,6 +53,7 @@ final class SettingsViewModel {
         var searchToolsError: String?
         var showLiteLLMHint: Bool = false
         var notificationPermissionStatus: NotificationPermissionStatus = .notDetermined
+        var isPrivacyScreenEnabled: Bool = true
     }
 
     enum ConnectionStatus: Equatable {
@@ -118,8 +120,8 @@ final class SettingsViewModel {
             saveSettings()
         case .cloudSyncToggled, .cloudSyncConflictResolved, .cloudSyncConflictCancelled:
             handleCloudSyncEvent(event)
-        case .showTokenUsageToggled(let show):
-            toggleShowTokenUsage(show)
+        case .showTokenUsageToggled, .privacyScreenToggled:
+            handlePreferenceToggleEvent(event)
         case .webSearchToolNameChanged, .webSearchMaxResultsChanged, .fetchSearchToolsTapped:
             handleWebSearchEvent(event)
         case .resetConfirmed:
@@ -148,7 +150,8 @@ private extension SettingsViewModel {
             showTokenUsage: settingsManager.getShowTokenUsage(),
             webSearchToolName: settingsManager.getWebSearchToolName(),
             webSearchMaxResults: settingsManager.getWebSearchMaxResults(),
-            availableSearchTools: settingsManager.getAvailableSearchTools()
+            availableSearchTools: settingsManager.getAvailableSearchTools(),
+            isPrivacyScreenEnabled: settingsManager.getIsPrivacyScreenEnabled()
         )
         state = .loaded(loadedState)
         let serverURL = loadedState.serverURL
@@ -272,6 +275,30 @@ private extension SettingsViewModel {
         loadedState.showTokenUsage = show
         state = .loaded(loadedState)
     }
+
+    func handlePreferenceToggleEvent(_ event: Event) {
+        switch event {
+        case .showTokenUsageToggled(let show):
+            toggleShowTokenUsage(show)
+        case .privacyScreenToggled(let enabled):
+#if os(iOS)
+            togglePrivacyScreen(enabled)
+#else
+            _ = enabled
+#endif
+        default:
+            break
+        }
+    }
+
+#if os(iOS)
+    func togglePrivacyScreen(_ enabled: Bool) {
+        guard case .loaded(var loadedState) = state else { return }
+        settingsManager.setIsPrivacyScreenEnabled(enabled)
+        loadedState.isPrivacyScreenEnabled = enabled
+        state = .loaded(loadedState)
+    }
+#endif
 
     func updateWebSearchToolName(_ name: String) {
         guard case .loaded(var loadedState) = state else { return }

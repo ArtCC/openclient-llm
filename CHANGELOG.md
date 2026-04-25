@@ -13,6 +13,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 - **Search tools discovery** — new `GET /v1/search/tools` integration; Settings → Web Search now includes a "Load Available Tools" button that fetches the list of search providers configured in the LiteLLM server and presents them in a `Picker`; previously required manual entry of the tool name; auto-selects the first tool if the saved name is no longer in the returned list
 - **Globe button red when unconfigured** — the web search toggle in the chat input bar now turns red when no search tool is configured (in addition to when the model doesn't support it), providing clear visual feedback that web search needs to be set up first
+- **Privacy screen (iOS)** — new toggle in Settings → Privacy: "Hide Content in App Switcher"; when enabled (default), app content is replaced by a blurred overlay with the app icon when the app moves to the background or the App Switcher is opened, mimicking the behaviour of banking apps; implemented via `PrivacyScreenView` overlay driven by `scenePhase` changes in `OpenClientApp`
 
 ### Changed
 
