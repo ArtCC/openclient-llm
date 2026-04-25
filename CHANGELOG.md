@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.4.1-build-47] - 2026-04-25
+
+### Changed
+
+- **`ConversationsOverviewWidget` header buttons** — replaced the `plus` SF Symbol with `square.and.pencil` (matching the "New Chat" button in the Chats scene toolbar); added a new `magnifyingglass` search button to the left of it, deep-linking to `openclient://search`
+
 ## [1.4.0-build-45] - 2026-04-24
 
 ### Added

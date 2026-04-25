@@ -97,21 +97,34 @@ private extension ConversationsOverviewWidgetView {
                 .font(.headline)
                 .foregroundStyle(.primary)
             Spacer()
-            if let url = URL(string: "openclient://new-chat") {
-                Link(destination: url) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.accentColor.opacity(0.15))
-                            .frame(width: 30, height: 30)
-                        Image(systemName: "plus")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(Color.accentColor)
+            HStack(spacing: 4) {
+                if let newChatURL = URL(string: "openclient://new-chat") {
+                    Link(destination: newChatURL) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.accentColor.opacity(0.15))
+                                .frame(width: 30, height: 30)
+                            Image(systemName: "square.and.pencil")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Color.accentColor)
+                        }
+                    }
+                }
+                if let searchURL = URL(string: "openclient://search") {
+                    Link(destination: searchURL) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.accentColor.opacity(0.15))
+                                .frame(width: 30, height: 30)
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Color.accentColor)
+                        }
                     }
                 }
             }
         }
-        .padding(.horizontal, 2.5)
-        .padding(.vertical, 8)
+        .padding(2.5)
     }
 
     var emptyState: some View {
