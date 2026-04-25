@@ -17,6 +17,8 @@
 		80E687802F9A24A000AC491E /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E6877F2F9A24A000AC491E /* WidgetKit.framework */; };
 		80E687822F9A24A000AC491E /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E687812F9A24A000AC491E /* SwiftUI.framework */; };
 		80E687912F9A24A200AC491E /* WidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 80E6877D2F9A24A000AC491E /* WidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		80FEAFD82F9D11C300ED2905 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80FEAFD72F9D11C300ED2905 /* StoreKit.framework */; };
+		80FEAFDA2F9D11D300ED2905 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80FEAFD92F9D11D300ED2905 /* StoreKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +69,8 @@
 		80E6877D2F9A24A000AC491E /* WidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		80E6877F2F9A24A000AC491E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		80E687812F9A24A000AC491E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		80FEAFD72F9D11C300ED2905 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		80FEAFD92F9D11D300ED2905 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.4.sdk/System/Library/Frameworks/StoreKit.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -182,6 +186,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				80FEAFD82F9D11C300ED2905 /* StoreKit.framework in Frameworks */,
 				8084C87F2F9CC4D300F4BDC3 /* ConfettiSwiftUI in Frameworks */,
 				8042FA682F7B01E800F0E933 /* VoticeSDK in Frameworks */,
 			);
@@ -191,6 +196,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				80FEAFDA2F9D11D300ED2905 /* StoreKit.framework in Frameworks */,
 				8084C8812F9CC4DD00F4BDC3 /* ConfettiSwiftUI in Frameworks */,
 				8042FA6B2F7B01F800F0E933 /* VoticeSDK in Frameworks */,
 			);
@@ -251,6 +257,8 @@
 		80E6877E2F9A24A000AC491E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				80FEAFD92F9D11D300ED2905 /* StoreKit.framework */,
+				80FEAFD72F9D11C300ED2905 /* StoreKit.framework */,
 				80E6877F2F9A24A000AC491E /* WidgetKit.framework */,
 				80E687812F9A24A000AC491E /* SwiftUI.framework */,
 			);
