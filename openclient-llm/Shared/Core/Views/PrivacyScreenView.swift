@@ -15,37 +15,29 @@ struct PrivacyScreenView: View {
     var body: some View {
         ZStack {
             Rectangle()
-                .fill(.regularMaterial)
+                .fill(.ultraThinMaterial)
                 .ignoresSafeArea()
 
-            VStack(spacing: 16) {
-                Image(uiImage: appIcon)
+            VStack(spacing: 20) {
+                Image("logo")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 96, height: 96)
-                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    .shadow(color: .black.opacity(0.15), radius: 12, x: 0, y: 4)
+                    .frame(width: 125, height: 125)
+                    .shadow(color: .cyan.opacity(0.4), radius: 24, x: 0, y: 8)
+                    .cornerRadius(25)
 
-                Text(String(localized: "OpenClient"))
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
+                VStack(spacing: 4) {
+                    Text(String(localized: "OpenClient"))
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    Text(String(localized: "Your AI conversations"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .transition(.opacity)
-    }
-}
-
-// MARK: - Private
-
-private extension PrivacyScreenView {
-    var appIcon: UIImage {
-        let iconNames: [String] = ["AppIcon60x60", "AppIcon", "AppIcon-60@2x", "AppIcon-60@3x"]
-        for name in iconNames {
-            if let image = UIImage(named: name) {
-                return image
-            }
-        }
-        return UIImage(systemName: "bubble.left.and.bubble.right.fill") ?? UIImage()
     }
 }
 
