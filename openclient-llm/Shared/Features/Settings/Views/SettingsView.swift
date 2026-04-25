@@ -24,6 +24,7 @@ struct SettingsView: View {
     @State private var isShowingUserProfile = false
     @State private var isShowingMemory = false
     @State private var isShowingHelp = false
+    @State private var isShowingTipJar = false
     @State private var showResetAlert = false
     @State private var presentedWebURL: WebDestination?
     @FocusState private var focusedField: Field?
@@ -77,6 +78,12 @@ private extension SettingsView {
             HelpView()
 #if os(macOS)
                 .frame(width: 500, height: 460)
+#endif
+        }
+        .sheet(isPresented: $isShowingTipJar) {
+            TipJarView()
+#if os(macOS)
+                .frame(width: 400, height: 520)
 #endif
         }
         .alert(
@@ -164,6 +171,7 @@ private extension SettingsView {
 #endif
                 notificationsSection(loadedState)
                 webSearchSection(loadedState)
+                tipJarSection(isPresented: $isShowingTipJar)
                 feedbackSection(isShowingVotice: $isShowingVotice)
                 helpSection(isPresented: $isShowingHelp)
                 legalSection()

@@ -6,10 +6,15 @@
 //  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
 //
 
+import StoreKit
 import SwiftUI
 
 @MainActor
 final class AppDelegate: NSObject, UIApplicationDelegate {
+    // MARK: - Properties
+
+    private var transactionObserverTask: Task<Void, Never>?
+
     // MARK: - UIApplication
 
     func application(
@@ -30,6 +35,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                 icon: UIApplicationShortcutIcon(type: .search)
             )
         ]
+
+        transactionObserverTask = Task {
+            for await result in Transaction.updates {
+                if case .verified(let transaction) = result {
+                    await transaction.finish()
+                }
+            }
+        }
 
         return true
     }
