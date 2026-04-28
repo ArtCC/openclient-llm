@@ -413,9 +413,8 @@ private extension ChatView {
                 .transition(.opacity)
             }
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 20)
         .padding(.bottom, 15)
-        .frame(maxWidth: 760)
         .frame(maxWidth: .infinity)
     }
 

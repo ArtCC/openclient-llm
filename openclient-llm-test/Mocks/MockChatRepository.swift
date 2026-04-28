@@ -23,6 +23,7 @@ final class MockChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
                 message: ChatCompletionResponse.Message(
                     role: "assistant",
                     content: "Mock answer",
+                    reasoningContent: nil,
                     images: nil,
                     toolCalls: nil
                 ),

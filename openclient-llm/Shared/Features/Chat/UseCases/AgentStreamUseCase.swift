@@ -160,14 +160,20 @@ private extension AgentStreamUseCase {
             // but emitted it as plain text instead of structured tool_calls (known Ollama quirk).
             // Signal the loop to retry without tools so the model answers naturally.
             let content = choice.message.content ?? ""
+            let reasoning = choice.message.reasoningContent
             if content.trimmingCharacters(in: .whitespaces) == "{}" {
                 LogManager.warning("agentLoop: content is '{}' with no tool_calls — retrying without tools")
                 return true
             }
+            if let reasoning, !reasoning.isEmpty {
+                yieldChunked(reasoning, as: { .reasoning($0) }, continuation: context.continuation)
+            }
             if !content.isEmpty {
-                context.continuation.yield(.token(content))
-            } else {
-                LogManager.warning("agentLoop: stop with empty content")
+                yieldChunked(content, as: { .token($0) }, continuation: context.continuation)
+            }
+            if content.isEmpty && (reasoning?.isEmpty ?? true) {
+                LogManager.warning("agentLoop: empty content with no tool_calls — retrying without tools")
+                return true
             }
             return false
         }
@@ -239,5 +245,20 @@ private extension AgentStreamUseCase {
         }
 
         return results
+    }
+
+    nonisolated func yieldChunked(
+        _ text: String,
+        as event: @Sendable (String) -> AgentEvent,
+        continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
+    ) {
+        var index = text.startIndex
+        while index < text.endIndex {
+            let remaining = text.distance(from: index, to: text.endIndex)
+            let chunkSize = min(2, remaining)
+            let end = text.index(index, offsetBy: chunkSize)
+            continuation.yield(event(String(text[index..<end])))
+            index = end
+        }
     }
 }

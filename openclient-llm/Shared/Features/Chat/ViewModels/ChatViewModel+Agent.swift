@@ -41,14 +41,7 @@ extension ChatViewModel {
                 state = .loaded(currentState)
             }
 
-            guard case .loaded(var finalState) = state else { return }
-            finalState.isStreaming = false
-            finalState.isSearchingWeb = false
-            state = .loaded(finalState)
-            LogManager.success("performAgentStreaming completed model=\(context.modelId)")
-            persistConversation()
-            streamingBackgroundUseCase.end()
-            await notifyStreamingCompletedUseCase.execute()
+            await handleAgentStreamSuccess(context.assistantId, modelId: context.modelId)
         } catch {
             guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
             LogManager.error("performAgentStreaming error model=\(context.modelId): \(error)")
@@ -180,5 +173,24 @@ private extension ChatViewModel {
         var merged = state.messages[index].webSearchResults ?? []
         merged.append(contentsOf: results)
         state.messages[index].webSearchResults = merged
+    }
+
+    func handleAgentStreamSuccess(_ assistantId: UUID, modelId: String) async {
+        guard case .loaded(var finalState) = state else { return }
+        finalState.isStreaming = false
+        finalState.isSearchingWeb = false
+
+        if let index = finalState.messages.firstIndex(where: { $0.id == assistantId }),
+           finalState.messages[index].content.isEmpty,
+           finalState.messages[index].reasoningContent == nil {
+            finalState.messages.remove(at: index)
+            finalState.errorMessage = String(localized: "The model returned an empty response. Please try again.")
+        }
+
+        state = .loaded(finalState)
+        LogManager.success("performAgentStreaming completed model=\(modelId)")
+        persistConversation()
+        streamingBackgroundUseCase.end()
+        await notifyStreamingCompletedUseCase.execute()
     }
 }

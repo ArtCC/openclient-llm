@@ -51,8 +51,8 @@ final class AgentStreamUseCaseTests: XCTestCase {
             if case .token(let text) = event { tokens.append(text) }
         }
 
-        // Then — content emitted directly as a single token (no second request)
-        XCTAssertEqual(tokens, ["Hello world"])
+        // Then — content emitted as chunked tokens (simulated typewriter streaming)
+        XCTAssertEqual(tokens.joined(), "Hello world")
     }
 
     // MARK: - Tests — Tool call round
@@ -91,7 +91,7 @@ final class AgentStreamUseCaseTests: XCTestCase {
         // Then
         XCTAssertTrue(toolStarted)
         XCTAssertTrue(toolCompleted)
-        XCTAssertEqual(tokens, ["Based on results"])
+        XCTAssertEqual(tokens.joined(), "Based on results")
         XCTAssertEqual(seqRepo.callIndex, 2)
     }
 
@@ -120,7 +120,7 @@ final class AgentStreamUseCaseTests: XCTestCase {
         }
 
         XCTAssertFalse(tokens.contains("{}"), "Raw '{}' must never reach the UI")
-        XCTAssertEqual(tokens, ["Hola! Estoy bien, gracias."])
+        XCTAssertEqual(tokens.joined(), "Hola! Estoy bien, gracias.")
         XCTAssertEqual(seqRepo.callIndex, 2, "Should have made a second request without tools")
     }
 
@@ -161,7 +161,7 @@ final class AgentStreamUseCaseTests: XCTestCase {
 
         XCTAssertTrue(toolStarted, "Tool should have been executed despite finish_reason='stop'")
         XCTAssertFalse(tokens.contains("{}"), "Raw '{}' must never reach the UI")
-        XCTAssertEqual(tokens, ["Final grounded answer"])
+        XCTAssertEqual(tokens.joined(), "Final grounded answer")
         XCTAssertEqual(seqRepo.callIndex, 2)
     }
 
@@ -255,7 +255,7 @@ final class AgentStreamUseCaseTests: XCTestCase {
 private extension AgentStreamUseCaseTests {
     func makeStopResponse(content: String) -> ChatCompletionResponse {
         let message = ChatCompletionResponse.Message(
-            role: "assistant", content: content, images: nil, toolCalls: nil
+            role: "assistant", content: content, reasoningContent: nil, images: nil, toolCalls: nil
         )
         return ChatCompletionResponse(
             id: "resp-stop",
@@ -266,7 +266,7 @@ private extension AgentStreamUseCaseTests {
 
     func makeToolCallResponse(toolCalls: [ToolCall]) -> ChatCompletionResponse {
         let message = ChatCompletionResponse.Message(
-            role: "assistant", content: nil, images: nil, toolCalls: toolCalls
+            role: "assistant", content: nil, reasoningContent: nil, images: nil, toolCalls: toolCalls
         )
         return ChatCompletionResponse(
             id: "resp-tool",
@@ -281,7 +281,7 @@ private extension AgentStreamUseCaseTests {
         content: String? = nil
     ) -> ChatCompletionResponse {
         let message = ChatCompletionResponse.Message(
-            role: "assistant", content: content, images: nil, toolCalls: toolCalls
+            role: "assistant", content: content, reasoningContent: nil, images: nil, toolCalls: toolCalls
         )
         return ChatCompletionResponse(
             id: "resp-tool-nonstandard",

@@ -35,6 +35,14 @@ extension ChatViewModel {
 
             guard case .loaded(var currentState) = state else { return }
             currentState.isStreaming = false
+
+            if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }),
+               currentState.messages[index].content.isEmpty,
+               currentState.messages[index].reasoningContent == nil {
+                currentState.messages.remove(at: index)
+                currentState.errorMessage = String(localized: "The model returned an empty response. Please try again.")
+            }
+
             state = .loaded(currentState)
             LogManager.success("performStreaming completed model=\(model)")
             persistConversation()
