@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [1.4.1-build-49] - 2026-04-27
+## [1.4.1-build-50] - 2026-04-29
 
 ### Added
 
@@ -15,11 +15,19 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - **Search tools discovery** — new `GET /v1/search/tools` integration; Settings → Web Search now includes a "Load Available Tools" button that fetches the list of search providers configured in the LiteLLM server and presents them in a `Picker`; previously required manual entry of the tool name; auto-selects the first tool if the saved name is no longer in the returned list
 - **Globe button red when unconfigured** — the web search toggle in the chat input bar now turns red when no search tool is configured (in addition to when the model doesn't support it), providing clear visual feedback that web search needs to be set up first
 - **Privacy screen (iOS)** — new toggle in Settings → Privacy: "Hide Content in App Switcher"; when enabled (default), app content is replaced by a blurred overlay with the app icon when the app moves to the background or the App Switcher is opened, mimicking the behaviour of banking apps; implemented via `PrivacyScreenView` overlay driven by `scenePhase` changes in `OpenClientApp`
+- **Reasoning (thinking) streaming for agent mode** — `ChatCompletionResponse.Message` now carries an optional `reasoningContent` field; `AgentStreamUseCase` yields reasoning tokens as chunked `.reasoning` events alongside content tokens, enabling real-time display of model thinking in the UI
+- **Empty assistant message handling** — when streaming completes with an empty assistant message, `ChatViewModel` removes the blank bubble and shows a localized error; `ChatRepository` decoder catches individual line errors without killing the SSE stream
 
 ### Changed
 
 - **`ConversationsOverviewWidget` header buttons** — replaced the `plus` SF Symbol with `square.and.pencil` (matching the "New Chat" button in the Chats scene toolbar); added a new `magnifyingglass` search button to the left of it, deep-linking to `openclient://search`
 - **Web search tool name default** — removed hardcoded `"brave-search"` default; the saved tool name now defaults to `""` so users without a search provider configured are not misled
+- **Chat message area layout** — horizontal padding increased from 16 to 20 pt and max width set to infinity for a wider reading area
+- **Stream decoding resilience** — `ChatRepository` streaming decoder catches and logs individual SSE line errors without terminating the entire stream
+
+### Fixed
+
+- **Empty assistant message removed** — streaming responses that finished with no content and no reasoning content were silently kept as blank bubbles; they are now removed and a localized error is shown to the user
 
 ## [1.4.0-build-45] - 2026-04-24
 
