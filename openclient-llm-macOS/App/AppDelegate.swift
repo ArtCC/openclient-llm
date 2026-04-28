@@ -7,6 +7,7 @@
 //
 
 import AppKit
+import StoreKit
 
 // MARK: - Delegate
 
@@ -15,10 +16,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Properties
 
     private let menuBarManager = MenuBarManager()
+    private var transactionObserverTask: Task<Void, Never>?
 
     // MARK: - NSApplicationDelegate
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         menuBarManager.setUp()
+
+        transactionObserverTask = Task {
+            for await result in Transaction.updates {
+                if case .verified(let transaction) = result {
+                    await transaction.finish()
+                }
+            }
+        }
     }
 }

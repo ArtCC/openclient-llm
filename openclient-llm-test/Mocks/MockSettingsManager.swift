@@ -25,6 +25,8 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     var isWebSearchEnabled: Bool = false
     var webSearchToolName: String = "brave-search"
     var webSearchMaxResults: Int = 10
+    var availableSearchTools: [SearchToolItem] = []
+    var isPrivacyScreenEnabled: Bool = true
     var deleteAllCalled: Bool = false
 
     // MARK: - Public
@@ -123,6 +125,22 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
     func setWebSearchMaxResults(_ value: Int) {
         webSearchMaxResults = value
+    }
+
+    func getAvailableSearchTools() -> [SearchToolItem] {
+        availableSearchTools
+    }
+
+    func setAvailableSearchTools(_ tools: [SearchToolItem]) {
+        availableSearchTools = tools
+    }
+
+    func getIsPrivacyScreenEnabled() -> Bool {
+        isPrivacyScreenEnabled
+    }
+
+    func setIsPrivacyScreenEnabled(_ value: Bool) {
+        isPrivacyScreenEnabled = value
     }
 
     func deleteAll() {

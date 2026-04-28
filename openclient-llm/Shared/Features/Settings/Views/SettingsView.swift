@@ -16,14 +16,15 @@ import VoticeSDK
 struct SettingsView: View {
     // MARK: - Properties
 
-    @State private var viewModel = SettingsViewModel()
+    @State var viewModel = SettingsViewModel()
     @State private var serverURL: String = ""
     @State private var apiKey: String = ""
     @State private var isAPIKeyVisible = false
-    @State private var isShowingVotice = false
+    @State var isShowingVotice = false
     @State private var isShowingUserProfile = false
     @State private var isShowingMemory = false
-    @State private var isShowingHelp = false
+    @State var isShowingHelp = false
+    @State var isShowingTipJar = false
     @State private var showResetAlert = false
     @State private var presentedWebURL: WebDestination?
     @FocusState private var focusedField: Field?
@@ -75,6 +76,12 @@ private extension SettingsView {
         }
         .sheet(isPresented: $isShowingHelp) {
             HelpView()
+#if os(macOS)
+                .frame(width: 500, height: 460)
+#endif
+        }
+        .sheet(isPresented: $isShowingTipJar) {
+            TipJarView()
 #if os(macOS)
                 .frame(width: 500, height: 460)
 #endif
@@ -159,10 +166,8 @@ private extension SettingsView {
                 cloudSyncSection(loadedState)
                 personalizationSection()
                 chatSection(loadedState)
-                notificationsSection(loadedState)
                 webSearchSection(loadedState)
-                feedbackSection(isShowingVotice: $isShowingVotice)
-                helpSection(isPresented: $isShowingHelp)
+                supportSection()
                 legalSection()
                 dangerSection()
             }
@@ -290,43 +295,6 @@ private extension SettingsView {
         }
     }
 
-    func webSearchSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
-        Section {
-            TextField(
-                String(localized: "Search Tool Name"),
-                text: Binding(
-                    get: { loadedState.webSearchToolName },
-                    set: { viewModel.send(.webSearchToolNameChanged($0)) }
-                )
-            )
-            .textSelection(.enabled)
-            .autocorrectionDisabled()
-#if os(iOS)
-            .textInputAutocapitalization(.never)
-            .keyboardType(.asciiCapable)
-#endif
-
-            Stepper(
-                value: Binding(
-                    get: { loadedState.webSearchMaxResults },
-                    set: { viewModel.send(.webSearchMaxResultsChanged($0)) }
-                ),
-                in: 1...20
-            ) {
-                HStack {
-                    Text(String(localized: "Results"))
-                    Spacer()
-                    Text("\(loadedState.webSearchMaxResults)")
-                        .foregroundStyle(.secondary)
-                }
-            }
-        } header: {
-            Text(String(localized: "Web Search"))
-        } footer: {
-            Text(String(localized: "Tool name must match the search_tool_name configured in your LiteLLM config.yaml."))
-        }
-    }
-
     func cloudSyncSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
         Section {
             Toggle(isOn: Binding(
@@ -360,15 +328,14 @@ private extension SettingsView {
             )) {
                 Label(String(localized: "Show Token Usage"), systemImage: "number")
             }
-        } header: {
-            Text(String(localized: "Chat"))
-        } footer: {
-            Text(String(localized: "Show token count below each assistant response."))
-        }
-    }
-
-    func notificationsSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
-        Section {
+#if os(iOS)
+            Toggle(isOn: Binding(
+                get: { loadedState.isPrivacyScreenEnabled },
+                set: { viewModel.send(.privacyScreenToggled($0)) }
+            )) {
+                Label(String(localized: "Hide Content in App Switcher"), systemImage: "lock.shield")
+            }
+#endif
             switch loadedState.notificationPermissionStatus {
             case .authorized:
                 Label(String(localized: "Notifications enabled"), systemImage: "checkmark.circle.fill")
@@ -396,7 +363,7 @@ private extension SettingsView {
                 .buttonStyle(.plain)
             }
         } header: {
-            Text(String(localized: "Notifications"))
+            Text(String(localized: "Chat"))
         } footer: {
             Text(String(localized: "Sent when a response finishes while the app is in the background."))
         }

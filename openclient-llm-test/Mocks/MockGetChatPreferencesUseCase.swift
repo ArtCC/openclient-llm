@@ -16,6 +16,7 @@ final class MockGetChatPreferencesUseCase: GetChatPreferencesUseCaseProtocol, @u
     var selectedModelId: String?
     var showTokenUsage: Bool = true
     var isWebSearchEnabled: Bool = false
+    var webSearchToolName: String = ""
     var ttsVoice: String = ""
 
     // MARK: - GetChatPreferencesUseCaseProtocol
@@ -30,6 +31,10 @@ final class MockGetChatPreferencesUseCase: GetChatPreferencesUseCaseProtocol, @u
 
     func getIsWebSearchEnabled() -> Bool {
         isWebSearchEnabled
+    }
+
+    func getWebSearchToolName() -> String {
+        webSearchToolName
     }
 
     func getSelectedTTSVoice(forModelId modelId: String) -> String {

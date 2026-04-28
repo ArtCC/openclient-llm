@@ -169,7 +169,14 @@ private extension ChatRepository {
             var imageChunks = 0
             for try await data in dataStream {
                 guard !Task.isCancelled else { break }
-                let chunk = try decoder.decode(ChatCompletionStreamResponse.self, from: data)
+                let chunk: ChatCompletionStreamResponse
+                do {
+                    chunk = try decoder.decode(ChatCompletionStreamResponse.self, from: data)
+                } catch {
+                    let preview = String(data: data, encoding: .utf8)?.prefix(200) ?? "<non-utf8>"
+                    LogManager.warning("streamMessage skipping undecodable chunk: \(error) — \(preview)")
+                    continue
+                }
                 if let content = chunk.choices.first?.delta.content {
                     totalChars += content.count
                     continuation.yield(.token(content))

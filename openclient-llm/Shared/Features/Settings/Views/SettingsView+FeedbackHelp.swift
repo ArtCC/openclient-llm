@@ -8,11 +8,18 @@
 
 import SwiftUI
 
-// MARK: - Feedback & Help
+// MARK: - Support
 
 extension SettingsView {
-    func feedbackSection(isShowingVotice: Binding<Bool>) -> some View {
+    func supportSection() -> some View {
         Section {
+            Button {
+                isShowingTipJar = true
+            } label: {
+                Label(String(localized: "Buy Me a Coffee"), systemImage: "cup.and.saucer")
+            }
+            .buttonStyle(.plain)
+
             Button {
                 requestAppReview()
             } label: {
@@ -21,20 +28,14 @@ extension SettingsView {
             .buttonStyle(.plain)
 
             Button {
-                isShowingVotice.wrappedValue = true
+                isShowingVotice = true
             } label: {
                 Label(String(localized: "Suggest Features"), systemImage: "lightbulb")
             }
             .buttonStyle(.plain)
-        } header: {
-            Text(String(localized: "Feedback"))
-        }
-    }
 
-    func helpSection(isPresented: Binding<Bool>) -> some View {
-        Section {
             Button {
-                isPresented.wrappedValue = true
+                isShowingHelp = true
             } label: {
                 Label(String(localized: "Help"), systemImage: "questionmark.circle")
             }
