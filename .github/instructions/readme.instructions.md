@@ -14,7 +14,7 @@ The README follows this exact structure in order:
 5. **Technologies** — Two-column markdown table: Technology | Purpose
 6. **Architecture** — Short paragraph summarising the pattern + link to `ARCHITECTURE.md`
 7. **Usage** — Setup steps + Requirements subsection + Self-hosting guides subsection
-8. **License** — Apache 2.0 with link
+8. **License** — GNU Affero General Public License v3.0 with link
 9. **Author** — Name and links
 
 ## Linked files
