@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Xcode-26+-blue?style=flat-square&logo=xcode" alt="Xcode" />
   <img src="https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift" alt="Swift" />
   <img src="https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift" alt="SwiftUI" />
-  <img src="https://img.shields.io/badge/License-Apache%202.0-green?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/License-AGPL%20v3.0-blue?style=flat-square" alt="License" />
 </p>
 
 ## Description
@@ -133,7 +133,7 @@ The guides below cover Docker Compose configurations, reference `.env` files, an
 
 ## License
 
-This project is licensed under the [Apache License 2.0](LICENSE).
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE).
 
 ## Contributing
 
