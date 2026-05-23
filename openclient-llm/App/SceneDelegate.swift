@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import WidgetKit
 
 @MainActor
 final class SceneDelegate: NSObject, UIWindowSceneDelegate {
@@ -53,6 +54,10 @@ final class SceneDelegate: NSObject, UIWindowSceneDelegate {
             defaults?.removeObject(forKey: "pendingNewChatFromWidget")
             ShortcutManager.shared.pendingAction = .newChat
         }
+    }
+
+    func sceneDidEnterBackground(_ scene: UIScene) {
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     // MARK: - URL Scheme (Warm Launch)

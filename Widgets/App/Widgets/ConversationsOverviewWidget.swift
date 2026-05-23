@@ -59,7 +59,8 @@ struct ConversationsOverviewProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<ConversationsOverviewEntry>) -> Void) {
         let conversations = AppGroupStore.loadConversations()
         let entry = ConversationsOverviewEntry(date: Date(), conversations: conversations)
-        let nextRefresh = Calendar.current.date(byAdding: .minute, value: 30, to: Date()) ?? Date()
+        let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: Date()) ?? Date()
+
         completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
     }
 }
@@ -204,6 +205,7 @@ private extension WidgetConversation {
     var modelColor: Color {
         let colors: [Color] = [.blue, .purple, .orange, .teal, .pink, .indigo]
         let index = abs(modelId.hashValue) % colors.count
+
         return colors[index]
     }
 }
