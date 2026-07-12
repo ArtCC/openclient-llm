@@ -15,7 +15,8 @@ import XCTest
 extension ChatViewModelTests {
     func test_send_webSearchToggled_flipsIsWebSearchEnabled() async throws {
         // Given
-        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4", capabilities: [.functionCalling])])
+        mockGetChatPreferences.webSearchToolName = "brave-search"
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
 
@@ -44,6 +45,23 @@ extension ChatViewModelTests {
 
         // When
         sut.send(.webSearchToggled)
+        sut.send(.webSearchToggled)
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertFalse(loadedState.isWebSearchEnabled)
+    }
+
+    func test_send_webSearchToggled_withoutCompatibleModelOrTool_doesNothing() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // When
         sut.send(.webSearchToggled)
 
         // Then

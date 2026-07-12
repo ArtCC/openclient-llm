@@ -248,6 +248,34 @@ final class AgentStreamUseCaseTests: XCTestCase {
             }
         }
     }
+
+    func test_execute_cancelledWhileWaitingForResponse_doesNotStartToolLoop() async throws {
+        // Given
+        let toolCall = ToolCall(
+            id: "call_1",
+            type: "function",
+            function: ToolCallFunction(name: "unknown_tool", arguments: "{}")
+        )
+        mockRepository.agentCompletionResult = .success(makeToolCallResponse(toolCalls: [toolCall]))
+        mockRepository.agentCompletionDelay = .milliseconds(250)
+        let stream = sut.execute(
+            messages: [ChatMessage(role: .user, content: "Hi")],
+            model: "gpt-4",
+            parameters: .default,
+            toolRegistry: ToolRegistry(tools: [])
+        )
+        let consumer = Task {
+            for try await _ in stream {}
+        }
+
+        // When
+        try await Task.sleep(for: .milliseconds(50))
+        consumer.cancel()
+        try await Task.sleep(for: .milliseconds(300))
+
+        // Then
+        XCTAssertEqual(mockRepository.agentCompletionCallCount, 1)
+    }
 }
 
 // MARK: - Helpers

@@ -12,7 +12,9 @@ import Foundation
 
 extension ChatViewModel {
     func toggleWebSearch() {
-        guard case .loaded(var loadedState) = state else { return }
+        guard case .loaded(var loadedState) = state,
+              loadedState.selectedModel?.capabilities.contains(.functionCalling) == true,
+              loadedState.isWebSearchToolConfigured else { return }
         let newValue = !loadedState.isWebSearchEnabled
         setWebSearchEnabledUseCase.execute(newValue)
         loadedState.isWebSearchEnabled = newValue

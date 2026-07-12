@@ -40,7 +40,7 @@ struct WebSearchUseCase: WebSearchUseCaseProtocol {
             country: nil,
             searchDomainFilter: nil
         )
-        LogManager.network("WebSearch query=\(query) tool=\(toolName) maxResults=\(maxResults)")
+        LogManager.network("WebSearch tool=\(toolName) maxResults=\(maxResults)")
         let response = try await apiClient.searchRequest(toolName: toolName, body: body)
         LogManager.success("WebSearch results=\(response.results.count)")
         return response.results

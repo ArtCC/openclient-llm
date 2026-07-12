@@ -15,6 +15,7 @@ final class ChatViewModel {
 
     enum Event {
         case viewAppeared
+        case viewDisappeared
         case conversationLoaded(Conversation)
         case inputChanged(String)
         case sendTapped
@@ -94,6 +95,7 @@ final class ChatViewModel {
     private let resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol
     let getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol
     let getMemoryContextUseCase: GetMemoryContextUseCaseProtocol
+    let memoryManager: MemoryManagerProtocol
     private let getConversationStartersUseCase: GetConversationStartersUseCaseProtocol
     private let playAudioUseCase: any PlayAudioUseCaseProtocol
     let recordAudioUseCase: any RecordAudioUseCaseProtocol
@@ -101,6 +103,7 @@ final class ChatViewModel {
     let streamingBackgroundUseCase: StreamingBackgroundUseCaseProtocol
     let notifyStreamingCompletedUseCase: NotifyStreamingCompletedUseCaseProtocol
     var streamTask: Task<Void, Never>?
+    var activeAssistantMessageId: UUID?
     var errorDismissTask: Task<Void, Never>?
     var durationTrackingTask: Task<Void, Never>?
     private var pendingConversation: Conversation?
@@ -126,6 +129,7 @@ final class ChatViewModel {
         resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol = ResolveAudioModelIdsUseCase(),
         getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol = GetUserProfileContextUseCase(),
         getMemoryContextUseCase: GetMemoryContextUseCaseProtocol = GetMemoryContextUseCase(),
+        memoryManager: MemoryManagerProtocol = MemoryManager(),
         getConversationStartersUseCase: GetConversationStartersUseCaseProtocol = GetConversationStartersUseCase(),
         playAudioUseCase: any PlayAudioUseCaseProtocol = PlayAudioUseCase(),
         recordAudioUseCase: any RecordAudioUseCaseProtocol = RecordAudioUseCase(),
@@ -151,6 +155,7 @@ final class ChatViewModel {
         self.resolveAudioModelIdsUseCase = resolveAudioModelIdsUseCase
         self.getUserProfileContextUseCase = getUserProfileContextUseCase
         self.getMemoryContextUseCase = getMemoryContextUseCase
+        self.memoryManager = memoryManager
         self.getConversationStartersUseCase = getConversationStartersUseCase
         self.playAudioUseCase = playAudioUseCase
         self.recordAudioUseCase = recordAudioUseCase
@@ -163,7 +168,17 @@ final class ChatViewModel {
     // MARK: - Input functions
 
     func send(_ event: Event) {
+        if case .viewDisappeared = event {
+            stopStreaming()
+            return
+        }
+        sendActiveEvent(event)
+    }
+
+    func sendActiveEvent(_ event: Event) {
         switch event {
+        case .viewDisappeared:
+            return
         case .viewAppeared:
             loadInitialData()
         case .conversationLoaded(let conversation):
@@ -214,6 +229,7 @@ private extension ChatViewModel {
     }
 
     func loadInitialData() {
+        cancelActiveStreaming()
         state = .loading
         Task { await fetchAndBuildInitialState() }
     }
@@ -275,6 +291,7 @@ private extension ChatViewModel {
     }
 
     func loadConversation(_ conversation: Conversation) {
+        cancelActiveStreaming()
         guard case .loaded(var loadedState) = state else {
             pendingConversation = conversation
             return
@@ -384,10 +401,16 @@ private extension ChatViewModel {
 
     func stopStreaming() {
         LogManager.debug("stopStreaming requested")
+        cancelActiveStreaming()
+    }
+
+    func cancelActiveStreaming() {
         streamTask?.cancel()
         streamTask = nil
+        activeAssistantMessageId = nil
         streamingBackgroundUseCase.end()
         guard case .loaded(var loadedState) = state else { return }
+        guard loadedState.isStreaming else { return }
         loadedState.isStreaming = false
         state = .loaded(loadedState)
         persistConversation()

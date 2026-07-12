@@ -14,12 +14,14 @@ final class MockBranchConversationUseCase: BranchConversationUseCaseProtocol, @u
     // MARK: - Properties
 
     var branchResult: Result<Conversation, Error>?
+    var executedConversations: [Conversation] = []
     var executedConversationIds: [UUID] = []
     var executedFromMessageIds: [UUID] = []
 
     // MARK: - Execute
 
     func execute(conversation: Conversation, fromMessageId: UUID) throws -> Conversation {
+        executedConversations.append(conversation)
         executedConversationIds.append(conversation.id)
         executedFromMessageIds.append(fromMessageId)
         if let result = branchResult {

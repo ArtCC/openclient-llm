@@ -1,6 +1,12 @@
 # AGENTS.md
 
-This file supplements `.github/copilot-instructions.md` and `.github/instructions/` with facts an agent would likely miss without reading multiple config files.
+This file supplements `specs/` with facts an agent would likely miss without reading multiple config files.
+
+## Platform & Services
+
+- Target Swift 6+ with SwiftUI on iOS, iPadOS, and macOS. Minimum deployment is iOS 26 and macOS 26.
+- The app connects to a self-hosted LiteLLM server through its OpenAI-compatible API. The base URL is user-configurable.
+- Store credentials in `KeychainManager`; store non-sensitive settings in `SettingsManager`.
 
 ## Build & Run
 
@@ -13,6 +19,7 @@ xcodebuild build -project openclient-llm.xcodeproj -scheme openclient-llm-macOS 
 ```
 
 - Use `.xcodeproj` (not `.xcworkspace`). SwiftLint is the only SPM dependency and is integrated inside Xcode.
+- SwiftLint runs on every Xcode build. All code must pass linting without warnings.
 - CI skips code signing: append `CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO` to `xcodebuild` commands.
 - VS Code + XcodeBuildMCP is supported (config at `.xcodebuildmcp/config.yaml`).
 - **You must create a `Secrets.xcconfig` before building.** Copy the template from CI:
@@ -56,6 +63,7 @@ Tests live in `openclient-llm-test/`, linked to the iOS target. No UI tests — 
 - Structure: Given-When-Then with `// Given` / `// When` / `// Then` comments.
 - Mocks live in `openclient-llm-test/Mocks/`, named `MockXxx`, protocol-based.
 - Test classes mirror feature folders: `Features/Chat/` → `Features/Chat/ChatViewModelTests.swift`.
+- Add isolated tests for UseCases, Repositories, and ViewModels. Use protocols and mocks for dependencies.
 
 ## Project structure & targets
 
@@ -102,6 +110,7 @@ final class FeatureViewModel {
 - Every SwiftUI view file must include `#Preview`.
 - Never initialize optional stored properties with `= nil` (optionals default to nil).
 - Use `String(localized:)` for ALL user-facing strings. Never manually edit `Localizable.xcstrings` — Xcode syncs it from `String(localized:)` usage.
+- Write localized source strings in English only; translations are maintained manually by the project author.
 - SwiftLint configuration: `.swiftlint.yml` enforces `force_unwrapping` and `force_cast` as errors, max line length 120, max function body 50 lines.
 - No external dependencies beyond SwiftLint.
 

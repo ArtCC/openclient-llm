@@ -16,6 +16,8 @@ final class MockChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
     var sendMessageResult: Result<(String, TokenUsage?), Error> = .success(("Mock response", nil))
     var streamChunks: [StreamChunk] = []
     var streamError: Error?
+    var agentCompletionDelay: Duration?
+    var agentCompletionCallCount = 0
     var agentCompletionResult: Result<ChatCompletionResponse, Error> = .success(
         ChatCompletionResponse(
             id: "mock-id",
@@ -70,6 +72,10 @@ final class MockChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
         parameters: ModelParameters,
         tools: [ToolDefinition]?
     ) async throws -> ChatCompletionResponse {
-        try agentCompletionResult.get()
+        agentCompletionCallCount += 1
+        if let agentCompletionDelay {
+            try? await Task.sleep(for: agentCompletionDelay)
+        }
+        return try agentCompletionResult.get()
     }
 }

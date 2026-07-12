@@ -169,6 +169,7 @@ private extension ChatView {
                 viewModel.send(.conversationLoaded(newConversation))
             }
         }
+        .onDisappear { viewModel.send(.viewDisappeared) }
     }
 #endif
 
@@ -255,6 +256,7 @@ private extension ChatView {
                 viewModel.send(.conversationLoaded(newConversation))
             }
         }
+        .onDisappear { viewModel.send(.viewDisappeared) }
         .imagePicker(isPresented: $showImagePicker) { data, fileName, type in
             viewModel.send(.attachmentAdded(data: data, fileName: fileName, type: type))
         }
@@ -424,9 +426,16 @@ private extension ChatView {
     func menuContent(for loadedSt: ChatViewModel.LoadedState) -> some View {
         ForEach(menuActions(for: loadedSt)) { action in
             switch action {
-            case .export(let url):
-                ShareLink(item: url) {
-                    Label(action.title, systemImage: action.systemImage)
+            case .export:
+                if let exportedData = loadedSt.exportedData,
+                   let exportedText = String(data: exportedData, encoding: .utf8) {
+                    ShareLink(item: exportedText) {
+                        Label(action.title, systemImage: action.systemImage)
+                    }
+                } else {
+                    Button { viewModel.send(.exportConversation) } label: {
+                        Label(action.title, systemImage: action.systemImage)
+                    }
                 }
             case .favourites:
                 Button { showFavouritesSheet = true } label: {
