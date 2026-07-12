@@ -60,6 +60,7 @@ struct ConversationRepository: ConversationRepositoryProtocol {
         let localConversations = try loadLocalConversations()
 
         let sorted = localConversations.sorted { $0.updatedAt > $1.updatedAt }
+        updateWidgetSnapshot(conversations: sorted)
         LogManager.success("loadAll returned \(sorted.count) conversations")
         return sorted
     }
@@ -113,8 +114,9 @@ struct ConversationRepository: ConversationRepositoryProtocol {
             _ = synchronize()
         }
 
-        AppGroupStore.clearConversations()
-        WidgetCenter.shared.reloadAllTimelines()
+        if AppGroupStore.clearConversations() {
+            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.conversationsWidgetKind)
+        }
     }
 
     @discardableResult
@@ -337,10 +339,9 @@ private extension ConversationRepository {
         }
     }
 
-    /// Rebuilds the App Group widget snapshot from the current local conversations
-    /// and signals WidgetKit to reload all timelines.
-    func updateWidgetSnapshot() {
-        let conversations = (try? loadLocalConversations()) ?? []
+    /// Rebuilds the App Group widget snapshot and reloads its timeline when it changed.
+    func updateWidgetSnapshot(conversations: [Conversation]? = nil) {
+        let conversations = conversations ?? (try? loadLocalConversations()) ?? []
         let sorted = conversations.sorted { $0.updatedAt > $1.updatedAt }
         let widgetConversations = sorted.prefix(6).map { conversation in
             WidgetConversation(
@@ -352,8 +353,9 @@ private extension ConversationRepository {
                 updatedAt: conversation.updatedAt
             )
         }
-        AppGroupStore.saveConversations(Array(widgetConversations))
-        WidgetCenter.shared.reloadAllTimelines()
+        if AppGroupStore.saveConversations(Array(widgetConversations)) {
+            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.conversationsWidgetKind)
+        }
     }
 }
 

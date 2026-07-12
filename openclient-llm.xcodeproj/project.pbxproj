@@ -89,6 +89,7 @@
 			membershipExceptions = (
 				App/Models/AppGroupStore.swift,
 				App/Models/WidgetConversation.swift,
+				App/Models/WidgetControlStore.swift,
 			);
 			target = 805E798A2F79AC9B0070CBB3 /* openclient-llm */;
 		};

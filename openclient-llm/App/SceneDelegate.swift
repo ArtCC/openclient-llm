@@ -7,7 +7,6 @@
 //
 
 import SwiftUI
-import WidgetKit
 
 @MainActor
 final class SceneDelegate: NSObject, UIWindowSceneDelegate {
@@ -49,15 +48,9 @@ final class SceneDelegate: NSObject, UIWindowSceneDelegate {
     // MARK: - Foreground Transition
 
     func sceneDidBecomeActive(_ scene: UIScene) {
-        let defaults = UserDefaults(suiteName: "group.com.artcc.openclient-llm")
-        if defaults?.bool(forKey: "pendingNewChatFromWidget") == true {
-            defaults?.removeObject(forKey: "pendingNewChatFromWidget")
+        if WidgetControlStore.consumePendingNewChat() {
             ShortcutManager.shared.pendingAction = .newChat
         }
-    }
-
-    func sceneDidEnterBackground(_ scene: UIScene) {
-        WidgetCenter.shared.reloadAllTimelines()
     }
 
     // MARK: - URL Scheme (Warm Launch)
