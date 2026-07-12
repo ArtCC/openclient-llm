@@ -18,7 +18,7 @@ import WidgetKit
 struct ConversationsOverviewWidget: Widget {
     // MARK: - Properties
 
-    static let kind: String = "com.artcc.openclient-llm.widget.conversations-overview"
+    static let kind = AppGroupStore.conversationsWidgetKind
 
     // MARK: - Body
 
@@ -204,7 +204,10 @@ private struct ConversationRow: View {
 private extension WidgetConversation {
     var modelColor: Color {
         let colors: [Color] = [.blue, .purple, .orange, .teal, .pink, .indigo]
-        let index = abs(modelId.hashValue) % colors.count
+        let hash = modelId.utf8.reduce(UInt64(5_381)) { partialResult, byte in
+            (partialResult &* 33) &+ UInt64(byte)
+        }
+        let index = Int(hash % UInt64(colors.count))
 
         return colors[index]
     }

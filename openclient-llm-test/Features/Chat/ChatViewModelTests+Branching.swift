@@ -53,6 +53,46 @@ extension ChatViewModelTests {
         XCTAssertEqual(forkReceived?.id, expectedFork.id)
         XCTAssertFalse(mockBranchConversation.executedFromMessageIds.isEmpty)
         XCTAssertEqual(mockBranchConversation.executedFromMessageIds.first, msgId)
+        XCTAssertEqual(mockBranchConversation.executedConversations.first?.messages, loadedAfterMessage.messages)
+    }
+
+    func test_send_forkFromMessage_afterSendingMessage_usesCurrentHistory() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockStreamMessage.chunks = [.token("Response")]
+        sut = ChatViewModel(
+            fetchModelsUseCase: mockFetchModels,
+            streamMessageUseCase: mockStreamMessage,
+            saveConversationUseCase: mockSaveConversation,
+            branchConversationUseCase: BranchConversationUseCase(
+                saveConversationUseCase: mockSaveConversation
+            ),
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            getConversationStartersUseCase: mockGetConversationStarters
+        )
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+        sut.send(.inputChanged("Hello"))
+        sut.send(.sendTapped)
+        try await Task.sleep(for: .milliseconds(200))
+
+        guard case .loaded(let sentState) = sut.state,
+              let userMessage = sentState.messages.first(where: { $0.role == .user }) else {
+            XCTFail("Expected a sent user message")
+            return
+        }
+
+        // When
+        sut.send(.forkFromMessage(userMessage.id))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state,
+              let fork = loadedState.branchedConversation else {
+            XCTFail("Expected a branched conversation")
+            return
+        }
+        XCTAssertEqual(fork.messages, [userMessage])
+        XCTAssertEqual(mockSaveConversation.savedConversations.last, fork)
     }
 
     func test_send_forkFromMessage_withoutConversation_doesNothing() async throws {

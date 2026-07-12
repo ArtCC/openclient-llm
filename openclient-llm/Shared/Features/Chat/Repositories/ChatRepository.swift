@@ -256,6 +256,10 @@ private extension ChatRepository {
             }
             switch attachment.type {
             case .image:
+                guard data.count <= Self.maximumImageBytes else {
+                    LogManager.warning("buildCompletionMessage: image exceeds size limit — skipping")
+                    continue
+                }
                 let base64 = data.base64EncodedString()
                 parts.append(.imageBase64(base64, mimeType: attachment.mimeType))
             case .pdf:
@@ -275,10 +279,13 @@ private extension ChatRepository {
     func extractPDFText(from data: Data) -> String {
         guard let pdfDocument = PDFDocument(data: data) else { return "" }
         var fullText = ""
-        for pageIndex in 0..<pdfDocument.pageCount {
+        let pageCount = min(pdfDocument.pageCount, Self.maximumPDFPages)
+        for pageIndex in 0..<pageCount {
             if let page = pdfDocument.page(at: pageIndex),
                let pageText = page.string {
-                fullText += pageText + "\n"
+                let remainingCharacterCount = Self.maximumPDFCharacters - fullText.count
+                guard remainingCharacterCount > 0 else { break }
+                fullText += String(pageText.prefix(remainingCharacterCount)) + "\n"
             }
         }
         return fullText
@@ -289,4 +296,12 @@ private extension ChatRepository {
         let base64 = String(dataURL[dataURL.index(after: commaIndex)...])
         return Data(base64Encoded: base64)
     }
+}
+
+// MARK: - Private constants
+
+private extension ChatRepository {
+    static let maximumImageBytes = 5_000_000
+    static let maximumPDFPages = 20
+    static let maximumPDFCharacters = 100_000
 }

@@ -59,7 +59,9 @@ final class ConversationListViewModel {
     private let renameConversationUseCase: RenameConversationUseCaseProtocol
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
+    private let conversationCloudObserver: ConversationCloudObserving
     private var errorDismissTask: Task<Void, Never>?
+    private var cloudChangeTask: Task<Void, Never>?
 
     var onConversationSelected: ((Conversation?) -> Void)?
 
@@ -73,7 +75,8 @@ final class ConversationListViewModel {
         updateConversationTagsUseCase: UpdateConversationTagsUseCaseProtocol = UpdateConversationTagsUseCase(),
         renameConversationUseCase: RenameConversationUseCaseProtocol = RenameConversationUseCase(),
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
-        settingsManager: SettingsManagerProtocol = SettingsManager()
+        settingsManager: SettingsManagerProtocol = SettingsManager(),
+        conversationCloudObserver: ConversationCloudObserving? = nil
     ) {
         self.state = state
         self.loadConversationsUseCase = loadConversationsUseCase
@@ -83,8 +86,11 @@ final class ConversationListViewModel {
         self.renameConversationUseCase = renameConversationUseCase
         self.fetchModelsUseCase = fetchModelsUseCase
         self.settingsManager = settingsManager
+        self.conversationCloudObserver = conversationCloudObserver
+            ?? ConversationCloudObserver(settingsManager: settingsManager)
         observeAppDataReset()
         observeConversationUpdated()
+        observeCloudConversationChanges()
     }
 
     // MARK: - Input functions
@@ -129,6 +135,7 @@ final class ConversationListViewModel {
 private extension ConversationListViewModel {
     func loadData() {
         state = .loading
+        conversationCloudObserver.start()
 
         Task {
             var models: [LLMModel] = []
@@ -157,6 +164,7 @@ private extension ConversationListViewModel {
 
     func reloadConversations() {
         guard case .loaded(var loadedState) = state else { return }
+        conversationCloudObserver.start()
 
         do {
             loadedState.conversations = try loadConversationsUseCase.execute()
@@ -323,6 +331,22 @@ private extension ConversationListViewModel {
             for await _ in notifications {
                 guard let self else { return }
                 await MainActor.run { self.reloadConversations() }
+            }
+        }
+    }
+
+    func observeCloudConversationChanges() {
+        Task { [weak self] in
+            let notifications = NotificationCenter.default
+                .notifications(named: .conversationCloudDidChange)
+            for await _ in notifications {
+                guard let self else { return }
+                self.cloudChangeTask?.cancel()
+                self.cloudChangeTask = Task { [weak self] in
+                    try? await Task.sleep(for: .milliseconds(500))
+                    guard !Task.isCancelled else { return }
+                    self?.reloadConversations()
+                }
             }
         }
     }

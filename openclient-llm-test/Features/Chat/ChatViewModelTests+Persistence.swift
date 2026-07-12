@@ -52,6 +52,28 @@ extension ChatViewModelTests {
         XCTAssertFalse(mockSaveConversation.savedConversations.isEmpty)
     }
 
+    func test_send_sendTapped_synchronizesConversationMessagesWithState() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockStreamMessage.chunks = [.token("Response")]
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+
+        sut.send(.inputChanged("Hello"))
+
+        // When
+        sut.send(.sendTapped)
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.conversation?.messages, loadedState.messages)
+        XCTAssertEqual(mockSaveConversation.savedConversations.last?.messages, loadedState.messages)
+    }
+
     func test_send_conversationLoaded_restoresMessages() async throws {
         // Given
         mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
@@ -79,6 +101,60 @@ extension ChatViewModelTests {
         XCTAssertEqual(loadedState.messages.count, 2)
         XCTAssertEqual(loadedState.systemPrompt, "Be helpful")
         XCTAssertNotNil(loadedState.conversation)
+    }
+
+    func test_send_conversationLoaded_duringStreaming_preservesPreviousConversation() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        mockStreamMessage.chunks = [.token("Delayed response")]
+        mockStreamMessage.tokenDelay = .milliseconds(300)
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+        sut.send(.inputChanged("First chat"))
+        sut.send(.sendTapped)
+
+        guard case .loaded(let streamingState) = sut.state,
+              let previousConversation = streamingState.conversation else {
+            XCTFail("Expected a streaming conversation")
+            return
+        }
+        let selectedConversation = Conversation(
+            modelId: "gpt-4",
+            messages: [ChatMessage(role: .user, content: "Second chat")]
+        )
+
+        // When
+        sut.send(.conversationLoaded(selectedConversation))
+        try await Task.sleep(for: .milliseconds(400))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.conversation?.id, selectedConversation.id)
+        XCTAssertEqual(loadedState.messages, selectedConversation.messages)
+        XCTAssertFalse(loadedState.isStreaming)
+        XCTAssertTrue(mockSaveConversation.savedConversations.contains { $0.id == previousConversation.id })
+        XCTAssertFalse(mockSaveConversation.savedConversations.contains { $0.id == selectedConversation.id })
+    }
+
+    func test_send_sendTapped_withLongHistory_limitsRequestHistory() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        let history = (0..<60).map { ChatMessage(role: .user, content: "Message \($0)") }
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+        sut.send(.conversationLoaded(Conversation(modelId: "gpt-4", messages: history)))
+        sut.send(.inputChanged("Latest message"))
+
+        // When
+        sut.send(.sendTapped)
+        try await Task.sleep(for: .milliseconds(200))
+
+        // Then
+        XCTAssertEqual(mockStreamMessage.receivedMessages.last?.count, 51)
+        XCTAssertEqual(mockStreamMessage.receivedMessages.last?.last?.content, "Latest message")
     }
 
     // MARK: - Tests — System prompt

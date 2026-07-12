@@ -5,7 +5,6 @@
 //  Created by Arturo Carretero Calvo on 31/03/2026.
 //  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
 //
-
 import Foundation
 
 protocol CloudSyncManagerProtocol: Sendable {
@@ -15,6 +14,12 @@ protocol CloudSyncManagerProtocol: Sendable {
     func allCloudConversationIds() -> Set<UUID>?
     func deleteConversationFromCloud(_ conversationId: UUID) throws
     func deleteAllFromCloud() throws
+    func hasPendingConversationDownloads() throws -> Bool
+    func materializeAttachmentsFromCloud(for conversation: Conversation) throws -> Bool
+    func loadConversationTombstonesFromCloud() throws -> [ConversationTombstone]
+    func saveConversationTombstonesToCloud(_ tombstones: [ConversationTombstone]) throws
+    func loadConversationDeleteAllMarkerFromCloud() throws -> ConversationDeleteAllMarker?
+    func saveConversationDeleteAllMarkerToCloud(_ marker: ConversationDeleteAllMarker) throws
     func saveProfileToCloud(_ profile: UserProfile) throws
     func loadProfileFromCloud() throws -> UserProfile?
     func deleteProfileFromCloud() throws
@@ -30,7 +35,7 @@ protocol CloudSyncManagerProtocol: Sendable {
 struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
     // MARK: - Properties
 
-    private let fileManager: FileManager
+    let fileManager: FileManager
 
     // MARK: - Init
 
@@ -41,34 +46,27 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
     // MARK: - Public
 
     func isCloudAvailable() -> Bool {
-        fileManager.ubiquityIdentityToken != nil
+        fileManager.ubiquityIdentityToken != nil && cloudDocumentsDirectory() != nil
     }
-
     func syncConversationsToCloud(_ conversations: [Conversation]) throws {
         guard let cloudURL = cloudConversationsDirectory() else { return }
-
         try ensureDirectoryExists(at: cloudURL)
-
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = .prettyPrinted
-
         let localDocuments = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-
         for conversation in conversations {
             let fileURL = cloudURL.appendingPathComponent("\(conversation.id.uuidString).json")
             let data = try encoder.encode(conversation)
-            try data.write(to: fileURL, options: .atomic)
+            try writeIfChanged(data, to: fileURL)
 
             // Sync attachment files for this conversation
             try syncAttachmentFiles(for: conversation, localDocuments: localDocuments)
         }
     }
-
     func loadConversationsFromCloud() throws -> [Conversation] {
         guard let cloudURL = cloudConversationsDirectory() else { return [] }
         guard fileManager.fileExists(atPath: cloudURL.path) else { return [] }
-
         // Do NOT skip hidden files: iCloud placeholders are named `.UUID.json.icloud`
         // (leading dot = hidden). We need to see them to trigger their download.
         let fileURLs = try fileManager.contentsOfDirectory(
@@ -76,16 +74,13 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
             includingPropertiesForKeys: [.ubiquitousItemDownloadingStatusKey],
             options: []
         )
-
         // Trigger download of any cloud-only placeholder files so they are available
         // on the next refresh cycle (download is asynchronous).
         for url in fileURLs where url.lastPathComponent.hasPrefix(".") && url.pathExtension == "icloud" {
             try? fileManager.startDownloadingUbiquitousItem(at: url)
         }
-
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-
         var conversations: [Conversation] = []
         for url in fileURLs where url.pathExtension == "json" {
             do {
@@ -96,14 +91,11 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
                 continue
             }
         }
-
         return conversations.sorted { $0.updatedAt > $1.updatedAt }
     }
-
     func allCloudConversationIds() -> Set<UUID>? {
         guard let cloudURL = cloudConversationsDirectory() else { return nil }
         guard fileManager.fileExists(atPath: cloudURL.path) else { return nil }
-
         guard let fileURLs = try? fileManager.contentsOfDirectory(
             at: cloudURL,
             includingPropertiesForKeys: nil,
@@ -134,6 +126,11 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
             try fileManager.removeItem(at: fileURL)
         }
 
+        let placeholderURL = cloudURL.appendingPathComponent(".\(conversationId.uuidString).json.icloud")
+        if fileManager.fileExists(atPath: placeholderURL.path) {
+            try fileManager.removeItem(at: placeholderURL)
+        }
+
         // Remove cloud attachment folder for this conversation
         if let cloudAttachments = cloudAttachmentsDirectory() {
             let convAttachments = cloudAttachments.appendingPathComponent(conversationId.uuidString, isDirectory: true)
@@ -156,6 +153,71 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
         }
     }
 
+    func hasPendingConversationDownloads() throws -> Bool {
+        guard let cloudURL = cloudConversationsDirectory(), fileManager.fileExists(atPath: cloudURL.path) else {
+            return false
+        }
+        let files = try fileManager.contentsOfDirectory(at: cloudURL, includingPropertiesForKeys: nil, options: [])
+        let placeholders = files.filter { $0.lastPathComponent.hasPrefix(".") && $0.pathExtension == "icloud" }
+        for placeholder in placeholders {
+            try? fileManager.startDownloadingUbiquitousItem(at: placeholder)
+        }
+        guard placeholders.isEmpty else { return true }
+        let conversationFiles = files.filter { $0.pathExtension == "json" }
+        let conversationsPending = try conversationFiles.contains { try requiresDownload(at: $0) }
+        let tombstonesPending = try tombstonesRequireDownload()
+        return conversationsPending || tombstonesPending
+    }
+
+    func materializeAttachmentsFromCloud(for conversation: Conversation) throws -> Bool {
+        guard let cloudAttachments = cloudAttachmentsDirectory() else { return false }
+        let localDocuments = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let cloudFolder = cloudAttachments.appendingPathComponent(conversation.id.uuidString, isDirectory: true)
+        var completed = true
+
+        for attachment in conversation.messages.flatMap(\.attachments) where !attachment.fileRelativePath.isEmpty {
+            let localFile = localDocuments.appendingPathComponent(attachment.fileRelativePath)
+            guard !fileManager.fileExists(atPath: localFile.path) else { continue }
+            let cloudFile = cloudFolder.appendingPathComponent(localFile.lastPathComponent)
+            let placeholder = cloudFolder.appendingPathComponent(".\(localFile.lastPathComponent).icloud")
+            if fileManager.fileExists(atPath: placeholder.path) {
+                try? fileManager.startDownloadingUbiquitousItem(at: placeholder)
+                completed = false
+                continue
+            }
+            guard fileManager.fileExists(atPath: cloudFile.path) else {
+                completed = false
+                continue
+            }
+            try ensureDirectoryExists(at: localFile.deletingLastPathComponent())
+            try fileManager.copyItem(at: cloudFile, to: localFile)
+        }
+        return completed
+    }
+
+    func loadConversationTombstonesFromCloud() throws -> [ConversationTombstone] {
+        var tombstones: [ConversationTombstone] = []
+        if let legacyURL = cloudConversationTombstonesFileURL(), fileManager.fileExists(atPath: legacyURL.path) {
+            tombstones += try decodeTombstones(at: legacyURL)
+        }
+        if let directory = cloudConversationTombstonesDirectory(), fileManager.fileExists(atPath: directory.path) {
+            let files = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+            tombstones += try files.filter { $0.pathExtension == "json" }.map { try decodeTombstone(at: $0) }
+        }
+        return tombstones
+    }
+
+    func saveConversationTombstonesToCloud(_ tombstones: [ConversationTombstone]) throws {
+        guard let directory = cloudConversationTombstonesDirectory() else { return }
+        try ensureDirectoryExists(at: directory)
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = .prettyPrinted
+        for tombstone in tombstones {
+            let fileURL = directory.appendingPathComponent("\(tombstone.conversationId.uuidString).json")
+            try writeIfChanged(encoder.encode(tombstone), to: fileURL)
+        }
+    }
     func saveProfileToCloud(_ profile: UserProfile) throws {
         guard let fileURL = cloudProfileFileURL() else { return }
 
@@ -319,9 +381,7 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
     }
 }
 
-// MARK: - Private
-
-private extension CloudSyncManager {
+extension CloudSyncManager {
     func cloudConversationsDirectory() -> URL? {
         cloudDocumentsDirectory()?
             .appendingPathComponent("Conversations", isDirectory: true)
@@ -332,6 +392,13 @@ private extension CloudSyncManager {
             .appendingPathComponent("Attachments", isDirectory: true)
     }
 
+    func cloudConversationTombstonesFileURL() -> URL? {
+        cloudDocumentsDirectory()?.appendingPathComponent("ConversationTombstones.json")
+    }
+
+    func cloudConversationTombstonesDirectory() -> URL? {
+        cloudDocumentsDirectory()?.appendingPathComponent("ConversationTombstones", isDirectory: true)
+    }
     func cloudProfileFileURL() -> URL? {
         cloudDocumentsDirectory()?
             .appendingPathComponent("UserProfile.json")
@@ -357,6 +424,54 @@ private extension CloudSyncManager {
         try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
     }
 
+    func writeIfChanged(_ data: Data, to url: URL) throws {
+        if let existing = try? Data(contentsOf: url), existing == data { return }
+        try data.write(to: url, options: .atomic)
+    }
+
+    func requiresDownload(at url: URL) throws -> Bool {
+        let values = try url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey])
+        guard values.ubiquitousItemDownloadingStatus != .current else { return false }
+        try? fileManager.startDownloadingUbiquitousItem(at: url)
+        return true
+    }
+
+    func tombstonesRequireDownload() throws -> Bool {
+        if let legacyURL = cloudConversationTombstonesFileURL() {
+            if try placeholderRequiresDownload(for: legacyURL) { return true }
+            if fileManager.fileExists(atPath: legacyURL.path), try requiresDownload(at: legacyURL) {
+                return true
+            }
+        }
+        guard let directory = cloudConversationTombstonesDirectory(),
+              fileManager.fileExists(atPath: directory.path) else {
+            return false
+        }
+        let files = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+        let placeholders = files.filter { $0.lastPathComponent.hasPrefix(".") && $0.pathExtension == "icloud" }
+        for placeholder in placeholders {
+            try? fileManager.startDownloadingUbiquitousItem(at: placeholder)
+        }
+        guard placeholders.isEmpty else { return true }
+        return try files.filter { $0.pathExtension == "json" }.contains { try requiresDownload(at: $0) }
+    }
+
+    func placeholderRequiresDownload(for url: URL) throws -> Bool {
+        let placeholder = url.deletingLastPathComponent().appendingPathComponent(".\(url.lastPathComponent).icloud")
+        guard fileManager.fileExists(atPath: placeholder.path) else { return false }
+        try? fileManager.startDownloadingUbiquitousItem(at: placeholder)
+        return true
+    }
+    func decodeTombstones(at url: URL) throws -> [ConversationTombstone] {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode([ConversationTombstone].self, from: Data(contentsOf: url))
+    }
+    func decodeTombstone(at url: URL) throws -> ConversationTombstone {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(ConversationTombstone.self, from: Data(contentsOf: url))
+    }
     /// Copies attachment files referenced by `conversation` from local storage to iCloud.
     func syncAttachmentFiles(for conversation: Conversation, localDocuments: URL) throws {
         guard let cloudAttachments = cloudAttachmentsDirectory() else { return }

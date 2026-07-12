@@ -28,12 +28,13 @@ extension ChatViewModel {
                 parameters: parameters
             )
             for try await chunk in stream {
-                guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+                guard !Task.isCancelled, isActiveStream(assistantMessageId),
+                      case .loaded(var currentState) = state else { return }
                 applyStreamChunk(chunk, to: &currentState, assistantMessageId: assistantMessageId)
                 state = .loaded(currentState)
             }
 
-            guard case .loaded(var currentState) = state else { return }
+            guard isActiveStream(assistantMessageId), case .loaded(var currentState) = state else { return }
             currentState.isStreaming = false
 
             if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }),
@@ -47,9 +48,11 @@ extension ChatViewModel {
             LogManager.success("performStreaming completed model=\(model)")
             persistConversation()
             streamingBackgroundUseCase.end()
+            completeActiveStream(assistantMessageId)
             await notifyStreamingCompletedUseCase.execute()
         } catch {
-            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+            guard !Task.isCancelled, isActiveStream(assistantMessageId),
+                  case .loaded(var currentState) = state else { return }
             LogManager.error("performStreaming error model=\(model): \(error)")
             if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }),
                currentState.messages[index].content.isEmpty {
@@ -61,6 +64,7 @@ extension ChatViewModel {
             scheduleErrorDismiss()
             persistConversation()
             streamingBackgroundUseCase.end()
+            completeActiveStream(assistantMessageId)
         }
     }
 
@@ -124,7 +128,7 @@ private extension ChatViewModel {
             memoryContext: memoryContext,
             conversationSystemPrompt: systemPrompt
         )
-        var result = messages
+        var result = Array(messages.suffix(50))
         if !effectiveSystemPrompt.isEmpty {
             result.insert(ChatMessage(role: .system, content: effectiveSystemPrompt), at: 0)
         }

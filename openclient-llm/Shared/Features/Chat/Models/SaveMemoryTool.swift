@@ -19,8 +19,8 @@ struct SaveMemoryTool: ChatToolProtocol {
             function: ToolFunctionDefinition(
                 name: "save_memory",
                 description: "Save a piece of information to the user's persistent memory so it can " +
-                    "be recalled in future conversations. Use this when the user shares important " +
-                    "personal details, preferences, or context that should be remembered long-term.",
+                    "be recalled in future conversations. Save only durable user facts, preferences, " +
+                    "constraints, or ongoing projects that will improve future responses.",
                 parameters: ToolParameters(
                     type: "object",
                     properties: [

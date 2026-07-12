@@ -11,6 +11,16 @@ import Foundation
 // MARK: - Internal helpers
 
 extension ChatViewModel {
+    func isActiveStream(_ assistantMessageId: UUID) -> Bool {
+        activeAssistantMessageId == assistantMessageId
+    }
+
+    func completeActiveStream(_ assistantMessageId: UUID) {
+        guard isActiveStream(assistantMessageId) else { return }
+        activeAssistantMessageId = nil
+        streamTask = nil
+    }
+
     func buildEffectiveSystemPrompt(
         profileContext: String,
         memoryContext: String,
@@ -55,7 +65,7 @@ extension ChatViewModel {
     }
 
     func persistConversation() {
-        guard case .loaded(let loadedState) = state,
+        guard case .loaded(var loadedState) = state,
               var conversation = loadedState.conversation else { return }
 
         conversation.messages = loadedState.messages
@@ -65,6 +75,8 @@ extension ChatViewModel {
         if let model = loadedState.selectedModel {
             conversation.modelId = model.id
         }
+        loadedState.conversation = conversation
+        state = .loaded(loadedState)
 
         do {
             try saveConversationUseCase.execute(conversation)
