@@ -19,6 +19,7 @@ final class MockConversationRepository: ConversationRepositoryProtocol, @uncheck
     var loadError: Error?
     var savedConversations: [Conversation] = []
     var deletedIds: [UUID] = []
+    var synchronizeResult: ConversationSyncResult = .synchronized
 
     // MARK: - Public
 
@@ -45,5 +46,9 @@ final class MockConversationRepository: ConversationRepositoryProtocol, @uncheck
 
     func deleteAll() throws {
         conversations.removeAll()
+    }
+
+    func synchronize() -> ConversationSyncResult {
+        synchronizeResult
     }
 }

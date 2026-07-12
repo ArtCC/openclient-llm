@@ -305,6 +305,12 @@ private extension SettingsView {
             }
             .disabled(!loadedState.isCloudAvailable)
 
+            if loadedState.isCloudSyncEnabled {
+                Button(String(localized: "Sync Now")) {
+                    viewModel.send(.syncConversationsTapped)
+                }
+            }
+
             if !loadedState.isCloudAvailable {
                 Label(
                     String(localized: "Sign in to iCloud to enable sync"),
@@ -316,7 +322,22 @@ private extension SettingsView {
         } header: {
             Text(String(localized: "Sync"))
         } footer: {
-            Text(String(localized: "Sync conversations across your devices via iCloud."))
+            Text(cloudSyncFooter(loadedState.conversationSyncResult))
+        }
+    }
+
+    func cloudSyncFooter(_ result: ConversationSyncResult?) -> String {
+        switch result {
+        case .synchronized:
+            return String(localized: "Conversations are synchronized across your devices via iCloud.")
+        case .pendingDownload:
+            return String(localized: "iCloud is downloading changes. Sync will continue automatically.")
+        case .unavailable:
+            return String(localized: "iCloud is unavailable. Your changes will stay on this device until sync resumes.")
+        case .failed:
+            return String(localized: "Sync could not finish. Your changes remain safely stored on this device.")
+        case nil:
+            return String(localized: "Sync conversations across your devices via iCloud.")
         }
     }
 

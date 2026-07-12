@@ -14,6 +14,8 @@ protocol ConversationRepositoryProtocol: Sendable {
     func save(_ conversation: Conversation) throws
     func delete(_ conversationId: UUID) throws
     func deleteAll() throws
+    @discardableResult
+    func synchronize() -> ConversationSyncResult
 }
 
 struct ConversationRepository: ConversationRepositoryProtocol {
@@ -21,6 +23,8 @@ struct ConversationRepository: ConversationRepositoryProtocol {
 
     private let fileManager: FileManager
     private let directoryURL: URL
+    private let tombstonesURL: URL
+    private let deleteAllMarkerURL: URL
     private let settingsManager: SettingsManagerProtocol
     private let cloudSyncManager: CloudSyncManagerProtocol
     private let attachmentRepository: AttachmentRepositoryProtocol
@@ -31,11 +35,14 @@ struct ConversationRepository: ConversationRepositoryProtocol {
         fileManager: FileManager = .default,
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
-        attachmentRepository: AttachmentRepositoryProtocol = AttachmentRepository()
+        attachmentRepository: AttachmentRepositoryProtocol = AttachmentRepository(),
+        baseDirectory: URL? = nil
     ) {
         self.fileManager = fileManager
-        let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let documentsURL = baseDirectory ?? fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
         self.directoryURL = documentsURL.appendingPathComponent("Conversations", isDirectory: true)
+        self.tombstonesURL = documentsURL.appendingPathComponent("ConversationTombstones.json")
+        self.deleteAllMarkerURL = documentsURL.appendingPathComponent("ConversationDeleteAll.json")
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
         self.attachmentRepository = attachmentRepository
@@ -47,29 +54,10 @@ struct ConversationRepository: ConversationRepositoryProtocol {
         LogManager.debug("loadAll conversations")
         try ensureDirectoryExists()
 
-        var localConversations = try loadLocalConversations()
-
         if settingsManager.getIsCloudSyncEnabled() {
-            let cloudConversations = (try? cloudSyncManager.loadConversationsFromCloud()) ?? []
-            let cloudIds = cloudSyncManager.allCloudConversationIds()
-
-            localConversations = mergeConversations(
-                local: localConversations,
-                cloud: cloudConversations,
-                cloudIds: cloudIds
-            )
-
-            // Clean up local files for conversations removed from cloud
-            if cloudIds != nil {
-                let mergedIds = Set(localConversations.map(\.id))
-                cleanupLocalFiles(keeping: mergedIds)
-            }
-
-            // Persist merged result locally
-            for conversation in localConversations {
-                try saveLocal(conversation)
-            }
+            _ = synchronize()
         }
+        let localConversations = try loadLocalConversations()
 
         let sorted = localConversations.sorted { $0.updatedAt > $1.updatedAt }
         LogManager.success("loadAll returned \(sorted.count) conversations")
@@ -82,7 +70,7 @@ struct ConversationRepository: ConversationRepositoryProtocol {
         try saveLocal(conversation)
 
         if settingsManager.getIsCloudSyncEnabled() {
-            try? cloudSyncManager.syncConversationsToCloud([conversation])
+            _ = synchronize()
         }
 
         updateWidgetSnapshot()
@@ -96,12 +84,14 @@ struct ConversationRepository: ConversationRepositoryProtocol {
            let conversation = try? JSONDecoder.iso8601.decode(Conversation.self, from: data) {
             deleteAttachments(for: conversation)
         }
-        guard fileManager.fileExists(atPath: fileURL.path) else { return }
-        try fileManager.removeItem(at: fileURL)
+        try saveTombstones(mergedTombstones([ConversationTombstone(conversationId: conversationId, deletedAt: Date())]))
+        if fileManager.fileExists(atPath: fileURL.path) {
+            try fileManager.removeItem(at: fileURL)
+        }
         LogManager.success("delete conversation id=\(conversationId) done")
 
         if settingsManager.getIsCloudSyncEnabled() {
-            try? cloudSyncManager.deleteConversationFromCloud(conversationId)
+            _ = synchronize()
         }
 
         updateWidgetSnapshot()
@@ -109,18 +99,39 @@ struct ConversationRepository: ConversationRepositoryProtocol {
 
     func deleteAll() throws {
         LogManager.warning("deleteAll conversations")
-        guard fileManager.fileExists(atPath: directoryURL.path) else { return }
-        try fileManager.removeItem(at: directoryURL)
+        if settingsManager.getIsCloudSyncEnabled() {
+            try saveDeleteAllMarker(ConversationDeleteAllMarker(deletedAt: Date()))
+        }
+        if fileManager.fileExists(atPath: directoryURL.path) {
+            try fileManager.removeItem(at: directoryURL)
+        }
         try ensureDirectoryExists()
         try? attachmentRepository.deleteAll()
         LogManager.success("deleteAll conversations done")
 
         if settingsManager.getIsCloudSyncEnabled() {
-            try? cloudSyncManager.deleteAllFromCloud()
+            _ = synchronize()
         }
 
         AppGroupStore.clearConversations()
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    @discardableResult
+    func synchronize() -> ConversationSyncResult {
+        guard settingsManager.getIsCloudSyncEnabled(), cloudSyncManager.isCloudAvailable() else {
+            return .unavailable
+        }
+        do {
+            try ensureDirectoryExists()
+            if try cloudSyncManager.hasPendingConversationDownloads() {
+                return .pendingDownload
+            }
+            return try synchronizeAvailableCloud()
+        } catch {
+            LogManager.error("Conversation synchronization failed: \(error)")
+            return .failed
+        }
     }
 }
 
@@ -166,25 +177,22 @@ private extension ConversationRepository {
         try data.write(to: fileURL, options: .atomic)
     }
 
-    /// Merges local and cloud conversations.
-    /// When `cloudIds` is provided (cloud directory exists), only local conversations
-    /// whose ID appears in the cloud set are kept — the cloud is the source of truth.
-    /// When `cloudIds` is nil (cloud directory unreachable), all local conversations are kept.
     func mergeConversations(
         local: [Conversation],
         cloud: [Conversation],
-        cloudIds: Set<UUID>?
+        tombstones: [ConversationTombstone],
+        deleteAllMarker: ConversationDeleteAllMarker?
     ) -> [Conversation] {
+        let deletedAt = Dictionary(uniqueKeysWithValues: tombstones.map { ($0.conversationId, $0.deletedAt) })
         var merged: [UUID: Conversation] = [:]
 
         for conversation in local {
-            if let cloudIds {
-                guard cloudIds.contains(conversation.id) else { continue }
-            }
+            guard shouldKeep(conversation, deletedAt: deletedAt, marker: deleteAllMarker) else { continue }
             merged[conversation.id] = conversation
         }
 
         for cloudConversation in cloud {
+            guard shouldKeep(cloudConversation, deletedAt: deletedAt, marker: deleteAllMarker) else { continue }
             if let existing = merged[cloudConversation.id] {
                 // Keep the most recently updated version
                 if cloudConversation.updatedAt > existing.updatedAt {
@@ -196,6 +204,112 @@ private extension ConversationRepository {
         }
 
         return Array(merged.values)
+    }
+
+    func synchronizeAvailableCloud() throws -> ConversationSyncResult {
+        let local = try loadLocalConversations()
+        let localTombstones = try loadTombstones()
+        let cloud = try cloudSyncManager.loadConversationsFromCloud()
+        let cloudTombstones = try cloudSyncManager.loadConversationTombstonesFromCloud()
+        let marker = newestMarker(
+            try loadDeleteAllMarker(),
+            try cloudSyncManager.loadConversationDeleteAllMarkerFromCloud()
+        )
+        let deleteAllTombstones = marker.map { marker in
+            (local + cloud).map {
+                ConversationTombstone(conversationId: $0.id, deletedAt: marker.deletedAt)
+            }
+        } ?? []
+        let tombstones = mergeTombstones(localTombstones + cloudTombstones + deleteAllTombstones)
+        let conversations = mergeConversations(
+            local: local,
+            cloud: cloud,
+            tombstones: tombstones,
+            deleteAllMarker: marker
+        )
+
+        try persistLocal(conversations: conversations, tombstones: tombstones)
+        try cloudSyncManager.saveConversationTombstonesToCloud(tombstones)
+        if let marker {
+            try cloudSyncManager.saveConversationDeleteAllMarkerToCloud(marker)
+            try saveDeleteAllMarker(marker)
+        }
+        try cloudSyncManager.syncConversationsToCloud(conversations)
+        for tombstone in tombstones {
+            try cloudSyncManager.deleteConversationFromCloud(tombstone.conversationId)
+        }
+
+        var attachmentsReady = true
+        for conversation in conversations {
+            let isMaterialized = try cloudSyncManager.materializeAttachmentsFromCloud(for: conversation)
+            attachmentsReady = isMaterialized && attachmentsReady
+        }
+        updateWidgetSnapshot()
+        return attachmentsReady ? .synchronized : .pendingDownload
+    }
+
+    func persistLocal(conversations: [Conversation], tombstones: [ConversationTombstone]) throws {
+        let ids = Set(conversations.map(\.id))
+        cleanupLocalFiles(keeping: ids)
+        for conversation in conversations {
+            try saveLocal(conversation)
+        }
+        try saveTombstones(tombstones)
+        for tombstone in tombstones {
+            try? attachmentRepository.deleteAll(forConversationId: tombstone.conversationId)
+        }
+    }
+
+    func shouldKeep(
+        _ conversation: Conversation,
+        deletedAt: [UUID: Date],
+        marker: ConversationDeleteAllMarker?
+    ) -> Bool {
+        deletedAt[conversation.id] == nil
+            && (marker == nil || conversation.updatedAt > marker?.deletedAt ?? .distantFuture)
+    }
+
+    func loadTombstones() throws -> [ConversationTombstone] {
+        guard fileManager.fileExists(atPath: tombstonesURL.path) else { return [] }
+        let data = try Data(contentsOf: tombstonesURL)
+        return try JSONDecoder.iso8601.decode([ConversationTombstone].self, from: data)
+    }
+
+    func saveTombstones(_ tombstones: [ConversationTombstone]) throws {
+        let data = try JSONEncoder.iso8601.encode(tombstones)
+        try data.write(to: tombstonesURL, options: .atomic)
+    }
+
+    func loadDeleteAllMarker() throws -> ConversationDeleteAllMarker? {
+        guard fileManager.fileExists(atPath: deleteAllMarkerURL.path) else { return nil }
+        let data = try Data(contentsOf: deleteAllMarkerURL)
+        return try JSONDecoder.iso8601.decode(ConversationDeleteAllMarker.self, from: data)
+    }
+
+    func saveDeleteAllMarker(_ marker: ConversationDeleteAllMarker) throws {
+        let data = try JSONEncoder.iso8601.encode(marker)
+        try data.write(to: deleteAllMarkerURL, options: .atomic)
+    }
+
+    func newestMarker(
+        _ local: ConversationDeleteAllMarker?,
+        _ cloud: ConversationDeleteAllMarker?
+    ) -> ConversationDeleteAllMarker? {
+        [local, cloud].compactMap { $0 }.max { $0.deletedAt < $1.deletedAt }
+    }
+
+    func mergedTombstones(_ adding: [ConversationTombstone]) -> [ConversationTombstone] {
+        mergeTombstones(((try? loadTombstones()) ?? []) + adding)
+    }
+
+    func mergeTombstones(_ tombstones: [ConversationTombstone]) -> [ConversationTombstone] {
+        var latest: [UUID: ConversationTombstone] = [:]
+        for tombstone in tombstones {
+            let existingDate = latest[tombstone.conversationId]?.deletedAt ?? .distantPast
+            guard existingDate < tombstone.deletedAt else { continue }
+            latest[tombstone.conversationId] = tombstone
+        }
+        return Array(latest.values)
     }
 
     func cleanupLocalFiles(keeping ids: Set<UUID>) {
@@ -250,5 +364,14 @@ private extension JSONDecoder {
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         return decoder
+    }()
+}
+
+private extension JSONEncoder {
+    static let iso8601: JSONEncoder = {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = .prettyPrinted
+        return encoder
     }()
 }

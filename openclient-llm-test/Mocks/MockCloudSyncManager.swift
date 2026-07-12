@@ -31,6 +31,10 @@ final class MockCloudSyncManager: CloudSyncManagerProtocol, @unchecked Sendable 
     var cloudMemoryItems: [MemoryItem]?
     var savedMemoryItems: [MemoryItem]?
     var deleteMemoryCalled: Bool = false
+    var pendingConversationDownloads: Bool = false
+    var cloudTombstones: [ConversationTombstone] = []
+    var cloudDeleteAllMarker: ConversationDeleteAllMarker?
+    var materializedConversationIds: [UUID] = []
 
     // MARK: - Public
 
@@ -41,6 +45,10 @@ final class MockCloudSyncManager: CloudSyncManagerProtocol, @unchecked Sendable 
     func syncConversationsToCloud(_ conversations: [Conversation]) throws {
         if let syncError { throw syncError }
         syncedConversations.append(contentsOf: conversations)
+        for conversation in conversations {
+            cloudConversations.removeAll { $0.id == conversation.id }
+            cloudConversations.append(conversation)
+        }
     }
 
     func loadConversationsFromCloud() throws -> [Conversation] {
@@ -54,10 +62,38 @@ final class MockCloudSyncManager: CloudSyncManagerProtocol, @unchecked Sendable 
 
     func deleteConversationFromCloud(_ conversationId: UUID) throws {
         deletedIds.append(conversationId)
+        cloudConversations.removeAll { $0.id == conversationId }
     }
 
     func deleteAllFromCloud() throws {
         deleteAllCalled = true
+    }
+
+    func hasPendingConversationDownloads() throws -> Bool {
+        pendingConversationDownloads
+    }
+
+    func materializeAttachmentsFromCloud(for conversation: Conversation) throws -> Bool {
+        materializedConversationIds.append(conversation.id)
+        return !pendingConversationDownloads
+    }
+
+    func loadConversationTombstonesFromCloud() throws -> [ConversationTombstone] {
+        if let loadError { throw loadError }
+        return cloudTombstones
+    }
+
+    func saveConversationTombstonesToCloud(_ tombstones: [ConversationTombstone]) throws {
+        if let syncError { throw syncError }
+        cloudTombstones = tombstones
+    }
+
+    func loadConversationDeleteAllMarkerFromCloud() throws -> ConversationDeleteAllMarker? {
+        cloudDeleteAllMarker
+    }
+
+    func saveConversationDeleteAllMarkerToCloud(_ marker: ConversationDeleteAllMarker) throws {
+        cloudDeleteAllMarker = marker
     }
 
     func saveProfileToCloud(_ profile: UserProfile) throws {

@@ -189,6 +189,13 @@ final class ChatViewModel {
             sendMessage()
         case .stopStreamingTapped:
             stopStreaming()
+        default:
+            sendRoutedEvent(event)
+        }
+    }
+
+    func sendRoutedEvent(_ event: Event) {
+        switch event {
         case .suggestionTapped(let prompt):
             handleSuggestionTapped(prompt)
         case .modelSelected,
@@ -206,6 +213,8 @@ final class ChatViewModel {
             handlePhase6Event(event)
         case .webSearchToggled:
             toggleWebSearch()
+        case .viewDisappeared, .viewAppeared, .conversationLoaded, .inputChanged, .sendTapped, .stopStreamingTapped:
+            return
         }
     }
 }

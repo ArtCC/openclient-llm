@@ -15,4 +15,5 @@ extension Notification.Name {
     /// Posted whenever a conversation is persisted (message sent, updated, etc.).
     /// ConversationListViewModel observes this to reload the list without recreating views.
     static let conversationDidUpdate = Notification.Name("openclient.conversationDidUpdate")
+    nonisolated static let conversationCloudDidChange = Notification.Name("openclient.conversationCloudDidChange")
 }

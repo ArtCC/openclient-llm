@@ -22,6 +22,7 @@ final class SettingsViewModelTests: XCTestCase {
     private var mockUserProfileManager: MockUserProfileManager!
     private var mockResetUseCase: MockResetAppDataUseCase!
     var mockFetchSearchTools: MockFetchSearchToolsUseCase!
+    var mockSyncConversations: MockSyncConversationsUseCase!
 
     // MARK: - Setup
 
@@ -36,6 +37,7 @@ final class SettingsViewModelTests: XCTestCase {
         mockUserProfileManager = MockUserProfileManager()
         mockResetUseCase = MockResetAppDataUseCase()
         mockFetchSearchTools = MockFetchSearchToolsUseCase()
+        mockSyncConversations = MockSyncConversationsUseCase()
         sut = SettingsViewModel(
             saveServerConfigurationUseCase: mockSaveServerConfig,
             testServerConnectionUseCase: mockTestConnection,
@@ -43,6 +45,7 @@ final class SettingsViewModelTests: XCTestCase {
             fetchSearchToolsUseCase: mockFetchSearchTools,
             settingsManager: mockSettingsManager,
             cloudSyncManager: mockCloudSyncManager,
+            syncConversationsUseCase: mockSyncConversations,
             userProfileManager: mockUserProfileManager,
             resetAppUseCase: mockResetUseCase
         )
@@ -58,6 +61,7 @@ final class SettingsViewModelTests: XCTestCase {
         mockUserProfileManager = nil
         mockResetUseCase = nil
         mockFetchSearchTools = nil
+        mockSyncConversations = nil
 
         try await super.tearDown()
     }
@@ -202,6 +206,7 @@ final class SettingsViewModelTests: XCTestCase {
         }
         XCTAssertTrue(loadedState.isCloudSyncEnabled)
         XCTAssertTrue(mockSettingsManager.isCloudSyncEnabled)
+        XCTAssertEqual(mockSyncConversations.executeCallCount, 1)
     }
 
     func test_send_cloudSyncToggled_disablesSync() {

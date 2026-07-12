@@ -22,6 +22,7 @@ final class SettingsViewModel {
         case cloudSyncToggled(Bool)
         case cloudSyncConflictResolved(keepLocal: Bool)
         case cloudSyncConflictCancelled
+        case syncConversationsTapped
         case showTokenUsageToggled(Bool)
         case webSearchToolNameChanged(String)
         case webSearchMaxResultsChanged(Int)
@@ -54,6 +55,7 @@ final class SettingsViewModel {
         var showLiteLLMHint: Bool = false
         var notificationPermissionStatus: NotificationPermissionStatus = .notDetermined
         var isPrivacyScreenEnabled: Bool = true
+        var conversationSyncResult: ConversationSyncResult?
     }
 
     enum ConnectionStatus: Equatable {
@@ -71,6 +73,7 @@ final class SettingsViewModel {
     private let fetchSearchToolsUseCase: FetchSearchToolsUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
     private let cloudSyncManager: CloudSyncManagerProtocol
+    private let syncConversationsUseCase: SyncConversationsUseCaseProtocol
     private let userProfileManager: UserProfileManagerProtocol
     private let resetAppUseCase: ResetAppDataUseCaseProtocol
     private let checkNotificationPermissionUseCase: NotificationStatusCheckProtocol
@@ -86,6 +89,7 @@ final class SettingsViewModel {
         fetchSearchToolsUseCase: FetchSearchToolsUseCaseProtocol = FetchSearchToolsUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
+        syncConversationsUseCase: SyncConversationsUseCaseProtocol = SyncConversationsUseCase(),
         userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
         resetAppUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase(),
         checkNotificationPermissionUseCase: NotificationStatusCheckProtocol = CheckNotificationPermissionUseCase(),
@@ -98,6 +102,7 @@ final class SettingsViewModel {
         self.fetchSearchToolsUseCase = fetchSearchToolsUseCase
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
+        self.syncConversationsUseCase = syncConversationsUseCase
         self.userProfileManager = userProfileManager
         self.resetAppUseCase = resetAppUseCase
         self.checkNotificationPermissionUseCase = checkNotificationPermissionUseCase
@@ -118,7 +123,7 @@ final class SettingsViewModel {
             testConnection()
         case .saveTapped:
             saveSettings()
-        case .cloudSyncToggled, .cloudSyncConflictResolved, .cloudSyncConflictCancelled:
+        case .cloudSyncToggled, .cloudSyncConflictResolved, .cloudSyncConflictCancelled, .syncConversationsTapped:
             handleCloudSyncEvent(event)
         case .showTokenUsageToggled, .privacyScreenToggled:
             handlePreferenceToggleEvent(event)
@@ -242,6 +247,7 @@ private extension SettingsViewModel {
             // Only local has data → push to cloud.
             settingsManager.setIsCloudSyncEnabled(true)
             loadedState.isCloudSyncEnabled = true
+            loadedState.conversationSyncResult = syncConversationsUseCase.execute()
             state = .loaded(loadedState)
 
             if !localProfile.isEmpty && (cloudProfile?.isEmpty ?? true) {
@@ -250,6 +256,7 @@ private extension SettingsViewModel {
         } else {
             settingsManager.setIsCloudSyncEnabled(false)
             loadedState.isCloudSyncEnabled = false
+            loadedState.conversationSyncResult = nil
             state = .loaded(loadedState)
         }
     }
@@ -259,6 +266,7 @@ private extension SettingsViewModel {
         settingsManager.setIsCloudSyncEnabled(true)
         userProfileManager.resolveCloudSyncConflict(keepLocal: keepLocal)
         loadedState.isCloudSyncEnabled = true
+        loadedState.conversationSyncResult = syncConversationsUseCase.execute()
         loadedState.showCloudSyncConflictAlert = false
         state = .loaded(loadedState)
     }
@@ -322,9 +330,17 @@ private extension SettingsViewModel {
             resolveCloudSyncConflict(keepLocal: keepLocal)
         case .cloudSyncConflictCancelled:
             cancelCloudSyncToggle()
+        case .syncConversationsTapped:
+            synchronizeConversations()
         default:
             break
         }
+    }
+
+    func synchronizeConversations() {
+        guard case .loaded(var loadedState) = state, loadedState.isCloudSyncEnabled else { return }
+        loadedState.conversationSyncResult = syncConversationsUseCase.execute()
+        state = .loaded(loadedState)
     }
 
     func handleWebSearchEvent(_ event: Event) {
