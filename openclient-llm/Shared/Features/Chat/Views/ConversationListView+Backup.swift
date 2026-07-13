@@ -71,15 +71,4 @@ extension ConversationListView {
         return error.domain == NSCocoaErrorDomain && error.code == NSUserCancelledError
     }
 
-    func makeBackupURL(data: Data) -> URL? {
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("OpenClient-backup")
-            .appendingPathExtension("json")
-        do {
-            try data.write(to: url, options: .atomic)
-            return url
-        } catch {
-            return nil
-        }
-    }
 }

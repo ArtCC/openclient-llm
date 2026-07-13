@@ -19,8 +19,9 @@ struct ConversationListView: View {
     @State private var conversationToDelete: Conversation?
     @State private var renamingConversation: Conversation?
     @State private var renameText: String = ""
-    @State private var isShowingBackupImporter = false
-    @State private var backupURL: URL?
+    @State var isShowingBackupImporter = false
+    @State private var isShowingBackupExporter = false
+    @State private var backupFileDocument: ConversationBackupFileDocument?
 
 #if os(macOS)
     @State var isMacSearchExpanded = false
@@ -137,8 +138,22 @@ struct ConversationListView: View {
             allowsMultipleSelection: false,
             onCompletion: importBackup
         )
+        .fileExporter(
+            isPresented: $isShowingBackupExporter,
+            document: backupFileDocument,
+            contentType: .json,
+            defaultFilename: "OpenClient-backup"
+        ) { result in
+            if case .failure(let error) = result, !isUserCancellation(error) {
+                viewModel.send(.backupExportWriteFailed)
+            }
+            backupFileDocument = nil
+        }
         .onChange(of: backupData) { _, data in
-            backupURL = data.flatMap(makeBackupURL)
+            guard let data else { return }
+            backupFileDocument = ConversationBackupFileDocument(data: data)
+            isShowingBackupExporter = true
+            viewModel.send(.backupDataConsumed)
         }
     }
 }
@@ -157,6 +172,7 @@ private extension ConversationListView {
             }
         }
         .toolbar {
+#if os(iOS)
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     viewModel.send(.newConversationTapped)
@@ -167,30 +183,20 @@ private extension ConversationListView {
                 .keyboardShortcut("n", modifiers: .command)
             }
             ToolbarItem(placement: .secondaryAction) {
-                Menu {
-                    Button {
-                        viewModel.send(.exportBackupTapped)
-                    } label: {
-                        Label(String(localized: "Export Backup"), systemImage: "archivebox")
-                    }
-
-                    if let backupURL {
-                        ShareLink(item: backupURL) {
-                            Label(String(localized: "Share Backup"), systemImage: "square.and.arrow.up")
-                        }
-                    }
-
-                    Button {
-                        isShowingBackupImporter = true
-                    } label: {
-                        Label(String(localized: "Import Conversations"), systemImage: "square.and.arrow.down")
-                    }
+                Button {
+                    viewModel.send(.exportBackupTapped)
                 } label: {
-                    Image(systemName: "archivebox")
+                    Label(String(localized: "Export Backup"), systemImage: "archivebox")
                 }
-                .accessibilityLabel(String(localized: "Backup and Restore"))
             }
-#if os(macOS)
+            ToolbarItem(placement: .secondaryAction) {
+                Button {
+                    isShowingBackupImporter = true
+                } label: {
+                    Label(String(localized: "Import Conversations"), systemImage: "square.and.arrow.down")
+                }
+            }
+#else
             macToolbarItems
 #endif
         }

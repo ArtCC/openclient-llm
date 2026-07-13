@@ -34,6 +34,7 @@ final class ConversationListViewModel {
         static var importResultConsumed: Self { .backup(.resultConsumed) }
         static var errorMessageConsumed: Self { .backup(.errorConsumed) }
         static var backupImportReadFailed: Self { .backup(.readFailed) }
+        static var backupExportWriteFailed: Self { .backup(.exportWriteFailed) }
     }
 
     enum ConversationEvent {
@@ -56,6 +57,7 @@ final class ConversationListViewModel {
         case resultConsumed
         case errorConsumed
         case readFailed
+        case exportWriteFailed
     }
 
     enum State: Equatable {
@@ -203,6 +205,8 @@ private extension ConversationListViewModel {
             clearErrorMessage()
         case .readFailed:
             showBackupImportReadError()
+        case .exportWriteFailed:
+            showBackupExportWriteError()
         }
     }
 
@@ -423,6 +427,13 @@ private extension ConversationListViewModel {
     func showBackupImportReadError() {
         guard case .loaded(var loadedState) = state else { return }
         loadedState.errorMessage = String(localized: "Unable to read the backup file.")
+        state = .loaded(loadedState)
+        scheduleErrorDismiss()
+    }
+
+    func showBackupExportWriteError() {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.errorMessage = String(localized: "Unable to save the backup file.")
         state = .loaded(loadedState)
         scheduleErrorDismiss()
     }
