@@ -1,0 +1,61 @@
+//
+//  ExportConversationsUseCase.swift
+//  openclient-llm
+//
+//  Created by Arturo Carretero Calvo on 13/07/2026.
+//  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
+//
+
+import Foundation
+
+protocol ExportConversationsUseCaseProtocol: Sendable {
+    func execute(_ conversations: [Conversation]) throws -> Data
+}
+
+struct ExportConversationsUseCase: ExportConversationsUseCaseProtocol {
+    // MARK: - Properties
+
+    private let attachmentRepository: AttachmentRepositoryProtocol
+
+    // MARK: - Init
+
+    init(attachmentRepository: AttachmentRepositoryProtocol = AttachmentRepository()) {
+        self.attachmentRepository = attachmentRepository
+    }
+
+    // MARK: - Execute
+
+    func execute(_ conversations: [Conversation]) throws -> Data {
+        let document = ConversationExportDocument(conversations: conversations.map(exportedConversation))
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.dateEncodingStrategy = .iso8601
+        return try encoder.encode(document)
+    }
+
+    // MARK: - Private
+
+    private func exportedConversation(
+        _ conversation: Conversation
+    ) -> ConversationExportDocument.ExportedConversation {
+        .init(conversation: conversation, attachments: exportedAttachments(for: conversation))
+    }
+
+    private func exportedAttachments(
+        for conversation: Conversation
+    ) -> [ConversationExportDocument.ExportedAttachment] {
+        conversation.messages.flatMap { message in
+            message.attachments.compactMap { attachment in
+                guard !attachment.fileRelativePath.isEmpty,
+                      let data = try? attachmentRepository.load(attachment: attachment) else {
+                    return nil
+                }
+                return .init(
+                    messageId: message.id,
+                    attachmentId: attachment.id,
+                    data: data.base64EncodedString()
+                )
+            }
+        }
+    }
+}

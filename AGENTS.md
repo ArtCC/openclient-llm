@@ -1,6 +1,36 @@
 # AGENTS.md
 
-This file supplements `specs/` with facts an agent would likely miss without reading multiple config files.
+This file is the project-wide operating guide. It resolves facts that would otherwise require reading multiple configuration files; focused implementation rules live in `specs/`.
+
+## Instruction Order
+
+1. Read this file before changing the project.
+2. Read every specification relevant to the requested work before editing.
+3. If instructions conflict, follow repository-specific instructions over general guidance. When two project instructions conflict, stop and ask for clarification.
+4. Keep this file limited to durable, project-wide facts. Put focused or evolving implementation rules in `specs/`.
+
+## Specifications
+
+Each specification must use the `.instructions.md` suffix and start with YAML front matter containing a `description`. Add an `applyTo` pattern when the scope can be expressed by file path. When adding or removing a specification, update this table in the same change.
+
+| File | Read when |
+|---|---|
+| `agent-tool-calling.instructions.md` | Implementing tool calling, tool UI, or the agent loop. |
+| `architecture.instructions.md` | Creating Swift files, features, or changing layer boundaries. |
+| `changelog.instructions.md` | Updating `CHANGELOG.md`. |
+| `chat-visual-style.instructions.md` | Designing chat-specific SwiftUI. |
+| `code-style.instructions.md` | Writing or reviewing Swift style. |
+| `concurrency.instructions.md` | Working with async code, isolation, or `Sendable`. |
+| `conversation-backup-format.instructions.md` | Exporting, importing, restoring, validating, or versioning conversation backups. |
+| `design-ui.instructions.md` | Designing general SwiftUI UI, accessibility, haptics, or animation. |
+| `litellm-api.instructions.md` | Changing LiteLLM/OpenAI-compatible API integration. |
+| `readme.instructions.md` | Updating `README.md`. |
+| `roadmap.instructions.md` | Planning or prioritizing future work. |
+| `roadmap-completed.instructions.md` | Reviewing completed roadmap work. |
+| `security.instructions.md` | Handling sensitive data, user input, credentials, or security review. |
+| `swiftui-multiplatform.instructions.md` | Building shared iOS, iPadOS, or macOS SwiftUI. |
+| `testing.instructions.md` | Adding or changing tests and mocks. |
+| `web-browsing.instructions.md` | Implementing web search or browsing features. |
 
 ## Platform & Services
 
@@ -65,7 +95,7 @@ Tests live in `openclient-llm-test/`, linked to the iOS target. No UI tests — 
 - Test classes mirror feature folders: `Features/Chat/` → `Features/Chat/ChatViewModelTests.swift`.
 - Add isolated tests for UseCases, Repositories, and ViewModels. Use protocols and mocks for dependencies.
 
-## Project structure & targets
+## Project Structure And Targets
 
 | Target | Purpose |
 |---|---|
@@ -75,7 +105,7 @@ Tests live in `openclient-llm-test/`, linked to the iOS target. No UI tests — 
 | `ShareExtension` | iOS Share Extension (does NOT link Shared code; uses App Group) |
 | `Widgets` | WidgetKit extension (does NOT link Shared code; uses App Group) |
 
-- Shared business logic lives in `openclient-llm/Shared/` and is referenced by both iOS and macOS targets.
+- Shared business logic lives in `openclient-llm/Shared/` and is referenced by both app targets.
 - Platform-specific UI goes in each target's own folder. Use `#if os(iOS)` / `#if os(macOS)` only when the difference is small.
 - App Group: `group.com.artcc.openclient-llm`
 
@@ -120,3 +150,10 @@ final class FeatureViewModel {
 - Commit messages: imperative style ("Add chat streaming support"), reference related issues with `Closes #N`.
 - Do NOT commit `Secrets.xcconfig` (gitignored; contains Votice API keys).
 - Version is sourced from `CHANGELOG.md` (first `## [X.Y.Z]` header). Tags use `vX.Y.Z` format.
+
+## Change Completion
+
+- Run the smallest relevant test set after a focused change; run the full iOS suite after shared-code changes.
+- Build both iOS and macOS after changing shared SwiftUI or shared business logic.
+- Run `git diff --check` before reporting completion.
+- Do not include generated files, `Secrets.xcconfig`, or unrelated working-tree changes in a commit.

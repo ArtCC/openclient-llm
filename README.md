@@ -40,7 +40,7 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 - Control Center toggle (iOS 18+): add a "New Chat" button to the iOS Control Center for instant one-tap access from any screen or the lock screen
 - Home-screen widgets: New Chat (small), Search (small), Quick Actions (medium), and Recent Conversations (medium/large) — tap any widget to jump directly into the app
 - iCloud sync across all your Apple devices
-- Export conversations to JSON
+- Export individual conversations or full JSON backups, and restore backups on another device ([format specification](specs/conversation-backup-format.instructions.md))
 - Token usage per message and estimated conversation cost
 
 **Models**
