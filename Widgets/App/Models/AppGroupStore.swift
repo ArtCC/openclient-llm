@@ -16,15 +16,24 @@ enum AppGroupStore {
     // MARK: - Properties
 
     static let suiteName = "group.com.artcc.openclient-llm"
+    static let conversationsWidgetKind = "com.artcc.openclient-llm.widget.conversations-overview"
 
     private static let conversationsKey = "widgetConversations"
 
     // MARK: - Public
 
-    static func saveConversations(_ conversations: [WidgetConversation]) {
+    @discardableResult
+    static func saveConversations(_ conversations: [WidgetConversation]) -> Bool {
         guard let defaults = UserDefaults(suiteName: suiteName),
-              let data = try? encoder.encode(conversations) else { return }
+              let data = try? encoder.encode(conversations) else { return false }
+        if let currentData = defaults.data(forKey: conversationsKey),
+           let currentConversations = try? decoder.decode([WidgetConversation].self, from: currentData),
+           let newConversations = try? decoder.decode([WidgetConversation].self, from: data),
+           currentConversations == newConversations {
+            return false
+        }
         defaults.set(data, forKey: conversationsKey)
+        return true
     }
 
     static func loadConversations() -> [WidgetConversation] {
@@ -36,8 +45,12 @@ enum AppGroupStore {
         return conversations
     }
 
-    static func clearConversations() {
-        UserDefaults(suiteName: suiteName)?.removeObject(forKey: conversationsKey)
+    @discardableResult
+    static func clearConversations() -> Bool {
+        guard let defaults = UserDefaults(suiteName: suiteName),
+              defaults.object(forKey: conversationsKey) != nil else { return false }
+        defaults.removeObject(forKey: conversationsKey)
+        return true
     }
 }
 

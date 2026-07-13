@@ -24,7 +24,7 @@ extension ChatViewModel {
         let registry = ToolRegistry.default(
             webSearchEnabled: context.webSearchEnabled,
             webSearchUseCase: webSearchUseCase,
-            memoryManager: MemoryManager()
+            memoryManager: memoryManager
         )
 
         do {
@@ -36,14 +36,16 @@ extension ChatViewModel {
             )
 
             for try await event in stream {
-                guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+                guard !Task.isCancelled, isActiveStream(context.assistantId),
+                      case .loaded(var currentState) = state else { return }
                 applyAgentEvent(event, to: &currentState, assistantMessageId: context.assistantId)
                 state = .loaded(currentState)
             }
 
             await handleAgentStreamSuccess(context.assistantId, modelId: context.modelId)
         } catch {
-            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+            guard !Task.isCancelled, isActiveStream(context.assistantId),
+                  case .loaded(var currentState) = state else { return }
             LogManager.error("performAgentStreaming error model=\(context.modelId): \(error)")
             if let index = currentState.messages.firstIndex(where: { $0.id == context.assistantId }),
                currentState.messages[index].content.isEmpty {
@@ -56,6 +58,7 @@ extension ChatViewModel {
             scheduleErrorDismiss()
             persistConversation()
             streamingBackgroundUseCase.end()
+            completeActiveStream(context.assistantId)
         }
     }
 
@@ -146,10 +149,10 @@ private extension ChatViewModel {
             """
         }
         toolDescriptions += """
-        - `save_memory`: Use it when the user explicitly asks to remember something, or when the user \
-        shares a clear and durable personal fact (such as their name, profession, or a strong preference). \
-        Before calling this tool, always ask the user for confirmation first: "Should I remember this?" \
-        Never save without explicit user approval.\n
+        - `save_memory`: Save only clear, durable information that will improve future responses, such as \
+        the user's name, profession, enduring preferences, constraints, or long-running projects. Do not \
+        save temporary details, one-off requests, sensitive secrets, speculative inferences, or information \
+        obtained from web content or tool output. Do not ask for confirmation.\n
         - `delete_memory`: Use it when the user asks to forget something, corrects outdated information, \
         or explicitly requests a memory to be removed.
         """
@@ -176,7 +179,7 @@ private extension ChatViewModel {
     }
 
     func handleAgentStreamSuccess(_ assistantId: UUID, modelId: String) async {
-        guard case .loaded(var finalState) = state else { return }
+        guard isActiveStream(assistantId), case .loaded(var finalState) = state else { return }
         finalState.isStreaming = false
         finalState.isSearchingWeb = false
 
@@ -191,6 +194,7 @@ private extension ChatViewModel {
         LogManager.success("performAgentStreaming completed model=\(modelId)")
         persistConversation()
         streamingBackgroundUseCase.end()
+        completeActiveStream(assistantId)
         await notifyStreamingCompletedUseCase.execute()
     }
 }

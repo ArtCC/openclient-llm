@@ -12,7 +12,7 @@ import SwiftUI
 
 extension ChatView {
     enum MenuAction: Identifiable {
-        case export(URL)
+        case export
         case favourites
         case mediaFiles
         case modelParameters
@@ -47,9 +47,8 @@ extension ChatView {
 extension ChatView {
     func menuActions(for loadedSt: ChatViewModel.LoadedState) -> [MenuAction] {
         var items: [MenuAction] = []
-        if loadedSt.conversation != nil, !loadedSt.messages.isEmpty,
-           let url = makeExportURL(loadedSt) {
-            items.append(.export(url))
+        if loadedSt.conversation != nil, !loadedSt.messages.isEmpty {
+            items.append(.export)
         }
         if !loadedSt.messages.isEmpty {
             items.append(.favourites)

@@ -13,7 +13,6 @@ import Foundation
 
 /// AppIntent used by the Control Center widget to open OpenClient in a blank new conversation.
 /// Self-contained — does not depend on any app-target code.
-/// Opens the app via the `openclient://new-chat` URL scheme.
 struct NewChatControlIntent: AppIntent {
     // MARK: - Metadata
 
@@ -24,8 +23,7 @@ struct NewChatControlIntent: AppIntent {
     // MARK: - Perform
 
     func perform() async throws -> some IntentResult {
-        UserDefaults(suiteName: "group.com.artcc.openclient-llm")?
-            .set(true, forKey: "pendingNewChatFromWidget")
+        WidgetControlStore.requestNewChat()
         return .result()
     }
 }

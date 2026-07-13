@@ -40,8 +40,9 @@ extension ChatViewModel {
     func sendMessage() {
         guard case .loaded(var loadedState) = state else { return }
         let text = loadedState.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, let model = loadedState.selectedModel, !loadedState.isStreaming else { return }
-        LogManager.info("sendMessage model=\(model.id) text=\"\(String(text.prefix(80)))\"")
+        guard !text.isEmpty || !loadedState.pendingAttachments.isEmpty,
+              let model = loadedState.selectedModel, !loadedState.isStreaming else { return }
+        LogManager.info("sendMessage model=\(model.id) attachments=\(loadedState.pendingAttachments.count)")
 
         let assistantId = prepareMessageState(text: text, model: model, loadedState: &loadedState)
         let currentMessages = loadedState.messages.filter { $0.id != assistantId }
@@ -51,11 +52,14 @@ extension ChatViewModel {
         let modelCapabilities = model.capabilities
 
         streamTask?.cancel()
+        activeAssistantMessageId = assistantId
         streamingBackgroundUseCase.begin { [weak self] in
             LogManager.warning("Background time expired — saving partial response")
-            self?.streamTask?.cancel()
-            self?.streamTask = nil
-            guard let self, case .loaded(var currentState) = self.state else { return }
+            guard let self, self.activeAssistantMessageId == assistantId else { return }
+            self.streamTask?.cancel()
+            self.streamTask = nil
+            self.activeAssistantMessageId = nil
+            guard case .loaded(var currentState) = self.state else { return }
             currentState.isStreaming = false
             self.state = .loaded(currentState)
             self.persistConversation()
@@ -88,7 +92,9 @@ extension ChatViewModel {
         let assistantMessage = ChatMessage(role: .assistant, content: "")
         loadedState.messages.append(assistantMessage)
         if loadedState.conversation?.title.isEmpty == true {
-            loadedState.conversation?.title = String(text.prefix(50))
+            loadedState.conversation?.title = text.isEmpty
+                ? String(localized: "New Conversation")
+                : String(text.prefix(50))
         }
         state = .loaded(loadedState)
         return assistantMessage.id

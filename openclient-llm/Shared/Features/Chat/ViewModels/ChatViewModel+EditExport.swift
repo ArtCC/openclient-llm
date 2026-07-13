@@ -39,11 +39,8 @@ extension ChatViewModel {
               !loadedState.isStreaming,
               let model = loadedState.selectedModel else { return }
 
-        // Remove last assistant message if present
-        if loadedState.messages.last?.role == .assistant {
-            loadedState.messages.removeLast()
-        }
-
+        guard loadedState.messages.last?.role == .assistant else { return }
+        loadedState.messages.removeLast()
         guard !loadedState.messages.isEmpty else { return }
 
         loadedState.isStreaming = true
@@ -57,17 +54,23 @@ extension ChatViewModel {
         let currentMessages = loadedState.messages.filter { $0.id != assistantMessageId }
         let systemPrompt = loadedState.systemPrompt
         let parameters = loadedState.modelParameters
+        let webSearchEnabled = loadedState.isWebSearchEnabled
+        let modelCapabilities = model.capabilities
 
         LogManager.info("regenerateLastResponse model=\(model.id) messages=\(currentMessages.count)")
         streamTask?.cancel()
+        activeAssistantMessageId = assistantMessageId
         streamTask = Task {
-            await performStreaming(
+            await streamWithWebSearch(SendMessageContext(
+                text: "",
                 messages: currentMessages,
-                model: model.id,
-                assistantMessageId: assistantMessageId,
+                modelId: model.id,
+                assistantId: assistantMessageId,
                 systemPrompt: systemPrompt,
-                parameters: parameters
-            )
+                parameters: parameters,
+                webSearchEnabled: webSearchEnabled,
+                modelCapabilities: modelCapabilities
+            ))
         }
     }
 
@@ -98,17 +101,23 @@ extension ChatViewModel {
         let currentMessages = loadedState.messages.filter { $0.id != assistantMessageId }
         let systemPrompt = loadedState.systemPrompt
         let parameters = loadedState.modelParameters
+        let webSearchEnabled = loadedState.isWebSearchEnabled
+        let modelCapabilities = model.capabilities
 
         LogManager.info("editAndResend id=\(id) model=\(model.id)")
         streamTask?.cancel()
+        activeAssistantMessageId = assistantMessageId
         streamTask = Task {
-            await performStreaming(
+            await streamWithWebSearch(SendMessageContext(
+                text: trimmed,
                 messages: currentMessages,
-                model: model.id,
-                assistantMessageId: assistantMessageId,
+                modelId: model.id,
+                assistantId: assistantMessageId,
                 systemPrompt: systemPrompt,
-                parameters: parameters
-            )
+                parameters: parameters,
+                webSearchEnabled: webSearchEnabled,
+                modelCapabilities: modelCapabilities
+            ))
         }
     }
 

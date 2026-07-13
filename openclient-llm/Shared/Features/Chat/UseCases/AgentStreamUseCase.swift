@@ -126,6 +126,7 @@ private extension AgentStreamUseCase {
                 parameters: parameters,
                 tools: tools
             )
+            guard !Task.isCancelled else { return }
 
             guard let choice = response.choices.first else {
                 LogManager.warning("agentLoop: empty choices on iteration \(iteration)")
@@ -151,6 +152,7 @@ private extension AgentStreamUseCase {
         conversationMessages: inout [ChatMessage],
         context: AgentLoopContext
     ) async throws -> Bool {
+        guard !Task.isCancelled else { return false }
         // Check tool_calls presence first — some models (Ollama/Llama/Mistral/Qwen)
         // include tool_calls with finishReason "stop" or nil instead of "tool_calls".
         // Relying solely on finishReason misses those cases and causes {} to be emitted.
@@ -193,7 +195,9 @@ private extension AgentStreamUseCase {
             registry: context.toolRegistry,
             continuation: context.continuation
         )
+        guard !Task.isCancelled else { return false }
         for toolResult in toolResults {
+            guard !Task.isCancelled else { return false }
             conversationMessages.append(ChatMessage(
                 role: .tool,
                 content: toolResult.executionResult.text,
@@ -213,8 +217,10 @@ private extension AgentStreamUseCase {
 
         try await withThrowingTaskGroup(of: ToolCallResult.self) { group in
             for toolCall in toolCalls {
+                guard !Task.isCancelled else { return }
                 continuation.yield(.toolCallStarted(toolCall))
                 group.addTask {
+                    try Task.checkCancellation()
                     let executionResult: ToolExecutionResult
                     do {
                         executionResult = try await registry.execute(
@@ -235,6 +241,7 @@ private extension AgentStreamUseCase {
             }
 
             for try await toolCallResult in group {
+                guard !Task.isCancelled else { return }
                 results.append(toolCallResult)
                 continuation.yield(.toolCallCompleted(
                     toolCallId: toolCallResult.toolCallId,

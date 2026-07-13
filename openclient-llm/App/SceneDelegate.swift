@@ -48,9 +48,7 @@ final class SceneDelegate: NSObject, UIWindowSceneDelegate {
     // MARK: - Foreground Transition
 
     func sceneDidBecomeActive(_ scene: UIScene) {
-        let defaults = UserDefaults(suiteName: "group.com.artcc.openclient-llm")
-        if defaults?.bool(forKey: "pendingNewChatFromWidget") == true {
-            defaults?.removeObject(forKey: "pendingNewChatFromWidget")
+        if WidgetControlStore.consumePendingNewChat() {
             ShortcutManager.shared.pendingAction = .newChat
         }
     }

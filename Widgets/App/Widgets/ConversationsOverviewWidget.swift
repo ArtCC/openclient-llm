@@ -18,7 +18,7 @@ import WidgetKit
 struct ConversationsOverviewWidget: Widget {
     // MARK: - Properties
 
-    static let kind: String = "com.artcc.openclient-llm.widget.conversations-overview"
+    static let kind = AppGroupStore.conversationsWidgetKind
 
     // MARK: - Body
 
@@ -59,7 +59,8 @@ struct ConversationsOverviewProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<ConversationsOverviewEntry>) -> Void) {
         let conversations = AppGroupStore.loadConversations()
         let entry = ConversationsOverviewEntry(date: Date(), conversations: conversations)
-        let nextRefresh = Calendar.current.date(byAdding: .minute, value: 30, to: Date()) ?? Date()
+        let nextRefresh = Calendar.current.date(byAdding: .minute, value: 5, to: Date()) ?? Date()
+
         completion(Timeline(entries: [entry], policy: .after(nextRefresh)))
     }
 }
@@ -203,7 +204,11 @@ private struct ConversationRow: View {
 private extension WidgetConversation {
     var modelColor: Color {
         let colors: [Color] = [.blue, .purple, .orange, .teal, .pink, .indigo]
-        let index = abs(modelId.hashValue) % colors.count
+        let hash = modelId.utf8.reduce(UInt64(5_381)) { partialResult, byte in
+            (partialResult &* 33) &+ UInt64(byte)
+        }
+        let index = Int(hash % UInt64(colors.count))
+
         return colors[index]
     }
 }

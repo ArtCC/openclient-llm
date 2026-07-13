@@ -76,17 +76,4 @@ extension ChatView {
         .scrollDismissesKeyboard(.interactively)
     }
 
-    func makeExportURL(_ loadedState: ChatViewModel.LoadedState) -> URL? {
-        guard let conversation = loadedState.conversation else { return nil }
-        guard let data = try? ExportConversationUseCase().execute(conversation) else { return nil }
-        let raw = conversation.title.isEmpty ? "conversation" : conversation.title
-        let sanitized = raw
-            .replacingOccurrences(of: "[\\\\/:*?\"<>|]", with: "_", options: .regularExpression)
-            .prefix(50)
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent(String(sanitized))
-            .appendingPathExtension("json")
-        try? data.write(to: url)
-        return url
-    }
 }
