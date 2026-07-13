@@ -41,6 +41,7 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 - Home-screen widgets: New Chat (small), Search (small), Quick Actions (medium), and Recent Conversations (medium/large) — tap any widget to jump directly into the app
 - iCloud sync across all your Apple devices
 - Export individual conversations or full JSON backups, and restore backups on another device ([format specification](specs/conversation-backup-format.instructions.md))
+- Private Chat: start a session-only chat whose messages and attachments are discarded when you close it; personal memory is neither read nor changed
 - Token usage per message and estimated conversation cost
 
 **Models**
