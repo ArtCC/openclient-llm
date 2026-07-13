@@ -13,6 +13,7 @@ struct HomeView: View {
 
     @State private var viewModel = HomeViewModel()
     @State private var selectedConversation: Conversation?
+    @State private var isShowingPrivateChat: Bool = false
 
 #if os(macOS)
     @State private var sidebarDestination: SidebarDestination = .chats
@@ -39,6 +40,19 @@ struct HomeView: View {
         }
         .task {
             viewModel.send(.viewAppeared)
+        }
+        .sheet(isPresented: $isShowingPrivateChat) {
+            EphemeralChatView()
+        }
+        .onChange(of: viewModel.isPrivateChatRequested) { _, isRequested in
+            guard isRequested else { return }
+#if os(iOS)
+            selectedTab = .chats
+#elseif os(macOS)
+            sidebarDestination = .chats
+#endif
+            isShowingPrivateChat = true
+            viewModel.send(.privateChatRequestConsumed)
         }
         .onChange(of: viewModel.pendingConversation) { _, conversation in
             guard let conversation else { return }
@@ -166,6 +180,8 @@ private extension HomeView {
         switch action {
         case .newChat:
             viewModel.send(.newChatShortcutTriggered)
+        case .newPrivateChat:
+            viewModel.send(.newPrivateChatShortcutTriggered)
         case .search:
             selectedTab = .search
         }

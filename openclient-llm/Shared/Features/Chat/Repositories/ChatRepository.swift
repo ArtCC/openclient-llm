@@ -250,7 +250,7 @@ private extension ChatRepository {
         }
 
         for attachment in message.attachments {
-            guard let data = try? attachmentRepository.load(attachment: attachment) else {
+            guard let data = attachment.transientData ?? (try? attachmentRepository.load(attachment: attachment)) else {
                 LogManager.warning("buildCompletionMessage: could not load attachment \(attachment.id) — skipping")
                 continue
             }

@@ -22,6 +22,7 @@ struct ConversationListView: View {
     @State var isShowingBackupImporter = false
     @State private var isShowingBackupExporter = false
     @State private var backupFileDocument: ConversationBackupFileDocument?
+    @State var isShowingEphemeralChat = false
 
 #if os(macOS)
     @State var isMacSearchExpanded = false
@@ -66,6 +67,9 @@ struct ConversationListView: View {
             ) { tags in
                 viewModel.send(.tagsUpdated(conversation.id, tags))
             }
+        }
+        .sheet(isPresented: $isShowingEphemeralChat) {
+            EphemeralChatView()
         }
         .alert(
             String(localized: "Rename Conversation"),
@@ -174,13 +178,7 @@ private extension ConversationListView {
         .toolbar {
 #if os(iOS)
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    viewModel.send(.newConversationTapped)
-                } label: {
-                    Image(systemName: "square.and.pencil")
-                }
-                .accessibilityLabel(String(localized: "New Chat"))
-                .keyboardShortcut("n", modifiers: .command)
+                newChatToolbarMenu
             }
             ToolbarItem(placement: .secondaryAction) {
                 Button {
@@ -198,24 +196,6 @@ private extension ConversationListView {
             }
 #else
             macToolbarItems
-#endif
-        }
-    }
-
-    var emptyState: some View {
-        ContentUnavailableView {
-            Label(
-                String(localized: "No Conversations"),
-                systemImage: "bubble.left.and.bubble.right"
-            )
-        } description: {
-            Text(String(localized: "Start a new conversation to begin chatting"))
-        } actions: {
-            Button(String(localized: "New Chat")) {
-                viewModel.send(.newConversationTapped)
-            }
-#if os(macOS)
-            .buttonStyle(.borderedProminent)
 #endif
         }
     }

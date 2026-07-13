@@ -36,14 +36,16 @@ struct ToolRegistry: Sendable {
 
     static func `default`(
         webSearchEnabled: Bool = true,
+        includesMemoryTools: Bool = true,
         webSearchUseCase: WebSearchUseCaseProtocol = WebSearchUseCase(),
-        memoryManager: MemoryManagerProtocol = MemoryManager()
+        memoryManager: MemoryManagerProtocol? = nil
     ) -> ToolRegistry {
-        var tools: [any ChatToolProtocol] = [
-            GetCurrentDatetimeTool(),
-            SaveMemoryTool(memoryManager: memoryManager),
-            DeleteMemoryTool(memoryManager: memoryManager)
-        ]
+        var tools: [any ChatToolProtocol] = [GetCurrentDatetimeTool()]
+        if includesMemoryTools {
+            let resolvedMemoryManager = memoryManager ?? MemoryManager()
+            tools.append(SaveMemoryTool(memoryManager: resolvedMemoryManager))
+            tools.append(DeleteMemoryTool(memoryManager: resolvedMemoryManager))
+        }
         if webSearchEnabled {
             tools.append(WebSearchTool(webSearchUseCase: webSearchUseCase))
         }

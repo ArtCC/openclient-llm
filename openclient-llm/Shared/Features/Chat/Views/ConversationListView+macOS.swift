@@ -15,13 +15,7 @@ extension ConversationListView {
     @ToolbarContentBuilder
     var macToolbarItems: some ToolbarContent {
         ToolbarItemGroup(placement: .primaryAction) {
-            Button {
-                viewModel.send(.newConversationTapped)
-            } label: {
-                Image(systemName: "square.and.pencil")
-            }
-            .help(String(localized: "New Chat"))
-            .keyboardShortcut("n", modifiers: .command)
+            newChatToolbarMenu
 
             Button {
                 viewModel.send(.exportBackupTapped)

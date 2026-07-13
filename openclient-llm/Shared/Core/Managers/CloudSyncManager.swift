@@ -53,7 +53,7 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
         try ensureDirectoryExists(at: cloudURL)
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        encoder.outputFormatting = .prettyPrinted
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let localDocuments = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
         for conversation in conversations {
             let fileURL = cloudURL.appendingPathComponent("\(conversation.id.uuidString).json")
@@ -212,7 +212,7 @@ struct CloudSyncManager: CloudSyncManagerProtocol, Sendable {
         try ensureDirectoryExists(at: directory)
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        encoder.outputFormatting = .prettyPrinted
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         for tombstone in tombstones {
             let fileURL = directory.appendingPathComponent("\(tombstone.conversationId.uuidString).json")
             try writeIfChanged(encoder.encode(tombstone), to: fileURL)

@@ -73,6 +73,28 @@ final class ConversationRepositorySyncTests: XCTestCase {
         XCTAssertEqual(try sut.loadAll().map(\.id), [conversation.id])
     }
 
+    func test_synchronize_withoutChanges_doesNotRewriteLocalConversation() throws {
+        // Given
+        let conversation = Conversation(
+            modelId: "model",
+            updatedAt: Date(timeIntervalSince1970: 1_000_000)
+        )
+        try sut.save(conversation)
+        _ = sut.synchronize()
+        let fileURL = directory
+            .appendingPathComponent("Conversations", isDirectory: true)
+            .appendingPathComponent("\(conversation.id.uuidString).json")
+        let expectedModificationDate = Date(timeIntervalSince1970: 1_000_000)
+        try FileManager.default.setAttributes([.modificationDate: expectedModificationDate], ofItemAtPath: fileURL.path)
+
+        // When
+        _ = sut.synchronize()
+
+        // Then
+        let attributes = try FileManager.default.attributesOfItem(atPath: fileURL.path)
+        XCTAssertEqual(attributes[.modificationDate] as? Date, expectedModificationDate)
+    }
+
     func test_synchronize_conflict_keepsMostRecentlyUpdatedConversation() throws {
         // Given
         let id = UUID()

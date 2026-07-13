@@ -21,6 +21,7 @@ final class ConversationCloudObserver: ConversationCloudObserving, @unchecked Se
     private let cloudSyncManager: CloudSyncManagerProtocol
     private nonisolated(unsafe) var metadataQuery: NSMetadataQuery?
     private nonisolated(unsafe) var queryObserver: NSObjectProtocol?
+    private var contentChangeDates: [String: Date] = [:]
 
     // MARK: - Init
 
@@ -53,12 +54,31 @@ final class ConversationCloudObserver: ConversationCloudObserving, @unchecked Se
             queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self, self.settingsManager.getIsCloudSyncEnabled() else { return }
+                guard let self,
+                      let query = self.metadataQuery,
+                      self.settingsManager.getIsCloudSyncEnabled() else { return }
+                guard self.hasContentChanges(in: query) else { return }
                 NotificationCenter.default.post(name: .conversationCloudDidChange, object: nil)
             }
         }
         metadataQuery = query
         query.start()
+    }
+
+    private func hasContentChanges(in query: NSMetadataQuery) -> Bool {
+        query.disableUpdates()
+        defer { query.enableUpdates() }
+
+        var latestContentChangeDates: [String: Date] = [:]
+        for case let item as NSMetadataItem in query.results {
+            guard let path = item.value(forAttribute: NSMetadataItemPathKey) as? String else { continue }
+            let changeDate = item.value(forAttribute: NSMetadataItemFSContentChangeDateKey) as? Date ?? .distantPast
+            latestContentChangeDates[path] = changeDate
+        }
+
+        guard latestContentChangeDates != contentChangeDates else { return false }
+        contentChangeDates = latestContentChangeDates
+        return true
     }
 
     deinit {

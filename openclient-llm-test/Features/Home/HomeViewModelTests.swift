@@ -54,6 +54,26 @@ final class HomeViewModelTests: XCTestCase {
         XCTAssertEqual(sut.pendingConversation?.modelId, "")
     }
 
+    func test_send_newPrivateChatShortcutTriggered_requestsPrivateChatWithoutConversation() {
+        // When
+        sut.send(.newPrivateChatShortcutTriggered)
+
+        // Then
+        XCTAssertTrue(sut.isPrivateChatRequested)
+        XCTAssertNil(sut.pendingConversation)
+    }
+
+    func test_send_privateChatRequestConsumed_clearsPrivateChatRequest() {
+        // Given
+        sut.send(.newPrivateChatShortcutTriggered)
+
+        // When
+        sut.send(.privateChatRequestConsumed)
+
+        // Then
+        XCTAssertFalse(sut.isPrivateChatRequested)
+    }
+
     // MARK: - pendingConversationConsumed
 
     func test_send_pendingConversationConsumed_clearsConversation() {

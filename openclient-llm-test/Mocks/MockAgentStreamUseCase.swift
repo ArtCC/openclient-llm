@@ -15,6 +15,8 @@ final class MockAgentStreamUseCase: AgentStreamUseCaseProtocol, @unchecked Senda
 
     var events: [AgentEvent] = []
     var error: Error?
+    var receivedToolNames: [String] = []
+    var onExecute: (() -> Void)?
 
     // MARK: - Execute
 
@@ -24,6 +26,8 @@ final class MockAgentStreamUseCase: AgentStreamUseCaseProtocol, @unchecked Senda
         parameters: ModelParameters,
         toolRegistry: ToolRegistry
     ) -> AsyncThrowingStream<AgentEvent, Error> {
+        receivedToolNames = toolRegistry.definitions.map(\.function.name)
+        onExecute?()
         let events = events
         let error = error
         return AsyncThrowingStream { continuation in
