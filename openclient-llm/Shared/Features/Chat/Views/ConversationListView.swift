@@ -22,7 +22,6 @@ struct ConversationListView: View {
     @State var isShowingBackupImporter = false
     @State private var isShowingBackupExporter = false
     @State private var backupFileDocument: ConversationBackupFileDocument?
-    @State var isShowingEphemeralChat = false
 
 #if os(macOS)
     @State var isMacSearchExpanded = false
@@ -31,6 +30,7 @@ struct ConversationListView: View {
 
     var activeConversationId: UUID?
     let onConversationSelected: (Conversation?) -> Void
+    let onPrivateChatSelected: () -> Void
 
     // MARK: - View
 
@@ -67,9 +67,6 @@ struct ConversationListView: View {
             ) { tags in
                 viewModel.send(.tagsUpdated(conversation.id, tags))
             }
-        }
-        .sheet(isPresented: $isShowingEphemeralChat) {
-            EphemeralChatView()
         }
         .alert(
             String(localized: "Rename Conversation"),
@@ -472,7 +469,7 @@ private extension ConversationListView {
 
 #Preview {
     NavigationStack {
-        ConversationListView { _ in }
+        ConversationListView { _ in } onPrivateChatSelected: {}
             .navigationTitle(String(localized: "Chats"))
     }
 }

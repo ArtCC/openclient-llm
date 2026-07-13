@@ -41,7 +41,7 @@ extension ConversationListView {
         .keyboardShortcut("n", modifiers: .command)
 
         Button {
-            isShowingEphemeralChat = true
+            onPrivateChatSelected()
         } label: {
             Label(String(localized: "New Private Chat"), systemImage: "lock.fill")
         }

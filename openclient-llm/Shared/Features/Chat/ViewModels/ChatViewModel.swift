@@ -78,6 +78,7 @@ final class ChatViewModel {
 
     var onConversationUpdated: (() -> Void)?
     var onForkCreated: ((Conversation) -> Void)?
+    let isPrivateChat: Bool
 
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     let attachmentRepository: AttachmentRepositoryProtocol
@@ -93,9 +94,9 @@ final class ChatViewModel {
     private let saveSelectedModelUseCase: SaveSelectedModelUseCaseProtocol
     let setWebSearchEnabledUseCase: SetWebSearchEnabledUseCaseProtocol
     private let resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol
-    let getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol
-    let getMemoryContextUseCase: GetMemoryContextUseCaseProtocol
-    let memoryManager: MemoryManagerProtocol
+    let getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol?
+    let getMemoryContextUseCase: GetMemoryContextUseCaseProtocol?
+    let memoryManager: MemoryManagerProtocol?
     private let getConversationStartersUseCase: GetConversationStartersUseCaseProtocol
     private let playAudioUseCase: any PlayAudioUseCaseProtocol
     let recordAudioUseCase: any RecordAudioUseCaseProtocol
@@ -112,6 +113,7 @@ final class ChatViewModel {
 
     init(
         conversation: Conversation? = nil,
+        isPrivateChat: Bool = false,
         state: State = .loading,
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
         attachmentRepository: AttachmentRepositoryProtocol = AttachmentRepository(),
@@ -127,9 +129,9 @@ final class ChatViewModel {
         saveSelectedModelUseCase: SaveSelectedModelUseCaseProtocol = SaveSelectedModelUseCase(),
         setWebSearchEnabledUseCase: SetWebSearchEnabledUseCaseProtocol = SetWebSearchEnabledUseCase(),
         resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol = ResolveAudioModelIdsUseCase(),
-        getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol = GetUserProfileContextUseCase(),
-        getMemoryContextUseCase: GetMemoryContextUseCaseProtocol = GetMemoryContextUseCase(),
-        memoryManager: MemoryManagerProtocol = MemoryManager(),
+        getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol? = nil,
+        getMemoryContextUseCase: GetMemoryContextUseCaseProtocol? = nil,
+        memoryManager: MemoryManagerProtocol? = nil,
         getConversationStartersUseCase: GetConversationStartersUseCaseProtocol = GetConversationStartersUseCase(),
         playAudioUseCase: any PlayAudioUseCaseProtocol = PlayAudioUseCase(),
         recordAudioUseCase: any RecordAudioUseCaseProtocol = RecordAudioUseCase(),
@@ -139,6 +141,7 @@ final class ChatViewModel {
     ) {
         self.state = state
         self.pendingConversation = conversation
+        self.isPrivateChat = isPrivateChat
         self.fetchModelsUseCase = fetchModelsUseCase
         self.attachmentRepository = attachmentRepository
         self.streamMessageUseCase = streamMessageUseCase
@@ -153,9 +156,13 @@ final class ChatViewModel {
         self.saveSelectedModelUseCase = saveSelectedModelUseCase
         self.setWebSearchEnabledUseCase = setWebSearchEnabledUseCase
         self.resolveAudioModelIdsUseCase = resolveAudioModelIdsUseCase
-        self.getUserProfileContextUseCase = getUserProfileContextUseCase
-        self.getMemoryContextUseCase = getMemoryContextUseCase
-        self.memoryManager = memoryManager
+        self.getUserProfileContextUseCase = getUserProfileContextUseCase ?? (
+            isPrivateChat ? nil : GetUserProfileContextUseCase()
+        )
+        self.getMemoryContextUseCase = getMemoryContextUseCase ?? (
+            isPrivateChat ? nil : GetMemoryContextUseCase()
+        )
+        self.memoryManager = memoryManager ?? (isPrivateChat ? nil : MemoryManager())
         self.getConversationStartersUseCase = getConversationStartersUseCase
         self.playAudioUseCase = playAudioUseCase
         self.recordAudioUseCase = recordAudioUseCase
@@ -223,6 +230,64 @@ final class ChatViewModel {
 
 private extension ChatViewModel {
 
+    func loadInitialData() {
+        cancelActiveStreaming()
+        state = .loading
+        Task { await fetchAndBuildInitialState() }
+    }
+
+    func fetchAndBuildInitialState() async {
+        do {
+            let models = try await fetchModelsUseCase.execute()
+            let pending = pendingConversation
+            pendingConversation = nil
+            state = .loaded(makeLoadedState(models: models, pending: pending))
+        } catch {
+            LogManager.error("fetchAndBuildInitialState failed: \(error)")
+            let pending = pendingConversation
+            pendingConversation = nil
+            state = .loaded(makeLoadedState(
+                models: [],
+                pending: pending,
+                errorMessage: error.localizedDescription
+            ))
+            scheduleErrorDismiss()
+        }
+    }
+
+    func makeLoadedState(
+        models: [LLMModel],
+        pending: Conversation?,
+        errorMessage: String? = nil
+    ) -> LoadedState {
+        let chatModels = models.filter {
+            [.chat, .completion, .unknown, .imageGeneration].contains($0.mode)
+        }
+        let savedModelID = getChatPreferencesUseCase.getSelectedModelId()
+        let selectedModel = chatModels.first(where: { $0.id == pending?.modelId })
+            ?? chatModels.first(where: { $0.id == savedModelID })
+            ?? chatModels.first
+        let audioModelIDs = resolveAudioModelIdsUseCase.execute(from: models)
+        let loadedState = LoadedState(
+            conversation: pending,
+            messages: pending?.messages ?? [],
+            selectedModel: selectedModel,
+            availableModels: chatModels,
+            conversationStarters: (pending?.messages ?? []).isEmpty
+                ? getConversationStartersUseCase.execute(count: 4)
+                : [],
+            errorMessage: errorMessage,
+            systemPrompt: pending?.systemPrompt ?? "",
+            modelParameters: pending?.modelParameters ?? .default,
+            showTokenUsage: getChatPreferencesUseCase.getShowTokenUsage(),
+            ttsModelId: audioModelIDs.ttsModelId,
+            transcriptionModelId: audioModelIDs.transcriptionModelId,
+            isWebSearchEnabled: getChatPreferencesUseCase.getIsWebSearchEnabled(),
+            isWebSearchToolConfigured: !getChatPreferencesUseCase.getWebSearchToolName().isEmpty
+        )
+        return loadedState
+    }
+
     func handleConfigurationEvent(_ event: Event) {
         switch event {
         case .modelSelected(let model): selectModel(model)
@@ -234,68 +299,6 @@ private extension ChatViewModel {
         case .speakMessageTapped(let message): speakMessage(message)
         case .stopSpeakingTapped: stopSpeaking()
         default: break
-        }
-    }
-
-    func loadInitialData() {
-        cancelActiveStreaming()
-        state = .loading
-        Task { await fetchAndBuildInitialState() }
-    }
-
-    func fetchAndBuildInitialState() async {
-        do {
-            LogManager.debug("fetchAndBuildInitialState start")
-            let models = try await fetchModelsUseCase.execute()
-            let pending = pendingConversation
-            pendingConversation = nil
-
-            let chatModels = models.filter {
-                [.chat, .completion, .unknown, .imageGeneration].contains($0.mode)
-            }
-            let savedModelId = getChatPreferencesUseCase.getSelectedModelId()
-            let selectedModel: LLMModel?
-
-            if let pending {
-                selectedModel = chatModels.first(where: { $0.id == pending.modelId })
-                    ?? chatModels.first(where: { $0.id == savedModelId })
-                    ?? chatModels.first
-            } else {
-                selectedModel = chatModels.first(where: { $0.id == savedModelId }) ?? chatModels.first
-            }
-            let selectedId = selectedModel?.id ?? "-"
-            LogManager.success("fetchAndBuildInitialState models=\(chatModels.count) selected=\(selectedId)")
-
-            let audioModelIds = resolveAudioModelIdsUseCase.execute(from: models)
-            let starters = getConversationStartersUseCase.execute(count: 4)
-            state = .loaded(LoadedState(
-                conversation: pending,
-                messages: pending?.messages ?? [],
-                selectedModel: selectedModel,
-                availableModels: chatModels,
-                conversationStarters: (pending?.messages ?? []).isEmpty ? starters : [],
-                systemPrompt: pending?.systemPrompt ?? "",
-                modelParameters: pending?.modelParameters ?? .default,
-                showTokenUsage: getChatPreferencesUseCase.getShowTokenUsage(),
-                ttsModelId: audioModelIds.ttsModelId,
-                transcriptionModelId: audioModelIds.transcriptionModelId,
-                isWebSearchEnabled: getChatPreferencesUseCase.getIsWebSearchEnabled(),
-                isWebSearchToolConfigured: !getChatPreferencesUseCase.getWebSearchToolName().isEmpty
-            ))
-        } catch {
-            LogManager.error("fetchAndBuildInitialState failed: \(error)")
-            let pending = pendingConversation
-            pendingConversation = nil
-            state = .loaded(LoadedState(
-                conversation: pending,
-                messages: pending?.messages ?? [],
-                errorMessage: error.localizedDescription,
-                systemPrompt: pending?.systemPrompt ?? "",
-                modelParameters: pending?.modelParameters ?? .default,
-                isWebSearchEnabled: getChatPreferencesUseCase.getIsWebSearchEnabled(),
-                isWebSearchToolConfigured: !getChatPreferencesUseCase.getWebSearchToolName().isEmpty
-            ))
-            scheduleErrorDismiss()
         }
     }
 
@@ -360,6 +363,17 @@ private extension ChatViewModel {
     func addAttachment(data: Data, fileName: String, type: ChatMessage.AttachmentType) {
         guard case .loaded(var loadedState) = state else { return }
         let mime = mimeType(for: type, fileName: fileName)
+        if isPrivateChat {
+            loadedState.pendingAttachments.append(ChatMessage.Attachment(
+                type: type,
+                fileName: fileName,
+                mimeType: mime,
+                fileRelativePath: "",
+                transientData: data
+            ))
+            state = .loaded(loadedState)
+            return
+        }
         let folderId = loadedState.conversation?.id ?? loadedState.pendingSessionId
         let attachmentId = UUID()
         let placeholder = ChatMessage.Attachment(
@@ -387,7 +401,8 @@ private extension ChatViewModel {
 
     func removeAttachment(_ id: UUID) {
         guard case .loaded(var loadedState) = state else { return }
-        if let attachment = loadedState.pendingAttachments.first(where: { $0.id == id }) {
+        if !isPrivateChat,
+           let attachment = loadedState.pendingAttachments.first(where: { $0.id == id }) {
             try? attachmentRepository.delete(attachment: attachment)
         }
         loadedState.pendingAttachments.removeAll { $0.id == id }

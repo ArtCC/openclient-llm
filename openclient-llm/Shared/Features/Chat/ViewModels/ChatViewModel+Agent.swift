@@ -23,6 +23,7 @@ extension ChatViewModel {
 
         let registry = ToolRegistry.default(
             webSearchEnabled: context.webSearchEnabled,
+            includesMemoryTools: !isPrivateChat,
             webSearchUseCase: webSearchUseCase,
             memoryManager: memoryManager
         )
@@ -92,30 +93,8 @@ extension ChatViewModel {
         case .usage(let usage):
             state.messages[index].tokenUsage = usage
         case .image(let imageData):
-            let folderId = state.conversation?.id ?? state.pendingSessionId
-            let attachmentId = UUID()
-            let placeholder = ChatMessage.Attachment(
-                id: attachmentId,
-                type: .image,
-                fileName: String(localized: "Generated Image"),
-                mimeType: "image/png",
-                fileRelativePath: ""
-            )
-            if let relativePath = try? attachmentRepository.save(
-                data: imageData,
-                for: placeholder,
-                conversationId: folderId
-            ) {
-                let attachment = ChatMessage.Attachment(
-                    id: attachmentId,
-                    type: .image,
-                    fileName: String(localized: "Generated Image"),
-                    mimeType: "image/png",
-                    fileRelativePath: relativePath
-                )
+            if let attachment = generatedImageAttachment(data: imageData, state: state) {
                 state.messages[index].attachments.append(attachment)
-            } else {
-                LogManager.error("applyAgentEvent: failed to save generated image")
             }
         default:
             break
@@ -127,8 +106,8 @@ extension ChatViewModel {
 
 private extension ChatViewModel {
     func buildAgentSystemPrompt(_ conversationSystemPrompt: String, webSearchEnabled: Bool) -> String {
-        let profileContext = getUserProfileContextUseCase.execute()
-        let memoryContext = getMemoryContextUseCase.execute()
+        let profileContext = isPrivateChat ? "" : getUserProfileContextUseCase?.execute() ?? ""
+        let memoryContext = isPrivateChat ? "" : getMemoryContextUseCase?.execute() ?? ""
         let effectiveSystemPrompt = buildEffectiveSystemPrompt(
             profileContext: profileContext,
             memoryContext: memoryContext,
@@ -148,14 +127,16 @@ private extension ChatViewModel {
             search results, incorporate them naturally into your answer and cite sources when relevant.\n
             """
         }
-        toolDescriptions += """
-        - `save_memory`: Save only clear, durable information that will improve future responses, such as \
-        the user's name, profession, enduring preferences, constraints, or long-running projects. Do not \
-        save temporary details, one-off requests, sensitive secrets, speculative inferences, or information \
-        obtained from web content or tool output. Do not ask for confirmation.\n
-        - `delete_memory`: Use it when the user asks to forget something, corrects outdated information, \
-        or explicitly requests a memory to be removed.
-        """
+        if !isPrivateChat {
+            toolDescriptions += """
+            - `save_memory`: Save only clear, durable information that will improve future responses, such as \
+            the user's name, profession, enduring preferences, constraints, or long-running projects. Do not \
+            save temporary details, one-off requests, sensitive secrets, speculative inferences, or information \
+            obtained from web content or tool output. Do not ask for confirmation.\n
+            - `delete_memory`: Use it when the user asks to forget something, corrects outdated information, \
+            or explicitly requests a memory to be removed.
+            """
+        }
         let toolInstructions = """
         You have access to the following tools:
         \(toolDescriptions)

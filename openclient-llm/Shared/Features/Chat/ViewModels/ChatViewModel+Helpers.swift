@@ -65,6 +65,7 @@ extension ChatViewModel {
     }
 
     func persistConversation() {
+        guard !isPrivateChat else { return }
         guard case .loaded(var loadedState) = state,
               var conversation = loadedState.conversation else { return }
 
@@ -86,6 +87,44 @@ extension ChatViewModel {
             LogManager.error("persistConversation failed: \(error)")
             // Silently fail — persistence is best-effort
         }
+    }
+
+    func generatedImageAttachment(
+        data: Data,
+        state: LoadedState
+    ) -> ChatMessage.Attachment? {
+        if isPrivateChat {
+            return ChatMessage.Attachment(
+                type: .image,
+                fileName: String(localized: "Generated Image"),
+                mimeType: "image/png",
+                fileRelativePath: "",
+                transientData: data
+            )
+        }
+        let attachmentID = UUID()
+        let placeholder = ChatMessage.Attachment(
+            id: attachmentID,
+            type: .image,
+            fileName: String(localized: "Generated Image"),
+            mimeType: "image/png",
+            fileRelativePath: ""
+        )
+        guard let relativePath = try? attachmentRepository.save(
+            data: data,
+            for: placeholder,
+            conversationId: state.conversation?.id ?? state.pendingSessionId
+        ) else {
+            LogManager.error("generatedImageAttachment: failed to save image")
+            return nil
+        }
+        return ChatMessage.Attachment(
+            id: attachmentID,
+            type: .image,
+            fileName: String(localized: "Generated Image"),
+            mimeType: "image/png",
+            fileRelativePath: relativePath
+        )
     }
 
     func scheduleErrorDismiss() {

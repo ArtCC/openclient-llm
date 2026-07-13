@@ -12,7 +12,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 ### Added
 
 - **Conversation backup and restore** — export full, versioned JSON backups with portable attachments; restore them safely on another device as copies with preserved branch relationships, validation, rollback, and an import summary
-- **Ephemeral Chat** — launch a separate private chat that retains messages, attachments, generated images, web-search results, and agent activity only in memory; it never saves or syncs conversations and never reads or modifies personal memory
+- **Private Chat** — launch a private chat that retains messages, attachments, generated images, web-search results, and agent activity only in memory; it never saves or syncs conversations and never reads or modifies personal memory
 
 ## [1.4.4-build-56] - 2026-07-12
 
