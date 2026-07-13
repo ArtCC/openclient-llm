@@ -15,11 +15,17 @@ final class MockSaveConversationUseCase: SaveConversationUseCaseProtocol, @unche
 
     var savedConversations: [Conversation] = []
     var error: Error?
+    var failureAtCall: Int?
+    var executeCallCount = 0
 
     // MARK: - Execute
 
     func execute(_ conversation: Conversation) throws {
+        executeCallCount += 1
         if let error { throw error }
+        if failureAtCall == executeCallCount {
+            throw NSError(domain: "MockSaveConversationUseCase", code: 1)
+        }
         savedConversations.append(conversation)
     }
 }

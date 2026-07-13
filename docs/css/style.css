@@ -13,7 +13,8 @@
   --badge-text: #444;
   --section-alt-bg: rgba(0, 0, 0, 0.025);
   --header-bg: rgba(245, 245, 247, 0.82);
-  --hero-glow: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0, 122, 255, 0.08) 0%, transparent 70%);
+  --hero-glow: radial-gradient(ellipse 55% 40% at 50% 0%, rgba(0, 122, 255, 0.16) 0%, transparent 72%);
+  --hero-grid: rgba(0, 122, 255, 0.09);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -28,7 +29,8 @@
     --badge-text: #ccc;
     --section-alt-bg: rgba(255, 255, 255, 0.03);
     --header-bg: rgba(0, 0, 0, 0.75);
-    --hero-glow: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(10, 132, 255, 0.12) 0%, transparent 70%);
+    --hero-glow: radial-gradient(ellipse 55% 40% at 50% 0%, rgba(10, 132, 255, 0.22) 0%, transparent 72%);
+    --hero-grid: rgba(10, 132, 255, 0.12);
   }
 }
 
@@ -48,6 +50,11 @@ body {
   color: var(--text);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+}
+
+a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
 }
 
 /* ============================================================
@@ -145,7 +152,10 @@ body {
   position: relative;
   overflow: hidden;
   padding-top: 56px;
-  /* header height */
+  isolation: isolate;
+  background-image: linear-gradient(var(--hero-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--hero-grid) 1px, transparent 1px);
+  background-size: 44px 44px;
 }
 
 .hero-glow {
@@ -153,14 +163,38 @@ body {
   top: 56px;
   left: 0;
   right: 0;
-  height: 420px;
+  height: 560px;
   background: var(--hero-glow);
   pointer-events: none;
 }
 
+.hero-orb {
+  position: absolute;
+  z-index: -1;
+  width: 220px;
+  aspect-ratio: 1;
+  border: 1px solid var(--card-border);
+  border-radius: 50%;
+  background: var(--card-bg);
+  box-shadow: inset 0 0 50px rgba(0, 122, 255, 0.08);
+}
+
+.hero-orb-left {
+  top: 210px;
+  left: max(-120px, calc(50% - 610px));
+}
+
+.hero-orb-right {
+  top: 105px;
+  right: max(-100px, calc(50% - 570px));
+  width: 150px;
+}
+
 .hero .container {
-  padding-top: 80px;
-  padding-bottom: 72px;
+  position: relative;
+  z-index: 1;
+  padding-top: 88px;
+  padding-bottom: 88px;
 }
 
 /* ============================================================
@@ -188,20 +222,37 @@ body {
   letter-spacing: 0.04em;
   border-radius: 20px;
   border: 1px solid var(--card-border);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 28px rgba(0, 122, 255, 0.08);
 }
 
 /* ============================================================
    Icon
    ============================================================ */
 
+.app-icon-frame {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 28px;
+}
+
+.app-icon-frame::before {
+  position: absolute;
+  z-index: -1;
+  inset: -22px;
+  border-radius: 42px;
+  background: var(--accent);
+  content: "";
+  filter: blur(30px);
+  opacity: 0.25;
+}
+
 .icon {
   display: block;
   width: 140px;
   height: 140px;
   border-radius: 32px;
-  margin: 0 auto 20px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -242,7 +293,7 @@ h1 {
   font-size: 1.15rem;
   color: var(--muted);
   max-width: 500px;
-  margin: 0 auto 40px;
+  margin: 0 auto 36px;
   line-height: 1.7;
 }
 
@@ -266,20 +317,26 @@ h1 {
   background: var(--accent);
   color: #fff;
   text-decoration: none;
-  border-radius: 14px;
+  border: 1px solid transparent;
+  border-radius: 16px;
   font-size: 1rem;
   font-weight: 600;
   transition: opacity 0.2s, transform 0.15s;
 }
 
 .cta-group a:hover {
-  opacity: 0.87;
-  transform: translateY(-1px);
+  opacity: 0.94;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(0, 122, 255, 0.2);
 }
 
 .cta-github {
   background: #24292e !important;
   color: #fff !important;
+}
+
+.cta-github:hover {
+  box-shadow: 0 12px 24px rgba(36, 41, 46, 0.22) !important;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -295,6 +352,11 @@ h1 {
   background: none;
   border-radius: 0;
   line-height: 0;
+}
+
+.cta-group a.cta-appstore-badge:hover {
+  box-shadow: none;
+  opacity: 0.86;
 }
 
 .cta-appstore-badge img {
@@ -347,7 +409,7 @@ h1 {
    ============================================================ */
 
 .section {
-  padding: 72px 24px;
+  padding: 96px 24px;
   text-align: center;
 }
 
@@ -373,7 +435,7 @@ h1 {
 }
 
 .section-title {
-  font-size: 1.9rem;
+  font-size: clamp(1.9rem, 4vw, 2.5rem);
   font-weight: 700;
   letter-spacing: -0.02em;
   margin-bottom: 40px;
@@ -395,7 +457,7 @@ h1 {
 .features {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 18px;
   text-align: left;
 }
 
@@ -412,18 +474,31 @@ h1 {
 }
 
 .feature {
-  padding: 22px 20px;
+  position: relative;
+  overflow: hidden;
+  padding: 24px 22px;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 18px;
+  border-radius: 20px;
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.feature::after {
+  position: absolute;
+  top: 0;
+  left: 22px;
+  width: 46px;
+  height: 2px;
+  background: var(--icon-color);
+  content: "";
 }
 
 .feature:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.07);
+  transform: translateY(-5px);
+  border-color: color-mix(in srgb, var(--icon-color) 40%, var(--card-border));
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -440,14 +515,14 @@ h1 {
   height: 44px;
   border-radius: 12px;
   font-size: 1.3rem;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
   background: var(--icon-bg);
 }
 
 .feature h3 {
   font-size: 0.95rem;
   font-weight: 600;
-  margin-bottom: 5px;
+  margin-bottom: 7px;
   letter-spacing: -0.01em;
 }
 
@@ -749,7 +824,33 @@ footer a:hover {
     height: 112px;
   }
 
+  .hero .container {
+    padding-top: 72px;
+    padding-bottom: 72px;
+  }
+
+  .section {
+    padding: 72px 20px;
+  }
+
+  .cta-group {
+    gap: 10px;
+  }
+
+  .cta-group a {
+    padding: 0 18px;
+  }
+
   .site-header-nav .header-nav-link {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
