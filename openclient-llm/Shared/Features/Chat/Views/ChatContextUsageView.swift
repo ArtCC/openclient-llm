@@ -40,7 +40,7 @@ private extension ChatContextUsageView {
         Text(String(localized: "Estimated context"))
         Text(usage.formattedUsage)
         Text("·")
-        Text("\(usage.percentage)%")
+        Text(Double(usage.percentage) / 100, format: .percent)
     }
 
     var statusText: String {
