@@ -26,6 +26,7 @@ extension ChatView {
                     hasTTS: loadedState.ttsModelId != nil,
                     showTokenUsage: loadedState.showTokenUsage,
                     isLastMessage: isLast,
+                    isRunningTool: isLast && !loadedState.activeToolCallIds.isEmpty,
                     showsMessageActionsTip: message.id == tipMessageId && !loadedState.isStreaming,
                     onSpeakTapped: { viewModel.send(.speakMessageTapped(message)) },
                     onStopSpeakingTapped: { viewModel.send(.stopSpeakingTapped) },

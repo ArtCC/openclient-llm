@@ -75,7 +75,7 @@ struct AgentStreamUseCase: AgentStreamUseCaseProtocol {
 
     // MARK: - Init
 
-    init(repository: ChatRepositoryProtocol = ChatRepository(), timeout: Duration = .seconds(120)) {
+    init(repository: ChatRepositoryProtocol = ChatRepository(), timeout: Duration = .seconds(125)) {
         self.repository = repository
         self.timeout = timeout
     }

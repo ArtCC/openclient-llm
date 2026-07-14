@@ -12,7 +12,11 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 ### Added
 
 - **Contextual feature tips** — native TipKit popovers explain model selection, attachments, message actions, web search, chat options, Private Chat, context usage, memory, and conversation organization without adding actions inside the tips
-- **Tip discovery controls** — tips appear only when their related feature is available, are invalidated after use, respect a daily global frequency, and can be enabled again from Help
+- **Tip discovery controls** — tips appear only when their related feature is available, are invalidated after use, respect an hourly global frequency, and can be enabled again from Help
+
+### Changed
+
+- **Reasoning disclosure behavior** — active reasoning opens automatically, collapses when the answer begins or streaming ends, respects manual changes during the current response, and starts closed when reopening a chat
 
 ## [1.4.5-build-58] - 2026-07-14
 

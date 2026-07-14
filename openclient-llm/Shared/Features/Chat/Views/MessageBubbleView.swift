@@ -23,6 +23,7 @@ struct MessageBubbleView: View {
     var hasTTS: Bool = false
     var showTokenUsage: Bool = true
     var isLastMessage: Bool = false
+    var isRunningTool: Bool = false
     var showsMessageActionsTip: Bool = false
     var onSpeakTapped: (() -> Void)?
     var onStopSpeakingTapped: (() -> Void)?
@@ -30,10 +31,8 @@ struct MessageBubbleView: View {
     var onRegenerateTapped: (() -> Void)?
     var onForkTapped: (() -> Void)?
     var onFavouriteTapped: (() -> Void)?
-    @AppStorage("thinkingDisclosureExpanded") private var userThinkingPreference: Bool = true
     @State private var cursorVisible: Bool = false
-    @State private var isThinkingExpanded: Bool = true
-    @State private var programmaticExpansionChange: Bool = false
+    @State private var reasoningDisclosureState = ReasoningDisclosureState()
     @State private var parsedBlocks: [MessageBlock] = []
 
     // MARK: - View
@@ -140,32 +139,41 @@ private extension MessageBubbleView {
         }
         .onAppear {
             parsedBlocks = MarkdownParser.parse(message.content)
-            programmaticExpansionChange = true
-            isThinkingExpanded = userThinkingPreference
+            reasoningDisclosureState.viewAppeared(
+                isStreaming: isStreaming,
+                hasReasoning: !(message.reasoningContent ?? "").isEmpty,
+                hasAnswer: !message.content.isEmpty
+            )
         }
         .onChange(of: message.content) {
             parsedBlocks = MarkdownParser.parse(message.content)
+            if !message.content.isEmpty {
+                reasoningDisclosureState.answerReceived(isStreaming: isStreaming)
+            }
         }
-        .onChange(of: isThinkingExpanded) { _, newValue in
-            if programmaticExpansionChange {
-                programmaticExpansionChange = false
-            } else {
-                userThinkingPreference = newValue
+        .onChange(of: message.reasoningContent) {
+            if !(message.reasoningContent ?? "").isEmpty {
+                reasoningDisclosureState.reasoningReceived(isStreaming: isStreaming)
+            }
+        }
+        .onChange(of: isRunningTool) { _, isRunning in
+            if isRunning {
+                reasoningDisclosureState.toolStarted()
             }
         }
         .task(id: isStreaming) {
             guard isStreaming else {
                 cursorVisible = false
-                if message.reasoningContent != nil {
-                    withAnimation(.easeInOut(duration: 0.4)) {
-                        programmaticExpansionChange = true
-                        isThinkingExpanded = userThinkingPreference
-                    }
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    reasoningDisclosureState.streamingEnded()
                 }
                 return
             }
-            programmaticExpansionChange = true
-            isThinkingExpanded = true
+            reasoningDisclosureState.viewAppeared(
+                isStreaming: true,
+                hasReasoning: !(message.reasoningContent ?? "").isEmpty,
+                hasAnswer: !message.content.isEmpty
+            )
             while !Task.isCancelled {
                 cursorVisible.toggle()
                 try? await Task.sleep(for: .milliseconds(500))
@@ -374,7 +382,7 @@ private extension MessageBubbleView {
     }
 
     func thinkingDisclosureView(_ reasoning: String) -> some View {
-        DisclosureGroup(isExpanded: $isThinkingExpanded) {
+        DisclosureGroup(isExpanded: thinkingExpansionBinding) {
             ScrollView {
                 Text(reasoning)
                     .font(.caption.monospaced())
@@ -392,13 +400,24 @@ private extension MessageBubbleView {
                     .font(.caption)
                     .fontWeight(.medium)
             }
-            .foregroundStyle(isStreaming ? AnyShapeStyle(Color.appAccent) : AnyShapeStyle(.secondary))
-            .opacity(isStreaming ? (cursorVisible ? 1.0 : 0.5) : 0.7)
+            .foregroundStyle(isActivelyReasoning ? AnyShapeStyle(Color.appAccent) : AnyShapeStyle(.secondary))
+            .opacity(isActivelyReasoning ? (cursorVisible ? 1.0 : 0.5) : 0.7)
         }
         .animation(.easeInOut(duration: 0.5), value: cursorVisible)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .glassEffect(.regular, in: .rect(cornerRadius: 12))
+    }
+
+    var thinkingExpansionBinding: Binding<Bool> {
+        Binding(
+            get: { reasoningDisclosureState.isExpanded },
+            set: { reasoningDisclosureState.userToggledExpansion($0) }
+        )
+    }
+
+    var isActivelyReasoning: Bool {
+        reasoningDisclosureState.phase == .reasoning
     }
 
     func tokenUsageLabel(_ usage: TokenUsage) -> some View {

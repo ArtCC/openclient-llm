@@ -46,7 +46,7 @@ struct ScrollTriggerModifier: ViewModifier {
             }
             .task(id: loadedState.conversation?.id) {
                 guard !loadedState.messages.isEmpty else { return }
-                try? await Task.sleep(for: .milliseconds(120))
+                try? await Task.sleep(for: .milliseconds(500))
                 guard !Task.isCancelled else { return }
                 scrollPosition.scrollTo(edge: .bottom)
             }
