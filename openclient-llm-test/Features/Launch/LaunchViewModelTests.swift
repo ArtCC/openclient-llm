@@ -29,7 +29,8 @@ final class LaunchViewModelTests: XCTestCase {
         sut = LaunchViewModel(
             checkOnboardingUseCase: mockUseCase,
             resetAppDataUseCase: mockResetAppData,
-            attachmentMigrationUseCase: mockAttachmentMigration
+            attachmentMigrationUseCase: mockAttachmentMigration,
+            launchDelay: .zero
         )
     }
 
@@ -82,6 +83,23 @@ final class LaunchViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state, .home)
     }
 
+    func test_send_viewAppeared_withLaunchDelay_keepsLoadingStateUntilDelayFinishes() {
+        // Given
+        mockUseCase.result = true
+        sut = LaunchViewModel(
+            checkOnboardingUseCase: mockUseCase,
+            resetAppDataUseCase: mockResetAppData,
+            attachmentMigrationUseCase: mockAttachmentMigration,
+            launchDelay: .milliseconds(500)
+        )
+
+        // When
+        sut.send(.viewAppeared)
+
+        // Then
+        XCTAssertEqual(sut.state, .loading)
+    }
+
     func test_send_viewAppeared_onboardingCompleted_doesNotResetAppData() {
         // Given
         mockUseCase.result = true
@@ -99,7 +117,8 @@ final class LaunchViewModelTests: XCTestCase {
             state: .onboarding,
             checkOnboardingUseCase: mockUseCase,
             resetAppDataUseCase: mockResetAppData,
-            attachmentMigrationUseCase: mockAttachmentMigration
+            attachmentMigrationUseCase: mockAttachmentMigration,
+            launchDelay: .zero
         )
 
         // When

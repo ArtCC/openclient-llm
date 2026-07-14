@@ -17,6 +17,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 ### Changed
 
 - **Reasoning disclosure behavior** — active reasoning opens automatically, collapses when the answer begins or streaming ends, respects manual changes during the current response, and starts closed when reopening a chat
+- **Launch presentation** — keeps the launch state visible for a short minimum duration before presenting onboarding or the main interface
 
 ## [1.4.5-build-58] - 2026-07-14
 

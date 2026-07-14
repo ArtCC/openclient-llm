@@ -372,11 +372,11 @@ private extension ChatView {
                 }
             }
             .modifier(ScrollTriggerModifier(
-                loadedState: loadedState,
                 scrollPosition: $scrollPosition,
                 isScrollThrottled: $isScrollThrottled,
                 scrollToMessageId: $scrollToMessageId,
                 shouldAutoScroll: $shouldAutoScroll,
+                loadedState: loadedState,
                 isNearBottom: isNearBottom
             ))
     }

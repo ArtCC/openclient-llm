@@ -30,6 +30,7 @@ final class LaunchViewModel {
     private let resetAppDataUseCase: ResetAppDataUseCaseProtocol
     private let configureVoticeUseCase: ConfigureVoticeUseCaseProtocol
     private let attachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol
+    private let launchDelay: Duration
 
     // MARK: - Init
 
@@ -38,13 +39,15 @@ final class LaunchViewModel {
         checkOnboardingUseCase: CheckOnboardingUseCaseProtocol = CheckOnboardingUseCase(),
         resetAppDataUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase(),
         configureVoticeUseCase: ConfigureVoticeUseCaseProtocol = ConfigureVoticeUseCase(),
-        attachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol = AttachmentMigrationUseCase()
+        attachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol = AttachmentMigrationUseCase(),
+        launchDelay: Duration = .milliseconds(500)
     ) {
         self.state = state
         self.checkOnboardingUseCase = checkOnboardingUseCase
         self.resetAppDataUseCase = resetAppDataUseCase
         self.configureVoticeUseCase = configureVoticeUseCase
         self.attachmentMigrationUseCase = attachmentMigrationUseCase
+        self.launchDelay = launchDelay
     }
 
     // MARK: - Input functions
@@ -59,7 +62,21 @@ final class LaunchViewModel {
             if !isCompleted {
                 resetAppDataUseCase.execute()
             }
-            state = isCompleted ? .home : .onboarding
+
+            let destination: State = isCompleted ? .home : .onboarding
+            guard launchDelay > .zero else {
+                state = destination
+                return
+            }
+
+            Task { [weak self, launchDelay] in
+                do {
+                    try await Task.sleep(for: launchDelay)
+                } catch {
+                    return
+                }
+                self?.state = destination
+            }
         case .onboardingCompleted:
             state = .home
         }
