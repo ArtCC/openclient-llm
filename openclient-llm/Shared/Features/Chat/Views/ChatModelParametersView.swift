@@ -20,6 +20,8 @@ struct ChatModelParametersView: View {
     @State private var maxTokens: Double = 4096
     @State private var topPEnabled: Bool = false
     @State private var topP: Double = 1.0
+    @State private var contextWindowEnabled: Bool = false
+    @State private var contextWindowText: String = "16384"
 
     // MARK: - View
 
@@ -38,6 +40,7 @@ struct ChatModelParametersView: View {
                                 applyParameters()
                                 isPresented = false
                             }
+                            .disabled(contextWindowEnabled && parsedContextWindow == nil)
                         }
                         ToolbarItem(placement: .cancellationAction) {
                             Button(String(localized: "Reset")) {
@@ -81,6 +84,7 @@ private extension ChatModelParametersView {
                     applyParameters()
                     isPresented = false
                 }
+                .disabled(contextWindowEnabled && parsedContextWindow == nil)
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
             }
@@ -156,6 +160,27 @@ private extension ChatModelParametersView {
             } footer: {
                 Text(String(localized: "Nucleus sampling. Lower values make output more focused."))
             }
+
+            Section {
+                Toggle(isOn: $contextWindowEnabled) {
+                    Label(String(localized: "Context Window"), systemImage: "rectangle.3.group")
+                }
+
+                if contextWindowEnabled {
+                    VStack(alignment: .leading, spacing: 4) {
+                        TextField(
+                            String(localized: "Input tokens"),
+                            text: $contextWindowText
+                        )
+                        .textFieldStyle(.roundedBorder)
+                        Text(String(localized: "Enter a positive whole number of input tokens."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } footer: {
+                Text(String(localized: "Use this when an OpenAI-compatible server does not provide context metadata."))
+            }
         }
 #if os(macOS)
         .formStyle(.grouped)
@@ -182,6 +207,12 @@ private extension ChatModelParametersView {
             acc + Double(usage.promptTokens) * inputRate + Double(usage.completionTokens) * outputRate
         }
         return total > 0 ? total : nil
+    }
+
+    var parsedContextWindow: Int? {
+        guard let value = Int(contextWindowText.trimmingCharacters(in: .whitespacesAndNewlines)),
+              value > 0 else { return nil }
+        return value
     }
 
     func costSection(_ cost: Double) -> some View {
@@ -211,6 +242,10 @@ private extension ChatModelParametersView {
             topPEnabled = true
             topP = top
         }
+        if let contextTokens = loadedState.contextWindowTokens {
+            contextWindowEnabled = true
+            contextWindowText = String(contextTokens)
+        }
     }
 
     func applyParameters() {
@@ -220,6 +255,8 @@ private extension ChatModelParametersView {
             topP: topPEnabled ? topP : nil
         )
         viewModel.send(.modelParametersChanged(parameters))
+        let contextTokens = contextWindowEnabled ? parsedContextWindow : nil
+        viewModel.send(.contextWindowChanged(contextTokens))
     }
 
     func resetParameters() {
@@ -229,6 +266,8 @@ private extension ChatModelParametersView {
         maxTokens = 4096
         topPEnabled = false
         topP = 1.0
+        contextWindowEnabled = false
+        contextWindowText = "16384"
     }
 }
 

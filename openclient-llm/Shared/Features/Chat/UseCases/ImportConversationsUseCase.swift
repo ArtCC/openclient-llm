@@ -95,6 +95,11 @@ private extension ImportConversationsUseCase {
         guard Set(messageIds).count == messageIds.count else {
             throw ImportConversationsError.duplicateMessageIdentifier
         }
+        do {
+            try document.conversations.forEach { try $0.conversation.validateContextMetadata() }
+        } catch {
+            throw ImportConversationsError.invalidDocument
+        }
         try validateAttachmentReferences(in: document)
     }
 
@@ -217,6 +222,9 @@ private extension ImportConversationsUseCase {
                 title: conversation.title,
                 modelId: conversation.modelId,
                 systemPrompt: conversation.systemPrompt,
+                contextWindowTokens: conversation.contextWindowTokens,
+                contextSummary: conversation.contextSummary,
+                contextSummaryCursorMessageId: remappedSummaryCursor(for: conversation, context: context),
                 messages: messages,
                 modelParameters: conversation.modelParameters,
                 isPinned: conversation.isPinned,
@@ -229,6 +237,12 @@ private extension ImportConversationsUseCase {
             attachments: attachmentRestoration.saved,
             skippedAttachmentCount: attachmentRestoration.skippedCount
         )
+    }
+
+    func remappedSummaryCursor(for conversation: Conversation, context: ImportContext) -> UUID? {
+        guard let cursor = conversation.contextSummaryCursorMessageId,
+              conversation.messages.contains(where: { $0.id == cursor }) else { return nil }
+        return context.messageIds[cursor]
     }
 
     func restoreMessage(

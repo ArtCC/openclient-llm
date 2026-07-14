@@ -27,6 +27,7 @@ final class ChatViewModelTests: XCTestCase {
     var mockExportConversation: MockExportConversationUseCase!
     var mockBranchConversation: MockBranchConversationUseCase!
     var mockAttachmentRepository: MockAttachmentRepository!
+    var mockCompactConversation: MockCompactConversationUseCase!
 
     // MARK: - Setup
 
@@ -46,6 +47,7 @@ final class ChatViewModelTests: XCTestCase {
         mockExportConversation = MockExportConversationUseCase()
         mockBranchConversation = MockBranchConversationUseCase()
         mockAttachmentRepository = MockAttachmentRepository()
+        mockCompactConversation = MockCompactConversationUseCase()
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
             attachmentRepository: mockAttachmentRepository,
@@ -59,7 +61,8 @@ final class ChatViewModelTests: XCTestCase {
             setWebSearchEnabledUseCase: mockSetWebSearchEnabled,
             resolveAudioModelIdsUseCase: mockResolveAudioModelIds,
             getUserProfileContextUseCase: mockGetUserProfileContext,
-            getConversationStartersUseCase: mockGetConversationStarters
+            getConversationStartersUseCase: mockGetConversationStarters,
+            compactConversationUseCase: mockCompactConversation
         )
     }
 
@@ -78,6 +81,7 @@ final class ChatViewModelTests: XCTestCase {
         mockExportConversation = nil
         mockBranchConversation = nil
         mockAttachmentRepository = nil
+        mockCompactConversation = nil
 
         try await super.tearDown()
     }
@@ -233,6 +237,23 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertTrue(loadedState.messages.isEmpty)
     }
 
+    func test_send_initialConversation_persistsManualContextWindow() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "test")])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+        sut.send(.contextWindowChanged(8_192))
+        sut.send(.inputChanged("Hello"))
+
+        // When
+        sut.send(.sendTapped)
+        try await Task.sleep(for: .milliseconds(100))
+
+        // Then
+        let savedConversation = try XCTUnwrap(mockSaveConversation.savedConversations.last)
+        XCTAssertEqual(savedConversation.contextWindowTokens, 8_192)
+    }
+
     func test_send_sendTapped_withNoModel_doesNothing() async throws {
         // Given
         mockFetchModels.result = .success([])
@@ -378,4 +399,5 @@ final class ChatViewModelTests: XCTestCase {
         )
         XCTAssertEqual(loadedState.messages[1].role, .assistant)
     }
+
 }

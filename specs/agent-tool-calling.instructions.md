@@ -186,6 +186,10 @@ Some models can request multiple tool calls in a single response:
 ### Loop Safety
 
 - **Maximum iterations**: Cap the loop at 10 iterations to prevent infinite loops
+- **Tool-call budget**: Cap the total number of calls at 20 and a single tool round at 8 calls.
+- **Tool-result budget**: Rebuild the request context after every tool round and bound each result from the remaining input budget so tool output cannot consume the final-response space.
+- **Continuous context**: Preserve the latest complete user turn and its assistant/tool messages atomically; never skip a recent turn to include an older one.
+- **Transcript persistence**: Emit and persist every assistant `tool_calls` message and matching tool result before continuing the loop.
 - **Timeout**: Overall timeout for the entire agentic flow (e.g., 120 seconds)
 - **User cancellation**: Allow the user to stop the loop at any point
 - **Error in tool execution**: Return error message as tool content, let the model handle it

@@ -26,6 +26,7 @@ struct ExportConversationsUseCase: ExportConversationsUseCaseProtocol {
     // MARK: - Execute
 
     func execute(_ conversations: [Conversation]) throws -> Data {
+        try conversations.forEach { try $0.validateContextMetadata() }
         let document = ConversationExportDocument(conversations: conversations.map(exportedConversation))
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

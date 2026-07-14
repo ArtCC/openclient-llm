@@ -26,6 +26,7 @@ final class ChatViewModel {
         case attachmentAdded(data: Data, fileName: String, type: ChatMessage.AttachmentType)
         case attachmentRemoved(UUID)
         case modelParametersChanged(ModelParameters)
+        case contextWindowChanged(Int?)
         case speakMessageTapped(ChatMessage)
         case stopSpeakingTapped
         case startRecordingTapped
@@ -59,6 +60,8 @@ final class ChatViewModel {
         var pendingAttachments: [ChatMessage.Attachment] = []
         var pendingSessionId: UUID = UUID()
         var modelParameters: ModelParameters = .default
+        var contextWindowTokens: Int?
+        var contextUsage: ContextUsage?
         var isSpeaking: Bool = false
         var speakingMessageId: UUID?
         var isRecording: Bool = false
@@ -72,6 +75,7 @@ final class ChatViewModel {
         var isWebSearchEnabled: Bool = false
         var isWebSearchToolConfigured: Bool = false
         var isSearchingWeb: Bool = false
+        var activeToolCallIds: Set<String> = []
     }
 
     var state: State
@@ -103,7 +107,10 @@ final class ChatViewModel {
     let triggerHapticFeedbackUseCase: TriggerHapticFeedbackUseCaseProtocol
     let streamingBackgroundUseCase: StreamingBackgroundUseCaseProtocol
     let notifyStreamingCompletedUseCase: NotifyStreamingCompletedUseCaseProtocol
+    let compactConversationUseCase: CompactConversationUseCaseProtocol
     var streamTask: Task<Void, Never>?
+    var compactionTask: Task<Void, Never>?
+    private var loadTask: Task<Void, Never>?
     var activeAssistantMessageId: UUID?
     var errorDismissTask: Task<Void, Never>?
     var durationTrackingTask: Task<Void, Never>?
@@ -137,7 +144,8 @@ final class ChatViewModel {
         recordAudioUseCase: any RecordAudioUseCaseProtocol = RecordAudioUseCase(),
         triggerHapticFeedbackUseCase: TriggerHapticFeedbackUseCaseProtocol = TriggerHapticFeedbackUseCase(),
         streamingBackgroundUseCase: StreamingBackgroundUseCaseProtocol = StreamingBackgroundUseCase(),
-        notifyStreamingCompletedUseCase: NotifyStreamingCompletedUseCaseProtocol = NotifyStreamingCompletedUseCase()
+        notifyStreamingCompletedUseCase: NotifyStreamingCompletedUseCaseProtocol = NotifyStreamingCompletedUseCase(),
+        compactConversationUseCase: CompactConversationUseCaseProtocol = CompactConversationUseCase()
     ) {
         self.state = state
         self.pendingConversation = conversation
@@ -169,6 +177,7 @@ final class ChatViewModel {
         self.triggerHapticFeedbackUseCase = triggerHapticFeedbackUseCase
         self.streamingBackgroundUseCase = streamingBackgroundUseCase
         self.notifyStreamingCompletedUseCase = notifyStreamingCompletedUseCase
+        self.compactConversationUseCase = compactConversationUseCase
         observeAppDataReset()
     }
 
@@ -177,6 +186,9 @@ final class ChatViewModel {
     func send(_ event: Event) {
         if case .viewDisappeared = event {
             stopStreaming()
+            cancelCompaction()
+            loadTask?.cancel()
+            loadTask = nil
             return
         }
         sendActiveEvent(event)
@@ -210,6 +222,7 @@ final class ChatViewModel {
              .attachmentAdded,
              .attachmentRemoved,
              .modelParametersChanged,
+             .contextWindowChanged,
              .speakMessageTapped,
              .stopSpeakingTapped:
             handleConfigurationEvent(event)
@@ -232,17 +245,22 @@ private extension ChatViewModel {
 
     func loadInitialData() {
         cancelActiveStreaming()
+        cancelCompaction()
+        loadTask?.cancel()
         state = .loading
-        Task { await fetchAndBuildInitialState() }
+        loadTask = Task { await fetchAndBuildInitialState() }
     }
 
     func fetchAndBuildInitialState() async {
         do {
             let models = try await fetchModelsUseCase.execute()
+            guard !Task.isCancelled else { return }
             let pending = pendingConversation
             pendingConversation = nil
             state = .loaded(makeLoadedState(models: models, pending: pending))
+            loadTask = nil
         } catch {
+            guard !Task.isCancelled else { return }
             LogManager.error("fetchAndBuildInitialState failed: \(error)")
             let pending = pendingConversation
             pendingConversation = nil
@@ -251,6 +269,7 @@ private extension ChatViewModel {
                 pending: pending,
                 errorMessage: error.localizedDescription
             ))
+            loadTask = nil
             scheduleErrorDismiss()
         }
     }
@@ -268,7 +287,7 @@ private extension ChatViewModel {
             ?? chatModels.first(where: { $0.id == savedModelID })
             ?? chatModels.first
         let audioModelIDs = resolveAudioModelIdsUseCase.execute(from: models)
-        let loadedState = LoadedState(
+        var loadedState = LoadedState(
             conversation: pending,
             messages: pending?.messages ?? [],
             selectedModel: selectedModel,
@@ -279,12 +298,14 @@ private extension ChatViewModel {
             errorMessage: errorMessage,
             systemPrompt: pending?.systemPrompt ?? "",
             modelParameters: pending?.modelParameters ?? .default,
+            contextWindowTokens: pending?.contextWindowTokens,
             showTokenUsage: getChatPreferencesUseCase.getShowTokenUsage(),
             ttsModelId: audioModelIDs.ttsModelId,
             transcriptionModelId: audioModelIDs.transcriptionModelId,
             isWebSearchEnabled: getChatPreferencesUseCase.getIsWebSearchEnabled(),
             isWebSearchToolConfigured: !getChatPreferencesUseCase.getWebSearchToolName().isEmpty
         )
+        refreshContextUsage(in: &loadedState)
         return loadedState
     }
 
@@ -296,6 +317,7 @@ private extension ChatViewModel {
             addAttachment(data: data, fileName: fileName, type: type)
         case .attachmentRemoved(let id): removeAttachment(id)
         case .modelParametersChanged(let parameters): updateModelParameters(parameters)
+        case .contextWindowChanged(let tokens): updateContextWindow(tokens)
         case .speakMessageTapped(let message): speakMessage(message)
         case .stopSpeakingTapped: stopSpeaking()
         default: break
@@ -304,6 +326,7 @@ private extension ChatViewModel {
 
     func loadConversation(_ conversation: Conversation) {
         cancelActiveStreaming()
+        cancelCompaction()
         guard case .loaded(var loadedState) = state else {
             pendingConversation = conversation
             return
@@ -312,25 +335,23 @@ private extension ChatViewModel {
         loadedState.messages = conversation.messages
         loadedState.systemPrompt = conversation.systemPrompt
         loadedState.modelParameters = conversation.modelParameters
+        loadedState.contextWindowTokens = conversation.contextWindowTokens
         let selectedModel = loadedState.availableModels.first(where: { $0.id == conversation.modelId })
             ?? loadedState.selectedModel
         loadedState.selectedModel = selectedModel
         loadedState.pendingAttachments = []
         loadedState.inputText = ""
         loadedState.errorMessage = nil
-        state = .loaded(loadedState)
-    }
-
-    func updateInput(_ text: String) {
-        guard case .loaded(var loadedState) = state else { return }
-        loadedState.inputText = text
+        refreshContextUsage(in: &loadedState)
         state = .loaded(loadedState)
     }
 
     func selectModel(_ model: LLMModel) {
         guard case .loaded(var loadedState) = state else { return }
+        cancelCompaction()
         LogManager.info("selectModel id=\(model.id)")
         loadedState.selectedModel = model
+        refreshContextUsage(in: &loadedState)
         state = .loaded(loadedState)
         saveSelectedModelUseCase.execute(modelId: model.id)
         if loadedState.conversation != nil {
@@ -342,16 +363,19 @@ private extension ChatViewModel {
 
     func updateSystemPrompt(_ prompt: String) {
         guard case .loaded(var loadedState) = state else { return }
+        cancelCompaction()
         loadedState.systemPrompt = prompt
         if loadedState.conversation != nil {
             loadedState.conversation?.systemPrompt = prompt
         }
+        refreshContextUsage(in: &loadedState)
         state = .loaded(loadedState)
         persistConversation()
     }
 
     func updateModelParameters(_ parameters: ModelParameters) {
         guard case .loaded(var loadedState) = state else { return }
+        cancelCompaction()
         loadedState.modelParameters = parameters
         if loadedState.conversation != nil {
             loadedState.conversation?.modelParameters = parameters
@@ -421,28 +445,6 @@ private extension ChatViewModel {
             default: return "image/jpeg"
             }
         }
-    }
-
-    func stopStreaming() {
-        LogManager.debug("stopStreaming requested")
-        cancelActiveStreaming()
-    }
-
-    func cancelActiveStreaming() {
-        streamTask?.cancel()
-        streamTask = nil
-        activeAssistantMessageId = nil
-        streamingBackgroundUseCase.end()
-        guard case .loaded(var loadedState) = state else { return }
-        guard loadedState.isStreaming else { return }
-        loadedState.isStreaming = false
-        state = .loaded(loadedState)
-        persistConversation()
-    }
-
-    func handleSuggestionTapped(_ prompt: String) {
-        updateInput(prompt)
-        sendMessage()
     }
 
     func speakMessage(_ message: ChatMessage) {

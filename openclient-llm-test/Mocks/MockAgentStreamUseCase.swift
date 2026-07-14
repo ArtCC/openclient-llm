@@ -24,6 +24,7 @@ final class MockAgentStreamUseCase: AgentStreamUseCaseProtocol, @unchecked Senda
         messages: [ChatMessage],
         model: String,
         parameters: ModelParameters,
+        contextWindowTokens: Int?,
         toolRegistry: ToolRegistry
     ) -> AsyncThrowingStream<AgentEvent, Error> {
         receivedToolNames = toolRegistry.definitions.map(\.function.name)

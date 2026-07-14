@@ -12,27 +12,15 @@ import Foundation
 
 extension ChatViewModel {
     func performAgentStreaming(_ context: SendMessageContext) async {
-        LogManager.debug("performAgentStreaming model=\(context.modelId) messages=\(context.messages.count)")
-
-        var allMessages = context.messages
-        let agentSystemPrompt = buildAgentSystemPrompt(
-            context.systemPrompt,
-            webSearchEnabled: context.webSearchEnabled
-        )
-        allMessages.insert(ChatMessage(role: .system, content: agentSystemPrompt), at: 0)
-
-        let registry = ToolRegistry.default(
-            webSearchEnabled: context.webSearchEnabled,
-            includesMemoryTools: !isPrivateChat,
-            webSearchUseCase: webSearchUseCase,
-            memoryManager: memoryManager
-        )
+        let registry = makeToolRegistry(webSearchEnabled: context.webSearchEnabled)
 
         do {
+            let allMessages = try agentRequestMessages(context: context, registry: registry)
             let stream = agentStreamUseCase.execute(
                 messages: allMessages,
                 model: context.modelId,
-                parameters: context.parameters,
+                parameters: parametersCappedToModelOutput(context.parameters, model: context.selectedModel),
+                contextWindowTokens: context.contextWindowTokens ?? context.selectedModel.maxInputTokens,
                 toolRegistry: registry
             )
 
@@ -41,6 +29,7 @@ extension ChatViewModel {
                       case .loaded(var currentState) = state else { return }
                 applyAgentEvent(event, to: &currentState, assistantMessageId: context.assistantId)
                 state = .loaded(currentState)
+                if case .transcriptAppended = event { persistConversation() }
             }
 
             await handleAgentStreamSuccess(context.assistantId, modelId: context.modelId)
@@ -54,6 +43,7 @@ extension ChatViewModel {
             }
             currentState.isStreaming = false
             currentState.isSearchingWeb = false
+            currentState.activeToolCallIds = []
             currentState.errorMessage = error.localizedDescription
             state = .loaded(currentState)
             scheduleErrorDismiss()
@@ -66,12 +56,19 @@ extension ChatViewModel {
     func applyAgentEvent(_ event: AgentEvent, to state: inout LoadedState, assistantMessageId: UUID) {
         // Handle events that update UI state (no message index needed)
         switch event {
-        case .toolCallStarted:
-            state.isSearchingWeb = true
+        case .toolCallStarted(let toolCall):
+            state.activeToolCallIds.insert(toolCall.id)
+            state.isSearchingWeb = !state.activeToolCallIds.isEmpty
             return
-        case .toolCallCompleted(_, _, let searchResults):
-            state.isSearchingWeb = false
+        case .toolCallCompleted(let toolCallId, _, let searchResults):
+            state.activeToolCallIds.remove(toolCallId)
+            state.isSearchingWeb = !state.activeToolCallIds.isEmpty
             mergeSearchResults(searchResults, into: &state, assistantMessageId: assistantMessageId)
+            return
+        case .transcriptAppended(let messages):
+            guard let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) else { return }
+            state.messages.insert(contentsOf: messages, at: index)
+            refreshContextUsage(in: &state)
             return
         case .completed:
             return
@@ -92,6 +89,8 @@ extension ChatViewModel {
             state.messages[index].reasoningContent = (state.messages[index].reasoningContent ?? "") + text
         case .usage(let usage):
             state.messages[index].tokenUsage = usage
+        case .promptUsage(let promptTokens):
+            refreshContextUsage(in: &state, calibratedPromptTokens: promptTokens)
         case .image(let imageData):
             if let attachment = generatedImageAttachment(data: imageData, state: state) {
                 state.messages[index].attachments.append(attachment)
@@ -105,14 +104,34 @@ extension ChatViewModel {
 // MARK: - Private
 
 private extension ChatViewModel {
-    func buildAgentSystemPrompt(_ conversationSystemPrompt: String, webSearchEnabled: Bool) -> String {
-        let profileContext = isPrivateChat ? "" : getUserProfileContextUseCase?.execute() ?? ""
-        let memoryContext = isPrivateChat ? "" : getMemoryContextUseCase?.execute() ?? ""
-        let effectiveSystemPrompt = buildEffectiveSystemPrompt(
-            profileContext: profileContext,
-            memoryContext: memoryContext,
-            conversationSystemPrompt: conversationSystemPrompt
+    func agentRequestMessages(context: SendMessageContext, registry: ToolRegistry) throws -> [ChatMessage] {
+        let requestContext = try buildRequestContext(
+            messages: context.messages,
+            systemPrompt: buildAgentSystemPrompt(
+                context.systemPrompt,
+                webSearchEnabled: context.webSearchEnabled
+            ),
+            configuration: RequestContextConfiguration(
+                selectedModel: context.selectedModel,
+                contextWindowTokens: context.contextWindowTokens,
+                summary: context.contextSummary,
+                summaryCursorMessageId: context.contextSummaryCursorMessageId,
+                tools: registry.definitions
+            )
         )
+        return [ChatMessage(role: .system, content: requestContext.effectiveSystemPrompt)] + requestContext.messages
+    }
+
+    func makeToolRegistry(webSearchEnabled: Bool) -> ToolRegistry {
+        ToolRegistry.default(
+            webSearchEnabled: webSearchEnabled,
+            includesMemoryTools: !isPrivateChat,
+            webSearchUseCase: webSearchUseCase,
+            memoryManager: memoryManager
+        )
+    }
+
+    func buildAgentSystemPrompt(_ conversationSystemPrompt: String, webSearchEnabled: Bool) -> String {
         var toolDescriptions = """
         - `get_current_datetime`: Use it to get the current date, time, and timezone from the user's \
         device. Call it whenever the user asks about the current date or time, or when the answer \
@@ -142,9 +161,9 @@ private extension ChatViewModel {
         \(toolDescriptions)
         Respond using whatever format best serves the answer (Markdown, lists, code blocks, tables, etc.).
         """
-        return effectiveSystemPrompt.isEmpty
+        return conversationSystemPrompt.isEmpty
             ? toolInstructions
-            : "\(effectiveSystemPrompt)\n\n\(toolInstructions)"
+            : "\(conversationSystemPrompt)\n\n\(toolInstructions)"
     }
 
     func mergeSearchResults(
@@ -163,6 +182,7 @@ private extension ChatViewModel {
         guard isActiveStream(assistantId), case .loaded(var finalState) = state else { return }
         finalState.isStreaming = false
         finalState.isSearchingWeb = false
+        finalState.activeToolCallIds = []
 
         if let index = finalState.messages.firstIndex(where: { $0.id == assistantId }),
            finalState.messages[index].content.isEmpty,
@@ -171,11 +191,13 @@ private extension ChatViewModel {
             finalState.errorMessage = String(localized: "The model returned an empty response. Please try again.")
         }
 
+        refreshContextUsage(in: &finalState)
         state = .loaded(finalState)
         LogManager.success("performAgentStreaming completed model=\(modelId)")
-        persistConversation()
+        let didPersist = persistConversation()
         streamingBackgroundUseCase.end()
         completeActiveStream(assistantId)
+        if didPersist { scheduleCompactionIfNeeded() }
         await notifyStreamingCompletedUseCase.execute()
     }
 }

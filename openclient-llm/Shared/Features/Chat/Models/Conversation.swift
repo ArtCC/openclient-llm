@@ -8,6 +8,23 @@
 
 import Foundation
 
+enum ConversationContextMetadataError: LocalizedError {
+    case invalidContextWindow
+    case inconsistentSummary
+    case invalidSummaryCursor
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidContextWindow:
+            String(localized: "The conversation context window must be greater than zero.")
+        case .inconsistentSummary:
+            String(localized: "The conversation summary and its cursor must both be present.")
+        case .invalidSummaryCursor:
+            String(localized: "The conversation summary cursor does not reference one of its messages.")
+        }
+    }
+}
+
 struct Conversation: Identifiable, Equatable, Sendable, Codable {
     // MARK: - Properties
 
@@ -15,6 +32,9 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
     var title: String
     var modelId: String
     var systemPrompt: String
+    var contextWindowTokens: Int?
+    var contextSummary: String?
+    var contextSummaryCursorMessageId: UUID?
     var messages: [ChatMessage]
     var modelParameters: ModelParameters
     var isPinned: Bool
@@ -31,6 +51,9 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         title: String = "",
         modelId: String,
         systemPrompt: String = "",
+        contextWindowTokens: Int? = nil,
+        contextSummary: String? = nil,
+        contextSummaryCursorMessageId: UUID? = nil,
         messages: [ChatMessage] = [],
         modelParameters: ModelParameters = .default,
         isPinned: Bool = false,
@@ -44,6 +67,9 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         self.title = title
         self.modelId = modelId
         self.systemPrompt = systemPrompt
+        self.contextWindowTokens = contextWindowTokens
+        self.contextSummary = contextSummary
+        self.contextSummaryCursorMessageId = contextSummaryCursorMessageId
         self.messages = messages
         self.modelParameters = modelParameters
         self.isPinned = isPinned
@@ -60,6 +86,9 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         title = try container.decode(String.self, forKey: .title)
         modelId = try container.decode(String.self, forKey: .modelId)
         systemPrompt = try container.decode(String.self, forKey: .systemPrompt)
+        contextWindowTokens = try container.decodeIfPresent(Int.self, forKey: .contextWindowTokens)
+        contextSummary = try container.decodeIfPresent(String.self, forKey: .contextSummary)
+        contextSummaryCursorMessageId = try container.decodeIfPresent(UUID.self, forKey: .contextSummaryCursorMessageId)
         messages = try container.decode([ChatMessage].self, forKey: .messages)
         modelParameters = try container.decodeIfPresent(ModelParameters.self, forKey: .modelParameters) ?? .default
         isPinned = try container.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
@@ -74,5 +103,34 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
 
     var totalTokens: Int {
         messages.compactMap(\.tokenUsage?.totalTokens).reduce(0, +)
+    }
+
+    func contextPartition() -> (messages: [ChatMessage], compactedCount: Int) {
+        guard let summary = contextSummary?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !summary.isEmpty,
+              let cursorMessageId = contextSummaryCursorMessageId,
+              let cursorIndex = messages.firstIndex(where: { $0.id == cursorMessageId }) else {
+            return (messages, 0)
+        }
+        return (Array(messages.dropFirst(cursorIndex + 1)), cursorIndex + 1)
+    }
+
+    func validateContextMetadata() throws {
+        if let contextWindowTokens, contextWindowTokens <= 0 {
+            throw ConversationContextMetadataError.invalidContextWindow
+        }
+        let summary = contextSummary?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let hasSummary = summary?.isEmpty == false
+        guard hasSummary == (contextSummaryCursorMessageId != nil) else {
+            throw ConversationContextMetadataError.inconsistentSummary
+        }
+        if let cursorMessageId = contextSummaryCursorMessageId {
+            guard let cursorIndex = messages.firstIndex(where: { $0.id == cursorMessageId }) else {
+                throw ConversationContextMetadataError.invalidSummaryCursor
+            }
+            if cursorIndex + 1 < messages.count, messages[cursorIndex + 1].role != .user {
+                throw ConversationContextMetadataError.invalidSummaryCursor
+            }
+        }
     }
 }
