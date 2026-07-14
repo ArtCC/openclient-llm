@@ -44,7 +44,8 @@ Before starting, ask the user for:
 
 - If the bug had no test covering it, add one:
   - Name it `test_<method>_<condition>_<expectedResult>()`
-  - Place it in the correct test file (`openclient-llm-test/Features/<FeatureName>/`)
+  - Place it in the mirrored path (`openclient-llm-test/Features/<FeatureName>/` or the matching `Core/` subfolder)
+  - Ensure every new Swift file has the repository copyright header and every test class is `@MainActor`
 - If an existing test was wrong (not the code), fix the test and document why
 
 ### 5. Verify

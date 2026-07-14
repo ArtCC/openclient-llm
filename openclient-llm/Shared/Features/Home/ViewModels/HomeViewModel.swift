@@ -16,7 +16,9 @@ final class HomeViewModel {
     enum Event {
         case viewAppeared
         case newChatShortcutTriggered
+        case newPrivateChatShortcutTriggered
         case shortcutActionConsumed
+        case privateChatRequestConsumed
         case spotlightConversationRequested(UUID)
         case pendingConversationConsumed
         case shareItemReceived
@@ -28,6 +30,7 @@ final class HomeViewModel {
     private(set) var pendingConversation: Conversation?
     private(set) var pendingShareItem: ShareExtensionItem?
     private(set) var pendingURLSchemeText: String?
+    private(set) var isPrivateChatRequested: Bool = false
 
     var pendingShortcutAction: ShortcutAction? {
         shortcutManager.pendingAction
@@ -75,11 +78,12 @@ final class HomeViewModel {
         switch event {
         case .viewAppeared:
             checkNotificationPermissionIfNeeded()
-        case .newChatShortcutTriggered:
-            let modelId = getSelectedModelUseCase.execute()
-            pendingConversation = Conversation(modelId: modelId)
+        case .newChatShortcutTriggered, .newPrivateChatShortcutTriggered:
+            handleChatShortcut(event)
         case .shortcutActionConsumed:
             shortcutManager.pendingAction = nil
+        case .privateChatRequestConsumed:
+            isPrivateChatRequested = false
         case .spotlightConversationRequested(let id):
             resolveSpotlightConversation(id: id)
         case .pendingConversationConsumed:
@@ -99,6 +103,15 @@ final class HomeViewModel {
 // MARK: - Private
 
 private extension HomeViewModel {
+    func handleChatShortcut(_ event: Event) {
+        if case .newChatShortcutTriggered = event {
+            let modelId = getSelectedModelUseCase.execute()
+            pendingConversation = Conversation(modelId: modelId)
+        } else {
+            isPrivateChatRequested = true
+        }
+    }
+
     func checkNotificationPermissionIfNeeded() {
         Task {
             let status = await checkNotificationPermissionUseCase.execute()

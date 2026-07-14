@@ -14,10 +14,12 @@ final class MockFetchModelsUseCase: FetchModelsUseCaseProtocol, @unchecked Senda
     // MARK: - Properties
 
     var result: Result<[LLMModel], Error> = .success([])
+    var onExecute: (() -> Void)?
 
     // MARK: - Execute
 
     func execute() async throws -> [LLMModel] {
-        try result.get()
+        onExecute?()
+        return try result.get()
     }
 }

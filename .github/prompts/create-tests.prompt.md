@@ -24,12 +24,12 @@ Before starting, ask the user for:
 ### 2. Create or locate the test file
 
 - Path: `openclient-llm-test/Features/<FeatureName>/<TypeName>Tests.swift`
-- If testing a Core type (Parser, Manager): `openclient-llm-test/Core/<TypeName>Tests.swift`
+- If testing a Core type, mirror its Core subfolder, for example `openclient-llm-test/Core/Managers/<TypeName>Tests.swift`
 - File header:
   ```swift
   //
   //  <TypeName>Tests.swift
-  //  openclient-llm-test
+  //  openclient-llm
   //
   //  Created by Arturo Carretero Calvo on DD/MM/YYYY.
   //  Copyright © YYYY Arturo Carretero Calvo. All rights reserved.
@@ -39,6 +39,7 @@ Before starting, ask the user for:
 ### 3. Create mocks if needed
 
 - One mock per protocol dependency, in `openclient-llm-test/Mocks/Mock<ProtocolName>.swift`
+- Every mock file must use the same mandatory copyright header shown above, with its actual file name
 - Pattern:
   ```swift
   // Safety: Only used within serialized @MainActor test methods.
@@ -104,7 +105,7 @@ func test_parse_withMissingRequiredField_throwsError() throws { }
 - Never write a test that always passes regardless of the implementation
 - Never use `XCTAssertTrue(true)` or equivalent no-op assertions
 - Use `XCTAssertEqual`, `XCTAssertThrowsError`, `XCTAssertNil`, `XCTUnwrap` — be specific
-- Test classes must be `@MainActor` when testing `@MainActor` types
+- Every test class must be `@MainActor` because the target uses default MainActor isolation
 - Do not add `@MainActor` per method if the class is already `@MainActor`
 - Do not test private methods directly — test through the public API
 - Do not modify source code to make it easier to test (except extracting a protocol if genuinely needed)

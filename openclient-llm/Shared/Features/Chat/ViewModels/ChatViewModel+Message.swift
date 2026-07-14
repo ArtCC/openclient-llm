@@ -20,6 +20,10 @@ extension ChatViewModel {
         let parameters: ModelParameters
         let webSearchEnabled: Bool
         let modelCapabilities: [LLMModel.Capability]
+        let selectedModel: LLMModel
+        let contextWindowTokens: Int?
+        let contextSummary: String?
+        let contextSummaryCursorMessageId: UUID?
     }
 
     func streamWithWebSearch(_ context: SendMessageContext) async {
@@ -27,13 +31,7 @@ extension ChatViewModel {
         if useAgentMode {
             await performAgentStreaming(context)
         } else {
-            await performStreaming(
-                messages: context.messages,
-                model: context.modelId,
-                assistantMessageId: context.assistantId,
-                systemPrompt: context.systemPrompt,
-                parameters: context.parameters
-            )
+            await performStreaming(context)
         }
     }
 
@@ -51,20 +49,10 @@ extension ChatViewModel {
         let webSearchEnabled = loadedState.isWebSearchEnabled
         let modelCapabilities = model.capabilities
 
+        cancelCompaction()
         streamTask?.cancel()
         activeAssistantMessageId = assistantId
-        streamingBackgroundUseCase.begin { [weak self] in
-            LogManager.warning("Background time expired — saving partial response")
-            guard let self, self.activeAssistantMessageId == assistantId else { return }
-            self.streamTask?.cancel()
-            self.streamTask = nil
-            self.activeAssistantMessageId = nil
-            guard case .loaded(var currentState) = self.state else { return }
-            currentState.isStreaming = false
-            self.state = .loaded(currentState)
-            self.persistConversation()
-            Task { await self.notifyStreamingCompletedUseCase.executeExpired() }
-        }
+        beginStreamingBackground(for: assistantId)
         streamTask = Task {
             await streamWithWebSearch(SendMessageContext(
                 text: text,
@@ -74,14 +62,22 @@ extension ChatViewModel {
                 systemPrompt: systemPrompt,
                 parameters: parameters,
                 webSearchEnabled: webSearchEnabled,
-                modelCapabilities: modelCapabilities
+                modelCapabilities: modelCapabilities,
+                selectedModel: model,
+                contextWindowTokens: loadedState.contextWindowTokens,
+                contextSummary: loadedState.conversation?.contextSummary,
+                contextSummaryCursorMessageId: loadedState.conversation?.contextSummaryCursorMessageId
             ))
         }
     }
 
     func prepareMessageState(text: String, model: LLMModel, loadedState: inout LoadedState) -> UUID {
-        if loadedState.conversation == nil {
-            loadedState.conversation = Conversation(modelId: model.id, systemPrompt: loadedState.systemPrompt)
+        if loadedState.conversation == nil, !isPrivateChat {
+            loadedState.conversation = Conversation(
+                modelId: model.id,
+                systemPrompt: loadedState.systemPrompt,
+                contextWindowTokens: loadedState.contextWindowTokens
+            )
         }
         let userMessage = ChatMessage(role: .user, content: text, attachments: loadedState.pendingAttachments)
         loadedState.messages.append(userMessage)
@@ -91,6 +87,7 @@ extension ChatViewModel {
         loadedState.errorMessage = nil
         let assistantMessage = ChatMessage(role: .assistant, content: "")
         loadedState.messages.append(assistantMessage)
+        refreshContextUsage(in: &loadedState)
         if loadedState.conversation?.title.isEmpty == true {
             loadedState.conversation?.title = text.isEmpty
                 ? String(localized: "New Conversation")

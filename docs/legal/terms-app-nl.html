@@ -29,6 +29,10 @@
       <p>Door OpenClient («de App») te downloaden, te installeren of te gebruiken, gaat u akkoord met deze voorwaarden.
         Als u het er niet mee eens bent, gebruik de App dan niet.</p>
 
+      <h2>Gebruiksbevoegdheid</h2>
+      <p>U moet volgens het toepasselijke recht handelingsbekwaam zijn om deze voorwaarden te aanvaarden. Als dat niet
+        zo is, mag u de App alleen gebruiken met toestemming van een ouder of wettelijke voogd.</p>
+
       <h2>Wat de app doet</h2>
       <p>OpenClient is een native Apple-client voor iOS, iPadOS en macOS die verbinding maakt met elke
         OpenAI-compatibele server die u opgeeft — zoals
@@ -36,16 +40,20 @@
         <a href="https://docs.litellm.ai/" style="color: var(--accent); text-decoration: none;">LiteLLM</a> of een
         andere zelf-gehoste of externe backend die de OpenAI API implementeert. De App maakt tekstgesprekken, analyse
         van afbeeldingen en documenten (Vision), spraaktranscriptie (Speech-to-Text), tekst-naar-spraakweergave,
-        afbeeldingsgeneratie, webzoeken en een agentische gereedschapsoproeplus mogelijk — allemaal uitsluitend verwerkt
-        door de server die u configureert. De App host, beheert of beheert geen LLM-server, AI-model of zoekprovider.
+        afbeeldingsgeneratie, webzoeken en een agentische gereedschapsoproeplus mogelijk. Servergebaseerde AI-bewerkingen
+        worden naar de door u geconfigureerde server gestuurd. Afhankelijk van de gekozen instelling kan
+        spraaktranscriptie in plaats daarvan het Speech-framework van Apple gebruiken; de verwerking volgt dan het
+        platformgedrag en de instellingen van Apple. De App host, exploiteert of beheert geen LLM-server, AI-model of
+        zoekprovider.
       </p>
       <p>Aanvullende mogelijkheden zijn onder meer:</p>
       <ul>
         <li><strong>Gesprekssynchronisatie:</strong> Gesprekken worden lokaal op uw apparaat opgeslagen en, als iCloud
           is ingeschakeld, gesynchroniseerd tussen uw Apple-apparaten via iCloud Drive.</li>
-        <li><strong>Geheugen:</strong> Persistente geheugenitems worden opgeslagen in iCloud Key-Value Store (indien
-          beschikbaar) of lokaal in UserDefaults, en als context in gesprekken geïnjecteerd. Modellen kunnen ook
-          autonoom geheugenitems aanmaken tijdens een gesprek.</li>
+        <li><strong>Geheugen:</strong> Persistente geheugenitems worden lokaal in een JSON-bestand opgeslagen en kunnen,
+          wanneer iCloud-synchronisatie is ingeschakeld, als bestand via iCloud Drive worden gesynchroniseerd. Modellen
+          kunnen ze ook autonoom aanmaken. Bestaande UserDefaults- en iCloud-sleutelwaardegegevens kunnen naar de
+          bestandsopslag worden gemigreerd.</li>
         <li><strong>Webzoeken:</strong> Wanneer ingeschakeld, stuurt de App zoekopdrachten via uw LiteLLM-server naar de
           zoekprovider die op die server is geconfigureerd (bijv. Brave, Tavily, DuckDuckGo). De App neemt nooit
           rechtstreeks contact op met zoekproviders.</li>
@@ -59,9 +67,13 @@
           snelle zoekopdrachten. Deze gegevens verlaten uw apparaat niet.</li>
       </ul>
 
+      <h2>AI-uitvoer</h2>
+      <p>AI-uitvoer kan onnauwkeurig, verzonnen, onvolledig, aanstootgevend of onveilig zijn. Controleer belangrijke
+        informatie onafhankelijk. De uitvoer is geen professioneel medisch, juridisch, financieel of veiligheidsadvies.</p>
+
       <h2>Gratis app, kosten van API van derden</h2>
-      <p>OpenClient is <strong>gratis te downloaden en te gebruiken</strong>. De App zelf heeft geen abonnementen,
-        in-app aankopen of verborgen kosten van welke aard dan ook.</p>
+      <p>OpenClient is <strong>gratis te downloaden en te gebruiken</strong> en heeft geen abonnement. De App biedt via
+        de fooienpot optionele, vrijwillige in-app aankopen; deze zijn niet vereist om de App te gebruiken.</p>
       <p>Het verbinden van de App met een betaalde LLM-provider — zoals OpenAI, Anthropic, Groq of een andere
         cloudgebaseerde service — <strong>kan echter kosten met zich meebrengen die rechtstreeks door die provider
           worden gefactureerd</strong> op basis van uw API-gebruik (verbruikte tokens, gegenereerde afbeeldingen,
@@ -94,17 +106,27 @@
           toepasselijke wetten en de servicevoorwaarden van elke LLM- of zoekprovider waarmee u verbinding maakt.</li>
       </ul>
 
+      <h2>Feedback via Votice</h2>
+      <p>Vrijwillige feedbackinzendingen via Votice kunnen een optionele naam, tekst en bijlagen bevatten en kunnen via
+        het feedbackbord zichtbaar zijn voor andere gebruikers. Dien geen vertrouwelijk, onrechtmatig of inbreukmakend
+        materiaal in. U geeft de ontwikkelaar niet-exclusieve toestemming om ingediende feedback weer te geven en te
+        gebruiken voor het beheren en verbeteren van de App; u blijft eigenaar van uw inhoud.</p>
+
       <h2>Lokale gegevens en iCloud</h2>
       <p>De App slaat gespreksgeschiedenis lokaal op uw apparaat op via het bestandssysteem. Als iCloud is ingeschakeld
         in de instellingen van uw apparaat, kunnen de volgende gegevens worden gesynchroniseerd met iCloud:</p>
       <ul>
-        <li>Gespreksbestanden (via iCloud Drive)</li>
-        <li>Gebruikersprofielinstellingen (via iCloud Key-Value Store)</li>
-        <li>Geheugenitems (via iCloud Key-Value Store)</li>
+        <li>Gespreksbestanden en bijlagen (via iCloud Drive)</li>
+        <li>JSON-bestand van het gebruikersprofiel (via iCloud Drive)</li>
+        <li>JSON-bestand met geheugenitems (via iCloud Drive)</li>
+        <li>Aangepaste promptsjablonen (via iCloud Drive)</li>
+        <li>Verwijderings- en tombstonemetadata voor synchronisatie</li>
       </ul>
       <p>U bepaalt of iCloud-synchronisatie actief is via de iCloud-instellingen van uw apparaat. De ontwikkelaar heeft
-        geen toegang tot gegevens die in uw iCloud-account zijn opgeslagen. Het uitschakelen van iCloud-synchronisatie
-        betekent dat gegevens alleen lokaal blijven en niet tussen apparaten worden gedeeld.</p>
+        geen toegang tot gegevens die in uw iCloud-account zijn opgeslagen. Als u synchronisatie uitschakelt, stopt de
+        App met toekomstige synchronisatie, maar worden bestanden die al in iCloud staan niet automatisch verwijderd;
+        u beheert die bestanden via iCloud. Dit verhindert geen serververzoeken, vrijwillige Votice-inzendingen of
+        vrijwillige fooiaankopen die Apple via StoreKit verwerkt.</p>
 
       <h2>Geschatte kosten</h2>
       <p>De App kan geschatte gesprekskosten weergeven die worden berekend op basis van tokengebruik en prijsmetadata
@@ -148,7 +170,7 @@
           href="https://github.com/ArtCC/openclient-llm/issues">GitHub-repository</a>.</p>
     </div>
 
-    <p class="legal-updated">Laatst bijgewerkt: 20 april 2026</p>
+    <p class="legal-updated">Laatst bijgewerkt: 15 juli 2026</p>
   </div>
 </body>
 

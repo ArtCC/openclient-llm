@@ -11,7 +11,7 @@ Use this skill only for opt-in tests against a real LiteLLM deployment.
 
 Ask for both values before making authenticated requests:
 
-1. The LiteLLM base URL, for example `https://litellm.example.com`.
+1. The exact OpenAI-compatible base URL entered in the app, for example `https://litellm.example.com/v1`.
 2. A temporary virtual key with the minimum permissions required for the tests.
 
 Never store either value in source files, `Secrets.xcconfig`, Xcode settings,
@@ -22,10 +22,11 @@ Tell the user to revoke the key after testing.
 
 Run only the tests enabled by the server configuration and report skipped tests.
 
-1. **Authentication and discovery**: request `GET /v1/models`; record model IDs and
+1. **Authentication and discovery**: append `models` to the supplied base URL and request it
+   (for example `GET /v1/models` when the base URL ends in `/v1`); record model IDs and
    whether authentication succeeds, without exposing the key.
 2. **Completion contract**: send a deterministic, short request to
-   `POST /v1/chat/completions`; verify the OpenAI-compatible choice, content and usage
+   the base-relative `chat/completions` endpoint; verify the OpenAI-compatible choice, content and usage
    fields.
 3. **SSE streaming**: repeat with `stream: true`; verify incremental `data:` chunks,
    a terminal finish reason, and `[DONE]`.
@@ -47,6 +48,9 @@ Run only the tests enabled by the server configuration and report skipped tests.
 
 - Prefer `curl` with the Authorization header for endpoint checks, using the supplied
   key only for the command that needs it.
+- Match app URL construction: endpoints such as `models` and `chat/completions` are
+  relative to the user-supplied base URL. Do not add or remove `/v1`; the configured
+  base URL owns that prefix.
 - Do not write response bodies containing sensitive user data to files.
 - Use non-sensitive, deterministic prompts such as `Reply with exactly: integration-ok`.
 - Stop immediately on `401`, `403`, certificate failures, or unexpected model behavior;

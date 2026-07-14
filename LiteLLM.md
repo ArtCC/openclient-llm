@@ -2,6 +2,10 @@
 
 This guide shows how to self-host [LiteLLM](https://docs.litellm.ai) as an OpenAI-compatible proxy using Docker Compose so you can use it as a backend with OpenClient LLM. It covers the full stack: Postgres for persistence, a reference `config.yaml` with both local (Ollama) and cloud models, and common operational commands.
 
+Configure OpenClient with the proxy root, for example `http://your-server:4000`, not
+`http://your-server:4000/v1`. OpenClient appends endpoint paths verbatim: core requests use `/models`,
+`/model/info`, and `/chat/completions`; audio and search requests use their explicit `/v1/...` paths.
+
 ## Reference
 
 - https://docs.litellm.ai/docs/proxy/deploy
@@ -148,7 +152,7 @@ docker compose up -d
 Verify the proxy is running:
 
 ```bash
-curl http://localhost:4000/health
+curl http://localhost:4000/health/readiness
 ```
 
 List available models:
@@ -193,4 +197,6 @@ Any client (app, n8n, curl, etc.) must include it to use LiteLLM.
 - `host.docker.internal` resolves to the host IP via `extra_hosts`, required for LiteLLM to reach Ollama running on the host.
 - The `litellm-database` image includes Postgres support for virtual keys and cost tracking. Use `litellm:main-stable` if you don't need a database.
 - The admin dashboard is available at `https://litellm.yourdomain.com/ui`.
-- Any OpenAI-compatible client can point to LiteLLM by changing only the `base_url` and `api_key`.
+- OpenClient's basic model listing and chat work without `/model/info`; model metadata and capabilities are then best-effort.
+- Image output is supported when a configured model/provider returns image data in chat-completion stream chunks.
+  OpenClient does not call LiteLLM's dedicated image-generation endpoint.

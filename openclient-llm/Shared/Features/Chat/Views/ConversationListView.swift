@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ConversationListView: View {
     // MARK: - Properties
@@ -18,6 +19,9 @@ struct ConversationListView: View {
     @State private var conversationToDelete: Conversation?
     @State private var renamingConversation: Conversation?
     @State private var renameText: String = ""
+    @State var isShowingBackupImporter = false
+    @State private var isShowingBackupExporter = false
+    @State private var backupFileDocument: ConversationBackupFileDocument?
 
 #if os(macOS)
     @State var isMacSearchExpanded = false
@@ -26,6 +30,7 @@ struct ConversationListView: View {
 
     var activeConversationId: UUID?
     let onConversationSelected: (Conversation?) -> Void
+    let onPrivateChatSelected: () -> Void
 
     // MARK: - View
 
@@ -102,6 +107,55 @@ struct ConversationListView: View {
         } message: {
             Text(String(localized: "Are you sure you want to delete this conversation? This action cannot be undone."))
         }
+        .alert(
+            String(localized: "Import Complete"),
+            isPresented: Binding(
+                get: { importResult != nil },
+                set: { if !$0 { viewModel.send(.importResultConsumed) } }
+            )
+        ) {
+            Button(String(localized: "OK")) {
+                viewModel.send(.importResultConsumed)
+            }
+        } message: {
+            Text(importResultMessage)
+        }
+        .alert(
+            String(localized: "Backup Error"),
+            isPresented: Binding(
+                get: { errorMessage != nil },
+                set: { if !$0 { viewModel.send(.errorMessageConsumed) } }
+            )
+        ) {
+            Button(String(localized: "OK")) {
+                viewModel.send(.errorMessageConsumed)
+            }
+        } message: {
+            Text(errorMessage ?? "")
+        }
+        .fileImporter(
+            isPresented: $isShowingBackupImporter,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false,
+            onCompletion: importBackup
+        )
+        .fileExporter(
+            isPresented: $isShowingBackupExporter,
+            document: backupFileDocument,
+            contentType: .json,
+            defaultFilename: "OpenClient-backup"
+        ) { result in
+            if case .failure(let error) = result, !isUserCancellation(error) {
+                viewModel.send(.backupExportWriteFailed)
+            }
+            backupFileDocument = nil
+        }
+        .onChange(of: backupData) { _, data in
+            guard let data else { return }
+            backupFileDocument = ConversationBackupFileDocument(data: data)
+            isShowingBackupExporter = true
+            viewModel.send(.backupDataConsumed)
+        }
     }
 }
 
@@ -119,35 +173,26 @@ private extension ConversationListView {
             }
         }
         .toolbar {
+#if os(iOS)
             ToolbarItem(placement: .primaryAction) {
+                newChatToolbarMenu
+            }
+            ToolbarItem(placement: .secondaryAction) {
                 Button {
-                    viewModel.send(.newConversationTapped)
+                    viewModel.send(.exportBackupTapped)
                 } label: {
-                    Image(systemName: "square.and.pencil")
+                    Label(String(localized: "Export Backup"), systemImage: "archivebox")
                 }
-                .accessibilityLabel(String(localized: "New Chat"))
-                .keyboardShortcut("n", modifiers: .command)
             }
-#if os(macOS)
+            ToolbarItem(placement: .secondaryAction) {
+                Button {
+                    isShowingBackupImporter = true
+                } label: {
+                    Label(String(localized: "Import Conversations"), systemImage: "square.and.arrow.down")
+                }
+            }
+#else
             macToolbarItems
-#endif
-        }
-    }
-
-    var emptyState: some View {
-        ContentUnavailableView {
-            Label(
-                String(localized: "No Conversations"),
-                systemImage: "bubble.left.and.bubble.right"
-            )
-        } description: {
-            Text(String(localized: "Start a new conversation to begin chatting"))
-        } actions: {
-            Button(String(localized: "New Chat")) {
-                viewModel.send(.newConversationTapped)
-            }
-#if os(macOS)
-            .buttonStyle(.borderedProminent)
 #endif
         }
     }
@@ -412,31 +457,6 @@ private extension ConversationListView {
         }
     }
 
-    func conversationTitle(_ conversation: Conversation) -> String {
-        if !conversation.title.isEmpty {
-            return conversation.title
-        }
-        if let firstUserMessage = conversation.messages.first(where: { $0.role == .user }) {
-            let preview = firstUserMessage.content.prefix(50)
-            return preview.count < firstUserMessage.content.count
-            ? "\(preview)…"
-            : String(preview)
-        }
-        return String(localized: "New Chat")
-    }
-    func exportURL(for conversation: Conversation) -> URL? {
-        guard let data = try? ExportConversationUseCase().execute(conversation) else { return nil }
-        let raw = conversationTitle(conversation)
-        let sanitized = raw
-            .replacingOccurrences(of: "[\\\\/:*?\"<>|]", with: "_", options: .regularExpression)
-            .prefix(50)
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent(String(sanitized))
-            .appendingPathExtension("json")
-        try? data.write(to: url)
-        return url
-    }
-
     @ViewBuilder
     func branchBadge(for conversation: Conversation) -> some View {
         if conversation.parentConversationId != nil {
@@ -449,7 +469,7 @@ private extension ConversationListView {
 
 #Preview {
     NavigationStack {
-        ConversationListView { _ in }
+        ConversationListView { _ in } onPrivateChatSelected: {}
             .navigationTitle(String(localized: "Chats"))
     }
 }

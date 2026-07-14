@@ -47,8 +47,8 @@ final class ExportConversationUseCaseTests: XCTestCase {
         XCTAssertFalse(data.isEmpty)
         let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
         XCTAssertNotNil(json)
-        XCTAssertEqual(json?["title"] as? String, "Test Conversation")
-        XCTAssertEqual(json?["modelId"] as? String, "gpt-4")
+        XCTAssertEqual(json?["format"] as? String, ConversationExportDocument.formatIdentifier)
+        XCTAssertEqual(json?["version"] as? Int, ConversationExportDocument.currentVersion)
     }
 
     func test_execute_outputIsPrettyPrinted() throws {
@@ -74,10 +74,10 @@ final class ExportConversationUseCaseTests: XCTestCase {
         let data = try sut.execute(conversation)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let decoded = try decoder.decode(Conversation.self, from: data)
+        let decoded = try decoder.decode(ConversationExportDocument.self, from: data)
 
         // Then
-        XCTAssertEqual(decoded.messages.count, 5)
+        XCTAssertEqual(decoded.conversations.first?.conversation.messages.count, 5)
     }
 
     func test_execute_roundTrip_preservesConversation() throws {
@@ -93,13 +93,41 @@ final class ExportConversationUseCaseTests: XCTestCase {
         let data = try sut.execute(original)
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        let decoded = try decoder.decode(Conversation.self, from: data)
+        let decoded = try decoder.decode(ConversationExportDocument.self, from: data)
+        let importedConversation = try XCTUnwrap(decoded.conversations.first?.conversation)
 
         // Then
-        XCTAssertEqual(decoded.id, original.id)
-        XCTAssertEqual(decoded.title, original.title)
-        XCTAssertEqual(decoded.modelId, original.modelId)
-        XCTAssertEqual(decoded.systemPrompt, original.systemPrompt)
-        XCTAssertEqual(decoded.messages.count, original.messages.count)
+        XCTAssertEqual(importedConversation.id, original.id)
+        XCTAssertEqual(importedConversation.title, original.title)
+        XCTAssertEqual(importedConversation.modelId, original.modelId)
+        XCTAssertEqual(importedConversation.systemPrompt, original.systemPrompt)
+        XCTAssertEqual(importedConversation.messages.count, original.messages.count)
+    }
+
+    func test_execute_attachmentInStorage_embedsPortableData() throws {
+        // Given
+        let repository = MockAttachmentRepository()
+        let attachment = ChatMessage.Attachment(
+            type: .pdf,
+            fileName: "document.pdf",
+            mimeType: "application/pdf",
+            fileRelativePath: "Attachments/conversation/document.pdf"
+        )
+        let message = ChatMessage(role: .user, content: "Read this", attachments: [attachment])
+        let conversation = Conversation(modelId: "gpt-4", messages: [message])
+        repository.loadedData = Data("document contents".utf8)
+        sut = ExportConversationUseCase(attachmentRepository: repository)
+
+        // When
+        let data = try sut.execute(conversation)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let document = try decoder.decode(ConversationExportDocument.self, from: data)
+
+        // Then
+        let exportedAttachment = try XCTUnwrap(document.conversations.first?.attachments.first)
+        XCTAssertEqual(exportedAttachment.messageId, message.id)
+        XCTAssertEqual(exportedAttachment.attachmentId, attachment.id)
+        XCTAssertEqual(exportedAttachment.data, Data("document contents".utf8).base64EncodedString())
     }
 }

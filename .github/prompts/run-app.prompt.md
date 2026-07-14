@@ -5,6 +5,18 @@ agent: "agent"
 
 Build and run the app on the iPhone 17 Pro Max simulator so the user can interact with it.
 
+Before either path, create the required local build configuration if it does not exist. Never overwrite an existing file:
+
+```bash
+if [ ! -f Secrets.xcconfig ]; then
+  cat > Secrets.xcconfig << 'EOF'
+VOTICE_API_KEY =
+VOTICE_API_SECRET =
+VOTICE_APP_ID =
+EOF
+fi
+```
+
 ## MCP Detection
 
 Before building, check whether the **XcodeBuildMCP** MCP server is available by searching for its tools using `tool_search_tool_regex` with the pattern `mcp_xcodebuildmcp_build_run_sim`. Then follow the appropriate path below.
@@ -13,23 +25,17 @@ Before building, check whether the **XcodeBuildMCP** MCP server is available by 
 
 ## Path A — XcodeBuildMCP available (preferred)
 
-1. **Resolve the absolute project path** by running:
-   ```bash
-   find "$(pwd)" -maxdepth 2 -name "openclient-llm.xcodeproj" | head -1
-   ```
-   Use the resulting absolute path for all subsequent MCP calls.
-
-2. **Verify session defaults** by calling `mcp_xcodebuildmcp_session_show_defaults`.
+1. **Verify session defaults** by calling `mcp_xcodebuildmcp_session_show_defaults` before the first build.
    - Defaults are pre-configured in `.xcodebuildmcp/config.yaml` and loaded automatically at server startup:
      - scheme: `openclient-llm`
      - simulator: `iPhone 17 Pro Max`
-   - If `projectPath` is missing or resolves incorrectly (relative paths may fail), set it with `mcp_xcodebuildmcp_session_set_defaults` using the absolute path resolved in step 1.
+   - If `projectPath` is missing or wrong, use project discovery and set it with `mcp_xcodebuildmcp_session_set_defaults`.
    - Only override other values if they are missing or wrong.
 
-3. **Build and run** by calling `mcp_xcodebuildmcp_build_run_sim` (no extra arguments needed if defaults are set).
+2. **Build and run** by calling `mcp_xcodebuildmcp_build_run_sim` with `CODE_SIGN_IDENTITY=""` and `CODE_SIGNING_REQUIRED=NO` as extra build arguments.
    - This boots the simulator automatically if needed and launches the app.
 
-4. **Report**: confirm the app launched successfully. The user will now interact with it directly in the simulator.
+3. **Report**: confirm the app launched successfully. The user will now interact with it directly in the simulator.
 
 ---
 
@@ -45,11 +51,15 @@ open -a Simulator
 2. **Build and install the app**:
 
 ```bash
+set -o pipefail
 xcodebuild build \
+  -project openclient-llm.xcodeproj \
   -scheme openclient-llm \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' \
   -derivedDataPath /tmp/openclient-llm-build \
-  2>&1 | grep -E "error:|warning:|BUILD SUCCEEDED|BUILD FAILED"
+  CODE_SIGN_IDENTITY="" \
+  CODE_SIGNING_REQUIRED=NO \
+  2>&1 | tee /tmp/openclient-llm-build.log
 ```
 
 3. **Install and launch**:

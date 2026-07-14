@@ -13,6 +13,7 @@ struct ChatEmptyStateView: View {
 
     let selectedModel: LLMModel?
     let conversationStarters: [ConversationStarter]
+    var isPrivateChat: Bool = false
     var onSuggestionTapped: (String) -> Void
 
     // MARK: - View
@@ -21,19 +22,21 @@ struct ChatEmptyStateView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            Image(systemName: "sparkles")
+            Image(systemName: isPrivateChat ? "lock.fill" : "sparkles")
                 .font(.system(size: 44))
                 .foregroundStyle(Color.appAccent)
                 .frame(width: 80, height: 80)
                 .glassEffect(.regular, in: .circle)
 
             VStack(spacing: 8) {
-                Text(
-                    String(localized: "How can I help you?")
-                )
+                Text(isPrivateChat ? String(localized: "Private Chat") : String(localized: "How can I help you?"))
                 .font(.poppins(.semiBold, size: 22, relativeTo: .title2))
 
-                if selectedModel == nil {
+                if isPrivateChat {
+                    Text(String(localized: "This chat is not saved or added to memory."))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else if selectedModel == nil {
                     Text(
                         String(
                             localized:
@@ -45,7 +48,7 @@ struct ChatEmptyStateView: View {
                 }
             }
 
-            if selectedModel != nil {
+            if selectedModel != nil, !isPrivateChat {
                 suggestionChipsGrid
             }
 

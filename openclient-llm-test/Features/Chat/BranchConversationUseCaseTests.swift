@@ -157,4 +157,22 @@ final class BranchConversationUseCaseTests: XCTestCase {
         XCTAssertEqual(fork.messages.count, 1)
         XCTAssertEqual(fork.messages.first?.content, "First")
     }
+
+    func test_execute_beforeSummaryCursor_doesNotLeakFutureSummary() throws {
+        // Given
+        let first = ChatMessage(role: .user, content: "First")
+        let summarized = ChatMessage(role: .assistant, content: "Summarized")
+        let conversation = Conversation(
+            modelId: "gpt-4",
+            contextSummary: "Includes future context",
+            contextSummaryCursorMessageId: summarized.id,
+            messages: [first, summarized]
+        )
+
+        // When
+        let fork = try sut.execute(conversation: conversation, fromMessageId: first.id)
+
+        // Then
+        XCTAssertNil(fork.contextSummary)
+    }
 }

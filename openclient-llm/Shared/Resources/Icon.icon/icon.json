@@ -6,8 +6,18 @@
     {
       "layers" : [
         {
-          "image-name" : "icon.png",
-          "name" : "icon"
+          "blend-mode" : "normal",
+          "fill" : "automatic",
+          "hidden" : false,
+          "image-name" : "logo.png",
+          "name" : "logo",
+          "position" : {
+            "scale" : 1.1,
+            "translation-in-points" : [
+              0,
+              0
+            ]
+          }
         }
       ],
       "shadow" : {

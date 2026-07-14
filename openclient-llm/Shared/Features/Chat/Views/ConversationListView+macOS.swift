@@ -14,16 +14,31 @@ extension ConversationListView {
 
     @ToolbarContentBuilder
     var macToolbarItems: some ToolbarContent {
-        ToolbarItem(placement: .automatic) {
-            macSearchToolbarItem
-        }
-        ToolbarItem(placement: .automatic) {
+        ToolbarItemGroup(placement: .primaryAction) {
+            newChatToolbarMenu
+
+            Button {
+                viewModel.send(.exportBackupTapped)
+            } label: {
+                Image(systemName: "archivebox")
+            }
+            .help(String(localized: "Export Backup"))
+
+            Button {
+                isShowingBackupImporter = true
+            } label: {
+                Image(systemName: "square.and.arrow.down")
+            }
+            .help(String(localized: "Import Conversations"))
+
             Button {
                 viewModel.send(.refreshTapped)
             } label: {
                 Image(systemName: "arrow.clockwise")
             }
-            .accessibilityLabel(String(localized: "Refresh"))
+            .help(String(localized: "Refresh"))
+
+            macSearchToolbarItem
         }
     }
 

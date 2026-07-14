@@ -26,88 +26,90 @@
   <div class="container legal">
     <div class="legal-content">
       <h2>Sammanfattning</h2>
-      <p>OpenClient <strong>samlar inte in, lagrar, överför eller delar personuppgifter</strong> med utvecklaren.
-        Appen körs helt på din enhet och kommunicerar bara med den server du konfigurerar. Inga analyser,
-        telemetri eller kraschrapporter skickas till utvecklaren.</p>
+      <p>OpenClient skickar inte analyser, telemetri eller kraschrapporter till utvecklaren. Appen körs huvudsakligen på
+        din enhet. Data lämnar den endast för konfigurerade och bakomliggande leverantörer, Apple Speech där det är
+        aktuellt, användning av Votice, iCloud eller frivilliga köp som Apple behandlar via StoreKit.</p>
 
-      <h2>Ingen utvecklarserver</h2>
-      <p>OpenClient har ingen server, backend, analystjänst eller molninfrastruktur som drivs av utvecklaren. Det finns
-        ingen telemetri, användningsspårning eller kraschrapporter som skickas till utvecklaren. Utvecklaren tar aldrig
-        emot några data om din användning av appen.</p>
+      <h2>Utvecklartjänster</h2>
+      <p>OpenClient använder ingen utvecklarbackend för konversationer, analyser, telemetri, användningsspårning eller
+        kraschrapporter. När feedbacktavlan konfigureras, öppnas eller används kan den utvecklardrivna Votice-tjänsten
+        kontaktas enligt beskrivningen nedan.</p>
 
       <h2>Lokal lagring och iCloud</h2>
-      <p>All appdata lagras på din enhet eller i ditt personliga iCloud-konto. Utvecklaren har inte tillgång till
-        någondera. Specifikt:</p>
+      <p>Med undantag för överföringarna som beskrivs nedan lagras data som hanteras av appen på din enhet eller i ditt
+        personliga iCloud-konto. Utvecklaren har inte tillgång till dessa lagrade data. Specifikt:</p>
       <ul>
-        <li><strong>Konversationshistorik</strong> — lagras lokalt i appens dokumentkatalog. Om iCloud Drive är
-          aktiverat synkroniseras konversationer mellan dina Apple-enheter via din personliga iCloud Drive-lagring.</li>
-        <li><strong>Inställningar och användarprofil</strong> — lagras lokalt i UserDefaults. Om iCloud är aktiverat
-          synkroniseras profildata via iCloud Key-Value Store, privat för ditt Apple-ID.</li>
-        <li><strong>Minnesobjekt</strong> — lagras lokalt i UserDefaults. Om iCloud är aktiverat synkroniseras
-          minnesobjekt via iCloud Key-Value Store, privat för ditt Apple-ID. Detta inkluderar objekt som skapats
-          automatiskt av modeller under konversationer när agentens minnesverktyg anropas.</li>
+        <li><strong>Innehåll</strong> — konversationer; separata binära bilagor, inklusive dokument och genererade bilder;
+          profil-JSON; minnes-JSON, inklusive minne skapat av modeller; egna promptmallar; samt raderings- eller
+          tombstone-metadata lagras lokalt.</li>
+        <li><strong>iCloud-synkronisering</strong> — innehållet synkroniseras endast när iCloud är tillgängligt och appens
+          iCloud-inställning är aktiverad. Avaktivering stoppar framtida appsynkronisering men tar inte automatiskt bort
+          filer som redan finns i iCloud.</li>
+        <li><strong>Inställningar</strong> — finns kvar på enheten.</li>
         <li><strong>API-nycklar och server-URL</strong> — lagras uteslutande i enhetens nyckelring via iOS/macOS
           Security-ramverket. Överförs aldrig till utvecklaren.</li>
         <li><strong>Spotlight-index</strong> — konversationstitel och meddelandeutdrag indexeras lokalt i Spotlight för
           sökning på enheten. Dessa data lämnar inte din enhet.</li>
+        <li><strong>App Group</strong> — widgetar sparar en begränsad ögonblicksbild av upp till sex senaste
+          konversationer (titel, modell, förhandsvisning av senaste meddelandet och datum). Dela-tillägget och Genvägar
+          mellanlagrar text, URL:er, bilder eller PDF:er tills appen använder eller rensar dem. Dessa data stannar på
+          enheten och delas endast mellan huvudappen och dess tillägg.</li>
       </ul>
-      <p>Ingenting lämnar din enhet, förutom de förfrågningar du uttryckligen skickar till den server du konfigurerar.
-      </p>
 
       <h2>Serverkommunikation</h2>
-      <p>Appen ansluter uteslutande till den server-URL du anger — en Ollama-instans, en LiteLLM-proxy eller någon annan
-        OpenAI-kompatibel backend. Alla förfrågningar skickas direkt från din enhet till din server. Detta inkluderar:
-      </p>
+      <p>Appen skickar förfrågningar till angiven URL: en Ollama-instans, LiteLLM-proxy eller annan OpenAI-kompatibel
+        backend. Beroende på konfiguration kan servern vidarebefordra innehåll till bakomliggande modell- eller
+        sökleverantörer, som kan logga, lagra eller behandla det enligt sina egna policyer.</p>
       <ul>
-        <li>Chattmeddelanden och konversationskontext</li>
+        <li>Chattmeddelanden och kontext; i icke-privata chattar kan den effektiva kontexten innehålla profil och minne</li>
         <li>Bilder och dokument bifogade till meddelanden (Vision)</li>
-        <li>Ljuddata för taltranskription (Speech-to-Text via <code>/v1/audio/transcriptions</code>)</li>
+        <li>Ljuddata för taltranskription: beroende på vald transkriptionsinställning skickas ljudet antingen till din
+          konfigurerade server via <code>/v1/audio/transcriptions</code> eller bearbetas med Apples Speech-ramverk; i det
+          senare fallet kan Apple Speech behandla ljud enligt Apples plattformsbeteende och inställningar; behandling på
+          enheten garanteras inte.</li>
         <li>Text för talsyntes (Text-to-Speech via <code>/v1/audio/speech</code>)</li>
-        <li>Prompter för bildgenerering (<code>/v1/images/generations</code>)</li>
+        <li>Prompter för bildgenerering; genererade bilder kommer i kompatibla chat completion-svar</li>
         <li>Webbsökningsfrågor, som din LiteLLM-server vidarebefordrar till den sökleverantör du konfigurerat på
           serversidan (t.ex. Brave, Tavily, DuckDuckGo). Appen kontaktar aldrig sökleverantörer direkt.</li>
         <li>In- och utdata för verktygsanrop när agentläget är aktivt</li>
       </ul>
-      <p>Utvecklaren har ingen åtkomst till, kännedom om eller inblandning i denna kommunikation.</p>
+      <p>Utvecklaren tar inte emot kommunikationen om denne inte driver den konfigurerade servern eller leverantören.</p>
 
       <h2>Delat och importerat innehåll</h2>
       <p>Innehåll som tas emot via Dela-tillägget, det anpassade URL-schemat (<code>openclient://</code>),
         drag-och-släpp, eller Apple-genvägar bearbetas helt på din enhet och skickas bara till den konfigurerade
-        servern. Utvecklaren tar varken emot eller har tillgång till något delat innehåll.</p>
+        enheten och kan skickas till den konfigurerade servern och dess bakomliggande leverantörer när det används i en
+        förfrågan. Utvecklaren tar inte emot det på annat sätt.</p>
 
-      <h2>Inga tredjeparts-SDK:er eller analyser</h2>
-      <p>OpenClient har <strong>noll externa beroenden</strong> för sin körtidsfunktionalitet. Det finns inga
-        reklatnätverk, spårningsramverk eller analys-SDK:er integrerade i appen.
-        Det enda tredjepartsverktyget som används vid kompilering är <strong>SwiftLint</strong>, ett statiskt
-        kodanalysverktyg som körs under bygget och aldrig ingår i det publicerade appbinärfilens binär.</p>
-      <p>Appen integrerar <strong>Votice SDK</strong> — ett öppen källkodsprojekt av samma författare — uteslutande för
-        att låta användare skicka felrapporter och funktionsförfrågningar från skärmen Inställningar. Rapporter är
-        <strong>helt anonyma</strong>: ingen användaridentitet, konto, enhetsidentifierare eller personuppgifter bifogas
-        en inlämning. När du använder den här funktionen skickas bara den text du frivilligt anger till Votice-tjänsten.
-        Inga andra appdata (konversationer, API-nycklar, server-URL, minne eller bilagor) skickas någonsin till Votice.
-        Användning av den här funktionen är helt valfri.
-      </p>
+      <h2>Tredjepartsberoenden och analyser</h2>
+      <p>Appen innehåller <strong>VoticeSDK</strong> och <strong>ConfettiSwiftUI</strong> som körtidsberoenden. Den
+        integrerar inga annonsnätverk, spårningsramverk eller analys-SDK:er. <strong>SwiftLint</strong> används som ett
+        kodanalysverktyg under bygget och ingår inte i den distribuerade appen.</p>
+      <p>VoticeSDK tillhandahåller den valfria feedbacktavlan. Feedback kan skickas anonymt utan konto eller obligatoriskt
+        namn. Vid konfigurering, öppning eller användning kan ett slumpmässigt beständigt enhets-ID och tekniska data som
+        plattform, språk och appversion/build skickas för att hantera förslag, kommentarer och röster samt förhindra
+        dubbletter. ID:t innehåller inte direkt namn, e-post, API-uppgifter eller konversationer. Valfri text, bilder och
+        smeknamn skickas bara om du lämnar dem. Feedback och kommentarer kan visas för andra användare.</p>
 
       <h2>Öppen källkod och granskningsbar</h2>
       <p>OpenClient är helt öppen källkod under GNU Affero General Public License v3.0. Du kan inspektera, granska och
         verifiera varje
         kodrad i <a href="https://github.com/ArtCC/openclient-llm">GitHub-repositoriet</a>. Denna transparens låter dig
-        bekräfta att ingen datainsamling sker.</p>
+         granska hur appen hanterar data.</p>
 
       <h2>Barns integritet</h2>
-      <p>Appen samlar medvetet inte in information från någon, inklusive barn under 13 år. Eftersom inga data samlas in
-        finns det ingen risk för att barns data samlas in.</p>
+      <p>Appen efterfrågar inte medvetet personuppgifter från barn under 13 år. Skicka inte ett barns personuppgifter via
+        chattar, bilagor, tal, sökningar eller feedback om du inte är rättsligt behörig.</p>
 
       <h2>Ändringar i denna policy</h2>
-      <p>Om denna policy uppdateras publiceras ändringarna på den här sidan med ett uppdaterat revisionsdatum. Eftersom
-        appen inte samlar in data är betydande ändringar osannolika.</p>
+      <p>Om denna policy uppdateras publiceras ändringarna på den här sidan med ett uppdaterat revisionsdatum.</p>
 
       <h2>Kontakt</h2>
       <p>Om du har frågor om denna policy kan du öppna ett ärende i <a
           href="https://github.com/ArtCC/openclient-llm/issues">GitHub-repositoriet</a>.</p>
     </div>
 
-    <p class="legal-updated">Senast uppdaterad: 20 april 2026</p>
+    <p class="legal-updated">Senast uppdaterad: 15 juli 2026</p>
   </div>
 </body>
 

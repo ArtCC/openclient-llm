@@ -42,12 +42,14 @@ extension ChatViewModel {
         guard loadedState.messages.last?.role == .assistant else { return }
         loadedState.messages.removeLast()
         guard !loadedState.messages.isEmpty else { return }
+        invalidateCompactionIfNeeded(in: &loadedState, changedAt: loadedState.messages.count)
 
         loadedState.isStreaming = true
         loadedState.errorMessage = nil
 
         let assistantMessage = ChatMessage(role: .assistant, content: "")
         loadedState.messages.append(assistantMessage)
+        refreshContextUsage(in: &loadedState)
         state = .loaded(loadedState)
 
         let assistantMessageId = assistantMessage.id
@@ -58,8 +60,10 @@ extension ChatViewModel {
         let modelCapabilities = model.capabilities
 
         LogManager.info("regenerateLastResponse model=\(model.id) messages=\(currentMessages.count)")
+        cancelCompaction()
         streamTask?.cancel()
         activeAssistantMessageId = assistantMessageId
+        beginStreamingBackground(for: assistantMessageId)
         streamTask = Task {
             await streamWithWebSearch(SendMessageContext(
                 text: "",
@@ -69,7 +73,11 @@ extension ChatViewModel {
                 systemPrompt: systemPrompt,
                 parameters: parameters,
                 webSearchEnabled: webSearchEnabled,
-                modelCapabilities: modelCapabilities
+                modelCapabilities: modelCapabilities,
+                selectedModel: model,
+                contextWindowTokens: loadedState.contextWindowTokens,
+                contextSummary: loadedState.conversation?.contextSummary,
+                contextSummaryCursorMessageId: loadedState.conversation?.contextSummaryCursorMessageId
             ))
         }
     }
@@ -89,12 +97,14 @@ extension ChatViewModel {
         // Update content and remove all messages after it (including previous assistant response)
         loadedState.messages[messageIndex].content = trimmed
         loadedState.messages = Array(loadedState.messages.prefix(messageIndex + 1))
+        invalidateCompactionIfNeeded(in: &loadedState, changedAt: messageIndex)
 
         loadedState.isStreaming = true
         loadedState.errorMessage = nil
 
         let assistantMessage = ChatMessage(role: .assistant, content: "")
         loadedState.messages.append(assistantMessage)
+        refreshContextUsage(in: &loadedState)
         state = .loaded(loadedState)
 
         let assistantMessageId = assistantMessage.id
@@ -105,8 +115,10 @@ extension ChatViewModel {
         let modelCapabilities = model.capabilities
 
         LogManager.info("editAndResend id=\(id) model=\(model.id)")
+        cancelCompaction()
         streamTask?.cancel()
         activeAssistantMessageId = assistantMessageId
+        beginStreamingBackground(for: assistantMessageId)
         streamTask = Task {
             await streamWithWebSearch(SendMessageContext(
                 text: trimmed,
@@ -116,7 +128,11 @@ extension ChatViewModel {
                 systemPrompt: systemPrompt,
                 parameters: parameters,
                 webSearchEnabled: webSearchEnabled,
-                modelCapabilities: modelCapabilities
+                modelCapabilities: modelCapabilities,
+                selectedModel: model,
+                contextWindowTokens: loadedState.contextWindowTokens,
+                contextSummary: loadedState.conversation?.contextSummary,
+                contextSummaryCursorMessageId: loadedState.conversation?.contextSummaryCursorMessageId
             ))
         }
     }
@@ -177,5 +193,17 @@ extension ChatViewModel {
         state = .loaded(loadedState)
         persistConversation()
         LogManager.debug("toggleFavourite id=\(id) isFavourite=\(loadedState.messages[index].isFavourite)")
+    }
+
+    func invalidateCompactionIfNeeded(in state: inout LoadedState, changedAt messageIndex: Int) {
+        guard var conversation = state.conversation else { return }
+        guard let cursorMessageId = conversation.contextSummaryCursorMessageId,
+              let cursorIndex = state.messages.firstIndex(where: { $0.id == cursorMessageId }),
+              cursorIndex < messageIndex else {
+            conversation.contextSummary = nil
+            conversation.contextSummaryCursorMessageId = nil
+            state.conversation = conversation
+            return
+        }
     }
 }

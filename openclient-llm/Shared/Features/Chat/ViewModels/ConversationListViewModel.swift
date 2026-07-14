@@ -17,13 +17,47 @@ final class ConversationListViewModel {
         case viewAppeared
         case newConversationTapped
         case refreshTapped
-        case conversationTapped(Conversation)
-        case deleteConversation(UUID)
-        case searchChanged(String)
+        case conversation(ConversationEvent)
+        case filter(FilterEvent)
+        case backup(BackupEvent)
+
+        static func conversationTapped(_ conversation: Conversation) -> Self { .conversation(.tapped(conversation)) }
+        static func deleteConversation(_ id: UUID) -> Self { .conversation(.deleted(id)) }
+        static func pinToggled(_ id: UUID) -> Self { .conversation(.pinToggled(id)) }
+        static func tagsUpdated(_ id: UUID, _ tags: [String]) -> Self { .conversation(.tagsUpdated(id, tags)) }
+        static func titleEdited(_ id: UUID, _ title: String) -> Self { .conversation(.titleEdited(id, title)) }
+        static func searchChanged(_ query: String) -> Self { .filter(.searchChanged(query)) }
+        static func tagFilterChanged(_ tag: String?) -> Self { .filter(.tagChanged(tag)) }
+        static var exportBackupTapped: Self { .backup(.exportTapped) }
+        static var backupDataConsumed: Self { .backup(.dataConsumed) }
+        static func importBackupData(_ data: Data) -> Self { .backup(.imported(data)) }
+        static var importResultConsumed: Self { .backup(.resultConsumed) }
+        static var errorMessageConsumed: Self { .backup(.errorConsumed) }
+        static var backupImportReadFailed: Self { .backup(.readFailed) }
+        static var backupExportWriteFailed: Self { .backup(.exportWriteFailed) }
+    }
+
+    enum ConversationEvent {
+        case tapped(Conversation)
+        case deleted(UUID)
         case pinToggled(UUID)
         case tagsUpdated(UUID, [String])
-        case tagFilterChanged(String?)
         case titleEdited(UUID, String)
+    }
+
+    enum FilterEvent {
+        case searchChanged(String)
+        case tagChanged(String?)
+    }
+
+    enum BackupEvent {
+        case exportTapped
+        case dataConsumed
+        case imported(Data)
+        case resultConsumed
+        case errorConsumed
+        case readFailed
+        case exportWriteFailed
     }
 
     enum State: Equatable {
@@ -39,6 +73,8 @@ final class ConversationListViewModel {
         var searchQuery: String = ""
         var filteredConversations: [Conversation] = []
         var activeTagFilter: String?
+        var backupData: Data?
+        var importResult: ImportConversationsResult?
 
         var allTags: [String] {
             let tagSet = conversations.flatMap(\.tags)
@@ -58,6 +94,8 @@ final class ConversationListViewModel {
     private let updateConversationTagsUseCase: UpdateConversationTagsUseCaseProtocol
     private let renameConversationUseCase: RenameConversationUseCaseProtocol
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
+    private let exportBackupUseCase: ExportBackupUseCaseProtocol
+    private let importConversationsUseCase: ImportConversationsUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
     private let conversationCloudObserver: ConversationCloudObserving
     private var errorDismissTask: Task<Void, Never>?
@@ -75,6 +113,8 @@ final class ConversationListViewModel {
         updateConversationTagsUseCase: UpdateConversationTagsUseCaseProtocol = UpdateConversationTagsUseCase(),
         renameConversationUseCase: RenameConversationUseCaseProtocol = RenameConversationUseCase(),
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
+        exportBackupUseCase: ExportBackupUseCaseProtocol = ExportBackupUseCase(),
+        importConversationsUseCase: ImportConversationsUseCaseProtocol = ImportConversationsUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         conversationCloudObserver: ConversationCloudObserving? = nil
     ) {
@@ -85,6 +125,8 @@ final class ConversationListViewModel {
         self.updateConversationTagsUseCase = updateConversationTagsUseCase
         self.renameConversationUseCase = renameConversationUseCase
         self.fetchModelsUseCase = fetchModelsUseCase
+        self.exportBackupUseCase = exportBackupUseCase
+        self.importConversationsUseCase = importConversationsUseCase
         self.settingsManager = settingsManager
         self.conversationCloudObserver = conversationCloudObserver
             ?? ConversationCloudObserver(settingsManager: settingsManager)
@@ -103,20 +145,12 @@ final class ConversationListViewModel {
             createNewConversation()
         case .refreshTapped:
             refresh()
-        case .conversationTapped(let conversation):
-            selectConversation(conversation)
-        case .deleteConversation(let id):
-            deleteConversation(id)
-        case .searchChanged(let query):
-            updateSearch(query)
-        case .pinToggled(let id):
-            togglePin(id)
-        case .tagsUpdated(let id, let tags):
-            updateTags(id, tags: tags)
-        case .tagFilterChanged(let tag):
-            updateTagFilter(tag)
-        case .titleEdited(let id, let newTitle):
-            renameConversation(id, newTitle: newTitle)
+        case .conversation(let event):
+            handleConversationEvent(event)
+        case .filter(let event):
+            handleFilterEvent(event)
+        case .backup(let event):
+            handleBackupEvent(event)
         }
     }
 
@@ -133,6 +167,49 @@ final class ConversationListViewModel {
 // MARK: - Private
 
 private extension ConversationListViewModel {
+    func handleConversationEvent(_ event: ConversationEvent) {
+        switch event {
+        case .tapped(let conversation):
+            selectConversation(conversation)
+        case .deleted(let id):
+            deleteConversation(id)
+        case .pinToggled(let id):
+            togglePin(id)
+        case .tagsUpdated(let id, let tags):
+            updateTags(id, tags: tags)
+        case .titleEdited(let id, let title):
+            renameConversation(id, newTitle: title)
+        }
+    }
+
+    func handleFilterEvent(_ event: FilterEvent) {
+        switch event {
+        case .searchChanged(let query):
+            updateSearch(query)
+        case .tagChanged(let tag):
+            updateTagFilter(tag)
+        }
+    }
+
+    func handleBackupEvent(_ event: BackupEvent) {
+        switch event {
+        case .exportTapped:
+            exportBackup()
+        case .dataConsumed:
+            clearBackupData()
+        case .imported(let data):
+            importBackup(data)
+        case .resultConsumed:
+            clearImportResult()
+        case .errorConsumed:
+            clearErrorMessage()
+        case .readFailed:
+            showBackupImportReadError()
+        case .exportWriteFailed:
+            showBackupExportWriteError()
+        }
+    }
+
     func loadData() {
         state = .loading
         conversationCloudObserver.start()
@@ -301,6 +378,70 @@ private extension ConversationListViewModel {
             state = .loaded(loadedState)
             scheduleErrorDismiss()
         }
+    }
+
+    func exportBackup() {
+        guard case .loaded(var loadedState) = state else { return }
+        do {
+            loadedState.backupData = try exportBackupUseCase.execute()
+            loadedState.errorMessage = nil
+            state = .loaded(loadedState)
+        } catch {
+            showError(error, in: &loadedState)
+        }
+    }
+
+    func clearBackupData() {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.backupData = nil
+        state = .loaded(loadedState)
+    }
+
+    func importBackup(_ data: Data) {
+        guard case .loaded(var loadedState) = state else { return }
+        do {
+            let result = try importConversationsUseCase.execute(data)
+            loadedState.conversations = try loadConversationsUseCase.execute()
+            loadedState.importResult = result
+            loadedState.errorMessage = nil
+            applySearchFilter(&loadedState)
+            state = .loaded(loadedState)
+            NotificationCenter.default.post(name: .conversationDidUpdate, object: nil)
+        } catch {
+            showError(error, in: &loadedState)
+        }
+    }
+
+    func clearImportResult() {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.importResult = nil
+        state = .loaded(loadedState)
+    }
+
+    func clearErrorMessage() {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.errorMessage = nil
+        state = .loaded(loadedState)
+    }
+
+    func showBackupImportReadError() {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.errorMessage = String(localized: "Unable to read the backup file.")
+        state = .loaded(loadedState)
+        scheduleErrorDismiss()
+    }
+
+    func showBackupExportWriteError() {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.errorMessage = String(localized: "Unable to save the backup file.")
+        state = .loaded(loadedState)
+        scheduleErrorDismiss()
+    }
+
+    func showError(_ error: Error, in loadedState: inout LoadedState) {
+        loadedState.errorMessage = error.localizedDescription
+        state = .loaded(loadedState)
+        scheduleErrorDismiss()
     }
 
     func scheduleErrorDismiss() {

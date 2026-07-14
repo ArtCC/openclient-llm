@@ -14,9 +14,11 @@
 
 ## Description
 
-OpenClient connects you directly to your own AI server — no subscriptions, no data collection, no third parties.
+OpenClient connects directly to the AI server you configure, without an OpenClient-hosted proxy or subscription.
+Requests may still reach providers configured behind your server, and the optional in-app feedback screen uses Votice.
 
-Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollama.com), and any OpenAI-compatible server. Point the app at your URL and start chatting with any model: GPT, Claude, Llama, Gemini, Mistral, and hundreds more.
+It works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollama.com), and OpenAI-compatible
+servers that provide the endpoints used by your selected features; point the app at your URL and use the models it exposes.
 
 **Chat**
 - Real-time streaming responses with Markdown and code block rendering
@@ -24,7 +26,7 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 - Attach photos, camera shots, and PDF documents for multimodal conversations
 - Drag and drop text, images, and files from any app directly into the chat (Split View, Stage Manager, Finder on macOS)
 - Dictate messages with Speech-to-Text; have responses read aloud with Text-to-Speech
-- Generate images directly from chat
+- Receive generated images from compatible models and servers that return images in chat-completion streams
 - Web search powered by your server's configured provider (Brave, Firecrawl, and more)
 - Agentic tool-calling loop for models that support function calling
 - Favourite any message to bookmark it and jump back instantly
@@ -37,10 +39,11 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 - Share content from any app (Safari, Telegram, Photos, Files…) directly into a new conversation via the system Share sheet
 - Deep-link into the app with `openclient://chat?text=…`, `openclient://chat?url=…`, or `openclient://conversation?id=…` for third-party automation
 - Apple Shortcuts integration: "New Chat", "Search Chats", and "Send File to Chat" actions available in the Shortcuts app and via Siri
-- Control Center toggle (iOS 18+): add a "New Chat" button to the iOS Control Center for instant one-tap access from any screen or the lock screen
+- Control Center toggle: add a "New Chat" button for instant one-tap access from any screen or the lock screen
 - Home-screen widgets: New Chat (small), Search (small), Quick Actions (medium), and Recent Conversations (medium/large) — tap any widget to jump directly into the app
 - iCloud sync across all your Apple devices
-- Export conversations to JSON
+- Export individual conversations or full JSON backups, and restore backups on another device ([format specification](specs/conversation-backup-format.instructions.md))
+- Private Chat: start a session-only chat whose messages and attachments are discarded when you close it; personal memory is neither read nor changed
 - Token usage per message and estimated conversation cost
 
 **Models**
@@ -82,7 +85,8 @@ Works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ollam
 | async/await | Concurrency |
 | URLSession + SSE | Networking & streaming |
 | Keychain | Secure storage |
-| SwiftLint | Code linting |
+| SwiftLintPlugins | Build-time code linting |
+| ConfettiSwiftUI | Tip-jar celebration effect |
 | SF Symbols | Iconography |
 | AppIntents | Apple Shortcuts, Siri & Control Center integration |
 | WidgetKit | Control Center toggle and home-screen widgets (New Chat, Search, Quick Actions, Recent Conversations) |
@@ -101,16 +105,28 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full project tree and layer respo
 1. **Clone** the repository:
    ```bash
    git clone https://github.com/ArtCC/openclient-llm.git
-   ```
-2. **Open** in Xcode:
-   ```bash
    cd openclient-llm
+   ```
+2. **Create** the required local secrets configuration. Empty placeholders are sufficient to build; real credentials
+   are required for the in-app Votice feedback screen:
+   ```bash
+   cat > Secrets.xcconfig <<'EOF'
+   VOTICE_API_KEY =
+   VOTICE_API_SECRET =
+   VOTICE_APP_ID =
+   EOF
+   ```
+   `Secrets.xcconfig` is gitignored. Xcode Cloud creates it through `ci_scripts/ci_post_clone.sh`.
+3. **Open** in Xcode:
+   ```bash
    open openclient-llm.xcodeproj
    ```
-3. **Configure** your server URL in the app settings:
+4. **Configure** your server URL in the app settings:
    - **LiteLLM**: `http://your-server:4000`
    - **Ollama** (direct): `http://your-server:11434/v1`
-4. **Run** on your device or simulator
+   OpenClient appends API paths to this value without adding or removing `/v1`: LiteLLM uses paths such as
+   `/models` and `/chat/completions`, while direct Ollama requires its `/v1` OpenAI-compatible base.
+5. **Run** on your device or simulator
 
 ### Requirements
 
@@ -121,7 +137,8 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full project tree and layer respo
 
 ### Self-hosting guides
 
-OpenClient works with any OpenAI-compatible server. The two most common setups are:
+OpenClient works with servers that implement the OpenAI-compatible endpoints used by the selected features. Basic chat
+requires model listing and chat completions; LiteLLM-only enrichment and search are optional. The two common setups are:
 
 - **Ollama only** — run open-source models locally on your own hardware.
 - **LiteLLM + Ollama** — add a proxy layer to combine local models with cloud providers (OpenAI, Anthropic, Google…) under a single endpoint.
@@ -154,6 +171,6 @@ To suggest features or report bugs from within the app, go to **Settings** and u
 <p align="left">
   OpenClient is built on the belief that generative AI should be something you control — not something that controls your data.<br/>
   Run local models entirely on your own hardware, or route cloud providers through your own self-hosted proxy.<br/>
-  Either way, you decide what gets sent where — no vendor lock-in, no platform middleman, no data you didn't choose to share.<br/><br/>
-  Open source. No tracking. Full control.
+  Either way, you choose the server and any upstream providers it uses. OpenClient does not relay AI requests through an OpenClient-operated service.<br/><br/>
+  Open source. No advertising tracking. Full control.
 </p>

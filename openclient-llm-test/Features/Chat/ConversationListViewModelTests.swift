@@ -21,6 +21,8 @@ final class ConversationListViewModelTests: XCTestCase {
     var mockRenameConversation: MockRenameConversationUseCase!
     var mockFetchModels: MockFetchModelsUseCase!
     var mockSettingsManager: MockSettingsManager!
+    var mockExportBackup: MockExportBackupUseCase!
+    var mockImportConversations: MockImportConversationsUseCase!
 
     // MARK: - Setup
 
@@ -34,6 +36,8 @@ final class ConversationListViewModelTests: XCTestCase {
         mockRenameConversation = MockRenameConversationUseCase()
         mockFetchModels = MockFetchModelsUseCase()
         mockSettingsManager = MockSettingsManager()
+        mockExportBackup = MockExportBackupUseCase()
+        mockImportConversations = MockImportConversationsUseCase()
         sut = ConversationListViewModel(
             loadConversationsUseCase: mockLoadConversations,
             deleteConversationUseCase: mockDeleteConversation,
@@ -41,6 +45,8 @@ final class ConversationListViewModelTests: XCTestCase {
             updateConversationTagsUseCase: mockUpdateTags,
             renameConversationUseCase: mockRenameConversation,
             fetchModelsUseCase: mockFetchModels,
+            exportBackupUseCase: mockExportBackup,
+            importConversationsUseCase: mockImportConversations,
             settingsManager: mockSettingsManager
         )
     }
@@ -54,6 +60,8 @@ final class ConversationListViewModelTests: XCTestCase {
         mockRenameConversation = nil
         mockFetchModels = nil
         mockSettingsManager = nil
+        mockExportBackup = nil
+        mockImportConversations = nil
 
         try await super.tearDown()
     }

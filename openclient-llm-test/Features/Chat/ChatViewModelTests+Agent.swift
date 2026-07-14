@@ -222,6 +222,25 @@ extension ChatViewModelTests {
         XCTAssertFalse(loadedState.isSearchingWeb)
     }
 
+    func test_applyAgentEvent_transcriptAppended_insertsBeforeFinalAssistant() {
+        // Given
+        let user = ChatMessage(role: .user, content: "Question")
+        let finalAssistant = ChatMessage(role: .assistant, content: "")
+        let toolAssistant = ChatMessage(role: .assistant, content: "Tool call")
+        let tool = ChatMessage(role: .tool, content: "Result")
+        var loadedState = ChatViewModel.LoadedState(messages: [user, finalAssistant])
+
+        // When
+        sut.applyAgentEvent(
+            .transcriptAppended([toolAssistant, tool]),
+            to: &loadedState,
+            assistantMessageId: finalAssistant.id
+        )
+
+        // Then
+        XCTAssertEqual(loadedState.messages.map(\.id), [user.id, toolAssistant.id, tool.id, finalAssistant.id])
+    }
+
     func test_applyAgentEvent_agentError_setsErrorMessage() async throws {
         // Given
         let mockAgent = MockAgentStreamUseCase()

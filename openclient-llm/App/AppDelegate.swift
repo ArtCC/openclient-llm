@@ -29,6 +29,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                 icon: UIApplicationShortcutIcon(type: .compose)
             ),
             UIApplicationShortcutItem(
+                type: ShortcutAction.newPrivateChat.rawValue,
+                localizedTitle: String(localized: "New Private Chat"),
+                localizedSubtitle: nil,
+                icon: UIApplicationShortcutIcon(systemImageName: "lock.fill")
+            ),
+            UIApplicationShortcutItem(
                 type: ShortcutAction.search.rawValue,
                 localizedTitle: String(localized: "Search"),
                 localizedSubtitle: nil,

@@ -15,9 +15,30 @@ enum AgentEvent: Sendable {
     case reasoning(String)
     case toolCallStarted(ToolCall)
     case toolCallCompleted(toolCallId: String, result: String, searchResults: [LiteLLMSearchResult]?)
+    case transcriptAppended([ChatMessage])
     case usage(TokenUsage)
+    case promptUsage(Int)
     case image(Data)
     case completed
+}
+
+// MARK: - AgentStreamError
+
+enum AgentStreamError: LocalizedError, Sendable, Equatable {
+    case timedOut
+    case iterationLimitReached
+    case invalidResponse
+
+    var errorDescription: String? {
+        switch self {
+        case .timedOut:
+            String(localized: "The agent timed out before completing the response.")
+        case .iterationLimitReached:
+            String(localized: "The agent reached its maximum number of steps.")
+        case .invalidResponse:
+            String(localized: "The model returned an invalid agent response.")
+        }
+    }
 }
 
 // MARK: - ToolCallResult
@@ -35,6 +56,7 @@ protocol AgentStreamUseCaseProtocol: Sendable {
         messages: [ChatMessage],
         model: String,
         parameters: ModelParameters,
+        contextWindowTokens: Int?,
         toolRegistry: ToolRegistry
     ) -> AsyncThrowingStream<AgentEvent, Error>
 }
@@ -45,13 +67,17 @@ struct AgentStreamUseCase: AgentStreamUseCaseProtocol {
     // MARK: - Properties
 
     private static let maxIterations = 10
-
+    private static let maxToolCalls = 20
+    private static let maxToolCallsPerIteration = 8
+    private static let maximumToolResultCharacters = 12_000
     private let repository: ChatRepositoryProtocol
+    private let timeout: Duration
 
     // MARK: - Init
 
-    init(repository: ChatRepositoryProtocol = ChatRepository()) {
+    init(repository: ChatRepositoryProtocol = ChatRepository(), timeout: Duration = .seconds(120)) {
         self.repository = repository
+        self.timeout = timeout
     }
 
     // MARK: - Execute
@@ -60,25 +86,34 @@ struct AgentStreamUseCase: AgentStreamUseCaseProtocol {
         messages: [ChatMessage],
         model: String,
         parameters: ModelParameters,
+        contextWindowTokens: Int? = nil,
         toolRegistry: ToolRegistry
     ) -> AsyncThrowingStream<AgentEvent, Error> {
         AsyncThrowingStream { continuation in
+            let context = AgentLoopContext(
+                model: model,
+                parameters: parameters,
+                contextWindowTokens: contextWindowTokens,
+                toolRegistry: toolRegistry,
+                continuation: continuation
+            )
             let task = Task {
                 do {
-                    try await runAgentLoop(
-                        messages: messages,
-                        model: model,
-                        parameters: parameters,
-                        toolRegistry: toolRegistry,
-                        continuation: continuation
-                    )
+                    try await runAgentLoop(messages: messages, context: context)
                     continuation.finish()
                 } catch {
                     continuation.finish(throwing: error)
                 }
             }
+            let timeoutTask = Task {
+                try? await Task.sleep(for: timeout)
+                guard !Task.isCancelled else { return }
+                continuation.finish(throwing: AgentStreamError.timedOut)
+                task.cancel()
+            }
             continuation.onTermination = { _ in
                 task.cancel()
+                timeoutTask.cancel()
             }
         }
     }
@@ -86,172 +121,235 @@ struct AgentStreamUseCase: AgentStreamUseCaseProtocol {
 
 // MARK: - AgentLoopContext
 
-private nonisolated struct AgentLoopContext: @unchecked Sendable {
+private nonisolated struct AgentLoopContext: Sendable {
     let model: String
     let parameters: ModelParameters
+    let contextWindowTokens: Int?
     let toolRegistry: ToolRegistry
     let continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
+}
+
+private nonisolated struct AgentRoundContext: Sendable {
+    let requestMessages: [ChatMessage]
+    let loop: AgentLoopContext
 }
 
 // MARK: - Private
 
 private extension AgentStreamUseCase {
-    func runAgentLoop(
-        messages: [ChatMessage],
-        model: String,
-        parameters: ModelParameters,
-        toolRegistry: ToolRegistry,
-        continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
-    ) async throws {
+    func runAgentLoop(messages: [ChatMessage], context: AgentLoopContext) async throws {
         var conversationMessages = messages
-        var iteration = 0
-        var toolsJustExecuted = false
-        let context = AgentLoopContext(
-            model: model,
-            parameters: parameters,
-            toolRegistry: toolRegistry,
-            continuation: continuation
-        )
+        var toolCallCount = 0
+        var aggregateUsage = TokenUsage()
+        var forceFinalResponse = false
 
-        while iteration < Self.maxIterations {
-            guard !Task.isCancelled else { return }
-            iteration += 1
+        for iteration in 1...Self.maxIterations {
+            try Task.checkCancellation()
+            if iteration == Self.maxIterations { forceFinalResponse = true }
             LogManager.debug("agentLoop iteration=\(iteration) messages=\(conversationMessages.count)")
-
-            // After tool execution, omit tools so the model generates a natural response
-            let tools: [ToolDefinition]? = toolsJustExecuted ? nil : toolRegistry.definitions
-            let response = try await repository.agentCompletion(
-                messages: conversationMessages,
-                model: model,
-                parameters: parameters,
+            let tools = forceFinalResponse ? [] : context.toolRegistry.definitions
+            let requestMessages = try rebudgetedMessages(
+                conversationMessages,
+                contextWindowTokens: context.contextWindowTokens,
                 tools: tools
             )
-            guard !Task.isCancelled else { return }
+            let response = try await request(context: context, messages: requestMessages, tools: tools)
+            aggregateUsage = emitUsage(response.usage, aggregate: aggregateUsage, continuation: context.continuation)
+            guard let choice = response.choices.first else { throw AgentStreamError.invalidResponse }
 
-            guard let choice = response.choices.first else {
-                LogManager.warning("agentLoop: empty choices on iteration \(iteration)")
-                break
+            if let toolCalls = choice.message.toolCalls, !toolCalls.isEmpty {
+                guard !forceFinalResponse else { throw AgentStreamError.iterationLimitReached }
+                forceFinalResponse = try await completeToolRound(
+                    choice: choice,
+                    toolCalls: toolCalls,
+                    conversationMessages: &conversationMessages,
+                    toolCallCount: &toolCallCount,
+                    context: AgentRoundContext(requestMessages: requestMessages, loop: context)
+                )
+            } else if handleFinalChoice(choice, continuation: context.continuation) {
+                guard !forceFinalResponse else { throw AgentStreamError.invalidResponse }
+                forceFinalResponse = true
+            } else {
+                context.continuation.yield(.completed)
+                return
             }
-
-            let shouldContinue = try await handleChoice(
-                choice,
-                conversationMessages: &conversationMessages,
-                context: context
-            )
-            toolsJustExecuted = shouldContinue
-            if !shouldContinue { break }
         }
-
-        if iteration >= Self.maxIterations {
-            LogManager.warning("agentLoop reached max iterations (\(Self.maxIterations))")
-        }
+        throw AgentStreamError.iterationLimitReached
     }
 
-    func handleChoice(
-        _ choice: ChatCompletionResponse.Choice,
+    func request(
+        context: AgentLoopContext,
+        messages: [ChatMessage],
+        tools: [ToolDefinition]
+    ) async throws -> ChatCompletionResponse {
+        try await repository.agentCompletion(
+            messages: messages,
+            model: context.model,
+            parameters: context.parameters,
+            tools: tools.isEmpty ? nil : tools
+        )
+    }
+
+    func completeToolRound(
+        choice: ChatCompletionResponse.Choice,
+        toolCalls: [ToolCall],
         conversationMessages: inout [ChatMessage],
-        context: AgentLoopContext
+        toolCallCount: inout Int,
+        context: AgentRoundContext
     ) async throws -> Bool {
-        guard !Task.isCancelled else { return false }
-        // Check tool_calls presence first — some models (Ollama/Llama/Mistral/Qwen)
-        // include tool_calls with finishReason "stop" or nil instead of "tool_calls".
-        // Relying solely on finishReason misses those cases and causes {} to be emitted.
-        guard let toolCalls = choice.message.toolCalls, !toolCalls.isEmpty else {
-            // No tool calls — emit the model's final text response.
-            // Exception: if content is literally "{}" the model tried to call a tool
-            // but emitted it as plain text instead of structured tool_calls (known Ollama quirk).
-            // Signal the loop to retry without tools so the model answers naturally.
-            let content = choice.message.content ?? ""
-            let reasoning = choice.message.reasoningContent
-            if content.trimmingCharacters(in: .whitespaces) == "{}" {
-                LogManager.warning("agentLoop: content is '{}' with no tool_calls — retrying without tools")
-                return true
-            }
-            if let reasoning, !reasoning.isEmpty {
-                yieldChunked(reasoning, as: { .reasoning($0) }, continuation: context.continuation)
-            }
-            if !content.isEmpty {
-                yieldChunked(content, as: { .token($0) }, continuation: context.continuation)
-            }
-            if content.isEmpty && (reasoning?.isEmpty ?? true) {
-                LogManager.warning("agentLoop: empty content with no tool_calls — retrying without tools")
-                return true
-            }
-            return false
+        guard Set(toolCalls.map(\.id)).count == toolCalls.count else {
+            throw AgentStreamError.invalidResponse
         }
-
-        let finishReason = choice.finishReason ?? "stop"
-        if finishReason != "tool_calls" {
-            LogManager.warning("agentLoop: tool_calls present but finishReason=\(finishReason) — executing anyway")
-        }
-
-        conversationMessages.append(ChatMessage(
+        let remaining = max(0, Self.maxToolCalls - toolCallCount)
+        let executableCount = min(toolCalls.count, min(Self.maxToolCallsPerIteration, remaining))
+        let executable = Array(toolCalls.prefix(executableCount))
+        let rejected = Array(toolCalls.dropFirst(executableCount))
+        toolCallCount += executable.count
+        let assistant = ChatMessage(
             role: .assistant,
             content: choice.message.content ?? "",
             toolCalls: toolCalls
-        ))
-        let toolResults = try await executeToolCalls(
-            toolCalls,
-            registry: context.toolRegistry,
-            continuation: context.continuation
         )
-        guard !Task.isCancelled else { return false }
-        for toolResult in toolResults {
-            guard !Task.isCancelled else { return false }
-            conversationMessages.append(ChatMessage(
-                role: .tool,
-                content: toolResult.executionResult.text,
-                toolCallId: toolResult.toolCallId,
-                toolName: toolResult.toolName
-            ))
+        let willForceFinal = toolCallCount >= Self.maxToolCalls || !rejected.isEmpty
+        let nextTools = willForceFinal ? [] : context.loop.toolRegistry.definitions
+        let toolPlaceholders = toolCalls.map {
+            ChatMessage(role: .tool, content: "", toolCallId: $0.id, toolName: $0.function.name)
         }
-        return true
+        let resultLimit = try toolResultCharacterLimit(
+            requestMessages: context.requestMessages + [assistant] + toolPlaceholders,
+            contextWindowTokens: context.loop.contextWindowTokens,
+            tools: nextTools,
+            resultCount: toolCalls.count
+        )
+        let executedResults = try await executeToolCalls(
+            executable,
+            registry: context.loop.toolRegistry,
+            continuation: context.loop.continuation,
+            maximumCharacters: resultLimit
+        )
+        let results = orderedResults(
+            toolCalls: toolCalls,
+            executed: executedResults,
+            rejected: rejected,
+            maximumBytes: resultLimit
+        )
+        let transcript = [assistant] + results.map(toolMessage)
+        conversationMessages.append(contentsOf: transcript)
+        context.loop.continuation.yield(.transcriptAppended(transcript))
+        return willForceFinal
     }
 
     func executeToolCalls(
         _ toolCalls: [ToolCall],
         registry: ToolRegistry,
-        continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
+        continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation,
+        maximumCharacters: Int
     ) async throws -> [ToolCallResult] {
-        var results: [ToolCallResult] = []
-
         try await withThrowingTaskGroup(of: ToolCallResult.self) { group in
             for toolCall in toolCalls {
-                guard !Task.isCancelled else { return }
                 continuation.yield(.toolCallStarted(toolCall))
-                group.addTask {
-                    try Task.checkCancellation()
-                    let executionResult: ToolExecutionResult
-                    do {
-                        executionResult = try await registry.execute(
-                            toolName: toolCall.function.name,
-                            arguments: toolCall.function.arguments
-                        )
-                    } catch {
-                        executionResult = ToolExecutionResult(
-                            text: "Error executing \(toolCall.function.name): \(error.localizedDescription)"
-                        )
-                    }
-                    return ToolCallResult(
-                        toolCallId: toolCall.id,
-                        toolName: toolCall.function.name,
-                        executionResult: executionResult
-                    )
-                }
+                group.addTask { try await executeToolCall(toolCall, registry: registry) }
             }
-
-            for try await toolCallResult in group {
-                guard !Task.isCancelled else { return }
-                results.append(toolCallResult)
+            var results: [ToolCallResult] = []
+            for try await result in group {
+                try Task.checkCancellation()
+                let bounded = boundedToolResult(result, maximumCharacters: maximumCharacters)
+                results.append(bounded)
                 continuation.yield(.toolCallCompleted(
-                    toolCallId: toolCallResult.toolCallId,
-                    result: toolCallResult.executionResult.text,
-                    searchResults: toolCallResult.executionResult.searchResults
+                    toolCallId: bounded.toolCallId,
+                    result: bounded.executionResult.text,
+                    searchResults: bounded.executionResult.searchResults
                 ))
             }
+            return results
         }
+    }
 
-        return results
+    func executeToolCall(_ toolCall: ToolCall, registry: ToolRegistry) async throws -> ToolCallResult {
+        do {
+            let result = try await registry.execute(
+                toolName: toolCall.function.name,
+                arguments: toolCall.function.arguments
+            )
+            return ToolCallResult(
+                toolCallId: toolCall.id,
+                toolName: toolCall.function.name,
+                executionResult: result
+            )
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            return ToolCallResult(
+                toolCallId: toolCall.id,
+                toolName: toolCall.function.name,
+                executionResult: ToolExecutionResult(
+                    text: "Error executing \(toolCall.function.name): \(error.localizedDescription)"
+                )
+            )
+        }
+    }
+
+    func orderedResults(
+        toolCalls: [ToolCall],
+        executed: [ToolCallResult],
+        rejected: [ToolCall],
+        maximumBytes: Int
+    ) -> [ToolCallResult] {
+        let executedById = executed.reduce(into: [String: ToolCallResult]()) { results, result in
+            results[result.toolCallId] = result
+        }
+        let rejectedIds = Set(rejected.map(\.id))
+        return toolCalls.compactMap { toolCall in
+            if let result = executedById[toolCall.id] { return result }
+            guard rejectedIds.contains(toolCall.id) else { return nil }
+            let result = ToolCallResult(
+                toolCallId: toolCall.id,
+                toolName: toolCall.function.name,
+                executionResult: ToolExecutionResult(text: "Tool execution skipped: agent tool-call budget exceeded.")
+            )
+            return boundedToolResult(result, maximumCharacters: maximumBytes)
+        }
+    }
+
+    func toolMessage(_ result: ToolCallResult) -> ChatMessage {
+        ChatMessage(
+            role: .tool,
+            content: result.executionResult.text,
+            toolCallId: result.toolCallId,
+            toolName: result.toolName
+        )
+    }
+
+    func handleFinalChoice(
+        _ choice: ChatCompletionResponse.Choice,
+        continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
+    ) -> Bool {
+        let content = choice.message.content ?? ""
+        let reasoning = choice.message.reasoningContent
+        if content.trimmingCharacters(in: .whitespacesAndNewlines) == "{}" { return true }
+        if let reasoning, !reasoning.isEmpty {
+            yieldChunked(reasoning, as: { .reasoning($0) }, continuation: continuation)
+        }
+        if !content.isEmpty {
+            yieldChunked(content, as: { .token($0) }, continuation: continuation)
+        }
+        return content.isEmpty && (reasoning?.isEmpty ?? true)
+    }
+
+    func emitUsage(
+        _ usage: ChatCompletionResponse.Usage?,
+        aggregate: TokenUsage,
+        continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
+    ) -> TokenUsage {
+        guard let usage else { return aggregate }
+        let updated = TokenUsage(
+            promptTokens: aggregate.promptTokens + (usage.promptTokens ?? 0),
+            completionTokens: aggregate.completionTokens + (usage.completionTokens ?? 0),
+            totalTokens: aggregate.totalTokens + (usage.totalTokens ?? 0)
+        )
+        continuation.yield(.usage(updated))
+        continuation.yield(.promptUsage(usage.promptTokens ?? 0))
+        return updated
     }
 
     nonisolated func yieldChunked(
@@ -261,11 +359,88 @@ private extension AgentStreamUseCase {
     ) {
         var index = text.startIndex
         while index < text.endIndex {
-            let remaining = text.distance(from: index, to: text.endIndex)
-            let chunkSize = min(2, remaining)
-            let end = text.index(index, offsetBy: chunkSize)
+            let end = text.index(index, offsetBy: min(2, text.distance(from: index, to: text.endIndex)))
             continuation.yield(event(String(text[index..<end])))
             index = end
         }
+    }
+
+    func boundedToolResult(_ result: ToolCallResult, maximumCharacters: Int) -> ToolCallResult {
+        let marker = "\n[Tool result truncated]"
+        guard result.executionResult.text.utf8.count > maximumCharacters else { return result }
+        guard maximumCharacters > 0 else {
+            return ToolCallResult(
+                toolCallId: result.toolCallId,
+                toolName: result.toolName,
+                executionResult: ToolExecutionResult(text: "", searchResults: result.executionResult.searchResults)
+            )
+        }
+        let contentLimit = max(0, maximumCharacters - marker.utf8.count)
+        let suffix = maximumCharacters >= marker.utf8.count ? marker : ""
+        return ToolCallResult(
+            toolCallId: result.toolCallId,
+            toolName: result.toolName,
+            executionResult: ToolExecutionResult(
+                text: utf8Prefix(result.executionResult.text, maximumBytes: contentLimit) + suffix,
+                searchResults: result.executionResult.searchResults
+            )
+        )
+    }
+
+    func utf8Prefix(_ text: String, maximumBytes: Int) -> String {
+        var result = ""
+        var byteCount = 0
+        for character in text {
+            let bytes = String(character).utf8.count
+            guard byteCount + bytes <= maximumBytes else { break }
+            result.append(character)
+            byteCount += bytes
+        }
+        return result
+    }
+
+    func rebudgetedMessages(
+        _ messages: [ChatMessage],
+        contextWindowTokens: Int?,
+        tools: [ToolDefinition]
+    ) throws -> [ChatMessage] {
+        guard let contextWindowTokens, contextWindowTokens > 0 else { return messages }
+        let systemPrompt = messages.first(where: { $0.role == .system })?.content ?? ""
+        let conversation = messages.filter { $0.role != .system }
+        let context = ContextWindowBuilder().build(
+            messages: conversation,
+            systemPrompt: systemPrompt,
+            summary: nil,
+            model: LLMModel(id: "agent", maxInputTokens: contextWindowTokens),
+            tools: tools
+        )
+        guard !context.isLatestTurnOverBudget else { throw ChatContextError.latestTurnExceedsContextWindow }
+        if systemPrompt.isEmpty { return context.messages }
+        return [ChatMessage(role: .system, content: systemPrompt)] + context.messages
+    }
+
+    func toolResultCharacterLimit(
+        requestMessages: [ChatMessage],
+        contextWindowTokens: Int?,
+        tools: [ToolDefinition],
+        resultCount: Int
+    ) throws -> Int {
+        guard let contextWindowTokens, contextWindowTokens > 0 else { return Self.maximumToolResultCharacters }
+        let systemPrompt = requestMessages.first(where: { $0.role == .system })?.content ?? ""
+        let messages = requestMessages.filter { $0.role != .system }
+        let builder = ContextWindowBuilder()
+        let model = LLMModel(id: "agent", maxInputTokens: contextWindowTokens)
+        let estimated = builder.estimatedInputTokens(messages: messages, systemPrompt: systemPrompt, tools: tools)
+        guard estimated <= builder.usableInputTokens(for: contextWindowTokens) else {
+            throw ChatContextError.latestTurnExceedsContextWindow
+        }
+        let remaining = builder.remainingInputTokens(
+            messages: messages,
+            systemPrompt: systemPrompt,
+            model: model,
+            tools: tools
+        ) ?? 0
+        let characterBudget = max(0, remaining * 3 / max(1, resultCount))
+        return min(Self.maximumToolResultCharacters, characterBudget)
     }
 }

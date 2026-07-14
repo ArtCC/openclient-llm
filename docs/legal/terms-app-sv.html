@@ -29,6 +29,10 @@
       <p>Genom att ladda ner, installera eller använda OpenClient («Appen») godkänner du dessa villkor. Om du inte
         håller med ska du inte använda Appen.</p>
 
+      <h2>Behörighet</h2>
+      <p>Du måste ha rättslig handlingsförmåga enligt tillämplig lag för att godkänna dessa villkor. Om du inte har det
+        får du endast använda Appen med tillstånd från en förälder eller vårdnadshavare.</p>
+
       <h2>Vad appen gör</h2>
       <p>OpenClient är en inbyggd Apple-klient för iOS, iPadOS och macOS som ansluter till vilken OpenAI-kompatibel
         server du anger — som
@@ -36,16 +40,18 @@
         <a href="https://docs.litellm.ai/" style="color: var(--accent); text-decoration: none;">LiteLLM</a> eller någon
         annan självhostad eller tredjeparts-backend som implementerar OpenAI API. Appen möjliggör textkonversationer,
         analys av bilder och dokument (Vision), taltranskription (Speech-to-Text), text-till-tal-uppspelning,
-        bildgenerering, webbsökning och en agentisk verktygsanropsloop — allt bearbetat uteslutande av den server du
-        konfigurerar. Appen är värd för, driver eller kontrollerar ingen LLM-server, AI-modell eller sökleverantör.
+        bildgenerering, webbsökning och en agentisk verktygsanropsloop. Serverbaserade AI-funktioner skickas till den
+        server du konfigurerar. Beroende på vald inställning kan taltranskription i stället använda Apples Speech-ramverk;
+        behandlingen följer då Apples plattformsbeteende och inställningar. Appen varken är värd för, driver eller
+        kontrollerar LLM-servrar, AI-modeller eller sökleverantörer.
       </p>
       <p>Ytterligare funktioner inkluderar:</p>
       <ul>
         <li><strong>Konversationssynkronisering:</strong> Konversationer lagras lokalt på din enhet och, om iCloud är
           aktiverat, synkroniseras mellan dina Apple-enheter via iCloud Drive.</li>
-        <li><strong>Minne:</strong> Beständiga minnesobjekt lagras i iCloud Key-Value Store (när tillgängligt) eller
-          lokalt i UserDefaults, och injiceras i konversationer som kontext. Modeller kan också autonomt skapa
-          minnesobjekt under en konversation.</li>
+        <li><strong>Minne:</strong> Beständiga minnesobjekt lagras lokalt i en JSON-fil och kan, när iCloud-synkronisering
+          är aktiverad, synkroniseras som en fil via iCloud Drive. Modeller kan också skapa dem autonomt. Äldre data från
+          UserDefaults och iClouds nyckel-värde-lagring kan migreras till den filbaserade lagringen.</li>
         <li><strong>Webbsökning:</strong> När aktiverat skickar Appen sökfrågor via din LiteLLM-server till den
           sökleverantör som konfigurerats på den servern (t.ex. Brave, Tavily, DuckDuckGo). Appen kontaktar aldrig
           sökleverantörer direkt.</li>
@@ -58,9 +64,13 @@
           sökning. Dessa data lämnar inte din enhet.</li>
       </ul>
 
+      <h2>AI-utdata</h2>
+      <p>AI-utdata kan vara felaktiga, påhittade, ofullständiga, stötande eller osäkra. Verifiera viktig information
+        oberoende. Utdata är inte professionell medicinsk, juridisk, ekonomisk eller säkerhetsrelaterad rådgivning.</p>
+
       <h2>Gratis app, tredjepartskostnader för API</h2>
-      <p>OpenClient är <strong>gratis att ladda ner och använda</strong>. Appen i sig har inga prenumerationer, köp i
-        appen eller dolda avgifter av något slag.</p>
+      <p>OpenClient är <strong>gratis att ladda ner och använda</strong> och har ingen prenumeration. Appen erbjuder
+        valfria, frivilliga köp i appen via sin dricksburk; de krävs inte för att använda Appen.</p>
       <p>Att ansluta Appen till en betald LLM-leverantör — som OpenAI, Anthropic, Groq eller någon annan molnbaserad
         tjänst — <strong>kan dock medföra avgifter som faktureras direkt av den leverantören</strong> baserat på din
         API-användning (förbrukade tokens, genererade bilder, transkriberat ljud osv.). Dessa kostnader är helt
@@ -91,17 +101,27 @@
           användarvillkoren för alla LLM- eller sökleverantörer du ansluter till.</li>
       </ul>
 
+      <h2>Feedback via Votice</h2>
+      <p>Frivilliga feedbackinlämningar via Votice kan innehålla ett valfritt namn, text och bilagor och kan vara synliga
+        för andra användare via feedbacktavlan. Skicka inte konfidentiellt, olagligt eller rättighetskränkande material.
+        Du ger utvecklaren ett icke-exklusivt tillstånd att visa och använda inskickad feedback för att driva och
+        förbättra Appen; du behåller äganderätten till ditt innehåll.</p>
+
       <h2>Lokal data och iCloud</h2>
       <p>Appen lagrar konversationshistorik lokalt på din enhet med hjälp av filsystemet. Om iCloud är aktiverat i din
         enhets inställningar kan följande data synkroniseras med iCloud:</p>
       <ul>
-        <li>Konversationsfiler (via iCloud Drive)</li>
-        <li>Användarprofilinställningar (via iCloud Key-Value Store)</li>
-        <li>Minnesobjekt (via iCloud Key-Value Store)</li>
+        <li>Konversationsfiler och bilagor (via iCloud Drive)</li>
+        <li>JSON-fil för användarprofilen (via iCloud Drive)</li>
+        <li>JSON-fil för minnesobjekt (via iCloud Drive)</li>
+        <li>Anpassade promptmallar (via iCloud Drive)</li>
+        <li>Raderings- och tombstone-metadata som används för synkronisering</li>
       </ul>
       <p>Du kontrollerar om iCloud-synkronisering är aktiv via enhetens iCloud-inställningar. Utvecklaren har inte
-        tillgång till data som lagras i ditt iCloud-konto. Att inaktivera iCloud-synkronisering innebär att data bara
-        finns kvar lokalt och inte delas mellan enheter.</p>
+        tillgång till data som lagras i ditt iCloud-konto. Om synkroniseringen inaktiveras stoppas framtida
+        synkronisering från Appen, men filer som redan finns i iCloud raderas inte automatiskt; du hanterar dem via
+        iCloud. Det hindrar inte serverförfrågningar, frivilliga Votice-inlämningar eller frivilliga dricksköp som
+        behandlas av Apple via StoreKit.</p>
 
       <h2>Uppskattade kostnader</h2>
       <p>Appen kan visa uppskattade konversationskostnader beräknade från tokenanvändning och prismeta-data som din
@@ -143,7 +163,7 @@
           href="https://github.com/ArtCC/openclient-llm/issues">GitHub-repositoriet</a>.</p>
     </div>
 
-    <p class="legal-updated">Senast uppdaterad: 20 april 2026</p>
+    <p class="legal-updated">Senast uppdaterad: 15 juli 2026</p>
   </div>
 </body>
 

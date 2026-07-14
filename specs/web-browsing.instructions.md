@@ -24,9 +24,9 @@ Web search uses a **single mechanism**: an **agent loop** with a tool named `web
 
 | Condition | Globe Color | Behavior |
 |-----------|------------|----------|
-| Web search OFF | Grey | No search — regular streaming |
+| Web search OFF | Grey | No search; function-calling models still use the agent loop with other built-in tools, while other models use regular streaming |
 | Web search ON + `.functionCalling` | Accent | Agent loop with tool `web_search` → executed via `/v1/search` endpoint |
-| Web search ON + no `.functionCalling` | Red | **No search. Ignored.** Falls through to regular streaming |
+| Web search unavailable because the model lacks `.functionCalling` or no search tool is configured | Red | The toggle does not change state; no search occurs |
 
 ### How It Works (Agent Loop with `/v1/search`)
 
@@ -36,7 +36,7 @@ For models with function calling capability. The app registers a tool named `web
 2. Model responds with `tool_calls: [{"function": {"name": "web_search", ...}}]`
 3. App's `AgentStreamUseCase` → `WebSearchTool.execute()` → calls `POST /v1/search/{search_tool_name}` (e.g., `/v1/search/brave-search`)
 4. Search results sent back to model as tool result
-5. Model generates final grounded response (second request **omits** `tools` so the model replies naturally)
+5. Model may call tools again; the registry remains attached until the model answers or a safety limit forces a final request without tools
 
 This works with **any model from any provider** (Ollama, OpenAI, Anthropic, Groq, etc.) as long as the model returns structured `tool_calls` (not text-plain JSON). The `/v1/search` endpoint is completely model-agnostic.
 
@@ -95,10 +95,10 @@ search_tools:
 
 ```swift
 func streamWithWebSearch(_ context: SendMessageContext) async {
-    let useAgentMode = context.webSearchEnabled
-        && context.modelCapabilities.contains(.functionCalling)
+    let useAgentMode = context.modelCapabilities.contains(.functionCalling)
     if useAgentMode {
-        // Agent loop: tool web_search → /v1/search endpoint
+        // The registry always has datetime and may have memory tools.
+        // web_search is added only when context.webSearchEnabled is true.
         await performAgentStreaming(...)
     } else {
         // No search (disabled or no capabilities) → regular streaming
@@ -110,7 +110,7 @@ func streamWithWebSearch(_ context: SendMessageContext) async {
 ### Key Types
 
 - `WebSearchTool` — Implements `ChatToolProtocol`, defines `web_search` function. On execution, calls `WebSearchUseCase` which hits `/v1/search/{search_tool_name}`
-- `ToolRegistry` — Registers `WebSearchTool` when agent mode is used
+- `ToolRegistry` — Registers `WebSearchTool` only when web search is enabled; agent mode itself is automatic for function-calling models
 - `AgentStreamUseCase` — Manages the agentic loop (see `agent-tool-calling.instructions.md`)
 - `WebSearchUseCase` — Calls `APIClient.searchRequest()` → `POST /v1/search/{search_tool_name}`
 
@@ -133,4 +133,7 @@ The `name` field is stored in `ChatMessage.toolName` and serialized via `ChatCom
 
 ## Settings
 
-- **Search tool name**: Stored in `SettingsManager` (UserDefaults), default: `"brave-search"` — must match a `search_tool_name` in the LiteLLM `config.yaml`
+- **Web search enabled**: Stored in `SettingsManager` (`UserDefaults`) and defaults to `false` when no value exists.
+- **Search tool name**: Stored in `SettingsManager` (`UserDefaults`) and defaults to the empty string. It must match a `search_tool_name` in LiteLLM configuration; Settings can discover tools through `GET /v1/search/tools` and select the first returned tool when the saved value is unavailable.
+- **Maximum results**: Stored in `SettingsManager` (`UserDefaults`) and defaults to 10. `WebSearchUseCase` sends this value to LiteLLM, while `WebSearchTool` formats at most the first five returned results for model context and retains the full result array for source display.
+- **Tool rounds**: The agent permits up to 10 iterations, 20 tool calls in total, and 8 calls in one iteration. These are agent safeguards, not user-configurable search settings.
