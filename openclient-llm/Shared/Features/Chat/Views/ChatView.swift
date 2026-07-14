@@ -34,6 +34,7 @@ struct ChatView: View {
     @State private var editingMessageText: String = ""
 
     var conversation: Conversation?
+    var isPrivateChat: Bool
     var shareItem: ShareExtensionItem?
     var urlSchemeText: String?
     var onConversationUpdated: (() -> Void)?
@@ -45,6 +46,7 @@ struct ChatView: View {
 
     init(
         conversation: Conversation? = nil,
+        isPrivateChat: Bool = false,
         shareItem: ShareExtensionItem? = nil,
         urlSchemeText: String? = nil,
         onConversationUpdated: (() -> Void)? = nil,
@@ -52,8 +54,12 @@ struct ChatView: View {
         onShareItemProcessed: (() -> Void)? = nil,
         onURLSchemeTextProcessed: (() -> Void)? = nil
     ) {
-        _viewModel = State(initialValue: ChatViewModel(conversation: conversation))
+        _viewModel = State(initialValue: ChatViewModel(
+            conversation: conversation,
+            isPrivateChat: isPrivateChat
+        ))
         self.conversation = conversation
+        self.isPrivateChat = isPrivateChat
         self.shareItem = shareItem
         self.urlSchemeText = urlSchemeText
         self.onConversationUpdated = onConversationUpdated
@@ -87,6 +93,7 @@ private extension ChatView {
             }
         }
         .navigationTitle(conversation?.title ?? "")
+        .tint(Color.appAccent)
         .toolbar {
             ToolbarItem(placement: .principal) {
                 modelSelector(using: viewModel)
@@ -184,6 +191,7 @@ private extension ChatView {
                 }
             }
             .navigationTitle("")
+            .tint(Color.appAccent)
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
 #endif
@@ -364,6 +372,7 @@ private extension ChatView {
                 ChatEmptyStateView(
                     selectedModel: loadedState.selectedModel,
                     conversationStarters: loadedState.conversationStarters,
+                    isPrivateChat: isPrivateChat,
                     onSuggestionTapped: { viewModel.send(.suggestionTapped($0)) }
                 )
             } else {

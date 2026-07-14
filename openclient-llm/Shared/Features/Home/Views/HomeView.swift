@@ -13,6 +13,7 @@ struct HomeView: View {
 
     @State private var viewModel = HomeViewModel()
     @State private var selectedConversation: Conversation?
+    @State private var isPrivateChatActive: Bool = false
 
 #if os(macOS)
     @State private var sidebarDestination: SidebarDestination = .chats
@@ -39,6 +40,16 @@ struct HomeView: View {
         }
         .task {
             viewModel.send(.viewAppeared)
+        }
+        .onChange(of: viewModel.isPrivateChatRequested) { _, isRequested in
+            guard isRequested else { return }
+#if os(iOS)
+            selectedTab = .chats
+#elseif os(macOS)
+            sidebarDestination = .chats
+#endif
+            isPrivateChatActive = true
+            viewModel.send(.privateChatRequestConsumed)
         }
         .onChange(of: viewModel.pendingConversation) { _, conversation in
             guard let conversation else { return }
@@ -137,6 +148,8 @@ private extension HomeView {
         NavigationStack {
             ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
                 selectedConversation = conversation
+            } onPrivateChatSelected: {
+                isPrivateChatActive = true
             }
             .navigationDestination(item: $selectedConversation) { conversation in
                 ChatView(
@@ -149,6 +162,9 @@ private extension HomeView {
                     onShareItemProcessed: { viewModel.send(.shareItemConsumed) },
                     onURLSchemeTextProcessed: { viewModel.send(.urlSchemeTextConsumed) }
                 )
+            }
+            .navigationDestination(isPresented: $isPrivateChatActive) {
+                ChatView(isPrivateChat: true)
             }
         }
     }
@@ -166,6 +182,8 @@ private extension HomeView {
         switch action {
         case .newChat:
             viewModel.send(.newChatShortcutTriggered)
+        case .newPrivateChat:
+            viewModel.send(.newPrivateChatShortcutTriggered)
         case .search:
             selectedTab = .search
         }
@@ -216,6 +234,8 @@ private extension HomeView {
             NavigationStack {
                 ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
                     selectedConversation = conversation
+                } onPrivateChatSelected: {
+                    isPrivateChatActive = true
                 }
                 .navigationDestination(item: $selectedConversation) { conversation in
                     ChatView(
@@ -228,6 +248,9 @@ private extension HomeView {
                         onShareItemProcessed: { viewModel.send(.shareItemConsumed) },
                         onURLSchemeTextProcessed: { viewModel.send(.urlSchemeTextConsumed) }
                     )
+                }
+                .navigationDestination(isPresented: $isPrivateChatActive) {
+                    ChatView(isPrivateChat: true)
                 }
             }
         case .models:

@@ -172,11 +172,11 @@ private extension ConversationRepository {
     func saveLocal(_ conversation: Conversation) throws {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        encoder.outputFormatting = .prettyPrinted
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
 
         let data = try encoder.encode(conversation)
         let fileURL = directoryURL.appendingPathComponent("\(conversation.id.uuidString).json")
-        try data.write(to: fileURL, options: .atomic)
+        try writeIfChanged(data, to: fileURL)
     }
 
     func mergeConversations(
@@ -279,7 +279,7 @@ private extension ConversationRepository {
 
     func saveTombstones(_ tombstones: [ConversationTombstone]) throws {
         let data = try JSONEncoder.iso8601.encode(tombstones)
-        try data.write(to: tombstonesURL, options: .atomic)
+        try writeIfChanged(data, to: tombstonesURL)
     }
 
     func loadDeleteAllMarker() throws -> ConversationDeleteAllMarker? {
@@ -290,7 +290,7 @@ private extension ConversationRepository {
 
     func saveDeleteAllMarker(_ marker: ConversationDeleteAllMarker) throws {
         let data = try JSONEncoder.iso8601.encode(marker)
-        try data.write(to: deleteAllMarkerURL, options: .atomic)
+        try writeIfChanged(data, to: deleteAllMarkerURL)
     }
 
     func newestMarker(
@@ -328,6 +328,11 @@ private extension ConversationRepository {
                 LogManager.debug("Cleaned up local conversation file: \(uuid)")
             }
         }
+    }
+
+    func writeIfChanged(_ data: Data, to url: URL) throws {
+        if let existing = try? Data(contentsOf: url), existing == data { return }
+        try data.write(to: url, options: .atomic)
     }
 
     /// Deletes all attachment files referenced by the messages of a conversation.
@@ -373,7 +378,7 @@ private extension JSONEncoder {
     static let iso8601: JSONEncoder = {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
-        encoder.outputFormatting = .prettyPrinted
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         return encoder
     }()
 }

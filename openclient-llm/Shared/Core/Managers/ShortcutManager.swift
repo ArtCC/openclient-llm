@@ -12,6 +12,7 @@ import Foundation
 
 enum ShortcutAction: String, Sendable {
     case newChat = "com.artcc.openclient-llm.shortcut.newChat"
+    case newPrivateChat = "com.artcc.openclient-llm.shortcut.newPrivateChat"
     case search = "com.artcc.openclient-llm.shortcut.search"
 }
 

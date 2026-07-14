@@ -30,6 +30,7 @@ struct ConversationListView: View {
 
     var activeConversationId: UUID?
     let onConversationSelected: (Conversation?) -> Void
+    let onPrivateChatSelected: () -> Void
 
     // MARK: - View
 
@@ -174,13 +175,7 @@ private extension ConversationListView {
         .toolbar {
 #if os(iOS)
             ToolbarItem(placement: .primaryAction) {
-                Button {
-                    viewModel.send(.newConversationTapped)
-                } label: {
-                    Image(systemName: "square.and.pencil")
-                }
-                .accessibilityLabel(String(localized: "New Chat"))
-                .keyboardShortcut("n", modifiers: .command)
+                newChatToolbarMenu
             }
             ToolbarItem(placement: .secondaryAction) {
                 Button {
@@ -198,24 +193,6 @@ private extension ConversationListView {
             }
 #else
             macToolbarItems
-#endif
-        }
-    }
-
-    var emptyState: some View {
-        ContentUnavailableView {
-            Label(
-                String(localized: "No Conversations"),
-                systemImage: "bubble.left.and.bubble.right"
-            )
-        } description: {
-            Text(String(localized: "Start a new conversation to begin chatting"))
-        } actions: {
-            Button(String(localized: "New Chat")) {
-                viewModel.send(.newConversationTapped)
-            }
-#if os(macOS)
-            .buttonStyle(.borderedProminent)
 #endif
         }
     }
@@ -492,7 +469,7 @@ private extension ConversationListView {
 
 #Preview {
     NavigationStack {
-        ConversationListView { _ in }
+        ConversationListView { _ in } onPrivateChatSelected: {}
             .navigationTitle(String(localized: "Chats"))
     }
 }

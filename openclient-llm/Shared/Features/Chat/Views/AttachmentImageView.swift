@@ -55,7 +55,7 @@ struct AttachmentImageView: View {
         }
         .task(id: attachment.id) {
             guard loadedData == nil else { return }
-            loadedData = try? repository.load(attachment: attachment)
+            loadedData = attachment.transientData ?? (try? repository.load(attachment: attachment))
             isLoaded = true
         }
         .sheet(isPresented: $showPreview) {

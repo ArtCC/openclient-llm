@@ -80,7 +80,7 @@ extension ChatViewModel {
     }
 
     func prepareMessageState(text: String, model: LLMModel, loadedState: inout LoadedState) -> UUID {
-        if loadedState.conversation == nil {
+        if loadedState.conversation == nil, !isPrivateChat {
             loadedState.conversation = Conversation(modelId: model.id, systemPrompt: loadedState.systemPrompt)
         }
         let userMessage = ChatMessage(role: .user, content: text, attachments: loadedState.pendingAttachments)

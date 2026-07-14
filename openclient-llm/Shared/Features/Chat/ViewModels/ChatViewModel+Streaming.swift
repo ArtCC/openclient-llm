@@ -83,33 +83,7 @@ extension ChatViewModel {
                 state.messages[index].tokenUsage = usage
             }
         case .image(let imageData):
-            if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
-                let folderId = state.conversation?.id ?? state.pendingSessionId
-                let attachmentId = UUID()
-                let placeholder = ChatMessage.Attachment(
-                    id: attachmentId,
-                    type: .image,
-                    fileName: String(localized: "Generated Image"),
-                    mimeType: "image/png",
-                    fileRelativePath: ""
-                )
-                if let relativePath = try? attachmentRepository.save(
-                    data: imageData,
-                    for: placeholder,
-                    conversationId: folderId
-                ) {
-                    let attachment = ChatMessage.Attachment(
-                        id: attachmentId,
-                        type: .image,
-                        fileName: String(localized: "Generated Image"),
-                        mimeType: "image/png",
-                        fileRelativePath: relativePath
-                    )
-                    state.messages[index].attachments.append(attachment)
-                } else {
-                    LogManager.error("applyStreamChunk: failed to save generated image")
-                }
-            }
+            appendGeneratedImage(imageData, to: &state, assistantMessageId: assistantMessageId)
         }
     }
 }
@@ -117,12 +91,22 @@ extension ChatViewModel {
 // MARK: - Private
 
 private extension ChatViewModel {
+    func appendGeneratedImage(
+        _ data: Data,
+        to state: inout LoadedState,
+        assistantMessageId: UUID
+    ) {
+        guard let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }),
+              let attachment = generatedImageAttachment(data: data, state: state) else { return }
+        state.messages[index].attachments.append(attachment)
+    }
+
     func buildStreamMessages(
         _ messages: [ChatMessage],
         systemPrompt: String
     ) -> [ChatMessage] {
-        let profileContext = getUserProfileContextUseCase.execute()
-        let memoryContext = getMemoryContextUseCase.execute()
+        let profileContext = isPrivateChat ? "" : getUserProfileContextUseCase?.execute() ?? ""
+        let memoryContext = isPrivateChat ? "" : getMemoryContextUseCase?.execute() ?? ""
         let effectiveSystemPrompt = buildEffectiveSystemPrompt(
             profileContext: profileContext,
             memoryContext: memoryContext,

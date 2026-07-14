@@ -87,6 +87,9 @@ extension ChatMessage {
         /// e.g. `"Attachments/<conversationId>/<attachmentId>.jpg"`
         /// Empty string indicates a legacy attachment pending migration.
         let fileRelativePath: String
+        /// Bytes held only for the lifetime of an ephemeral chat session.
+        /// This value is deliberately excluded from Codable persistence.
+        let transientData: Data?
 
         // MARK: - Init
 
@@ -95,13 +98,15 @@ extension ChatMessage {
             type: AttachmentType,
             fileName: String,
             mimeType: String,
-            fileRelativePath: String
+            fileRelativePath: String,
+            transientData: Data? = nil
         ) {
             self.id = id
             self.type = type
             self.fileName = fileName
             self.mimeType = mimeType
             self.fileRelativePath = fileRelativePath
+            self.transientData = transientData
         }
 
         // MARK: - Decodable
@@ -111,7 +116,7 @@ extension ChatMessage {
         /// The `data` key is intentionally ignored; `AttachmentMigrationUseCase`
         /// handles extracting and persisting those bytes to disk.
         init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let container = try decoder.container(keyedBy: ChatMessageAttachmentCodingKeys.self)
             id = try container.decode(UUID.self, forKey: .id)
             let decodedType = try container.decode(AttachmentType.self, forKey: .type)
             type = decodedType
@@ -121,6 +126,16 @@ extension ChatMessage {
                 ?? Self.inferMimeType(for: decodedType, fileName: decodedFileName)
             // Legacy attachments won't have this key; migration will populate it
             fileRelativePath = try container.decodeIfPresent(String.self, forKey: .fileRelativePath) ?? ""
+            transientData = nil
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: ChatMessageAttachmentCodingKeys.self)
+            try container.encode(id, forKey: .id)
+            try container.encode(type, forKey: .type)
+            try container.encode(fileName, forKey: .fileName)
+            try container.encode(mimeType, forKey: .mimeType)
+            try container.encode(fileRelativePath, forKey: .fileRelativePath)
         }
 
         // MARK: - Helpers
@@ -139,4 +154,12 @@ extension ChatMessage {
             }
         }
     }
+}
+
+private enum ChatMessageAttachmentCodingKeys: String, CodingKey {
+    case id
+    case type
+    case fileName
+    case mimeType
+    case fileRelativePath
 }
