@@ -3,10 +3,10 @@ description: "Use when writing or reviewing Swift code style (formatting, naming
 applyTo: "**/*.swift"
 ---
 
-# Swift Code Style Guide (Reusable)
+# Swift Code Style
 
-This guide defines a reusable Swift style baseline focused on code readability and consistency.
-It intentionally excludes architecture decisions.
+This file defines preferred style. Existing code is the source of truth for local formatting when it differs from a
+generic example; do not perform unrelated cleanup while making a focused change.
 
 ## 1) Style Intent
 
@@ -64,32 +64,35 @@ let request = ChatCompletionRequest(model:model,messages:messages,stream:true,te
 ```swift
 //
 //  ExampleView.swift
-//  MyApp
+//  openclient-llm
 //
-//  Created by Author on 01/01/2026.
+//  Created by Arturo Carretero Calvo on 01/01/2026.
+//  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
 //
 
 import SwiftUI
 ```
 
-## 4) Universal File Layout (Same Order for All Files)
+Use the actual target name in the third header line for macOS and extension-owned files. Preserve an existing file's
+historical author/copyright spelling unless the task is specifically correcting headers.
 
-Use this section order in every Swift file, regardless of type.
+## 4) File Layout
+
+Use sections when they improve navigation. The repository does not use one universal section list for every kind of file.
 
 ### Required
 
 1. Type declaration
-2. `// MARK: - Properties`
-3. `// MARK: - Init` (if needed)
-4. `// MARK: - Public`
-5. `// MARK: - Internal` (if needed)
-6. `// MARK: - Private`
-7. Protocol conformances in extensions
-8. File-private helpers at the bottom
+2. `// MARK: - Properties` when the type has a meaningful property group
+3. `// MARK: - Init` when an initializer exists
+4. A named public section such as `View`, `Input functions`, or `Tests`
+5. Protocol conformances in focused extensions
+6. `// MARK: - Private` and private helpers near the bottom when practical
 
 ### Recommended
 
-- Keep private helpers in extensions at file bottom when possible.
+- Keep private helpers in extensions at file bottom when that does not prevent access to private stored properties or
+  make a large type harder to understand.
 - Keep each section compact and cohesive.
 
 ### Good
@@ -134,13 +137,13 @@ final class ExampleType {
 
 ### Required
 
-- Use `// MARK: - ...` labels exactly.
+- Use `// MARK: - ...` labels for major sections.
 - Add one blank line after each MARK label.
 - Do not create noisy MARK sections for tiny files.
 
 ### Recommended
 
-- Use meaningful labels (`Public`, `Private`, `Tests - sendTapped`) instead of generic names.
+- Use meaningful labels (`View`, `Input functions`, `Tests`, `Private`) instead of forcing `Public`/`Internal` labels.
 
 ### Good
 
@@ -329,13 +332,15 @@ final class SettingsStore: @unchecked Sendable {}
 value = 1
 ```
 
-## 11) Extensions
+## 11) Extensions And File Scope
 
 ### Required
 
-- Prefer extensions for protocol conformances.
-- Keep private helpers in `private extension` at file bottom.
-- Add MARK labels for each extension block.
+- Prefer extensions for protocol conformances and cohesive splits.
+- Keep private helpers in a `private extension` at file bottom when practical.
+- Add MARK labels for substantial extension blocks.
+- Prefer one primary type per file. Small supporting enums, structs, protocols, and private helpers may share the file
+  when they are tightly coupled. The repository also uses `Type+Concern.swift` files for large ViewModels and views.
 
 ### Recommended
 
@@ -362,6 +367,7 @@ private extension Conversation {
 - Name tests as `test_<method>_<scenario>_<expectedResult>()`.
 - Use `// Given`, `// When`, `// Then` blocks.
 - Keep one assertion intent per test.
+- Mark each XCTest class `@MainActor`; the test target does not set default actor isolation.
 
 ### Recommended
 
@@ -384,13 +390,15 @@ func test_send_viewAppeared_withModels_setsLoadedState() async throws {
 
 ## 13) Linter Alignment
 
-Follow your project linter as the source of truth. Typical baseline:
+`.swiftlint.yml` is authoritative. Its current limits are:
 
-- Max line length: warning 120, error 150
-- Max function body length: warning 50, error 80
-- Max type body length: warning 300, error 400
+- File length: warning 500, error 650
+- Line length: warning 120, error 150
+- Function body length: warning 50, error 80
+- Type body length: warning 300, error 400
 - Vertical whitespace: max one empty line
-- Force unwrap / force cast: forbidden
+- Force unwrap and force cast: errors
+- Trailing commas: allowed because the `trailing_comma` rule is disabled
 
 If guide text and linter disagree, update one of them so both stay aligned.
 
@@ -404,5 +412,5 @@ If guide text and linter disagree, update one of them so both stay aligned.
 
 ## 15) Practical Rule
 
-When unsure between two valid styles, choose the style already used in nearby files.
-Consistency with local code always wins.
+When unsure between two valid styles, choose the style already used in nearby files unless it conflicts with SwiftLint or
+a focused project specification.

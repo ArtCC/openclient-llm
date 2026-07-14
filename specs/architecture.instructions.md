@@ -3,178 +3,99 @@ description: "Use when implementing features, creating new files, defining layer
 applyTo: "**/*.swift"
 ---
 
-# OpenClient LLM — Architecture & Best Practices
+# OpenClient Architecture
 
-## Project Structure
+## Current Project Layout
 
-The project has **3 Xcode targets** with File System Synchronized Groups:
+The Xcode project currently has **five native targets**, all backed by File System Synchronized Groups:
 
+```text
+openclient-llm/                 # iOS/iPadOS app target
+├── App/                        # iOS app and scene delegates
+├── Resources/                  # iOS plist, entitlements, test plan
+└── Shared/                     # Compiled by both app targets
+    ├── Core/
+    │   ├── Extensions/
+    │   ├── Managers/
+    │   ├── Models/
+    │   ├── Networking/
+    │   ├── Utils/
+    │   └── Views/
+    ├── Features/               # Feature-owned Models/Repositories/UseCases/ViewModels/Views as needed
+    └── Resources/              # Shared assets, localization, icon, and Poppins fonts
+
+openclient-llm-macOS/           # macOS app target
+├── App/
+├── Resources/
+└── Views/                      # macOS-only menu bar and command UI
+
+openclient-llm-test/            # iOS-hosted XCTest unit test target
+├── Core/
+├── Features/
+└── Mocks/
+
+ShareExtension/                 # Standalone iOS Share Extension
+└── App/Models/                 # Duplicates its small App Group transfer model/store intentionally
+
+Widgets/                        # Standalone WidgetsExtension target
+└── App/                        # WidgetKit widgets, controls, intents, and App Group models
 ```
-openclient-llm/                # iOS target (also hosts all shared code)
-├── App/                       # iOS app entry point
-├── Shared/                    # Shared code used by both iOS and macOS targets
-│   ├── Features/              # Feature modules (Chat, Settings, Models...)
-│   │   └── <Feature>/
-│   │       ├── Views/          # SwiftUI views (use #if os() when needed)
-│   │       ├── ViewModels/     # @Observable view models (Event/State pattern)
-│   │       ├── UseCases/       # Business logic per use case
-│   │       ├── Repositories/   # Data access abstraction
-│   │       └── Models/         # Domain models for this feature
-│   └── Core/
-│       ├── Networking/         # API client, request/response models
-│       ├── Managers/           # Transversal services (auth, settings, connectivity)
-│       ├── Extensions/         # Swift/SwiftUI extensions
-│       └── Utils/              # Shared utilities
-├── Views/                     # iOS-only views (strictly iOS-specific UI)
-└── Resources/                 # iOS assets, Localizable strings
 
-openclient-llm-macOS/          # macOS target (macOS-specific code only)
-├── App/                       # macOS app entry point
-├── Views/                     # macOS-only views (sidebar, toolbar, menu bar)
-└── Resources/                 # macOS assets
+The macOS target includes the synchronized `openclient-llm` group as well as its own group. Shared views therefore live in
+`openclient-llm/Shared/Features/.../Views`, not in a separate iOS `Views/` directory. `ShareExtension` and
+`WidgetsExtension` do not link the shared feature layer; they communicate through `group.com.artcc.openclient-llm` and
+deep links. Through synchronized-group membership exceptions, `AppGroupStore.swift` and `WidgetConversation.swift` are
+also compiled into both apps, while `WidgetControlStore.swift` is compiled into the iOS app and WidgetsExtension.
 
-openclient-llm-test/           # Unit tests target (linked to iOS target)
-└── <Feature>Tests/            # Test files organized by feature
+Feature folders are pragmatic rather than uniform. Create only the subfolders a feature needs. `Shortcuts`, for example,
+currently contains intents directly, while larger features use several layer folders.
+
+## Current Layering
+
+The dominant flow is:
+
+```text
+View -> ViewModel -> UseCase -> Repository -> APIClient / local storage
+                         \----> Manager
 ```
 
-### Target Rules
+- Views own `@Observable` ViewModels with `@State`, render state, and send events.
+- ViewModels are explicit `@MainActor` classes and generally expose a nested `Event`, `State`, and `LoadedState`.
+- UseCases represent operations, but some are thin adapters over Managers or `APIClient` rather than Repository clients.
+- Repositories handle network mapping, attachments, and conversation persistence where that abstraction is useful.
+- Managers provide settings, keychain, cloud, audio, App Group, notification, and system-service integration.
+- `APIClient` is the OpenAI-compatible networking and streaming boundary.
 
-- **`openclient-llm/Shared/`**: All business logic, models, networking, ViewModels, UseCases, Repositories, Managers. This code is shared — the macOS target references it.
-- **`openclient-llm/`** (outside Shared): Only iOS/iPadOS-specific views, app entry point, and iOS resources.
-- **`openclient-llm-macOS/`**: Only macOS-specific views, app entry point, and macOS resources. Never duplicate shared logic here.
-- **`openclient-llm-test/`**: Unit tests for shared logic (ViewModels, UseCases, Repositories).
+Current code does **not** enforce a pure ViewModel-to-UseCase boundary. Several ViewModels inject Managers directly,
+including settings, memory, profile, cloud sync, shortcuts, sharing, and URL-scheme services. Treat that as current
+implementation, not as evidence that every new dependency should bypass a UseCase.
 
-> **Note**: Create directories as features are implemented.
+## Preferred Rules For New Work
 
-## Code Style
+- Preserve the existing View -> ViewModel -> UseCase -> Repository/Manager flow when it adds a meaningful business or
+  test seam. Do not add a pass-through UseCase solely to satisfy a diagram.
+- Views must not perform persistence, networking, or business decisions.
+- Prefer protocol-backed dependencies and initializer injection for testable boundaries.
+- A ViewModel may use a Manager directly when it represents UI-facing state or a system service and a UseCase would only
+  forward the same call. Follow the nearest feature's established pattern.
+- Keep `LogManager` available as a static diagnostic utility at any layer.
+- Put code used by both apps under `openclient-llm/Shared/`. Put genuinely platform-only app code in the corresponding
+  target directory. Use `#if os(iOS)` or `#if os(macOS)` for small differences inside otherwise shared views.
+- Do not move extension/widget code into Shared unless target membership and extension constraints are deliberately
+  changed.
+- Use `@Observable`, not `ObservableObject` or `@Published`, and keep explicit `@MainActor` on ViewModels.
+- Prefer `async`/`await` and native throwing APIs. `Result` remains appropriate for configurable test doubles and stored
+  outcomes.
 
-### File Header
+## ViewModel Shape
 
-Every Swift file must include this header at the top:
+Use the Event/State shape for screen ViewModels, while allowing feature-specific states and synchronous or asynchronous
+event handling:
 
 ```swift
-//
-//  FileName.swift
-//  openclient-llm
-//
-//  Created by Arturo Carretero Calvo on DD/MM/YYYY.
-//  Copyright © YYYY Arturo Carretero Calvo. All rights reserved.
-//
-
-import Foundation
-```
-
-- Replace `FileName.swift` with the actual file name
-- Replace `DD/MM/YYYY` with the creation date
-- Replace `YYYY` with the creation year
-- `import` goes after the header, separated by one blank line
-
-### MARK Conventions
-
-Use `// MARK: -` to separate logical sections in every file. Standard order:
-
-**For classes/structs:**
-
-```swift
-// MARK: - Properties
-// MARK: - Init
-// MARK: - Deinit      (only if needed)
-// MARK: - Public       (or named section like "Input functions")
-// MARK: - Private      (as extension at bottom of file)
-```
-
-**For Views:**
-
-```swift
-// MARK: - Properties
-// MARK: - View
-// MARK: - Private      (as extension at bottom of file)
-```
-
-### Extensions for Code Organization
-
-Use `private extension` at the bottom of the file to group all private methods. Use named extensions for protocol conformances and logical groupings:
-
-```swift
-// Full class example:
 @Observable
 @MainActor
 final class FeatureViewModel {
-    // MARK: - Properties
-
-    private(set) var state: State
-
-    // MARK: - Init
-
-    init(state: State = .loading) {
-        self.state = state
-    }
-
-    // MARK: - Input functions
-
-    func send(_ event: Event) { ... }
-}
-
-// MARK: - Private
-
-private extension FeatureViewModel {
-    func loadData() { ... }
-    func handleError(_ error: Error) { ... }
-}
-```
-
-For types with protocol conformances, use separate extensions:
-
-```swift
-// MARK: - CustomStringConvertible
-
-extension ChatMessage: CustomStringConvertible {
-    var description: String { ... }
-}
-```
-
-### General Rules
-
-- Do **not** initialize stored optional properties with `= nil` — optionals are already `nil` by default. Use `var foo: String?` instead of `var foo: String? = nil`. Note: default values in function/init parameters (`func bar(baz: String? = nil)`) are intentional and required to make the parameter omissible at the call site.
-- **Never duplicate code** — follow the DRY (Don't Repeat Yourself) principle throughout the codebase. If the same logic or UI appears in more than one place, extract it into a shared function, computed property, or type. This applies especially when differentiating between iOS and macOS with `#if os(iOS)` / `#if os(macOS)`: always extract any sub-view or logic that is identical across platforms into a shared helper, and only branch platform-specifically for what truly differs.
-- Use Swift strict concurrency (`Sendable`, `@MainActor` where needed)
-- Prefer `async/await` over Combine for async operations
-- Use `@Observable` macro (Observation framework) — never use `ObservableObject` or `@Published`
-- Mark view models with `@Observable @MainActor` and use `@State` in views
-- Use Swift's native error handling (`throw`/`catch`) — no Result types unless needed for Combine
-- Follow Swift API Design Guidelines for naming
-- Use `guard` early returns for preconditions
-- Prefer value types (`struct`, `enum`) over reference types unless shared mutable state is needed
-
-## Architecture
-
-### Layer Overview
-
-```
-View → ViewModel → UseCase → Repository → APIClient / LocalStorage
-                      ↑
-                   Manager (transversal services)
-```
-
-- **View**: SwiftUI views that observe ViewModels via `@State`. No business logic.
-- **ViewModel**: `@Observable @MainActor` classes with Event/State pattern. Coordinates UseCases.
-- **UseCase**: Encapsulates a single business operation (e.g., `SendMessageUseCase`, `FetchModelsUseCase`). Calls Repositories and Managers.
-- **Repository**: Abstracts data access (network, cache, local storage). Protocols for testability.
-- **Manager**: Transversal services used across features (auth, settings, connectivity). Called from UseCases. **Never inject or call Managers directly from ViewModels or Views** — always go through a UseCase. Exception: `LogManager` is a static diagnostic utility (equivalent to `os_log`) and may be used anywhere in the codebase, including ViewModels.
-- **APIClient**: Single networking layer using `URLSession` + `async/await` to communicate with LiteLLM.
-
-### ViewModel Template (Event/State Pattern)
-
-All ViewModels follow this standard pattern:
-
-```swift
-import Foundation
-
-@Observable
-@MainActor
-final class FeatureViewModel {
-    // MARK: - Properties
-
     enum Event {
         case viewAppeared
     }
@@ -186,15 +107,7 @@ final class FeatureViewModel {
 
     struct LoadedState: Equatable {}
 
-    private(set) var state: State
-
-    // MARK: - Init
-
-    init(state: State = .loading) {
-        self.state = state
-    }
-
-    // MARK: - Input functions
+    private(set) var state: State = .loading
 
     func send(_ event: Event) {
         switch event {
@@ -203,53 +116,16 @@ final class FeatureViewModel {
         }
     }
 }
-
-// MARK: - Private
-
-private extension FeatureViewModel {}
 ```
 
-### View Template
+Extensions such as `ChatViewModel+Streaming.swift` are an established way to split a large feature while retaining one
+ViewModel type. Do not force every type or helper into this template.
 
-```swift
-import SwiftUI
+## Maintenance
 
-struct FeatureView: View {
-    // MARK: - Properties
-
-    @State private var viewModel = FeatureViewModel()
-
-    // MARK: - View
-
-    var body: some View {
-        Group {
-            switch viewModel.state {
-            case .loading:
-                ProgressView()
-            case .loaded:
-                VStack {
-                    Image(systemName: "globe")
-                }
-            }
-        }
-        .task {
-            viewModel.send(.viewAppeared)
-        }
-    }
-}
-
-// MARK: - Private
-
-private extension FeatureView {}
-
-#Preview {
-    FeatureView()
-}
-```
-
-### General Principles
-
-- **Dependency injection**: Pass dependencies through initializers or SwiftUI environment
-- **Navigation**: Use `NavigationStack` with typed navigation paths
-- **Platform adaptation**: Use `#if os(iOS)` / `#if os(macOS)` for platform-specific code; keep shared logic in Core/
-- **Protocols for abstraction**: Repositories and Managers should have protocol definitions for testability
+- File System Synchronized Groups usually discover new files automatically, but verify target inclusion and platform
+  compilation when adding files under a shared group.
+- Update `ARCHITECTURE.md` when targets, top-level directories, feature modules, layer ownership, or platform strategy
+  change. It is a structural overview, not an inventory that must list every source file.
+- Keep detailed style, concurrency, testing, and SwiftUI rules in their focused specifications rather than duplicating
+  them here.

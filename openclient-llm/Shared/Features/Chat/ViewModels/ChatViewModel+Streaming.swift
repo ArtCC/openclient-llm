@@ -11,21 +11,32 @@ import Foundation
 // MARK: - Streaming helpers
 
 extension ChatViewModel {
-    func performStreaming(
-        messages: [ChatMessage],
-        model: String,
-        assistantMessageId: UUID,
-        systemPrompt: String,
-        parameters: ModelParameters
-    ) async {
-        LogManager.debug("performStreaming model=\(model) messages=\(messages.count)")
-        let allMessages = buildStreamMessages(messages, systemPrompt: systemPrompt)
-
+    func performStreaming(_ sendContext: SendMessageContext) async {
+        let assistantMessageId = sendContext.assistantId
+        LogManager.debug("performStreaming model=\(sendContext.modelId) messages=\(sendContext.messages.count)")
         do {
+            let requestContext = try buildRequestContext(
+                messages: sendContext.messages,
+                systemPrompt: sendContext.systemPrompt,
+                configuration: RequestContextConfiguration(
+                    selectedModel: sendContext.selectedModel,
+                    contextWindowTokens: sendContext.contextWindowTokens,
+                    summary: sendContext.contextSummary,
+                    summaryCursorMessageId: sendContext.contextSummaryCursorMessageId,
+                    tools: []
+                )
+            )
+            var allMessages = requestContext.messages
+            if !requestContext.effectiveSystemPrompt.isEmpty {
+                allMessages.insert(ChatMessage(role: .system, content: requestContext.effectiveSystemPrompt), at: 0)
+            }
             let stream = streamMessageUseCase.execute(
                 messages: allMessages,
-                model: model,
-                parameters: parameters
+                model: sendContext.modelId,
+                parameters: parametersCappedToModelOutput(
+                    sendContext.parameters,
+                    model: sendContext.selectedModel
+                )
             )
             for try await chunk in stream {
                 guard !Task.isCancelled, isActiveStream(assistantMessageId),
@@ -34,26 +45,11 @@ extension ChatViewModel {
                 state = .loaded(currentState)
             }
 
-            guard isActiveStream(assistantMessageId), case .loaded(var currentState) = state else { return }
-            currentState.isStreaming = false
-
-            if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }),
-               currentState.messages[index].content.isEmpty,
-               currentState.messages[index].reasoningContent == nil {
-                currentState.messages.remove(at: index)
-                currentState.errorMessage = String(localized: "The model returned an empty response. Please try again.")
-            }
-
-            state = .loaded(currentState)
-            LogManager.success("performStreaming completed model=\(model)")
-            persistConversation()
-            streamingBackgroundUseCase.end()
-            completeActiveStream(assistantMessageId)
-            await notifyStreamingCompletedUseCase.execute()
+            await finishStreaming(assistantMessageId, model: sendContext.modelId)
         } catch {
             guard !Task.isCancelled, isActiveStream(assistantMessageId),
                   case .loaded(var currentState) = state else { return }
-            LogManager.error("performStreaming error model=\(model): \(error)")
+            LogManager.error("performStreaming error model=\(sendContext.modelId): \(error)")
             if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }),
                currentState.messages[index].content.isEmpty {
                 currentState.messages.remove(at: index)
@@ -82,15 +78,39 @@ extension ChatViewModel {
             if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
                 state.messages[index].tokenUsage = usage
             }
+            refreshContextUsage(in: &state, calibratedPromptTokens: usage.promptTokens)
         case .image(let imageData):
             appendGeneratedImage(imageData, to: &state, assistantMessageId: assistantMessageId)
         }
     }
+
 }
 
 // MARK: - Private
 
 private extension ChatViewModel {
+    func finishStreaming(_ assistantMessageId: UUID, model: String) async {
+        guard isActiveStream(assistantMessageId), case .loaded(var currentState) = state else { return }
+        currentState.isStreaming = false
+        removeEmptyAssistantMessage(assistantMessageId, from: &currentState)
+        refreshContextUsage(in: &currentState)
+        state = .loaded(currentState)
+        LogManager.success("performStreaming completed model=\(model)")
+        let didPersist = persistConversation()
+        streamingBackgroundUseCase.end()
+        completeActiveStream(assistantMessageId)
+        if didPersist { scheduleCompactionIfNeeded() }
+        await notifyStreamingCompletedUseCase.execute()
+    }
+
+    func removeEmptyAssistantMessage(_ assistantMessageId: UUID, from state: inout LoadedState) {
+        guard let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }),
+              state.messages[index].content.isEmpty,
+              state.messages[index].reasoningContent == nil else { return }
+        state.messages.remove(at: index)
+        state.errorMessage = String(localized: "The model returned an empty response. Please try again.")
+    }
+
     func appendGeneratedImage(
         _ data: Data,
         to state: inout LoadedState,
@@ -101,21 +121,4 @@ private extension ChatViewModel {
         state.messages[index].attachments.append(attachment)
     }
 
-    func buildStreamMessages(
-        _ messages: [ChatMessage],
-        systemPrompt: String
-    ) -> [ChatMessage] {
-        let profileContext = isPrivateChat ? "" : getUserProfileContextUseCase?.execute() ?? ""
-        let memoryContext = isPrivateChat ? "" : getMemoryContextUseCase?.execute() ?? ""
-        let effectiveSystemPrompt = buildEffectiveSystemPrompt(
-            profileContext: profileContext,
-            memoryContext: memoryContext,
-            conversationSystemPrompt: systemPrompt
-        )
-        var result = Array(messages.suffix(50))
-        if !effectiveSystemPrompt.isEmpty {
-            result.insert(ChatMessage(role: .system, content: effectiveSystemPrompt), at: 0)
-        }
-        return result
-    }
 }

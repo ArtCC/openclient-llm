@@ -165,6 +165,39 @@ final class AgentStreamUseCaseTests: XCTestCase {
         XCTAssertEqual(seqRepo.callIndex, 2)
     }
 
+    func test_execute_toolRound_rebudgetsNextRequestWithinManualContextWindow() async throws {
+        // Given
+        let toolCall = ToolCall(
+            id: "call_1",
+            type: "function",
+            function: ToolCallFunction(name: "unknown_tool", arguments: "{}")
+        )
+        let repository = RecordingAgentRepository(responses: [
+            makeToolCallResponse(toolCalls: [toolCall]),
+            makeStopResponse(content: "Final answer")
+        ])
+        let agent = AgentStreamUseCase(repository: repository)
+        let message = ChatMessage(role: .user, content: String(repeating: "a", count: 80))
+
+        // When
+        for try await _ in agent.execute(
+            messages: [ChatMessage(role: .system, content: "System"), message],
+            model: "test",
+            parameters: .default,
+            contextWindowTokens: 512,
+            toolRegistry: ToolRegistry(tools: [])
+        ) {}
+
+        // Then
+        XCTAssertEqual(repository.requests.count, 2)
+        let secondRequest = try XCTUnwrap(repository.requests.last)
+        let estimated = ContextWindowBuilder().estimatedInputTokens(
+            messages: secondRequest.filter { $0.role != .system },
+            systemPrompt: secondRequest.first(where: { $0.role == .system })?.content ?? ""
+        )
+        XCTAssertLessThanOrEqual(estimated, 461)
+    }
+
     // MARK: - Tests — Max iterations
 
     func test_execute_maxIterationsExceeded_stopsLoop() async throws {
@@ -210,15 +243,19 @@ final class AgentStreamUseCaseTests: XCTestCase {
         let infiniteRepo = InfiniteToolRepo(response: toolCallResponse)
         let infiniteSut = AgentStreamUseCase(repository: infiniteRepo)
 
-        // When — should not throw, should terminate
-        var eventCount = 0
+        // When
         let stream = infiniteSut.execute(
             messages: [ChatMessage(role: .user, content: "Loop")],
             model: "gpt-4",
             parameters: .default,
             toolRegistry: ToolRegistry(tools: [])
         )
-        for try await _ in stream { eventCount += 1 }
+        do {
+            for try await _ in stream {}
+            XCTFail("Expected iteration limit error")
+        } catch {
+            XCTAssertEqual(error as? AgentStreamError, .iterationLimitReached)
+        }
 
         // Then — called max 10 times
         XCTAssertEqual(infiniteRepo.callCount, 10)
@@ -321,6 +358,7 @@ private extension AgentStreamUseCaseTests {
     func makeSequentialRepo(responses: [ChatCompletionResponse]) -> SequentialMockRepo {
         SequentialMockRepo(responses: responses)
     }
+
 }
 
 // MARK: - SequentialMockRepo
@@ -360,5 +398,45 @@ final class SequentialMockRepo: ChatRepositoryProtocol, @unchecked Sendable {
         let response = responses[callIndex]
         callIndex += 1
         return response
+    }
+}
+
+// MARK: - RecordingAgentRepository
+
+// Safety: Only used within serialized @MainActor test methods.
+final class RecordingAgentRepository: ChatRepositoryProtocol, @unchecked Sendable {
+    var responses: [ChatCompletionResponse]
+    var requests: [[ChatMessage]] = []
+    var toolRequests: [[ToolDefinition]?] = []
+
+    init(responses: [ChatCompletionResponse]) {
+        self.responses = responses
+    }
+
+    func sendMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) async throws -> (String, TokenUsage?) {
+        ("", nil)
+    }
+
+    func streamMessage(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters
+    ) -> AsyncThrowingStream<StreamChunk, Error> {
+        AsyncThrowingStream { $0.finish() }
+    }
+
+    func agentCompletion(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters,
+        tools: [ToolDefinition]?
+    ) async throws -> ChatCompletionResponse {
+        requests.append(messages)
+        toolRequests.append(tools)
+        return responses.removeFirst()
     }
 }

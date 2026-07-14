@@ -158,6 +158,92 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         XCTAssertThrowsError(try sut.execute(try encoded(document)))
         XCTAssertEqual(mockDeleteConversation.deletedIds.count, 1)
     }
+
+    func test_execute_summaryWithoutCursor_throwsWithoutPersisting() throws {
+        // Given
+        let conversation = Conversation(modelId: "gpt-4", contextSummary: "Summary")
+        let document = ConversationExportDocument(conversations: [
+            .init(conversation: conversation, attachments: [])
+        ])
+
+        // When / Then
+        XCTAssertThrowsError(try sut.execute(try encoded(document)))
+        XCTAssertTrue(mockSaveConversation.savedConversations.isEmpty)
+    }
+
+    func test_execute_cursorOutsideConversation_throwsWithoutPersisting() throws {
+        // Given
+        let conversation = Conversation(
+            modelId: "gpt-4",
+            contextSummary: "Summary",
+            contextSummaryCursorMessageId: UUID(),
+            messages: [ChatMessage(role: .user, content: "Hello")]
+        )
+        let document = ConversationExportDocument(conversations: [
+            .init(conversation: conversation, attachments: [])
+        ])
+
+        // When / Then
+        XCTAssertThrowsError(try sut.execute(try encoded(document)))
+        XCTAssertTrue(mockSaveConversation.savedConversations.isEmpty)
+    }
+
+    func test_execute_nonPositiveContextWindow_throwsWithoutPersisting() throws {
+        // Given
+        let conversation = Conversation(modelId: "gpt-4", contextWindowTokens: 0)
+        let document = ConversationExportDocument(conversations: [
+            .init(conversation: conversation, attachments: [])
+        ])
+
+        // When / Then
+        XCTAssertThrowsError(try sut.execute(try encoded(document)))
+        XCTAssertTrue(mockSaveConversation.savedConversations.isEmpty)
+    }
+
+    func test_execute_validSummaryAndCursor_remapsCursor() throws {
+        // Given
+        let message = ChatMessage(role: .user, content: "Hello")
+        let conversation = Conversation(
+            modelId: "gpt-4",
+            contextSummary: "Summary",
+            contextSummaryCursorMessageId: message.id,
+            messages: [message]
+        )
+        let document = ConversationExportDocument(conversations: [
+            .init(conversation: conversation, attachments: [])
+        ])
+
+        // When
+        _ = try sut.execute(try encoded(document))
+
+        // Then
+        let imported = try XCTUnwrap(mockSaveConversation.savedConversations.first)
+        XCTAssertEqual(imported.contextSummaryCursorMessageId, imported.messages.first?.id)
+    }
+
+    func test_execute_cursorInsideToolRound_throwsWithoutPersisting() throws {
+        // Given
+        let call = ToolCall(
+            id: "call_1",
+            type: "function",
+            function: ToolCallFunction(name: "search", arguments: "{}")
+        )
+        let assistant = ChatMessage(role: .assistant, content: "", toolCalls: [call])
+        let tool = ChatMessage(role: .tool, content: "Result", toolCallId: call.id, toolName: "search")
+        let conversation = Conversation(
+            modelId: "gpt-4",
+            contextSummary: "Summary",
+            contextSummaryCursorMessageId: assistant.id,
+            messages: [assistant, tool]
+        )
+        let document = ConversationExportDocument(conversations: [
+            .init(conversation: conversation, attachments: [])
+        ])
+
+        // When / Then
+        XCTAssertThrowsError(try sut.execute(try encoded(document)))
+        XCTAssertTrue(mockSaveConversation.savedConversations.isEmpty)
+    }
 }
 
 // MARK: - Private

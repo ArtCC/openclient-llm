@@ -2,6 +2,10 @@
 
 This guide shows how to self-host [Ollama](https://ollama.com) using Docker Compose so you can use it as a backend with OpenClient LLM. It covers both CPU-only and NVIDIA GPU setups, along with a reference `.env` file and common operational commands.
 
+Configure OpenClient with Ollama's OpenAI-compatible base URL, including `/v1`, for example
+`http://your-server:11434/v1`. OpenClient appends `/models` and `/chat/completions` to the configured value and does
+not add `/v1` automatically. When LiteLLM is in front of Ollama, configure OpenClient with the LiteLLM root instead.
+
 ## Reference
 
 - https://ollama.com/search
@@ -93,3 +97,21 @@ docker exec -it ollama ollama list
 docker exec -it ollama ollama run MODEL
 docker exec -it ollama ollama rm MODEL
 ```
+
+Verify the endpoint OpenClient uses:
+
+```bash
+curl http://localhost:11434/v1/models
+
+curl http://localhost:11434/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "MODEL",
+    "messages": [{"role": "user", "content": "Hello"}],
+    "stream": false
+  }'
+```
+
+Ollama does not provide LiteLLM's `/model/info`, search-tool, or cost metadata endpoints. OpenClient falls back to
+`/models` and queries Ollama's native `/api/show` endpoint for best-effort capability enrichment. Features requiring
+other endpoints, including server speech services, depend on backend support.

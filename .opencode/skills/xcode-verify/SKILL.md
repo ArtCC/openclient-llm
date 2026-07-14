@@ -10,12 +10,13 @@ Use this skill to verify Swift changes in `openclient-llm`.
 ## Process
 
 1. Before the first XcodeBuildMCP build or test call, use `session_show_defaults`.
-2. Prefer XcodeBuildMCP. Use `build_sim` for compilation and `test_sim` for tests.
-3. If an MCP request times out, use the documented `xcodebuild` command from `AGENTS.md` with code signing disabled.
-4. Read every compiler error and SwiftLint warning in context before changing code.
-5. Fix the root cause of every SwiftLint violation. Never disable rules, add `swiftlint:disable`, or modify `.swiftlint.yml` unless the user explicitly asks.
-6. Run affected tests after each fix. Run the full iOS test suite after changes to shared code or before reporting completion.
-7. Run `git diff --check` before completion.
+2. Before building, create `Secrets.xcconfig` from the template in `AGENTS.md` if it is missing; never overwrite it.
+3. Prefer XcodeBuildMCP. Use `build_sim` for compilation and `test_sim` for tests, with code signing disabled; add the documented test timeout arguments for test runs.
+4. If an MCP request times out, use the complete `xcodebuild` fallback from `AGENTS.md`, including `-project`, code-signing overrides, and test timeouts.
+5. Read every compiler error and SwiftLint warning in context before changing code.
+6. Fix the root cause of every SwiftLint violation. Never disable rules, add `swiftlint:disable`, or modify `.swiftlint.yml` unless the user explicitly asks.
+7. Run affected tests after each fix. Run the full iOS test suite after changes to shared code or before reporting completion.
+8. Run `git diff --check` before completion.
 
 ## Completion Criteria
 

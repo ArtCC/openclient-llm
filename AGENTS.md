@@ -48,8 +48,10 @@ xcodebuild build -project openclient-llm.xcodeproj -scheme openclient-llm -desti
 xcodebuild build -project openclient-llm.xcodeproj -scheme openclient-llm-macOS -destination 'platform=macOS'
 ```
 
-- Use `.xcodeproj` (not `.xcworkspace`). SwiftLint is the only SPM dependency and is integrated inside Xcode.
-- SwiftLint runs on every Xcode build. All code must pass linting without warnings.
+- Use `.xcodeproj` (not `.xcworkspace`). The three SPM packages are SwiftLintPlugins, VoticeSDK, and ConfettiSwiftUI.
+- SwiftLint runs on the iOS and macOS app builds. `.swiftlint.yml` sets line-length warning/error limits to
+  120/150, function-body limits to 50/80, type-body limits to 300/400, and file-length limits to 500/650;
+  force unwraps and force casts are errors.
 - CI skips code signing: append `CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO` to `xcodebuild` commands.
 - VS Code + XcodeBuildMCP is supported (config at `.xcodebuildmcp/config.yaml`).
 - **You must create a `Secrets.xcconfig` before building.** Copy the template from CI:
@@ -64,7 +66,8 @@ EOF
 
 ## Concurrency (critical)
 
-The project build setting `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor` means **every type and method is `@MainActor` unless explicitly opted out**.
+The iOS and macOS app targets set `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`; shared code therefore inherits
+main-actor isolation when compiled into either app. The test, Share Extension, and WidgetsExtension targets do not set it.
 
 - `@MainActor` annotations on ViewModels are redundant but kept for documentation.
 - All test classes **must** be `@MainActor` — otherwise they cannot access `@MainActor`-isolated types synchronously.
@@ -84,7 +87,8 @@ xcodebuild test -project openclient-llm.xcodeproj -scheme openclient-llm -destin
 xcodebuild test -project openclient-llm.xcodeproj -scheme openclient-llm -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' -only-testing:openclient-llm-test/ChatViewModelTests CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO
 ```
 
-Tests live in `openclient-llm-test/`, linked to the iOS target. No UI tests — unit and integration only. Integration tests that need a real server are gated by `ProcessInfo.processInfo.environment["LITELLM_TEST_URL"]` and skipped by default.
+Tests live in `openclient-llm-test/`, linked to the iOS target. They are unit and in-process integration tests; there
+are no UI tests or current tests that call a real LiteLLM/Ollama server.
 
 ### Test conventions
 
@@ -103,15 +107,19 @@ Tests live in `openclient-llm-test/`, linked to the iOS target. No UI tests — 
 | `openclient-llm-macOS` | macOS app (macOS-only UI; references `Shared/` from iOS target) |
 | `openclient-llm-test` | Unit tests (linked to iOS target) |
 | `ShareExtension` | iOS Share Extension (does NOT link Shared code; uses App Group) |
-| `Widgets` | WidgetKit extension (does NOT link Shared code; uses App Group) |
+| `WidgetsExtension` | WidgetKit extension sourced from `Widgets/`; uses the App Group and selected shared resource files |
 
 - Shared business logic lives in `openclient-llm/Shared/` and is referenced by both app targets.
 - Platform-specific UI goes in each target's own folder. Use `#if os(iOS)` / `#if os(macOS)` only when the difference is small.
+- `ShareExtension` does not link `Shared/`; it has extension-local payload/store types compatible with the main app.
+- `WidgetsExtension` does not link the shared feature layer. `AppGroupStore` and `WidgetConversation` are compiled into
+  both apps and the extension; `WidgetControlStore` is compiled into the iOS app and extension.
 - App Group: `group.com.artcc.openclient-llm`
 
 ## Architecture: Event/State ViewModels
 
-All ViewModels follow this exact pattern:
+ViewModels use `@Observable`, explicit `@MainActor`, event-driven `send(_:)` input, and screen-specific state. Most use
+the following Event/State shape; `HomeViewModel` instead exposes several focused observable properties:
 
 ```swift
 @Observable
@@ -128,9 +136,11 @@ final class FeatureViewModel {
 ```
 
 - Views access ViewModels via `@State private var viewModel = FeatureViewModel()`.
-- ViewModels call UseCases (never Managers directly — `LogManager` is the one exception, it's a static diagnostic utility).
-- ViewModel `send(_:)` is the single input point. No scattered mutation from outside.
-- Full architecture: View → ViewModel → UseCase → Repository → APIClient/LocalStorage, with Managers as transversal services.
+- ViewModels primarily coordinate UseCases, but some also inject Managers directly for settings, memory, cloud sync,
+  user profile, and app-wide routing state. Preserve the local pattern instead of adding pass-through UseCases.
+- ViewModel `send(_:)` is the public input point; asynchronous work and state mutation stay inside the ViewModel.
+- Typical data flow is View → ViewModel → UseCase → Repository → APIClient/LocalStorage. Managers are transversal
+  services coordinated by UseCases, ViewModels, repositories, and app entry points where the implementation requires it.
 
 ## File conventions
 
@@ -141,15 +151,20 @@ final class FeatureViewModel {
 - Never initialize optional stored properties with `= nil` (optionals default to nil).
 - Use `String(localized:)` for ALL user-facing strings. Never manually edit `Localizable.xcstrings` — Xcode syncs it from `String(localized:)` usage.
 - Write localized source strings in English only; translations are maintained manually by the project author.
-- SwiftLint configuration: `.swiftlint.yml` enforces `force_unwrapping` and `force_cast` as errors, max line length 120, max function body 50 lines.
-- No external dependencies beyond SwiftLint.
+- SwiftLint configuration: warnings/errors are 120/150 lines for line length, 50/80 for function bodies, 300/400 for
+  type bodies, and 500/650 for files. `force_unwrapping` and `force_cast` are errors.
+- External SPM packages are SwiftLintPlugins, VoticeSDK, and ConfettiSwiftUI; do not add others without a concrete need.
 
 ## Git workflow
 
 - Branch from `develop`, open PRs targeting `develop`.
 - Commit messages: imperative style ("Add chat streaming support"), reference related issues with `Closes #N`.
 - Do NOT commit `Secrets.xcconfig` (gitignored; contains Votice API keys).
-- Version is sourced from `CHANGELOG.md` (first `## [X.Y.Z]` header). Tags use `vX.Y.Z` format.
+- Values from `Secrets.xcconfig` are compiled into the client app and are recoverable from a distributed bundle. Treat them
+  as client configuration, not as confidential server-side secrets; never place a privileged credential there.
+- Release workflows derive tag and artifact labels from the first numeric `CHANGELOG.md` header. The deployment process
+  increments the published build number automatically, so the checked-in `CURRENT_PROJECT_VERSION` does not need to match
+  the changelog build suffix. Tags use the full changelog version prefixed with `v`.
 
 ## Change Completion
 

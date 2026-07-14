@@ -6,6 +6,8 @@ argument-hint: "View name (e.g., ChatDetail, ServerSettings)"
 
 Create a new View named `${input}View` with its ViewModel. Generate all files:
 
+Every generated Swift file must start with the repository copyright header, using its actual file name and creation date, before imports.
+
 ## Files to create
 
 ### In the appropriate `openclient-llm/Shared/Features/<Feature>/`
@@ -90,7 +92,7 @@ final class ${input}ViewModel {
 private extension ${input}ViewModel {}
 ```
 
-### Test (in `openclient-llm-test/`)
+### Test (in `openclient-llm-test/Features/<Feature>/`)
 
 3. **${input}ViewModelTests.swift** — Test all Event → State transitions
 
@@ -100,3 +102,4 @@ private extension ${input}ViewModel {}
 - Use `.task {}` not `.onAppear`
 - Always include `#Preview`
 - Use `// MARK: -` sections consistently
+- Mark the test class `@MainActor`

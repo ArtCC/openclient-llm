@@ -13,6 +13,23 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 - **Conversation backup and restore** — export full, versioned JSON backups with portable attachments; restore them safely on another device as copies with preserved branch relationships, validation, rollback, and an import summary
 - **Private Chat** — launch a private chat that retains messages, attachments, generated images, web-search results, and agent activity only in memory; it never saves or syncs conversations and never reads or modifies personal memory
+- **Context usage indicator** — shows estimated input tokens, compacted and excluded messages, the model context limit, and usage percentage above the chat composer
+- **Manual context window** — configure a per-conversation context limit for OpenAI-compatible servers that do not expose LiteLLM model metadata
+- **Conversation compaction** — preserves long chats by incrementally summarizing older context while retaining the complete visible and exportable transcript
+
+### Changed
+
+- **Context-aware chat requests** — replaced the fixed 50-message limit with a budget based on available context, the effective system prompt, tools, a bounded safety margin, and recent complete conversation turns
+- **Agent context safeguards** — cap iterations, tool calls, and tool-result size so agent workflows retain room for a final response
+
+### Fixed
+
+- Conversation compaction now advances an incremental cursor, safely invalidates summaries after edits and branches, and respects model output limits
+- Context usage and agent tool rounds now budget the constructed request payload against known or manually configured context limits
+- Context selection now preserves continuous complete turns and reports oversized current messages instead of silently sending older history
+- Agent mode now supports multiple tool rounds, cumulative usage, a global timeout, and persisted assistant/tool transcripts
+- Conversation imports and exports now reject invalid context windows and inconsistent summary cursors
+- Completed responses are persisted before asynchronous compaction, preventing stale summaries from overwriting newer chat state
 
 ## [1.4.4-build-56] - 2026-07-12
 

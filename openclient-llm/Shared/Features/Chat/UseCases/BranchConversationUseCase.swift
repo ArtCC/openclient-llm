@@ -42,9 +42,15 @@ struct BranchConversationUseCase: BranchConversationUseCaseProtocol {
         }
 
         let branchedMessages = Array(conversation.messages.prefix(messageIndex + 1))
+        let retainsSummary = conversation.contextSummaryCursorMessageId.flatMap { cursorMessageId in
+            conversation.messages.firstIndex(where: { $0.id == cursorMessageId })
+        }.map { $0 <= messageIndex } ?? false
         let fork = Conversation(
             modelId: conversation.modelId,
             systemPrompt: conversation.systemPrompt,
+            contextWindowTokens: conversation.contextWindowTokens,
+            contextSummary: retainsSummary ? conversation.contextSummary : nil,
+            contextSummaryCursorMessageId: retainsSummary ? conversation.contextSummaryCursorMessageId : nil,
             messages: branchedMessages,
             modelParameters: conversation.modelParameters,
             isPinned: false,

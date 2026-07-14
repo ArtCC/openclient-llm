@@ -51,4 +51,38 @@ final class ExportConversationsUseCaseTests: XCTestCase {
         XCTAssertEqual(document.conversations.count, conversations.count)
         XCTAssertEqual(document.conversations.map(\.conversation.modelId), ["gpt-4", "llama3"])
     }
+
+    func test_execute_invalidContextMetadata_throwsBeforeEncoding() {
+        // Given
+        let conversation = Conversation(modelId: "gpt-4", contextSummary: "Summary")
+        let sut = ExportConversationsUseCase()
+
+        // When / Then
+        XCTAssertThrowsError(try sut.execute([conversation]))
+    }
+
+    func test_execute_validContextMetadata_preservesIt() throws {
+        // Given
+        let message = ChatMessage(role: .user, content: "Hello")
+        let conversation = Conversation(
+            modelId: "gpt-4",
+            contextWindowTokens: 8_192,
+            contextSummary: "Summary",
+            contextSummaryCursorMessageId: message.id,
+            messages: [message]
+        )
+        let sut = ExportConversationsUseCase()
+
+        // When
+        let data = try sut.execute([conversation])
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let document = try decoder.decode(ConversationExportDocument.self, from: data)
+
+        // Then
+        let exported = try XCTUnwrap(document.conversations.first?.conversation)
+        XCTAssertEqual(exported.contextWindowTokens, 8_192)
+        XCTAssertEqual(exported.contextSummary, "Summary")
+        XCTAssertEqual(exported.contextSummaryCursorMessageId, message.id)
+    }
 }

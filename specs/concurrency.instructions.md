@@ -9,21 +9,21 @@ Based on the principles from [AvdLee's Swift Concurrency Agent Skill](https://gi
 
 ## Project Concurrency Settings
 
-This project uses **Swift 6** with these build settings:
+The iOS and macOS **app targets** use Swift 6, approachable concurrency, member import visibility, and
+`SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`. Shared code is compiled in those app targets and therefore receives that
+default there.
 
-| Setting | Value | Effect |
-|---------|-------|--------|
-| `SWIFT_VERSION` | `6.0` | Full strict concurrency checking |
-| `SWIFT_DEFAULT_ACTOR_ISOLATION` | `MainActor` | All types are `@MainActor` by default |
-| `SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY` | `YES` | Stricter import visibility |
+The `openclient-llm-test`, `ShareExtension`, and `WidgetsExtension` target configurations currently do **not** set
+`SWIFT_DEFAULT_ACTOR_ISOLATION`. Do not describe the whole project or every target as implicitly main-actor isolated.
 
 ### What `MainActor` Default Isolation Means
 
-- **Every type, method, and property is `@MainActor` unless explicitly opted out**
+- Declarations compiled by either app target are main-actor isolated by default unless explicitly opted out.
 - Writing `@MainActor` on ViewModels is redundant but kept for **documentation clarity**
-- Types that need to run off the main actor must use `nonisolated`
-- Test classes must be `@MainActor` because the types under test are `@MainActor` by default
-- This is Apple's recommended approach for UI-driven apps in Swift 6.2
+- Shared DTOs, request/response models, parsing helpers, and other values that must cross isolation boundaries commonly use
+  `nonisolated` declarations plus `Sendable` in the current code.
+- Every XCTest class is explicitly `@MainActor`. This is necessary because the test target has no MainActor default and
+  most production declarations it accesses are main-actor isolated in the host app.
 
 ### When to Use `nonisolated`
 
@@ -37,11 +37,12 @@ nonisolated func processImage(_ data: Data) async -> UIImage { ... }
 nonisolated func parseJSON(_ data: Data) throws -> [Model] { ... }
 ```
 
-**Do NOT add `nonisolated` to**: ViewModels, Views, UseCases that call UI-bound code, or any code that touches UI state.
+Do not add `nonisolated` to ViewModels, Views, or code that touches UI-bound state. A UseCase may be nonisolated when its
+entire dependency graph and values are safe to cross actor boundaries; decide from behavior rather than layer name.
 
 ## Core Principles
 
-1. **Understand the default isolation** — all code is `@MainActor` by default; use `nonisolated` only for genuinely background work
+1. **Understand target scope** — app/shared code has a MainActor default; tests and extensions do not
 2. **Keep explicit `@MainActor` on ViewModels** — redundant but serves as documentation that the type is intentionally UI-bound
 3. **Optimize for the smallest safe change** — don't add annotations, wrappers, or abstractions beyond what the compiler requires
 4. **Prefer structured concurrency** — `async let`, `TaskGroup` over unstructured `Task { }` whenever possible
@@ -52,13 +53,13 @@ nonisolated func parseJSON(_ data: Data) throws -> [Model] { ... }
 ## Decision Tree: Choosing Isolation
 
 ```
-All types are @MainActor by default (project setting).
+Declarations in the iOS/macOS app targets are @MainActor by default.
 │
 ├─ Is the code UI-bound? (ViewModel, View, UI state)
 │  └─ Keep default @MainActor — add explicit annotation for clarity on ViewModels ✅
 │
-├─ Does the code do heavy background work? (image processing, large JSON parsing)
-│  └─ Mark as `nonisolated` + make Sendable if crossing boundaries ✅
+├─ Must the declaration run or be constructed away from MainActor?
+│  └─ Mark the appropriate declaration `nonisolated` and make crossing values Sendable ✅
 │
 ├─ Is it a value type with no mutable shared state?
 │  └─ struct — implicitly Sendable if all members are Sendable ✅
@@ -66,8 +67,8 @@ All types are @MainActor by default (project setting).
 ├─ Is it a reference type wrapping a thread-safe API?
 │  └─ @unchecked Sendable + safety comment ✅
 │
-├─ Is it a reference type with mutable state needing async access?
-│  └─ actor (automatically opts out of default MainActor) ✅
+├─ Is it a reference type with mutable state needing serialized async access?
+│  └─ Consider an actor and verify protocol isolation at call sites ✅
 │
 ├─ Need synchronous fine-grained locking?
 │  └─ Mutex (iOS 18+) ✅
@@ -106,8 +107,8 @@ struct SomeUseCase: SomeUseCaseProtocol {
 
 - **`struct`** — value type, implicitly Sendable if all members are Sendable
 - **Protocol marked `: Sendable`** — ensures all conforming types are safe to pass across isolation domains
-- Inherits `@MainActor` by default — this is fine since UseCases are lightweight coordinators
-- If a UseCase does heavy computation, mark the method `nonisolated`
+- In app targets, an unannotated UseCase inherits the MainActor default. This is acceptable for lightweight orchestration.
+- Use explicit `nonisolated` only when all accessed dependencies and transferred values support it.
 
 ### Repository
 
@@ -117,14 +118,15 @@ struct SomeRepository: SomeRepositoryProtocol {
     private let apiClient: APIClientProtocol
 }
 
-// Stateful repository (local cache) — actor opts out of MainActor default
+// Preferred option for mutable state that genuinely needs actor serialization
 actor CachedRepository: SomeRepositoryProtocol {
     private var cache: [String: Data] = [:]
 }
 ```
 
 - **Stateless** (API wrapper) → `struct` + Sendable
-- **Stateful** (cache, local storage) → `actor` for automatic serialized access (actors ignore default isolation)
+- **Stateful** (cache, local storage) -> choose an actor, MainActor isolation, or a documented thread-safe API according to
+  the required calling semantics. Current repositories are mostly structs/classes rather than actors.
 
 ### Manager (Transversal Services)
 
@@ -137,9 +139,10 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 }
 ```
 
-- Use `@unchecked Sendable` **only** when wrapping a proven thread-safe API
-- **Always add a safety comment** explaining the invariant
-- If the Manager has mutable state not protected by a thread-safe API → use `actor` instead
+- Prefer `@unchecked Sendable` for immutable wrappers around proven thread-safe APIs.
+- Current cloud/profile/memory observers also use it for framework callback state constrained to the main thread. Such an
+  exception must document the complete synchronization invariant and keep `nonisolated(unsafe)` storage narrowly scoped.
+- If mutable state has no proven serialization rule, use an actor or MainActor isolation instead.
 
 ### APIClient
 
@@ -159,11 +162,11 @@ struct APIClient: APIClientProtocol, Sendable {
 
 ```swift
 .task {
-    await viewModel.send(.viewAppeared)
+    viewModel.send(.viewAppeared)
 }
 
 .task(id: searchQuery) {
-    await viewModel.send(.searchChanged(searchQuery))
+    viewModel.send(.searchChanged(searchQuery))
 }
 ```
 
@@ -173,16 +176,17 @@ struct APIClient: APIClientProtocol, Sendable {
 ### When Unstructured `Task` is Acceptable
 
 ```swift
-// Fire-and-forget from synchronous context (e.g., button action)
+// Bridge to a genuinely async API from a synchronous action.
 Button("Send") {
     Task {
-        await viewModel.send(.sendTapped)
+        await asyncService.send()
     }
 }
 ```
 
-- Only when bridging sync → async (button actions, gestures)
-- The ViewModel handles the work; the Task is just the bridge
+- Only when bridging synchronous UI callbacks to genuinely async work.
+- Current ViewModel `send(_:)` methods are generally synchronous event entry points and launch owned work internally, so
+  views should call them directly rather than wrapping every event in `Task`.
 
 ### Avoid
 
@@ -234,12 +238,16 @@ store.filter { contact in
 
 ## `@unchecked Sendable` Policy
 
-**Only permitted when ALL of these are true:**
+Preferred immutable-wrapper case:
 
-1. The type wraps a proven thread-safe API (Apple docs confirm thread safety)
-2. All stored properties are immutable (`let`)
-3. A safety invariant comment is present immediately above the class declaration
-4. No better alternative exists (actor, struct, Mutex)
+1. The type wraps a proven thread-safe API.
+2. Stored dependencies are immutable (`let`).
+3. A safety invariant comment is present immediately above the declaration.
+4. No better checked alternative exists.
+
+Current code also has framework-observer exceptions with mutable callback tokens or metadata queries. For those, the
+comment must identify the actor/thread that owns every mutable property; narrowly scoped `nonisolated(unsafe)` may only
+express that documented framework constraint. `@unchecked Sendable` is never permission for unsynchronized mutation.
 
 ```swift
 // ✅ Correct: documented invariant
@@ -268,7 +276,8 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
 ## Testing and `@MainActor`
 
-With `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`, **all test classes must be `@MainActor`**:
+The test target does not set default actor isolation. **Every XCTest class must be explicitly `@MainActor`** to match the
+hosted app code and the existing suite:
 
 ```swift
 @MainActor
@@ -278,7 +287,7 @@ final class SomeViewModelTests: XCTestCase {
 }
 ```
 
-- **This is not a blanket fix** — it's required because the types under test are `@MainActor` by default
+- This is the project convention for all XCTest classes, including tests of otherwise nonisolated helpers.
 - Without `@MainActor`, the test can't access isolated properties/methods synchronously
 - All `setUp` / `tearDown` / test methods inherit the `@MainActor` isolation
 
@@ -297,7 +306,7 @@ final class SomeViewModelTests: XCTestCase {
 Before considering a concurrency fix complete:
 
 - [ ] The fix addresses the root cause, not just the symptom
-- [ ] `@MainActor` is only applied to genuinely UI-bound code
+- [ ] Explicit `@MainActor` is retained on ViewModels and XCTest classes; other annotations reflect actual isolation
 - [ ] Every `@unchecked Sendable` has a documented safety invariant
 - [ ] Structured concurrency is used where possible
 - [ ] Tests still pass with strict concurrency checking

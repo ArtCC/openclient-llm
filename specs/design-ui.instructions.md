@@ -88,7 +88,8 @@ view.glassEffect(.regular, in: .capsule)
 
 ### Availability Gating
 
-Always gate Liquid Glass with `#available` and provide a fallback:
+The app targets iOS 26 and macOS 26, so use Liquid Glass APIs directly. Add availability checks and a fallback only if a
+target's deployment version is lowered.
 
 ```swift
 if #available(iOS 26, *) {
@@ -125,27 +126,22 @@ When reviewing or adding Liquid Glass to a view, verify:
 - Custom colors should be high-contrast and accessible in both modes
 - Use `Color(.systemBackground)`, `Color(.secondarySystemBackground)` for surfaces
 
-### App Color Palette
+### Current App Assets
 
 > **App-Specific** — Adapt this palette for your project.
 
-All custom colors are defined in the Asset Catalog with Light and Dark variants:
+`Shared/Resources/Assets.xcassets` currently contains `AccentColor`, legacy chat colors (`UserBubble`,
+`UserBubbleText`, `AssistantBubble`, `AssistantBubbleText`, `CodeBlockBackground`), the app logo, and raster provider
+logos. Do not document exact RGB values unless they are verified from the asset catalog.
 
-| Color Name | Usage | Light | Dark |
-|---|---|---|---|
-| **AccentColor** | Buttons, links, active tab, tint | Teal Blue `#0A84FF` | Teal Blue `#64D2FF` |
-| **UserBubble** | User message bubble background | `#0A84FF` (accent) | `#0A4F8A` |
-| **UserBubbleText** | Text inside user message bubble | `#FFFFFF` | `#FFFFFF` |
-| **AssistantBubble** | Assistant message bubble background | `#E9E9EB` | `#2C2C2E` |
-| **AssistantBubbleText** | Text inside assistant message bubble | `#000000` (primary) | `#FFFFFF` (primary) |
-| **CodeBlockBackground** | Code block behind text | `#F2F2F7` | `#1C1C1E` |
-| **ErrorColor** | Error messages, failed states | System Red | System Red |
-| **SuccessColor** | Connection success, confirmations | System Green | System Green |
+Current chat UI primarily uses `Color.appAccent`, semantic foreground styles, tinted glass for the user bubble, no
+assistant bubble background, and `.ultraThinMaterial` for code blocks. Existing color assets do not imply every one is
+actively used.
 
 ### Usage Rules
 
 - **Accent color** is the only branded color — everything else uses system semantics
-- **Message bubbles**: User = accent-based (right-aligned), Assistant = neutral secondary (left-aligned)
+- **Message bubbles**: User = accent-tinted glass (right-aligned); Assistant = unboxed content (left-aligned)
 - **Surfaces**: Always `Color(.systemBackground)` and `Color(.secondarySystemBackground)` — never custom background colors
 - **Text**: Always `Color.primary` / `Color.secondary` except inside colored user bubbles (fixed white)
 - **Destructive actions**: Always `Color.red` (system) — never custom reds
@@ -153,14 +149,20 @@ All custom colors are defined in the Asset Catalog with Light and Dark variants:
 
 ## Typography
 
-- Use system fonts exclusively — `Font.body`, `Font.headline`, `Font.caption`, etc.
-- Support **Dynamic Type** — never use fixed font sizes
+- Use semantic system fonts for most UI.
+- Poppins is bundled under `Shared/Resources/Fonts` and exposed through `Font.poppins`. Current code uses it selectively
+  for onboarding display text, the chat greeting/model selector, and a conversation badge. Preserve that accent rather
+  than claiming the app is system-font-only.
+- Pair custom font sizes with `relativeTo:` so Dynamic Type can scale them. Fixed SF Symbol sizes are acceptable where
+  the icon has a constrained visual role.
 - Use `@ScaledMetric` for spacing that should scale with text size
 - Prefer `Text` view with system font styles over custom attributed strings
 
 ## Icons
 
-- Use **SF Symbols** for all icons — no custom icon assets unless absolutely necessary
+- Prefer SF Symbols for controls, navigation, status, and generic concepts.
+- The app intentionally uses custom image assets for its logo and model-provider branding. Do not replace recognizable
+  provider artwork with a generic SF Symbol merely to satisfy an all-SF-Symbol rule.
 - Apply symbol rendering modes: `.monochrome`, `.hierarchical`, `.palette`, `.multicolor`
 - Use symbol effects for animations: `.symbolEffect(.bounce)`, `.symbolEffect(.pulse)`
 - Prefer `.symbolVariant(.fill)` for selected/active states
@@ -296,6 +298,8 @@ Button("New Chat") { }
 - Use `matchedGeometryEffect` for shared element transitions
 - Keep animations fast (0.2-0.35s) — never block interaction
 - Avoid custom animations when a system component handles it natively
+- Preserve feature-specific motion instead of imposing one global transition: onboarding uses `.smooth` and springs,
+  input state changes use spring/push/opacity transitions, and chat messages currently insert with opacity only.
 
 ## App Navigation Structure
 
@@ -303,16 +307,19 @@ Button("New Chat") { }
 
 ### iOS / iPadOS
 
-- Root navigation: `TabView` with Liquid Glass (automatic on iOS 26+)
-- 3 tabs: **Chats** (`bubble.left.and.bubble.right`), **Models** (`cpu`), **Settings** (`gearshape`)
-- Each tab wraps its own `NavigationStack`
-- On iPadOS, the Chats tab can use `NavigationSplitView` for sidebar layout
-- Tab Bar is scalable — new tabs can be added in future phases
+- Root navigation is a `.sidebarAdaptable` `TabView` with four destinations.
+- **Chats** uses `bubble.left.and.bubble.right`.
+- **Models** uses `brain.head.profile`.
+- **Settings** uses `gearshape`.
+- **Search** uses `magnifyingglass` and `role: .search`.
+- Chats and Search own `NavigationStack` navigation. Models and Settings own their screen navigation as implemented.
+- iPadOS currently uses the same layout and SwiftUI's adaptive tab style; there is no separate Chats
+  `NavigationSplitView` implementation.
 
 ### macOS
 
 - Root navigation: `NavigationSplitView` with sidebar (no Tab Bar)
-- Sidebar shows conversations list + sections for Models and Settings
+- Sidebar shows Chats, Models, and Settings. Search is not a macOS sidebar destination.
 - Liquid Glass applies to sidebar and toolbar automatically
 
 ## App Flow
@@ -360,11 +367,11 @@ LaunchView
 
 > **App-Specific** — Adapt window sizes for your project.
 
-### Minimum Size
+### Current Size
 
-- Set minimum window size: **800×600 pt** (`minWidth: 800, minHeight: 600`)
-- Set default initial size: **1000×700 pt**
-- Apply via `.defaultSize()` and `.frame(minWidth:minHeight:)` on the `WindowGroup`
+- `LaunchView` has a minimum size of **800×600 pt**.
+- `WindowGroup(id: "main")` has a default size of **800×600 pt**.
+- The app does not currently apply `.windowResizability(.contentSize)`.
 
 ### Persist Window Size & Position
 
@@ -378,9 +385,9 @@ struct OpenClientApp: App {
     var body: some Scene {
         WindowGroup(id: "main") {
             LaunchView()
+                .frame(minWidth: 800, minHeight: 600)
         }
-        .defaultSize(width: 1000, height: 700)
-        .windowResizability(.contentSize)
+        .defaultSize(width: 800, height: 600)
     }
 }
 ```
@@ -396,7 +403,7 @@ Define standard toolbar actions per screen to keep the UI consistent:
 
 | Screen | Leading | Center / Title | Trailing |
 |---|---|---|---|
-| **Chats list** | — | "Chats" title | New Chat button (`plus.bubble`) |
+| **Chats list** | — | "Chats" title | New Chat menu (`square.and.pencil`), backup import/export actions |
 | **Chat detail** | Back (auto) | Model name (subtitle style) | Chat info/options (`ellipsis.circle`) |
 | **Models list** | — | "Models" title | Refresh button (`arrow.clockwise`) |
 | **Settings** | — | "Settings" title | — |
@@ -411,25 +418,29 @@ Define standard toolbar actions per screen to keep the UI consistent:
 
 ## Search
 
-- Use `.searchable()` modifier on lists that benefit from filtering:
-  - **Conversations list**: Filter by conversation title
-  - **Models list**: Filter models by name or provider
-- Search is **local filtering only** (client-side) — not a server-side search
-- Show `ContentUnavailableView.search` when no results match the query
-- Place `.searchable()` on the `NavigationStack` or `List` — SwiftUI handles placement automatically
+Current implementation:
+
+- iOS/iPadOS has a dedicated Search tab backed by `SearchConversationsView`.
+- It uses local conversation filtering through `ConversationListViewModel`, `.searchable`, and
+  `ContentUnavailableView.search` for no matches.
+- iOS places the field in an always-visible navigation bar drawer; macOS uses default searchable placement when this
+  shared view is presented.
+- The macOS conversation list also has its own toolbar search expansion.
+- `ModelsView` does not currently use `.searchable`; do not claim model search exists.
 
 ```swift
 NavigationStack {
-    List(filteredModels) { model in
-        ModelRow(model: model)
+    List(filteredConversations) { conversation in
+        ConversationRow(conversation: conversation)
     }
-    .searchable(text: $searchText, prompt: String(localized: "Search models"))
+    .searchable(text: $searchText, prompt: String(localized: "Search conversations..."))
 }
 ```
 
-## Toast Notifications
+## Toast Notifications (Preferred, Not Currently Centralized)
 
-For transient feedback (connection success, copy confirmation, non-critical errors), use custom toast banners.
+There is no current app-wide `ToastManager`/`ToastView` overlay. If a feature introduces centralized transient feedback,
+use the following design rather than assuming the sample below already exists.
 
 ### Design
 
@@ -581,7 +592,8 @@ ContentUnavailableView {
 ## Modals & Sheets
 
 - Use `.sheet()` for modal presentations (new chat, edit settings)
-- Use `.confirmationDialog()` for destructive action confirmation — never `alert()` with destructive buttons
+- Prefer `.confirmationDialog()` for contextual destructive actions. Existing Settings and conversation flows also use
+  `.alert`; preserve their behavior unless the task includes migrating that presentation.
 - Use `.popover()` on iPadOS/macOS for contextual options
 - Sheets should have a clear dismiss action (Cancel button or swipe down)
 - Sheets should not be full-screen on iPadOS/macOS — use `.presentationDetents()` to control height when appropriate
@@ -599,8 +611,10 @@ ContentUnavailableView {
 
 - Auto-scroll to the latest message when a new message arrives (both sent and received)
 - If the user has scrolled up to read history, do NOT auto-scroll — show a "Scroll to bottom" floating button instead
-- Use `ScrollViewReader` with `.scrollTo()` for programmatic scrolling
-- Animate scroll-to-bottom with `.smooth` animation
+- Use the current `ScrollPosition`, `.scrollPosition(_:)`, `onScrollGeometryChange`, and `onScrollPhaseChange` approach.
+- `ScrollTriggerModifier` owns programmatic top, bottom, favourite-message, and streaming scroll triggers.
+- Preserve the user's position while they interact; current code disables auto-scroll during interaction and exposes
+  top/bottom glass buttons when away from an edge.
 
 ### List Scroll
 
@@ -624,12 +638,14 @@ ContentUnavailableView {
 ## Chat UI Patterns
 
 - **Message bubbles**: Rounded rectangles, different alignment/color for user vs assistant
-- **Streaming indicator**: Animated cursor or typing indicator while receiving tokens
+- **Streaming indicator**: A blinking `█` cursor after content begins; a pulsing localized "Thinking..." label appears
+  while streaming has started but both answer and reasoning content are empty
 - **Input area**: Text field with send button, anchored to bottom with keyboard avoidance
 - **Scroll behavior**: Auto-scroll to latest message, allow manual scroll to history
-- **Code blocks**: Monospaced font, syntax-highlighted background, copy button
+- **Code blocks**: Implemented as horizontally scrolling monospaced text with language/"Code" header, material
+  background, and a copy button. Syntax coloring is not currently implemented.
 - **Markdown rendering**: Render assistant messages as Markdown (bold, italic, lists, links, code)
-- **Timestamps**: Show message time subtly (secondary color, caption font) — not on every message, use grouping
+- **Timestamps**: Not currently shown in chat message rows; token usage is optional completed-message metadata
 - **Copy message**: Long press or context menu to copy full message text
 
 > For detailed chat UI implementation patterns, see `chat-visual-style.instructions.md`.
@@ -642,7 +658,7 @@ The following sections in this document contain project-specific configuration f
 
 | Section | What to adapt |
 |---|---|
-| **App Color Palette** | Custom color definitions (bubble colors, code block background) |
+| **Current App Assets** | Accent, legacy chat colors, logo/provider images, and their actual use |
 | **App Navigation Structure** | Specific tabs, sidebar sections, navigation hierarchy |
 | **App Flow** | Entry point routing, onboarding steps, screen flow |
 | **macOS Window** | Window sizes and resizability |

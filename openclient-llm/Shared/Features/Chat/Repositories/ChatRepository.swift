@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import PDFKit
 
 protocol ChatRepositoryProtocol: Sendable {
     func sendMessage(
@@ -263,7 +262,7 @@ private extension ChatRepository {
                 let base64 = data.base64EncodedString()
                 parts.append(.imageBase64(base64, mimeType: attachment.mimeType))
             case .pdf:
-                let pdfText = extractPDFText(from: data)
+                let pdfText = PDFTextExtractor.extract(from: data)
                 if !pdfText.isEmpty {
                     parts.append(.text("[Document: \(attachment.fileName)]\n\(pdfText)"))
                 }
@@ -274,21 +273,6 @@ private extension ChatRepository {
             role: message.role.rawValue,
             content: .multimodal(parts)
         )
-    }
-
-    func extractPDFText(from data: Data) -> String {
-        guard let pdfDocument = PDFDocument(data: data) else { return "" }
-        var fullText = ""
-        let pageCount = min(pdfDocument.pageCount, Self.maximumPDFPages)
-        for pageIndex in 0..<pageCount {
-            if let page = pdfDocument.page(at: pageIndex),
-               let pageText = page.string {
-                let remainingCharacterCount = Self.maximumPDFCharacters - fullText.count
-                guard remainingCharacterCount > 0 else { break }
-                fullText += String(pageText.prefix(remainingCharacterCount)) + "\n"
-            }
-        }
-        return fullText
     }
 
     func imageData(from dataURL: String) -> Data? {
@@ -302,6 +286,4 @@ private extension ChatRepository {
 
 private extension ChatRepository {
     static let maximumImageBytes = 5_000_000
-    static let maximumPDFPages = 20
-    static let maximumPDFCharacters = 100_000
 }
