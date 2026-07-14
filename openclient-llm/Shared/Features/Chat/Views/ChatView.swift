@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import TipKit
 #if canImport(UIKit)
 import SwiftUI
 #endif
@@ -14,7 +15,7 @@ import SwiftUI
 struct ChatView: View {
     // MARK: - Properties
 
-    @State private var viewModel: ChatViewModel
+    @State var viewModel: ChatViewModel
     @State private var inputText: String = ""
     @State private var shouldAutoScroll: Bool = true
     @State private var isNearBottom: Bool = true
@@ -30,8 +31,8 @@ struct ChatView: View {
     @State private var showDocumentPicker: Bool = false
     @State private var showCameraPicker: Bool = false
     @State private var showImageFilePicker: Bool = false
-    @State private var editingMessage: ChatMessage?
-    @State private var editingMessageText: String = ""
+    @State var editingMessage: ChatMessage?
+    @State var editingMessageText: String = ""
 
     var conversation: Conversation?
     var isPrivateChat: Bool
@@ -107,6 +108,7 @@ private extension ChatView {
                     Image(systemName: "ellipsis.circle")
                 }
                 .accessibilityLabel(String(localized: "More Options"))
+                .popoverTip(chatOptionsTip)
             }
         }
         .sheet(isPresented: $showSystemPromptSheet) {
@@ -208,6 +210,7 @@ private extension ChatView {
                         Image(systemName: "ellipsis.circle")
                     }
                     .accessibilityLabel(String(localized: "More Options"))
+                    .popoverTip(chatOptionsTip)
                 }
             }
             .sheet(isPresented: $showSystemPromptSheet) {
@@ -287,6 +290,12 @@ private extension ChatView {
                     attachmentPreview(loadedState, send: { viewModel.send($0) })
                     if let usage = loadedState.contextUsage {
                         ChatContextUsageView(usage: usage)
+                            .popoverTip(
+                                usage.percentage >= 50 && !loadedState.isStreaming
+                                ? AppTips.contextUsage
+                                : nil,
+                                arrowEdge: .bottom
+                            )
                             .padding(.horizontal, 24)
                             .padding(.bottom, 2)
                     }
@@ -309,7 +318,10 @@ private extension ChatView {
             }
             .modifier(ChatDropModifier(
                 onText: { viewModel.send(.inputChanged($0)) },
-                onAttachment: { viewModel.send(.attachmentAdded(data: $0, fileName: $1, type: $2)) }
+                onAttachment: {
+                    AppTips.chatAttachments.invalidate(reason: .actionPerformed)
+                    viewModel.send(.attachmentAdded(data: $0, fileName: $1, type: $2))
+                }
             ))
     }
 
@@ -392,48 +404,6 @@ private extension ChatView {
 #endif
     }
 
-    func messagesList(
-        _ loadedState: ChatViewModel.LoadedState
-    ) -> some View {
-        LazyVStack(spacing: 16) {
-            ForEach(loadedState.messages) { message in
-                let isLast = message.id == loadedState.messages.last?.id
-                MessageBubbleView(
-                    message: message,
-                    isStreaming: loadedState.isStreaming && isLast,
-                    isSpeaking: loadedState.speakingMessageId == message.id,
-                    hasTTS: loadedState.ttsModelId != nil,
-                    showTokenUsage: loadedState.showTokenUsage,
-                    isLastMessage: isLast,
-                    onSpeakTapped: {
-                        viewModel.send(.speakMessageTapped(message))
-                    },
-                    onStopSpeakingTapped: {
-                        viewModel.send(.stopSpeakingTapped)
-                    },
-                    onEditTapped: message.role == .user ? {
-                        editingMessage = message
-                        editingMessageText = message.content
-                    } : nil,
-                    onRegenerateTapped: (message.role == .assistant && isLast) ? {
-                        viewModel.send(.regenerateLastResponse)
-                    } : nil,
-                    onForkTapped: loadedState.conversation != nil ? {
-                        viewModel.send(.forkFromMessage(message.id))
-                    } : nil,
-                    onFavouriteTapped: {
-                        viewModel.send(.toggleFavourite(message.id))
-                    }
-                )
-                .id(message.id)
-                .transition(.opacity)
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.bottom, 15)
-        .frame(maxWidth: .infinity)
-    }
-
     // MARK: - Menu Content
 
     @ViewBuilder
@@ -447,24 +417,39 @@ private extension ChatView {
                         Label(action.title, systemImage: action.systemImage)
                     }
                 } else {
-                    Button { viewModel.send(.exportConversation) } label: {
+                    Button {
+                        AppTips.chatOptions.invalidate(reason: .actionPerformed)
+                        viewModel.send(.exportConversation)
+                    } label: {
                         Label(action.title, systemImage: action.systemImage)
                     }
                 }
             case .favourites:
-                Button { showFavouritesSheet = true } label: {
+                Button {
+                    AppTips.chatOptions.invalidate(reason: .actionPerformed)
+                    showFavouritesSheet = true
+                } label: {
                     Label(action.title, systemImage: action.systemImage)
                 }
             case .mediaFiles:
-                Button { showMediaGallery = true } label: {
+                Button {
+                    AppTips.chatOptions.invalidate(reason: .actionPerformed)
+                    showMediaGallery = true
+                } label: {
                     Label(action.title, systemImage: action.systemImage)
                 }
             case .modelParameters:
-                Button { showModelParametersSheet = true } label: {
+                Button {
+                    AppTips.chatOptions.invalidate(reason: .actionPerformed)
+                    showModelParametersSheet = true
+                } label: {
                     Label(action.title, systemImage: action.systemImage)
                 }
             case .systemPrompt:
-                Button { showSystemPromptSheet = true } label: {
+                Button {
+                    AppTips.chatOptions.invalidate(reason: .actionPerformed)
+                    showSystemPromptSheet = true
+                } label: {
                     Label(action.title, systemImage: action.systemImage)
                 }
             }
@@ -486,6 +471,17 @@ private extension ChatView {
         .padding(.trailing, 16)
         .padding(isTop ? .top : .bottom, 16)
         .transition(.scale(scale: 0.8).combined(with: .opacity))
+    }
+
+    // MARK: - Tips
+
+    var chatOptionsTip: ChatOptionsTip? {
+        guard case .loaded(let loadedState) = viewModel.state,
+              loadedState.conversation != nil,
+              !loadedState.isStreaming else {
+            return nil
+        }
+        return AppTips.chatOptions
     }
 
 }

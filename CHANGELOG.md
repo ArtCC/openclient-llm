@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [Unreleased]
+
+### Added
+
+- **Contextual feature tips** — native TipKit popovers explain model selection, attachments, message actions, web search, chat options, Private Chat, context usage, memory, and conversation organization without adding actions inside the tips
+- **Tip discovery controls** — tips appear only when their related feature is available, are invalidated after use, respect a daily global frequency, and can be enabled again from Help
+
 ## [1.4.5-build-58] - 2026-07-14
 
 ### Added

@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import TipKit
 #if canImport(UIKit)
 import SwiftUI
 #elseif canImport(AppKit)
@@ -22,6 +23,7 @@ struct MessageBubbleView: View {
     var hasTTS: Bool = false
     var showTokenUsage: Bool = true
     var isLastMessage: Bool = false
+    var showsMessageActionsTip: Bool = false
     var onSpeakTapped: (() -> Void)?
     var onStopSpeakingTapped: (() -> Void)?
     var onEditTapped: (() -> Void)?
@@ -42,6 +44,11 @@ struct MessageBubbleView: View {
             userMessageLayout
         case .assistant, .system:
             assistantMessageLayout
+                .popoverTip(
+                    showsMessageActionsTip
+                    ? AppTips.messageActions
+                    : nil
+                )
         case .tool:
             EmptyView()
         }
@@ -213,7 +220,35 @@ private extension MessageBubbleView {
 
     @ViewBuilder
     func messageContextMenu(_ content: String) -> some View {
+        commonMessageActions(content)
+
+        if message.role == .user, let onEditTapped {
+            Divider()
+            Button {
+                AppTips.messageActions.invalidate(reason: .actionPerformed)
+                onEditTapped()
+            } label: {
+                Label(String(localized: "Edit & Resend"), systemImage: "pencil")
+            }
+        }
+
+        if message.role == .assistant, isLastMessage, !isStreaming, let onRegenerateTapped {
+            Divider()
+            Button {
+                AppTips.messageActions.invalidate(reason: .actionPerformed)
+                onRegenerateTapped()
+            } label: {
+                Label(String(localized: "Regenerate Response"), systemImage: "arrow.clockwise")
+            }
+        }
+
+        additionalMessageActions
+    }
+
+    @ViewBuilder
+    func commonMessageActions(_ content: String) -> some View {
         Button {
+            AppTips.messageActions.invalidate(reason: .actionPerformed)
             copyToClipboard(content)
         } label: {
             Label(String(localized: "Copy"), systemImage: "doc.on.doc")
@@ -226,27 +261,13 @@ private extension MessageBubbleView {
         ) {
             Label(String(localized: "Share"), systemImage: "square.and.arrow.up")
         }
+    }
 
-        if message.role == .user, let onEditTapped {
-            Divider()
-            Button {
-                onEditTapped()
-            } label: {
-                Label(String(localized: "Edit & Resend"), systemImage: "pencil")
-            }
-        }
-
-        if message.role == .assistant, isLastMessage, !isStreaming, let onRegenerateTapped {
-            Divider()
-            Button {
-                onRegenerateTapped()
-            } label: {
-                Label(String(localized: "Regenerate Response"), systemImage: "arrow.clockwise")
-            }
-        }
-
+    @ViewBuilder
+    var additionalMessageActions: some View {
         if let onForkTapped {
             Button {
+                AppTips.messageActions.invalidate(reason: .actionPerformed)
                 onForkTapped()
             } label: {
                 Label(String(localized: "Fork from here"), systemImage: "arrow.branch")
@@ -256,6 +277,7 @@ private extension MessageBubbleView {
         if let onFavouriteTapped {
             Divider()
             Button {
+                AppTips.messageActions.invalidate(reason: .actionPerformed)
                 onFavouriteTapped()
             } label: {
                 Label(

@@ -14,6 +14,12 @@ struct OpenClientApp: App {
 
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
+    // MARK: - Init
+
+    init() {
+        AppTips.configure()
+    }
+
     // MARK: - View
 
     var body: some Scene {

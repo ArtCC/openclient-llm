@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 // MARK: - Model Selector
 
@@ -18,6 +19,7 @@ extension ChatView {
             Menu {
                 ForEach(loadedState.availableModels) { model in
                     Button {
+                        AppTips.modelSelector.invalidate(reason: .actionPerformed)
                         viewModel.send(.modelSelected(model))
                     } label: {
                         HStack {
@@ -44,6 +46,7 @@ extension ChatView {
                         .foregroundStyle(.secondary)
                 }
             }
+            .popoverTip(loadedState.availableModels.count > 1 ? AppTips.modelSelector : nil)
         }
     }
 }
