@@ -304,8 +304,11 @@ private extension ConversationListViewModel {
     func applySearchFilter(_ loadedState: inout LoadedState) {
         var base = loadedState.conversations
 
-        if let tag = loadedState.activeTagFilter {
+        if let tag = loadedState.activeTagFilter,
+           loadedState.conversations.contains(where: { $0.tags.contains(tag) }) {
             base = base.filter { $0.tags.contains(tag) }
+        } else {
+            loadedState.activeTagFilter = nil
         }
 
         let query = loadedState.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()

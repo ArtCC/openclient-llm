@@ -120,4 +120,26 @@ extension ConversationListViewModelTests {
         XCTAssertEqual(loadedState.filteredConversations.count, 2)
         XCTAssertNil(loadedState.activeTagFilter)
     }
+
+    func test_send_tagsUpdated_removingLastActiveTag_clearsFilter() async throws {
+        // Given
+        let conv1 = Conversation(title: "Swift Chat", modelId: "gpt-4", tags: ["swift"])
+        let conv2 = Conversation(title: "AI Chat", modelId: "gpt-4", tags: ["ai"])
+        mockLoadConversations.result = .success([conv1, conv2])
+        mockFetchModels.result = .success([])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+        sut.send(.tagFilterChanged("swift"))
+
+        // When
+        sut.send(.tagsUpdated(conv1.id, []))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertNil(loadedState.activeTagFilter)
+        XCTAssertEqual(loadedState.filteredConversations.count, 2)
+    }
 }
