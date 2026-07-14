@@ -7,19 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [Unreleased]
-
-### Added
-
-- **Contextual feature tips** — native TipKit popovers explain model selection, attachments, message actions, web search, chat options, Private Chat, context usage, memory, and conversation organization without adding actions inside the tips
-- **Tip discovery controls** — tips appear only when their related feature is available, are invalidated after use, respect an hourly global frequency, and can be enabled again from Help
-
-### Changed
-
-- **Reasoning disclosure behavior** — active reasoning opens automatically, collapses when the answer begins or streaming ends, respects manual changes during the current response, and starts closed when reopening a chat
-- **Launch presentation** — keeps the launch state visible for a short minimum duration before presenting onboarding or the main interface
-
-## [1.4.5-build-58] - 2026-07-14
+## [1.4.5-build-59] - 2026-07-15
 
 ### Added
 
@@ -28,11 +16,15 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - **Context usage indicator** — shows estimated input tokens, compacted and excluded messages, the model context limit, and usage percentage above the chat composer
 - **Manual context window** — configure a per-conversation context limit for OpenAI-compatible servers that do not expose LiteLLM model metadata
 - **Conversation compaction** — preserves long chats by incrementally summarizing older context while retaining the complete visible and exportable transcript
+- **Contextual feature tips** — native TipKit popovers explain model selection, attachments, message actions, web search, chat options, Private Chat, context usage, memory, and conversation organization without adding actions inside the tips
+- **Tip discovery controls** — tips appear only when their related feature is available, are invalidated after use, respect an hourly global frequency, and can be enabled again from Help
 
 ### Changed
 
 - **Context-aware chat requests** — replaced the fixed 50-message limit with a budget based on available context, the effective system prompt, tools, a bounded safety margin, and recent complete conversation turns
 - **Agent context safeguards** — cap iterations, tool calls, and tool-result size so agent workflows retain room for a final response
+- **Reasoning disclosure behavior** — active reasoning opens automatically, collapses when the answer begins or streaming ends, respects manual changes during the current response, and starts closed when reopening a chat
+- **Launch presentation** — keeps the launch state visible for a short minimum duration before presenting onboarding or the main interface
 
 ### Fixed
 
