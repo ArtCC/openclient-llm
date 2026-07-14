@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 extension ConversationListView {
     // MARK: - New Chat Menu
@@ -20,6 +21,7 @@ extension ConversationListView {
         .help(String(localized: "New Chat"))
         .accessibilityLabel(String(localized: "New Chat"))
         .menuOrder(.fixed)
+        .popoverTip(canShowPrivateChatTip ? AppTips.privateChat : nil)
     }
 
     var newChatEmptyStateMenu: some View {
@@ -29,6 +31,11 @@ extension ConversationListView {
             Text(String(localized: "New Chat"))
         }
         .menuOrder(.fixed)
+    }
+
+    var canShowPrivateChatTip: Bool {
+        guard case .loaded(let loadedState) = viewModel.state else { return false }
+        return !loadedState.conversations.isEmpty
     }
 
     @ViewBuilder
@@ -41,6 +48,7 @@ extension ConversationListView {
         .keyboardShortcut("n", modifiers: .command)
 
         Button {
+            AppTips.privateChat.invalidate(reason: .actionPerformed)
             onPrivateChatSelected()
         } label: {
             Label(String(localized: "New Private Chat"), systemImage: "lock.fill")

@@ -19,7 +19,7 @@ struct LaunchView: View {
         Group {
             switch viewModel.state {
             case .loading:
-                ProgressView()
+                AppSplashView(showsLoadingIndicator: true)
             case .onboarding:
                 OnboardingView {
                     withAnimation(.smooth) {

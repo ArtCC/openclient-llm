@@ -20,6 +20,12 @@ struct OpenClientApp: App {
 
     private let settingsManager: SettingsManagerProtocol = SettingsManager()
 
+    // MARK: - Init
+
+    init() {
+        AppTips.configure()
+    }
+
     // MARK: - View
 
     var body: some Scene {

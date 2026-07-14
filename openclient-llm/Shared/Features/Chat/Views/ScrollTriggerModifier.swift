@@ -12,11 +12,12 @@ import SwiftUI
 #endif
 
 struct ScrollTriggerModifier: ViewModifier {
-    let loadedState: ChatViewModel.LoadedState
     @Binding var scrollPosition: ScrollPosition
     @Binding var isScrollThrottled: Bool
     @Binding var scrollToMessageId: UUID?
     @Binding var shouldAutoScroll: Bool
+
+    let loadedState: ChatViewModel.LoadedState
     let isNearBottom: Bool
 
     func body(content: Content) -> some View {
@@ -44,12 +45,11 @@ struct ScrollTriggerModifier: ViewModifier {
                 }
                 scrollToMessageId = nil
             }
-            .task(id: loadedState.conversation?.id) {
-                guard !loadedState.messages.isEmpty else { return }
-                try? await Task.sleep(for: .milliseconds(120))
-                guard !Task.isCancelled else { return }
-                scrollPosition.scrollTo(edge: .bottom)
-            }
+            .modifier(InitialChatScrollModifier(
+                scrollPosition: $scrollPosition,
+                shouldAutoScroll: $shouldAutoScroll,
+                loadedState: loadedState
+            ))
 #if os(iOS)
             .onReceive(
                 NotificationCenter.default.publisher(
@@ -66,5 +66,36 @@ struct ScrollTriggerModifier: ViewModifier {
                 }
             }
 #endif
+    }
+}
+
+private struct InitialChatScrollModifier: ViewModifier {
+    @Binding var scrollPosition: ScrollPosition
+    @Binding var shouldAutoScroll: Bool
+
+    let loadedState: ChatViewModel.LoadedState
+
+    func body(content: Content) -> some View {
+        content
+            .onScrollGeometryChange(for: CGFloat.self) {
+                $0.contentSize.height
+            } action: { oldHeight, newHeight in
+                guard newHeight > oldHeight, shouldAutoScroll else { return }
+                Task { @MainActor in
+                    await Task.yield()
+                    guard shouldAutoScroll else { return }
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        scrollPosition.scrollTo(edge: .bottom)
+                    }
+                }
+            }
+            .task(id: loadedState.conversation?.id) {
+                guard !loadedState.messages.isEmpty else { return }
+                try? await Task.sleep(for: .milliseconds(500))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    scrollPosition.scrollTo(edge: .bottom)
+                }
+            }
     }
 }

@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import TipKit
 import UniformTypeIdentifiers
 
 struct ConversationListView: View {
@@ -22,6 +23,7 @@ struct ConversationListView: View {
     @State var isShowingBackupImporter = false
     @State private var isShowingBackupExporter = false
     @State private var backupFileDocument: ConversationBackupFileDocument?
+    let settingsManager: SettingsManagerProtocol = SettingsManager()
 
 #if os(macOS)
     @State var isMacSearchExpanded = false
@@ -201,6 +203,9 @@ private extension ConversationListView {
             macToolbarItems
 #endif
         }
+        .onChange(of: loadedState.conversations.count, initial: true) { _, count in
+            updateMemoryTipEligibility(conversationCount: count)
+        }
     }
 
     var noTagResults: some View {
@@ -236,6 +241,7 @@ private extension ConversationListView {
                             .contextMenu {
                                 conversationContextMenu(conversation)
                             }
+                            .popoverTip(organizationTip(for: conversation, loadedState: loadedState))
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button {
                                     conversationToDelete = conversation
@@ -250,10 +256,8 @@ private extension ConversationListView {
                 }
             }
         }
-#if os(macOS)
         .listStyle(.plain)
-#else
-        .listStyle(.plain)
+#if os(iOS)
         .refreshable {
             await viewModel.refreshAsync()
         }
@@ -263,6 +267,7 @@ private extension ConversationListView {
     @ViewBuilder
     func conversationContextMenu(_ conversation: Conversation) -> some View {
         Button {
+            AppTips.conversationOrganization.invalidate(reason: .actionPerformed)
             viewModel.send(.pinToggled(conversation.id))
         } label: {
             Label(
@@ -272,6 +277,7 @@ private extension ConversationListView {
         }
 
         Button {
+            AppTips.conversationOrganization.invalidate(reason: .actionPerformed)
             renameText = conversationTitle(conversation)
             renamingConversation = conversation
         } label: {
@@ -279,6 +285,7 @@ private extension ConversationListView {
         }
 
         Button {
+            AppTips.conversationOrganization.invalidate(reason: .actionPerformed)
             editingTagsConversation = conversation
         } label: {
             Label(String(localized: "Edit Tags"), systemImage: "tag")
@@ -293,6 +300,7 @@ private extension ConversationListView {
         Divider()
 
         Button(role: .destructive) {
+            AppTips.conversationOrganization.invalidate(reason: .actionPerformed)
             conversationToDelete = conversation
         } label: {
             Label(String(localized: "Delete"), systemImage: "trash")
@@ -463,20 +471,6 @@ private extension ConversationListView {
         .background(tag.color.displayColor.opacity(0.12), in: .capsule)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: "\(tag.name), \(tag.color.localizedName)"))
-    }
-
-    func formattedDate(_ date: Date) -> String {
-        let calendar = Calendar.current
-
-        if calendar.isDateInToday(date) {
-            return date.formatted(date: .omitted, time: .shortened)
-        } else if calendar.isDateInYesterday(date) {
-            return String(localized: "Yesterday")
-        } else if let daysAgo = calendar.dateComponents([.day], from: date, to: .now).day, daysAgo < 7 {
-            return date.formatted(.dateTime.weekday(.wide))
-        } else {
-            return date.formatted(date: .abbreviated, time: .omitted)
-        }
     }
 
     @ViewBuilder

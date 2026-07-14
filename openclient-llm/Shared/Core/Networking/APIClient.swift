@@ -168,7 +168,7 @@ struct APIClient: APIClientProtocol, Sendable {
         let boundary = UUID().uuidString
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.timeoutInterval = 120
+        request.timeoutInterval = 125
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
         let apiKey = settingsManager.getAPIKey()

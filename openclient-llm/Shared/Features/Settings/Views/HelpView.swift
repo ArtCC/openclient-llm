@@ -9,6 +9,10 @@
 import SwiftUI
 
 struct HelpView: View {
+    // MARK: - Properties
+
+    @State private var didResetTips = false
+
     // MARK: - View
 
     var body: some View {
@@ -33,10 +37,16 @@ private extension HelpView {
             shareExtensionSection
             urlSchemeSection
             shortcutsSection
+            featureTipsSection
         }
 #if os(macOS)
         .listStyle(.inset)
 #endif
+        .alert(String(localized: "Feature Tips Reset"), isPresented: $didResetTips) {
+            Button(String(localized: "OK"), role: .cancel) {}
+        } message: {
+            Text(String(localized: "Feature tips can appear again when their conditions are met."))
+        }
     }
 
     // MARK: - Share Extension
@@ -149,6 +159,25 @@ private extension HelpView {
             .padding(.vertical, 4)
         } header: {
             Label(String(localized: "Apple Shortcuts"), systemImage: "arrow.trianglehead.branch")
+        }
+    }
+
+    // MARK: - Feature Tips
+
+    var featureTipsSection: some View {
+        Section {
+            Button {
+                Task {
+                    await AppTips.resetEligibility()
+                    didResetTips = true
+                }
+            } label: {
+                Label(String(localized: "Show Feature Tips Again"), systemImage: "lightbulb")
+            }
+        } header: {
+            Label(String(localized: "Feature Tips"), systemImage: "lightbulb.max")
+        } footer: {
+            Text(String(localized: "Tips appear only when their related features are available."))
         }
     }
 
