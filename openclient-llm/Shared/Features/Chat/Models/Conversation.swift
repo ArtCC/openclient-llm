@@ -38,7 +38,7 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
     var messages: [ChatMessage]
     var modelParameters: ModelParameters
     var isPinned: Bool
-    var tags: [String]
+    var tags: [ConversationTag]
     var parentConversationId: UUID?
     var branchedFromMessageId: UUID?
     let createdAt: Date
@@ -57,7 +57,7 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         messages: [ChatMessage] = [],
         modelParameters: ModelParameters = .default,
         isPinned: Bool = false,
-        tags: [String] = [],
+        tags: [ConversationTag] = [],
         parentConversationId: UUID? = nil,
         branchedFromMessageId: UUID? = nil,
         createdAt: Date = Date(),
@@ -92,11 +92,36 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         messages = try container.decode([ChatMessage].self, forKey: .messages)
         modelParameters = try container.decodeIfPresent(ModelParameters.self, forKey: .modelParameters) ?? .default
         isPinned = try container.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
-        tags = try container.decodeIfPresent([String].self, forKey: .tags) ?? []
+        let tagNames = try container.decodeIfPresent([String].self, forKey: .tags) ?? []
+        let tagColors = try container.decodeIfPresent([String: TagColor].self, forKey: .tagColors) ?? [:]
+        tags = tagNames.map { ConversationTag(name: $0, color: tagColors[$0] ?? .orange) }
         parentConversationId = try container.decodeIfPresent(UUID.self, forKey: .parentConversationId)
         branchedFromMessageId = try container.decodeIfPresent(UUID.self, forKey: .branchedFromMessageId)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(title, forKey: .title)
+        try container.encode(modelId, forKey: .modelId)
+        try container.encode(systemPrompt, forKey: .systemPrompt)
+        try container.encodeIfPresent(contextWindowTokens, forKey: .contextWindowTokens)
+        try container.encodeIfPresent(contextSummary, forKey: .contextSummary)
+        try container.encodeIfPresent(contextSummaryCursorMessageId, forKey: .contextSummaryCursorMessageId)
+        try container.encode(messages, forKey: .messages)
+        try container.encode(modelParameters, forKey: .modelParameters)
+        try container.encode(isPinned, forKey: .isPinned)
+        try container.encode(tags.map(\.name), forKey: .tags)
+        let tagColors = tags.reduce(into: [String: TagColor]()) { colors, tag in
+            colors[tag.name] = tag.color
+        }
+        try container.encode(tagColors, forKey: .tagColors)
+        try container.encodeIfPresent(parentConversationId, forKey: .parentConversationId)
+        try container.encodeIfPresent(branchedFromMessageId, forKey: .branchedFromMessageId)
+        try container.encode(createdAt, forKey: .createdAt)
+        try container.encode(updatedAt, forKey: .updatedAt)
     }
 
     // MARK: - Computed
@@ -132,5 +157,26 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
                 throw ConversationContextMetadataError.invalidSummaryCursor
             }
         }
+    }
+}
+
+private extension Conversation {
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case modelId
+        case systemPrompt
+        case contextWindowTokens
+        case contextSummary
+        case contextSummaryCursorMessageId
+        case messages
+        case modelParameters
+        case isPinned
+        case tags
+        case tagColors
+        case parentConversationId
+        case branchedFromMessageId
+        case createdAt
+        case updatedAt
     }
 }

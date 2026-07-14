@@ -24,7 +24,7 @@ final class ConversationListViewModel {
         static func conversationTapped(_ conversation: Conversation) -> Self { .conversation(.tapped(conversation)) }
         static func deleteConversation(_ id: UUID) -> Self { .conversation(.deleted(id)) }
         static func pinToggled(_ id: UUID) -> Self { .conversation(.pinToggled(id)) }
-        static func tagsUpdated(_ id: UUID, _ tags: [String]) -> Self { .conversation(.tagsUpdated(id, tags)) }
+        static func tagsUpdated(_ id: UUID, _ tags: [ConversationTag]) -> Self { .conversation(.tagsUpdated(id, tags)) }
         static func titleEdited(_ id: UUID, _ title: String) -> Self { .conversation(.titleEdited(id, title)) }
         static func searchChanged(_ query: String) -> Self { .filter(.searchChanged(query)) }
         static func tagFilterChanged(_ tag: String?) -> Self { .filter(.tagChanged(tag)) }
@@ -41,7 +41,7 @@ final class ConversationListViewModel {
         case tapped(Conversation)
         case deleted(UUID)
         case pinToggled(UUID)
-        case tagsUpdated(UUID, [String])
+        case tagsUpdated(UUID, [ConversationTag])
         case titleEdited(UUID, String)
     }
 
@@ -76,9 +76,12 @@ final class ConversationListViewModel {
         var backupData: Data?
         var importResult: ImportConversationsResult?
 
-        var allTags: [String] {
-            let tagSet = conversations.flatMap(\.tags)
-            return Array(Set(tagSet)).sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+        var allTags: [ConversationTag] {
+            let tags = Dictionary(conversations.flatMap(\.tags).map { ($0.name, $0) },
+                                  uniquingKeysWith: { first, _ in first }).values
+            return tags.sorted {
+                $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+            }
         }
 
         var groupedConversations: [ConversationSection] {
@@ -304,8 +307,11 @@ private extension ConversationListViewModel {
     func applySearchFilter(_ loadedState: inout LoadedState) {
         var base = loadedState.conversations
 
-        if let tag = loadedState.activeTagFilter {
-            base = base.filter { $0.tags.contains(tag) }
+        if let tag = loadedState.activeTagFilter,
+           loadedState.conversations.contains(where: { $0.tags.contains(where: { $0.name == tag }) }) {
+            base = base.filter { $0.tags.contains(where: { $0.name == tag }) }
+        } else {
+            loadedState.activeTagFilter = nil
         }
 
         let query = loadedState.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -340,12 +346,12 @@ private extension ConversationListViewModel {
         }
     }
 
-    func updateTags(_ id: UUID, tags: [String]) {
+    func updateTags(_ id: UUID, tags: [ConversationTag]) {
         guard case .loaded(var loadedState) = state else { return }
         guard let index = loadedState.conversations.firstIndex(where: { $0.id == id }) else { return }
         do {
-            try updateConversationTagsUseCase.execute(id, tags: tags)
-            loadedState.conversations[index].tags = tags
+            let savedTags = try updateConversationTagsUseCase.execute(id, tags: tags)
+            loadedState.conversations[index].tags = savedTags
             applySearchFilter(&loadedState)
             state = .loaded(loadedState)
         } catch {

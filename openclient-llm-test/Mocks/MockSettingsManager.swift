@@ -27,6 +27,7 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     var webSearchMaxResults: Int = 10
     var availableSearchTools: [SearchToolItem] = []
     var isPrivacyScreenEnabled: Bool = true
+    var hasEnoughConversationsForMemoryTip: Bool = false
     var deleteAllCalled: Bool = false
 
     // MARK: - Public
@@ -143,6 +144,14 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         isPrivacyScreenEnabled = value
     }
 
+    func getHasEnoughConversationsForMemoryTip() -> Bool {
+        hasEnoughConversationsForMemoryTip
+    }
+
+    func setHasEnoughConversationsForMemoryTip(_ value: Bool) {
+        hasEnoughConversationsForMemoryTip = value
+    }
+
     func deleteAll() {
         isOnboardingCompleted = false
         serverBaseURL = ""
@@ -151,6 +160,7 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         selectedTTSModelId = nil
         selectedSTTModelId = nil
         ttsVoices = [:]
+        hasEnoughConversationsForMemoryTip = false
         deleteAllCalled = true
     }
 }

@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import TipKit
 
 struct ChatInputBarView: View {
     // MARK: - Properties
@@ -200,6 +201,7 @@ private extension ChatInputBarView {
         Menu {
 #if os(iOS)
             Button {
+                AppTips.chatAttachments.invalidate(reason: .actionPerformed)
                 showCameraPicker = true
             } label: {
                 Label(String(localized: "Camera"), systemImage: "camera")
@@ -207,18 +209,21 @@ private extension ChatInputBarView {
 #endif
 #if os(macOS)
             Button {
+                AppTips.chatAttachments.invalidate(reason: .actionPerformed)
                 showImageFilePicker = true
             } label: {
                 Label(String(localized: "Image File..."), systemImage: "photo.badge.plus")
             }
 #endif
             Button {
+                AppTips.chatAttachments.invalidate(reason: .actionPerformed)
                 showDocumentPicker = true
             } label: {
                 Label(String(localized: "Document"), systemImage: "doc")
             }
 
             Button {
+                AppTips.chatAttachments.invalidate(reason: .actionPerformed)
                 showImagePicker = true
             } label: {
                 Label(String(localized: "Photo Library"), systemImage: "photo.on.rectangle")
@@ -231,6 +236,7 @@ private extension ChatInputBarView {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .popoverTip(canShowInputTips ? AppTips.chatAttachments : nil, arrowEdge: .bottom)
     }
 
     var webSearchButton: some View {
@@ -238,7 +244,10 @@ private extension ChatInputBarView {
             $0.capabilities.contains(.functionCalling)
         } ?? false
 
-        return Button { onWebSearchToggled() } label: {
+        return Button {
+            AppTips.webSearch.invalidate(reason: .actionPerformed)
+            onWebSearchToggled()
+        } label: {
             Image(systemName: loadedState.isWebSearchEnabled ? "globe.badge.chevron.backward" : "globe")
                 .font(.title2)
                 .foregroundStyle(
@@ -252,6 +261,7 @@ private extension ChatInputBarView {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .popoverTip(canShowWebSearchTip ? AppTips.webSearch : nil, arrowEdge: .bottom)
         .accessibilityLabel(
             loadedState.isWebSearchEnabled
             ? String(localized: "Disable Web Search")
@@ -322,5 +332,19 @@ private extension ChatInputBarView {
     func webSearchColor(enabled: Bool, supported: Bool, configured: Bool) -> Color {
         guard configured && supported else { return .red }
         return enabled ? Color.appAccent : .secondary
+    }
+
+    var canShowInputTips: Bool {
+        loadedState.selectedModel != nil
+            && !loadedState.isStreaming
+            && !loadedState.isRecording
+            && !loadedState.isTranscribing
+            && !loadedState.isSearchingWeb
+    }
+
+    var canShowWebSearchTip: Bool {
+        canShowInputTips
+            && loadedState.isWebSearchToolConfigured
+            && loadedState.selectedModel?.capabilities.contains(.functionCalling) == true
     }
 }

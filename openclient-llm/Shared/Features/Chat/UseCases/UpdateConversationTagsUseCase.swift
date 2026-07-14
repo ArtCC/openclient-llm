@@ -9,7 +9,8 @@
 import Foundation
 
 protocol UpdateConversationTagsUseCaseProtocol: Sendable {
-    func execute(_ conversationId: UUID, tags: [String]) throws
+    @discardableResult
+    func execute(_ conversationId: UUID, tags: [ConversationTag]) throws -> [ConversationTag]
 }
 
 struct UpdateConversationTagsUseCase: UpdateConversationTagsUseCaseProtocol {
@@ -25,12 +26,24 @@ struct UpdateConversationTagsUseCase: UpdateConversationTagsUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute(_ conversationId: UUID, tags: [String]) throws {
+    @discardableResult
+    func execute(_ conversationId: UUID, tags: [ConversationTag]) throws -> [ConversationTag] {
         var conversations = try repository.loadAll()
-        guard let index = conversations.firstIndex(where: { $0.id == conversationId }) else { return }
-        conversations[index].tags = tags.map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
+        guard let index = conversations.firstIndex(where: { $0.id == conversationId }) else { return [] }
+        let colorsByName = conversations.flatMap(\.tags).reduce(into: [String: TagColor]()) { colors, tag in
+            if colors[tag.name] == nil {
+                colors[tag.name] = tag.color
+            }
+        }
+        var tagNames = Set<String>()
+        let normalizedTags = tags.compactMap { tag -> ConversationTag? in
+            let name = tag.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty, tagNames.insert(name).inserted else { return nil }
+            return ConversationTag(name: name, color: colorsByName[name] ?? tag.color)
+        }
+        conversations[index].tags = normalizedTags
         conversations[index].updatedAt = Date()
         try repository.save(conversations[index])
+        return normalizedTags
     }
 }

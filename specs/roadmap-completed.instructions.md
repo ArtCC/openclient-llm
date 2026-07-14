@@ -139,4 +139,15 @@ Goal: Extend the app across Apple platforms and system surfaces with widgets and
   - **New Chat (Small)**: `StaticConfiguration` with a single timeline entry. Shows the app icon and "New Chat" label. Tap opens the app in a blank conversation via `widgetURL(URL(string: "openclient://new-chat"))`.
   - **Search (Small)**: `StaticConfiguration` with a single timeline entry. Shows a magnifying glass icon and "Search" label. Tap opens the app directly in the Search tab with the keyboard focused via `widgetURL(URL(string: "openclient://search"))`. Requires adding `case search` to `URLSchemeAction` and handling it in `URLSchemeParser` and `URLSchemeManager`.
   - **Quick Actions (Medium)**: `StaticConfiguration` with vertically stacked New Chat and Search link rows, each showing an icon, label, subtitle, and chevron. Uses the same deep links as the Small widgets.
-  - **Conversations Overview (Medium/Large)**: `TimelineProvider` showing up to 2 recent conversations in medium size or 6 in large size, with title, preview, model styling, timestamp, Search, and New Chat links.
+   - **Conversations Overview (Medium/Large)**: `TimelineProvider` showing up to 2 recent conversations in medium size or 6 in large size, with title, preview, model styling, timestamp, Search, and New Chat links.
+
+## Phase 14 — Contextual Feature Discovery
+
+Goal: Help users discover advanced features at the moment they become relevant without extending the initial onboarding.
+
+- [x] **Native TipKit integration**: Configure TipKit once per iOS, iPadOS, and macOS app session with a daily global display frequency and native popover presentation.
+- [x] **Chat feature tips**: Contextual popovers explain model selection, attachments, message actions, web search, conversation options, and context usage only while their related controls and capabilities are available.
+- [x] **Organization and privacy tips**: The conversation list introduces Private Chat after a normal conversation exists and organization controls after five conversations.
+- [x] **Memory tip**: Settings introduces editable memory after the user has accumulated at least three conversations.
+- [x] **Informational-only content**: Tips contain only localized titles and messages, with no actions or custom navigation inside the popover; using the highlighted feature invalidates its tip.
+- [x] **Tip reset and testing**: Help can make invalidated tips eligible again, while the `-showAllFeatureTips` DEBUG launch argument uses TipKit's testing override for visual verification.

@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import TipKit
 import UniformTypeIdentifiers
 
 struct ConversationListView: View {
@@ -22,6 +23,7 @@ struct ConversationListView: View {
     @State var isShowingBackupImporter = false
     @State private var isShowingBackupExporter = false
     @State private var backupFileDocument: ConversationBackupFileDocument?
+    let settingsManager: SettingsManagerProtocol = SettingsManager()
 
 #if os(macOS)
     @State var isMacSearchExpanded = false
@@ -63,7 +65,8 @@ struct ConversationListView: View {
         .sheet(item: $editingTagsConversation) { conversation in
             ConversationTagsView(
                 conversationTitle: conversationTitle(conversation),
-                existingTags: conversation.tags
+                existingTags: conversation.tags,
+                availableTags: availableTags
             ) { tags in
                 viewModel.send(.tagsUpdated(conversation.id, tags))
             }
@@ -162,6 +165,11 @@ struct ConversationListView: View {
 // MARK: - Private
 
 private extension ConversationListView {
+    var availableTags: [ConversationTag] {
+        guard case .loaded(let loadedState) = viewModel.state else { return [] }
+        return loadedState.allTags
+    }
+
     func loadedView(_ loadedState: ConversationListViewModel.LoadedState) -> some View {
         Group {
             if loadedState.conversations.isEmpty {
@@ -194,6 +202,9 @@ private extension ConversationListView {
 #else
             macToolbarItems
 #endif
+        }
+        .onChange(of: loadedState.conversations.count, initial: true) { _, count in
+            updateMemoryTipEligibility(conversationCount: count)
         }
     }
 
@@ -230,6 +241,7 @@ private extension ConversationListView {
                             .contextMenu {
                                 conversationContextMenu(conversation)
                             }
+                            .popoverTip(organizationTip(for: conversation, loadedState: loadedState))
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button {
                                     conversationToDelete = conversation
@@ -244,10 +256,8 @@ private extension ConversationListView {
                 }
             }
         }
-#if os(macOS)
         .listStyle(.plain)
-#else
-        .listStyle(.plain)
+#if os(iOS)
         .refreshable {
             await viewModel.refreshAsync()
         }
@@ -257,6 +267,7 @@ private extension ConversationListView {
     @ViewBuilder
     func conversationContextMenu(_ conversation: Conversation) -> some View {
         Button {
+            AppTips.conversationOrganization.invalidate(reason: .actionPerformed)
             viewModel.send(.pinToggled(conversation.id))
         } label: {
             Label(
@@ -266,6 +277,7 @@ private extension ConversationListView {
         }
 
         Button {
+            AppTips.conversationOrganization.invalidate(reason: .actionPerformed)
             renameText = conversationTitle(conversation)
             renamingConversation = conversation
         } label: {
@@ -273,6 +285,7 @@ private extension ConversationListView {
         }
 
         Button {
+            AppTips.conversationOrganization.invalidate(reason: .actionPerformed)
             editingTagsConversation = conversation
         } label: {
             Label(String(localized: "Edit Tags"), systemImage: "tag")
@@ -287,6 +300,7 @@ private extension ConversationListView {
         Divider()
 
         Button(role: .destructive) {
+            AppTips.conversationOrganization.invalidate(reason: .actionPerformed)
             conversationToDelete = conversation
         } label: {
             Label(String(localized: "Delete"), systemImage: "trash")
@@ -318,17 +332,19 @@ private extension ConversationListView {
                 tagChip(
                     label: String(localized: "All"),
                     systemImage: "tag",
+                    iconColor: Color.primary.opacity(0.7),
                     isSelected: loadedState.activeTagFilter == nil
                 ) {
                     viewModel.send(.tagFilterChanged(nil))
                 }
-                ForEach(loadedState.allTags, id: \.self) { tag in
+                ForEach(loadedState.allTags, id: \.name) { tag in
                     tagChip(
-                        label: tag,
+                        label: tag.name,
                         systemImage: "tag.fill",
-                        isSelected: loadedState.activeTagFilter == tag
+                        iconColor: tag.color.displayColor,
+                        isSelected: loadedState.activeTagFilter == tag.name
                     ) {
-                        viewModel.send(.tagFilterChanged(loadedState.activeTagFilter == tag ? nil : tag))
+                        viewModel.send(.tagFilterChanged(loadedState.activeTagFilter == tag.name ? nil : tag.name))
                     }
                 }
             }
@@ -337,15 +353,20 @@ private extension ConversationListView {
         }
     }
 
-    func tagChip(label: String, systemImage: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
+    func tagChip(label: String, systemImage: String, iconColor: Color, isSelected: Bool,
+                 action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Label(label, systemImage: systemImage)
-                .font(.caption)
-                .fontWeight(.medium)
-                .lineLimit(1)
-                .foregroundStyle(isSelected ? .white : .primary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+            HStack(spacing: 5) {
+                Image(systemName: systemImage)
+                    .foregroundStyle(isSelected ? .white : iconColor)
+                Text(label)
+                    .foregroundStyle(isSelected ? .white : .primary)
+            }
+            .font(.caption)
+            .fontWeight(.medium)
+            .lineLimit(1)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
 #if os(macOS)
                 .background(isSelected ? Color.appAccent : Color.primary.opacity(0.08), in: .capsule)
 #else
@@ -356,6 +377,9 @@ private extension ConversationListView {
 #endif
         }
         .buttonStyle(.plain)
+#if os(iOS)
+        .frame(minHeight: 44)
+#endif
     }
 
     func conversationRow(
@@ -432,29 +456,21 @@ private extension ConversationListView {
             .background(.secondary.opacity(0.12), in: .capsule)
     }
 
-    func tagBadge(_ tag: String) -> some View {
-        Text(tag)
-            .font(.caption2)
-            .fontWeight(.medium)
-            .foregroundStyle(.orange)
-            .lineLimit(1)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(.orange.opacity(0.12), in: .capsule)
-    }
-
-    func formattedDate(_ date: Date) -> String {
-        let calendar = Calendar.current
-
-        if calendar.isDateInToday(date) {
-            return date.formatted(date: .omitted, time: .shortened)
-        } else if calendar.isDateInYesterday(date) {
-            return String(localized: "Yesterday")
-        } else if let daysAgo = calendar.dateComponents([.day], from: date, to: .now).day, daysAgo < 7 {
-            return date.formatted(.dateTime.weekday(.wide))
-        } else {
-            return date.formatted(date: .abbreviated, time: .omitted)
+    func tagBadge(_ tag: ConversationTag) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: "tag.fill")
+                .foregroundStyle(tag.color.displayColor)
+            Text(tag.name)
+                .foregroundStyle(.primary)
         }
+        .font(.caption2)
+        .fontWeight(.medium)
+        .lineLimit(1)
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(tag.color.displayColor.opacity(0.12), in: .capsule)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: "\(tag.name), \(tag.color.localizedName)"))
     }
 
     @ViewBuilder

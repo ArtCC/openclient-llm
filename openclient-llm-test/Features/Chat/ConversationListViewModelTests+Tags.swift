@@ -20,25 +20,35 @@ extension ConversationListViewModelTests {
         mockFetchModels.result = .success([])
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
+        let tags = [
+            ConversationTag(name: "swift", color: .orange),
+            ConversationTag(name: "ai", color: .blue)
+        ]
 
         // When
-        sut.send(.tagsUpdated(conversation.id, ["swift", "ai"]))
+        sut.send(.tagsUpdated(conversation.id, tags))
 
         // Then
         XCTAssertEqual(mockUpdateTags.executedId, conversation.id)
-        XCTAssertEqual(mockUpdateTags.executedTags, ["swift", "ai"])
+        XCTAssertEqual(mockUpdateTags.executedTags, tags)
 
         guard case .loaded(let loadedState) = sut.state else {
             XCTFail("Expected loaded state")
             return
         }
-        XCTAssertEqual(loadedState.conversations.first?.tags, ["swift", "ai"])
+        XCTAssertEqual(loadedState.conversations.first?.tags, tags)
     }
 
     func test_send_tagsUpdated_allTagsComputedCorrectly() async throws {
         // Given
-        let conv1 = Conversation(modelId: "gpt-4", tags: ["swift", "ai"])
-        let conv2 = Conversation(modelId: "gpt-4", tags: ["ai", "coding"])
+        let conv1 = Conversation(modelId: "gpt-4", tags: [
+            ConversationTag(name: "swift", color: .orange),
+            ConversationTag(name: "ai", color: .blue)
+        ])
+        let conv2 = Conversation(modelId: "gpt-4", tags: [
+            ConversationTag(name: "ai", color: .blue),
+            ConversationTag(name: "coding", color: .green)
+        ])
         mockLoadConversations.result = .success([conv1, conv2])
         mockFetchModels.result = .success([])
         sut.send(.viewAppeared)
@@ -50,13 +60,19 @@ extension ConversationListViewModelTests {
             return
         }
         // allTags should be sorted alphabetically (case-insensitive) and deduplicated
-        XCTAssertEqual(loadedState.allTags, ["ai", "coding", "swift"])
+        XCTAssertEqual(loadedState.allTags.map(\.name), ["ai", "coding", "swift"])
     }
 
     func test_allTags_sortedCaseInsensitively() async throws {
         // Given — mixed-case tags to verify case-insensitive alphabetical ordering
-        let conv1 = Conversation(modelId: "gpt-4", tags: ["Swift", "AI"])
-        let conv2 = Conversation(modelId: "gpt-4", tags: ["coding", "Backend"])
+        let conv1 = Conversation(modelId: "gpt-4", tags: [
+            ConversationTag(name: "Swift", color: .orange),
+            ConversationTag(name: "AI", color: .blue)
+        ])
+        let conv2 = Conversation(modelId: "gpt-4", tags: [
+            ConversationTag(name: "coding", color: .green),
+            ConversationTag(name: "Backend", color: .purple)
+        ])
         mockLoadConversations.result = .success([conv1, conv2])
         mockFetchModels.result = .success([])
         sut.send(.viewAppeared)
@@ -69,7 +85,7 @@ extension ConversationListViewModelTests {
         }
         // "AI" < "Backend" < "coding" < "Swift" when sorted case-insensitively
         let expectedOrder = ["AI", "Backend", "coding", "Swift"]
-        XCTAssertEqual(loadedState.allTags, expectedOrder)
+        XCTAssertEqual(loadedState.allTags.map(\.name), expectedOrder)
         // Verify the first tag is not affected by case — "All" chip is rendered before this list in the view
         XCTAssertFalse(loadedState.allTags.isEmpty)
     }
@@ -78,8 +94,16 @@ extension ConversationListViewModelTests {
 
     func test_send_tagFilterChanged_filtersConversationsByTag() async throws {
         // Given
-        let conv1 = Conversation(title: "Swift Chat", modelId: "gpt-4", tags: ["swift"])
-        let conv2 = Conversation(title: "AI Chat", modelId: "gpt-4", tags: ["ai"])
+        let conv1 = Conversation(
+            title: "Swift Chat",
+            modelId: "gpt-4",
+            tags: [ConversationTag(name: "swift", color: .orange)]
+        )
+        let conv2 = Conversation(
+            title: "AI Chat",
+            modelId: "gpt-4",
+            tags: [ConversationTag(name: "ai", color: .blue)]
+        )
         mockLoadConversations.result = .success([conv1, conv2])
         mockFetchModels.result = .success([])
         sut.send(.viewAppeared)
@@ -100,8 +124,16 @@ extension ConversationListViewModelTests {
 
     func test_send_tagFilterChanged_nil_showsAll() async throws {
         // Given
-        let conv1 = Conversation(title: "Swift Chat", modelId: "gpt-4", tags: ["swift"])
-        let conv2 = Conversation(title: "AI Chat", modelId: "gpt-4", tags: ["ai"])
+        let conv1 = Conversation(
+            title: "Swift Chat",
+            modelId: "gpt-4",
+            tags: [ConversationTag(name: "swift", color: .orange)]
+        )
+        let conv2 = Conversation(
+            title: "AI Chat",
+            modelId: "gpt-4",
+            tags: [ConversationTag(name: "ai", color: .blue)]
+        )
         mockLoadConversations.result = .success([conv1, conv2])
         mockFetchModels.result = .success([])
         sut.send(.viewAppeared)
@@ -119,5 +151,35 @@ extension ConversationListViewModelTests {
         }
         XCTAssertEqual(loadedState.filteredConversations.count, 2)
         XCTAssertNil(loadedState.activeTagFilter)
+    }
+
+    func test_send_tagsUpdated_removingLastActiveTag_clearsFilter() async throws {
+        // Given
+        let conv1 = Conversation(
+            title: "Swift Chat",
+            modelId: "gpt-4",
+            tags: [ConversationTag(name: "swift", color: .orange)]
+        )
+        let conv2 = Conversation(
+            title: "AI Chat",
+            modelId: "gpt-4",
+            tags: [ConversationTag(name: "ai", color: .blue)]
+        )
+        mockLoadConversations.result = .success([conv1, conv2])
+        mockFetchModels.result = .success([])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+        sut.send(.tagFilterChanged("swift"))
+
+        // When
+        sut.send(.tagsUpdated(conv1.id, []))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertNil(loadedState.activeTagFilter)
+        XCTAssertEqual(loadedState.filteredConversations.count, 2)
     }
 }

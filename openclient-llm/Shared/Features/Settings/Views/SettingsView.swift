@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import TipKit
 #if os(iOS)
 import StoreKit
 import SwiftUI
@@ -27,9 +28,11 @@ struct SettingsView: View {
     @State var isShowingTipJar = false
     @State private var showResetAlert = false
     @State private var presentedWebURL: WebDestination?
+    @State private var canShowMemoryTip = false
     @FocusState private var focusedField: Field?
     @Environment(\.scenePhase) private var scenePhase
     private let liteLLMHintText = String(localized: "Optimised for LiteLLM. Any OpenAI-compatible server also works.")
+    private let settingsManager: SettingsManagerProtocol = SettingsManager()
 
     // MARK: - View
 
@@ -112,6 +115,7 @@ private extension SettingsView {
             isPresented: $showResetAlert
         ) {
             Button(String(localized: "Reset"), role: .destructive) {
+                canShowMemoryTip = false
                 viewModel.send(.resetConfirmed)
             }
             Button(String(localized: "Cancel"), role: .cancel) {}
@@ -126,6 +130,7 @@ private extension SettingsView {
                 serverURL = initialState.serverURL
                 apiKey = initialState.apiKey
             }
+            canShowMemoryTip = settingsManager.getHasEnoughConversationsForMemoryTip()
         }
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
@@ -400,11 +405,13 @@ private extension SettingsView {
             .buttonStyle(.plain)
 
             Button {
+                AppTips.memory.invalidate(reason: .actionPerformed)
                 isShowingMemory = true
             } label: {
                 Label(String(localized: "Memory"), systemImage: "brain.head.profile")
             }
             .buttonStyle(.plain)
+            .popoverTip(canShowMemoryTip ? AppTips.memory : nil)
         } header: {
             Text(String(localized: "Personalization"))
         } footer: {

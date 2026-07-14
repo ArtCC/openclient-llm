@@ -26,6 +26,17 @@ struct LoadConversationsUseCase: LoadConversationsUseCaseProtocol {
     // MARK: - Execute
 
     func execute() throws -> [Conversation] {
-        try repository.loadAll()
+        var conversations = try repository.loadAll()
+        let colorsByName = conversations.flatMap(\.tags).reduce(into: [String: TagColor]()) { colors, tag in
+            if colors[tag.name] == nil {
+                colors[tag.name] = tag.color
+            }
+        }
+        for index in conversations.indices {
+            conversations[index].tags = conversations[index].tags.map {
+                ConversationTag(name: $0.name, color: colorsByName[$0.name] ?? $0.color)
+            }
+        }
+        return conversations
     }
 }

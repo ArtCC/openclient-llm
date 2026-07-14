@@ -14,14 +14,15 @@ final class MockUpdateConversationTagsUseCase: UpdateConversationTagsUseCaseProt
     // MARK: - Properties
 
     var executedId: UUID?
-    var executedTags: [String]?
+    var executedTags: [ConversationTag]?
     var error: Error?
 
     // MARK: - Public
 
-    func execute(_ conversationId: UUID, tags: [String]) throws {
+    func execute(_ conversationId: UUID, tags: [ConversationTag]) throws -> [ConversationTag] {
         if let error { throw error }
         executedId = conversationId
         executedTags = tags
+        return tags
     }
 }
