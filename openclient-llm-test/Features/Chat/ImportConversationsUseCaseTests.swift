@@ -15,6 +15,7 @@ final class ImportConversationsUseCaseTests: XCTestCase {
 
     var mockSaveConversation: MockSaveConversationUseCase!
     var mockDeleteConversation: MockDeleteConversationUseCase!
+    var mockLoadConversations: MockLoadConversationsUseCase!
     var mockAttachmentRepository: MockAttachmentRepository!
     var sut: ImportConversationsUseCase!
 
@@ -24,10 +25,12 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         try await super.setUp()
         mockSaveConversation = MockSaveConversationUseCase()
         mockDeleteConversation = MockDeleteConversationUseCase()
+        mockLoadConversations = MockLoadConversationsUseCase()
         mockAttachmentRepository = MockAttachmentRepository()
         sut = ImportConversationsUseCase(
             saveConversationUseCase: mockSaveConversation,
             deleteConversationUseCase: mockDeleteConversation,
+            loadConversationsUseCase: mockLoadConversations,
             attachmentRepository: mockAttachmentRepository
         )
     }
@@ -35,6 +38,7 @@ final class ImportConversationsUseCaseTests: XCTestCase {
     override func tearDown() async throws {
         sut = nil
         mockAttachmentRepository = nil
+        mockLoadConversations = nil
         mockDeleteConversation = nil
         mockSaveConversation = nil
         try await super.tearDown()
@@ -243,6 +247,32 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         // When / Then
         XCTAssertThrowsError(try sut.execute(try encoded(document)))
         XCTAssertTrue(mockSaveConversation.savedConversations.isEmpty)
+    }
+
+    func test_execute_tagAlreadyExistsLocally_reusesLocalColor() throws {
+        // Given
+        mockLoadConversations.result = .success([
+            Conversation(
+                modelId: "gpt-4",
+                tags: [ConversationTag(name: "swift", color: .blue)]
+            )
+        ])
+        let conversation = Conversation(
+            modelId: "gpt-4",
+            tags: [ConversationTag(name: "swift", color: .red)]
+        )
+        let document = ConversationExportDocument(conversations: [
+            .init(conversation: conversation, attachments: [])
+        ])
+
+        // When
+        _ = try sut.execute(try encoded(document))
+
+        // Then
+        XCTAssertEqual(
+            mockSaveConversation.savedConversations.first?.tags,
+            [ConversationTag(name: "swift", color: .blue)]
+        )
     }
 }
 

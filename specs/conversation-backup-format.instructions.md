@@ -39,7 +39,7 @@ A single-conversation export contains one element in `conversations`. A complete
 | `version` | Integer | Yes | The document schema version. Version 1 is the current supported version. |
 | `exportedAt` | ISO 8601 date | Yes | Time when the export document was created. |
 | `conversations` | Array | Yes | Zero or more exported conversations. |
-| `conversation` | Object | Yes | Persisted OpenClient conversation, including messages, parameters, tags, pin state, timestamps, tool data, web search results, branch references, manual context settings, and optional compacted-context metadata. |
+| `conversation` | Object | Yes | Persisted OpenClient conversation, including messages, parameters, tags, optional tag colors, pin state, timestamps, tool data, web search results, branch references, manual context settings, and optional compacted-context metadata. |
 | `attachments` | Array | Yes | Portable attachment payloads associated with messages in `conversation`. |
 | `attachments[].messageId` | UUID | Yes | Identifier of the message containing the attachment. |
 | `attachments[].attachmentId` | UUID | Yes | Identifier of the attachment in that message. |
@@ -52,6 +52,7 @@ A single-conversation export contains one element in `conversations`. A complete
 - An attachment whose local file cannot be read is omitted from `attachments`; the conversation remains exportable.
 - `fileRelativePath` is preserved in conversation metadata for Codable compatibility but is not a portable location and must not be used when restoring.
 - Context summaries and their inclusive compacted-message cursor are preserved when present; they are optional so Version 1 imports created before context compaction remain valid.
+- Tag names remain encoded in `tags` as strings. The optional `tagColors` object maps those names to stable semantic color identifiers so Version 1 backups remain readable by older app versions.
 - `contextWindowTokens` must be absent or greater than zero.
 - A context summary and cursor form an indivisible pair; the summary must contain text and the cursor must reference a message in the same conversation.
 
@@ -60,7 +61,7 @@ A single-conversation export contains one element in `conversations`. A complete
 - An importer must reject documents whose `format` or `version` is unsupported.
 - The current importer first decodes the complete `ConversationExportDocument` with ISO 8601 dates, then checks `format` and `version`. A malformed schema therefore reports an invalid document even if its raw format or version value would also be unsupported.
 - `ConversationExportDocument`, `ExportedConversation`, and `ExportedAttachment` use synthesized `Codable`: all fields shown as required must decode successfully, unknown JSON keys are ignored, and malformed UUIDs or dates reject the whole document.
-- `Conversation` has a compatibility decoder: context metadata, model parameters, pin state, tags, and branch references may be absent and receive their implemented nil/default values. Message and attachment compatibility is governed by their own custom decoders.
+- `Conversation` has a compatibility decoder: context metadata, model parameters, pin state, tags, tag colors, and branch references may be absent and receive their implemented nil/default values. Tags without a color use orange. Message and attachment compatibility is governed by their own custom decoders.
 - Conversation IDs and message IDs must be unique across the document.
 - Every attachment payload must reference an attachment on the specified message. Duplicate attachment payloads are invalid.
 - Imported conversations, messages, and attachments receive new UUIDs. Existing local conversations are never overwritten.
