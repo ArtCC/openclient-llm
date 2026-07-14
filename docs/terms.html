@@ -37,6 +37,10 @@
       <p>By downloading, installing, or using OpenClient ("the App"), you agree to these terms. If you do not agree,
         do not use the App.</p>
 
+      <h2>Eligibility</h2>
+      <p>You must have legal capacity under applicable law to accept these terms. If you do not, you may use the App
+        only with permission from a parent or legal guardian.</p>
+
       <h2>What the App Does</h2>
       <p>OpenClient is a native Apple client for iOS, iPadOS, and macOS that connects to any OpenAI-compatible server
         you provide — such as
@@ -44,16 +48,18 @@
         <a href="https://docs.litellm.ai/" style="color: var(--accent); text-decoration: none;">LiteLLM</a>, or any
         other self-hosted or third-party backend that implements the OpenAI API. The App enables text conversations,
         image and document analysis (Vision), voice transcription (Speech-to-Text), text-to-speech playback, image
-        generation, web search, and an agentic tool-calling loop — all processed exclusively by the server you
-        configure. The App does not host, operate, or control any LLM server, AI model, or search provider.
+        generation, web search, and an agentic tool-calling loop. Server-backed AI operations are sent to the server you
+        configure. Depending on the selected setting, speech transcription may instead use Apple's Speech framework;
+        processing then follows Apple's platform behavior and settings. The App does not host, operate, or control any
+        LLM server, AI model, or search provider.
       </p>
       <p>Additional capabilities include:</p>
       <ul>
         <li><strong>Conversation sync:</strong> Conversations are stored locally on your device and, if iCloud is
           enabled, synced across your Apple devices via iCloud Drive.</li>
-        <li><strong>Memory:</strong> Persistent memory items are stored in iCloud Key-Value Store (when available) or
-          locally in UserDefaults, and are injected into conversations as context. Models may also create memory items
-          autonomously during a conversation.</li>
+        <li><strong>Memory:</strong> Persistent memory items are stored locally in a JSON file and, when iCloud sync is
+          enabled, may be synchronized as a file through iCloud Drive. Models may also create memory items autonomously
+          during a conversation. Legacy UserDefaults and iCloud key-value data may be migrated to file-based storage.</li>
         <li><strong>Web search:</strong> When enabled, the App sends search queries through your LiteLLM server to the
           search provider configured on that server (e.g., Brave, Tavily, DuckDuckGo). The App never contacts search
           providers directly.</li>
@@ -66,9 +72,13 @@
           quick search. This data does not leave your device.</li>
       </ul>
 
+      <h2>AI Output</h2>
+      <p>AI output can be inaccurate, fabricated, incomplete, offensive, or unsafe. Independently verify important
+        information. Output is not professional medical, legal, financial, or safety advice.</p>
+
       <h2>Free App, Third-Party API Costs</h2>
-      <p>OpenClient is <strong>free to download and use</strong>. The App itself has no subscription, in-app purchases,
-        or hidden fees of any kind.</p>
+      <p>OpenClient is <strong>free to download and use</strong> and has no subscription. The App offers optional,
+        voluntary in-app purchases through its tip jar; they are not required to use the App.</p>
       <p>However, connecting the App to a paid LLM provider — such as OpenAI, Anthropic, Groq, or any other
         cloud-based service — <strong>may incur charges billed directly by that provider</strong> based on your API
         usage (tokens consumed, images generated, audio transcribed, etc.). These costs are entirely independent of the
@@ -98,17 +108,27 @@
           of service of any LLM provider or search provider you connect to.</li>
       </ul>
 
+      <h2>Votice Feedback</h2>
+      <p>Voluntary feedback submissions through Votice may include an optional name, text, and attachments, and may be
+        visible to other users through the feedback board. Do not submit confidential, unlawful, or infringing material.
+        You grant the developer non-exclusive permission to display and use submitted feedback to operate and improve
+        the App; you retain ownership of your content.</p>
+
       <h2>iCloud &amp; Local Data</h2>
       <p>The App stores conversation history locally on your device using the file system. If iCloud is enabled in your
         device settings, the following data may be synced to iCloud:</p>
       <ul>
-        <li>Conversation files (via iCloud Drive)</li>
-        <li>User profile settings (via iCloud Key-Value Store)</li>
-        <li>Memory items (via iCloud Key-Value Store)</li>
+        <li>Conversation files and attachments (via iCloud Drive)</li>
+        <li>User profile JSON file (via iCloud Drive)</li>
+        <li>Memory JSON file (via iCloud Drive)</li>
+        <li>Custom prompt templates (via iCloud Drive)</li>
+        <li>Deletion and tombstone metadata used for synchronization</li>
       </ul>
       <p>You control whether iCloud sync is active through your device's iCloud settings. The developer does not access
-        any data stored in your iCloud account. Disabling iCloud sync means data remains local only and is not shared
-        across devices.</p>
+        any data stored in your iCloud account. Disabling iCloud sync stops future synchronization by the App but does
+        not automatically delete files already in iCloud; you manage those files through iCloud. Disabling sync does not
+        prevent server requests, voluntary Votice submissions, or voluntary tip purchases processed by Apple through
+        StoreKit.</p>
 
       <h2>Estimated Costs</h2>
       <p>The App may display estimated conversation costs calculated from token usage and pricing metadata supplied by
@@ -152,7 +172,7 @@
           href="https://github.com/ArtCC/openclient-llm/issues">GitHub repository</a>.</p>
     </div>
 
-    <p class="legal-updated">Last updated: April 20, 2026</p>
+    <p class="legal-updated">Last updated: July 15, 2026</p>
 
     <div class="legal-nav">
       <a href="privacy.html">Privacy Policy</a>

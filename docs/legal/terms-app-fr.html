@@ -29,6 +29,10 @@
       <p>En téléchargeant, installant ou utilisant OpenClient (« l'Application »), vous acceptez ces conditions. Si vous
         n'êtes pas d'accord, n'utilisez pas l'Application.</p>
 
+      <h2>Admissibilité</h2>
+      <p>Vous devez avoir la capacité juridique requise par la loi applicable pour accepter ces conditions. À défaut,
+        vous ne pouvez utiliser l'Application qu'avec l'autorisation d'un parent ou représentant légal.</p>
+
       <h2>Ce que fait l'application</h2>
       <p>OpenClient est un client Apple natif pour iOS, iPadOS et macOS qui se connecte à tout serveur compatible OpenAI
         que vous fournissez — tel que
@@ -36,17 +40,20 @@
         <a href="https://docs.litellm.ai/" style="color: var(--accent); text-decoration: none;">LiteLLM</a> ou tout
         autre backend auto-hébergé ou tiers implémentant l'API OpenAI. L'Application permet des conversations
         textuelles, l'analyse d'images et de documents (Vision), la transcription vocale (Speech-to-Text), la lecture de
-        texte-parole, la génération d'images, la recherche web et une boucle d'appels d'outils agentique — tout cela
-        traité exclusivement par le serveur que vous configurez. L'Application n'héberge, n'exploite ni ne contrôle
-        aucun serveur LLM, modèle d'IA ou fournisseur de recherche.
+        texte-parole, la génération d'images, la recherche web et une boucle d'appels d'outils agentique. Les opérations
+        d'IA reposant sur un serveur sont envoyées au serveur que vous configurez. Selon le réglage choisi, la
+        transcription vocale peut utiliser à la place le framework Speech d'Apple ; le traitement suit alors le
+        comportement et les réglages de la plateforme Apple. L'Application n'héberge, n'exploite ni ne contrôle aucun
+        serveur LLM, modèle d'IA ou fournisseur de recherche.
       </p>
       <p>Les capacités supplémentaires incluent :</p>
       <ul>
         <li><strong>Synchronisation des conversations :</strong> Les conversations sont stockées localement sur votre
           appareil et, si iCloud est activé, synchronisées entre vos appareils Apple via iCloud Drive.</li>
-        <li><strong>Mémoire :</strong> Les éléments de mémoire persistants sont stockés dans iCloud Key-Value Store
-          (lorsque disponible) ou localement dans UserDefaults, et injectés dans les conversations comme contexte. Les
-          modèles peuvent également créer des éléments de mémoire de manière autonome lors d'une conversation.</li>
+        <li><strong>Mémoire :</strong> Les éléments de mémoire persistants sont stockés localement dans un fichier JSON
+          et, lorsque la synchronisation iCloud est activée, peuvent être synchronisés sous forme de fichier via iCloud
+          Drive. Les modèles peuvent aussi en créer de manière autonome. Les anciennes données UserDefaults et du
+          magasin clé-valeur iCloud peuvent être migrées vers ce stockage par fichiers.</li>
         <li><strong>Recherche web :</strong> Lorsqu'elle est activée, l'Application envoie des requêtes de recherche via
           votre serveur LiteLLM au fournisseur de recherche configuré sur ce serveur (ex. : Brave, Tavily, DuckDuckGo).
           L'Application ne contacte jamais directement les fournisseurs de recherche.</li>
@@ -60,9 +67,15 @@
           dans Spotlight pour une recherche rapide. Ces données ne quittent pas votre appareil.</li>
       </ul>
 
+      <h2>Résultats de l'IA</h2>
+      <p>Les résultats de l'IA peuvent être inexacts, inventés, incomplets, offensants ou dangereux. Vérifiez de façon
+        indépendante les informations importantes. Ils ne constituent pas un conseil professionnel médical, juridique,
+        financier ou de sécurité.</p>
+
       <h2>Application gratuite, coûts d'API tiers</h2>
-      <p>OpenClient est <strong>gratuite à télécharger et à utiliser</strong>. L'Application elle-même n'a aucun
-        abonnement, achat intégré ni frais cachés d'aucune sorte.</p>
+      <p>OpenClient est <strong>gratuite à télécharger et à utiliser</strong> et ne comporte aucun abonnement.
+        L'Application propose des achats intégrés facultatifs et volontaires via sa cagnotte ; ils ne sont pas requis
+        pour utiliser l'Application.</p>
       <p>Cependant, connecter l'Application à un fournisseur de LLM payant — tel qu'OpenAI, Anthropic, Groq ou tout
         autre service cloud — <strong>peut entraîner des frais facturés directement par ce fournisseur</strong> en
         fonction de votre utilisation de l'API (tokens consommés, images générées, audio transcrit, etc.). Ces coûts
@@ -95,18 +108,29 @@
           connectez.</li>
       </ul>
 
+      <h2>Avis via Votice</h2>
+      <p>Les avis envoyés volontairement via Votice peuvent inclure un nom facultatif, du texte et des pièces jointes,
+        et être visibles par d'autres utilisateurs sur le tableau d'avis. N'envoyez aucun contenu confidentiel,
+        illicite ou portant atteinte aux droits d'autrui. Vous accordez au développeur une autorisation non exclusive
+        d'afficher et d'utiliser les avis envoyés afin d'exploiter et d'améliorer l'Application ; vous restez propriétaire
+        de votre contenu.</p>
+
       <h2>Données locales et iCloud</h2>
       <p>L'Application stocke l'historique des conversations localement sur votre appareil via le système de fichiers.
         Si iCloud est activé dans les paramètres de votre appareil, les données suivantes peuvent être synchronisées
         avec iCloud :</p>
       <ul>
-        <li>Fichiers de conversations (via iCloud Drive)</li>
-        <li>Paramètres du profil utilisateur (via iCloud Key-Value Store)</li>
-        <li>Éléments de mémoire (via iCloud Key-Value Store)</li>
+        <li>Fichiers de conversations et pièces jointes (via iCloud Drive)</li>
+        <li>Fichier JSON du profil utilisateur (via iCloud Drive)</li>
+        <li>Fichier JSON de mémoire (via iCloud Drive)</li>
+        <li>Modèles d'invites personnalisés (via iCloud Drive)</li>
+        <li>Métadonnées de suppression et marqueurs de suppression utilisés pour la synchronisation</li>
       </ul>
       <p>Vous contrôlez si la synchronisation iCloud est active via les paramètres iCloud de votre appareil. Le
-        développeur n'accède à aucune donnée stockée dans votre compte iCloud. Désactiver la synchronisation iCloud
-        signifie que les données restent uniquement locales et ne sont pas partagées entre les appareils.</p>
+        développeur n'accède à aucune donnée stockée dans votre compte iCloud. La désactiver arrête les futures
+        synchronisations par l'Application, mais ne supprime pas automatiquement les fichiers déjà présents dans iCloud ;
+        vous les gérez via iCloud. Cela n'empêche pas les requêtes au serveur, les soumissions volontaires à Votice ni
+        les pourboires volontaires traités par Apple via StoreKit.</p>
 
       <h2>Coûts estimés</h2>
       <p>L'Application peut afficher des coûts de conversation estimés calculés à partir de l'utilisation des tokens et
@@ -151,7 +175,7 @@
           href="https://github.com/ArtCC/openclient-llm/issues">dépôt GitHub</a>.</p>
     </div>
 
-    <p class="legal-updated">Dernière mise à jour : 20 avril 2026</p>
+    <p class="legal-updated">Dernière mise à jour : 15 juillet 2026</p>
   </div>
 </body>
 

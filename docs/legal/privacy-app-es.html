@@ -26,96 +26,94 @@
   <div class="container legal">
     <div class="legal-content">
       <h2>Resumen</h2>
-      <p>OpenClient <strong>no recopila, almacena, transmite ni comparte ningún dato personal</strong> con el
-        desarrollador.
-        La aplicación funciona íntegramente en tu dispositivo y se comunica únicamente con el servidor que configures.
-        No se envía ningún tipo de analítica,
-        telemetría ni informe de fallos al desarrollador.</p>
+      <p>OpenClient no envía analíticas, telemetría ni informes de fallos al desarrollador. La aplicación funciona
+        principalmente en tu dispositivo. Los datos solo salen para proveedores configurados y ascendentes, Apple
+        Speech cuando corresponda, el uso del panel de Votice, iCloud o compras voluntarias procesadas por StoreKit.</p>
 
-      <h2>Sin servidor del desarrollador</h2>
-      <p>OpenClient no dispone de ningún servidor, backend, servicio de analítica ni infraestructura en la nube operados
-        por el desarrollador. No existe telemetría, seguimiento de uso ni informes de fallos enviados al desarrollador.
-        El desarrollador nunca recibe ningún dato derivado del uso de la aplicación.</p>
+      <h2>Servicios del desarrollador</h2>
+      <p>OpenClient no usa un backend del desarrollador para conversaciones, analíticas, telemetría, seguimiento de uso
+        ni informes de fallos. Configurar, abrir o usar el panel de comentarios puede contactar con el servicio Votice
+        operado por el desarrollador, como se explica más abajo.</p>
 
       <h2>Almacenamiento local e iCloud</h2>
-      <p>Todos los datos de la aplicación se almacenan en tu dispositivo o en tu cuenta personal de iCloud. El
-        desarrollador no tiene acceso a ninguno de ellos. En concreto:</p>
+      <p>Salvo las transmisiones descritas a continuación, los datos gestionados por la aplicación se almacenan en tu
+        dispositivo o en tu cuenta personal de iCloud. El desarrollador no tiene acceso a esos datos almacenados. En concreto:</p>
       <ul>
-        <li><strong>Historial de conversaciones</strong> — almacenado localmente en el directorio de documentos de la
-          aplicación. Si iCloud Drive está activado, las conversaciones se sincronizan entre tus dispositivos Apple a
-          través de tu almacenamiento personal de iCloud Drive.</li>
-        <li><strong>Ajustes y perfil de usuario</strong> — almacenados localmente en UserDefaults. Si iCloud está
-          activado, los datos del perfil se sincronizan mediante iCloud Key-Value Store, privado para tu Apple ID.</li>
-        <li><strong>Elementos de memoria</strong> — almacenados localmente en UserDefaults. Si iCloud está activado, los
-          elementos de memoria se sincronizan mediante iCloud Key-Value Store, privado para tu Apple ID. Esto incluye
-          los elementos creados automáticamente por los modelos durante las conversaciones cuando se invocan las
-          herramientas de memoria del agente.</li>
+        <li><strong>Contenido</strong> — se guardan localmente las conversaciones; los archivos binarios de adjuntos por
+          separado, incluidos documentos e imágenes generadas; el perfil JSON; la memoria JSON, incluida la creada por
+          modelos; las plantillas de prompts personalizadas; y los metadatos de eliminación.</li>
+        <li><strong>Sincronización con iCloud</strong> — este contenido solo se sincroniza si iCloud está disponible y el
+          ajuste de sincronización de la aplicación está activo. Desactivarlo detiene futuras sincronizaciones de la
+          aplicación, pero no elimina automáticamente los archivos que ya estén en iCloud.</li>
+        <li><strong>Ajustes</strong> — permanecen en el dispositivo.</li>
         <li><strong>Claves de API y URL del servidor</strong> — almacenadas exclusivamente en el Llavero del dispositivo
           mediante el framework Security de iOS/macOS. Nunca se transmiten al desarrollador.</li>
         <li><strong>Índice de Spotlight</strong> — los títulos de las conversaciones y fragmentos de mensajes se indexan
           localmente en Spotlight para permitir búsquedas en el dispositivo. Estos datos no abandonan tu dispositivo.
         </li>
+        <li><strong>App Group</strong> — los widgets guardan una instantánea limitada de hasta seis conversaciones
+          recientes (título, modelo, vista previa del último mensaje y fecha). La Extensión de compartir y Atajos
+          preparan temporalmente texto, URL, imágenes o PDF hasta que la aplicación los consume o borra. Estos datos
+          permanecen en el dispositivo y solo se comparten entre la aplicación principal y sus extensiones.</li>
       </ul>
-      <p>Nada sale de tu dispositivo excepto las solicitudes que envíes explícitamente al servidor que configures.</p>
 
       <h2>Comunicación con el servidor</h2>
-      <p>La aplicación se conecta exclusivamente a la URL del servidor que tú proporcionas — una instancia de Ollama, un
-        proxy de LiteLLM o cualquier otro backend compatible con OpenAI. Todas las solicitudes se envían directamente
-        desde tu dispositivo a tu servidor. Esto incluye:</p>
+      <p>La aplicación envía solicitudes a la URL que proporcionas: una instancia de Ollama, un proxy de LiteLLM u otro
+        backend compatible con OpenAI. Según su configuración, ese servidor puede reenviar contenido a proveedores
+        ascendentes de modelos o búsquedas, que pueden registrarlo, conservarlo o tratarlo según sus propias políticas.</p>
       <ul>
-        <li>Mensajes de chat y contexto de conversación</li>
+        <li>Mensajes y contexto; en chats no privados, el contexto efectivo puede incluir perfil y memoria</li>
         <li>Imágenes y documentos adjuntos a los mensajes (Vision)</li>
-        <li>Datos de audio para transcripción de voz (Speech-to-Text mediante <code>/v1/audio/transcriptions</code>)
-        </li>
+        <li>Datos de audio para transcripción de voz: según el ajuste de transcripción seleccionado, el audio se envía
+          al servidor configurado mediante <code>/v1/audio/transcriptions</code> o se procesa con el framework Speech de
+          Apple. Apple Speech puede procesarlo según el comportamiento y los ajustes de Apple, sin garantía de que el
+          proceso se realice en el dispositivo.</li>
         <li>Texto para síntesis de voz (Text-to-Speech mediante <code>/v1/audio/speech</code>)</li>
-        <li>Prompts para generación de imágenes (<code>/v1/images/generations</code>)</li>
+        <li>Prompts para generación de imágenes; las imágenes generadas llegan en respuestas de chat completions compatibles</li>
         <li>Consultas de búsqueda web, que tu servidor LiteLLM reenvía al proveedor de búsqueda que hayas configurado en
           el servidor (p. ej., Brave, Tavily, DuckDuckGo). La aplicación nunca contacta directamente con los proveedores
           de búsqueda.</li>
         <li>Entradas y salidas de llamadas a herramientas cuando el modo agente está activo</li>
       </ul>
-      <p>El desarrollador no tiene acceso, conocimiento ni participación en esta comunicación.</p>
+      <p>El desarrollador no recibe esta comunicación salvo que opere el servidor o proveedor que configures.</p>
 
       <h2>Contenido compartido e importado</h2>
       <p>El contenido recibido a través de la Extensión de compartir, el esquema de URL personalizado
         (<code>openclient://</code>), arrastrar y soltar, o los Atajos de Apple se procesa íntegramente en tu
-        dispositivo y se envía únicamente a tu servidor configurado. El desarrollador no recibe ni tiene acceso a ningún
-        contenido compartido.</p>
+        dispositivo y puede enviarse al servidor configurado y sus proveedores ascendentes cuando lo uses en una
+        solicitud. El desarrollador no lo recibe de otro modo.</p>
 
-      <h2>Sin SDKs de terceros ni analíticas</h2>
-      <p>OpenClient tiene <strong>cero dependencias externas</strong> para su funcionalidad en tiempo de ejecución. No
-        hay redes publicitarias, frameworks de seguimiento ni SDKs de analítica integrados en la aplicación.
-        La única herramienta de terceros utilizada en tiempo de compilación es <strong>SwiftLint</strong>, una
-        herramienta de análisis estático de código que se ejecuta durante la compilación y nunca se incluye en el
-        binario de la aplicación publicada.</p>
-      <p>La aplicación integra el <strong>SDK de Votice</strong> — un proyecto de código abierto del mismo autor —
-        exclusivamente para permitir a los usuarios enviar informes de fallos y solicitudes de funciones desde la
-        pantalla de Ajustes. Los informes son <strong>completamente anónimos</strong>: no se adjunta ninguna identidad
-        de usuario, cuenta, identificador de dispositivo ni dato personal a un envío. Cuando utilizas esta función, solo
-        se envía al servicio Votice el texto que introduces voluntariamente. Ningún otro dato de la aplicación
-        (conversaciones, claves de API, URL del servidor, memoria o adjuntos) se envía nunca a Votice. El uso de esta
-        función es completamente opcional.</p>
+      <h2>Dependencias de terceros y analíticas</h2>
+      <p>La aplicación incluye <strong>VoticeSDK</strong> y <strong>ConfettiSwiftUI</strong> como dependencias en tiempo
+        de ejecución. No integra redes publicitarias, frameworks de seguimiento ni SDKs de analítica.
+        <strong>SwiftLint</strong> se usa como herramienta de análisis de código durante la compilación y no forma parte
+        de la aplicación distribuida.</p>
+      <p>VoticeSDK ofrece el panel opcional de comentarios en Ajustes. Puedes enviar comentarios de forma anónima, sin
+        cuenta ni nombre obligatorio. Configurar, abrir o usar el panel puede enviar un identificador de dispositivo
+        aleatorio y persistente, además de datos técnicos como plataforma, idioma y versión/build, para gestionar
+        sugerencias, comentarios y votos y evitar duplicados. El identificador no contiene directamente nombre, correo,
+        credenciales de API ni conversaciones. El texto, las imágenes y el apodo opcionales solo se envían si decides
+        proporcionarlos. Los comentarios pueden ser visibles para otros usuarios.</p>
 
       <h2>Código abierto y auditable</h2>
       <p>OpenClient es completamente de código abierto bajo la GNU Affero General Public License v3.0. Puedes
         inspeccionar, auditar y
         verificar cada línea de código en el <a href="https://github.com/ArtCC/openclient-llm">repositorio de
-          GitHub</a>. Esta transparencia te permite confirmar que no existe ninguna recopilación de datos.</p>
+          GitHub</a>. Esta transparencia permite revisar el tratamiento de datos de la aplicación.</p>
 
       <h2>Privacidad de menores</h2>
-      <p>La aplicación no recopila conscientemente ninguna información de nadie, incluidos los menores de 13 años. Dado
-        que no se recopila ningún dato, no existe riesgo de recopilar datos de menores.</p>
+      <p>La aplicación no solicita conscientemente información personal de menores de 13 años. No envíes datos
+        personales de un menor mediante chats, adjuntos, voz, búsquedas o comentarios salvo autorización legal.</p>
 
       <h2>Cambios en esta política</h2>
-      <p>Si esta política se actualiza, los cambios se publicarán en esta página con una fecha de revisión actualizada.
-        Dado que la aplicación no recopila ningún dato, es poco probable que se produzcan cambios significativos.</p>
+      <p>Si esta política se actualiza, los cambios se publicarán en esta página con una fecha de revisión actualizada.</p>
 
       <h2>Contacto</h2>
       <p>Si tienes preguntas sobre esta política, puedes abrir un issue en el <a
           href="https://github.com/ArtCC/openclient-llm/issues">repositorio de GitHub</a>.</p>
     </div>
 
-    <p class="legal-updated">Última actualización: 20 de abril de 2026</p>
+    <p class="legal-updated">Última actualización: 15 de julio de 2026</p>
   </div>
 </body>
 

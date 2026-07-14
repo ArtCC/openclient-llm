@@ -179,14 +179,15 @@ Some models can request multiple tool calls in a single response:
 ]
 ```
 
-- Execute all tool calls (can be done concurrently with `TaskGroup`)
+- `AgentStreamUseCase` executes accepted calls concurrently with a throwing task group, then restores model-request order when constructing tool messages.
 - Send ALL results back in one request, each with its matching `tool_call_id`
-- Check `supports_parallel_function_calling` from model info
+- The current loop does not consult `supports_parallel_function_calling`; it concurrently executes multiple calls whenever the model returns them. Treat that as current behavior when changing capability handling.
 
 ### Loop Safety
 
 - **Maximum iterations**: Cap the loop at 10 iterations to prevent infinite loops
 - **Tool-call budget**: Cap the total number of calls at 20 and a single tool round at 8 calls.
+- **Final-response round**: On the tenth iteration, after exhausting the total tool-call budget, or after rejecting excess calls from a round, send the next request without tools to force a final response.
 - **Tool-result budget**: Rebuild the request context after every tool round and bound each result from the remaining input budget so tool output cannot consume the final-response space.
 - **Continuous context**: Preserve the latest complete user turn and its assistant/tool messages atomically; never skip a recent turn to include an older one.
 - **Transcript persistence**: Emit and persist every assistant `tool_calls` message and matching tool result before continuing the loop.
@@ -209,9 +210,9 @@ The `GET /model/info` endpoint provides capability flags:
 }
 ```
 
-- Only show agent mode toggle for models with `supports_function_calling: true`
-- Only enable parallel execution for models with `supports_parallel_function_calling: true`
-- Models without function calling (e.g., some Ollama models) should hide/disable agent features
+- Route every message for a model with `supports_function_calling: true` through `AgentStreamUseCase`; agent routing is automatic and is not controlled by a separate agent-mode toggle.
+- Preserve `supports_parallel_function_calling` as model metadata. The current agent loop does not use it to gate concurrent local execution.
+- Models without function calling use regular streaming. The web-search control is unavailable for those models.
 
 ### Provider Notes
 
@@ -251,11 +252,21 @@ struct ToolCallFunction: Codable, Sendable, Equatable {
 ### Tool Registry
 
 ```swift
-// Shared/Features/Chat/Models/Tool.swift
+// Shared/Features/Chat/Models/ChatTool.swift
 
-protocol ChatTool: Sendable {
+nonisolated struct ToolExecutionResult: Sendable {
+    let text: String
+    let searchResults: [LiteLLMSearchResult]?
+
+    init(text: String, searchResults: [LiteLLMSearchResult]? = nil) {
+        self.text = text
+        self.searchResults = searchResults
+    }
+}
+
+protocol ChatToolProtocol: Sendable {
     var definition: ToolDefinition { get }
-    func execute(arguments: String) async throws -> String
+    func execute(arguments: String) async throws -> ToolExecutionResult
 }
 
 struct ToolDefinition: Codable, Sendable {
@@ -270,9 +281,7 @@ struct ToolFunctionDefinition: Codable, Sendable {
 }
 ```
 
-Built-in tools to implement:
-- **`web_search`**: Web search integration via LiteLLM (see web-browsing.instructions.md). Uses a generic name to avoid triggering LiteLLM's `websearch_interception` callback, which may interfere with providers like Ollama.
-- Future: calculator, code execution, file operations, etc.
+The default registry always includes `get_current_datetime`. Outside Private Chat it also includes `save_memory` and `delete_memory`. It includes `web_search` only while web search is enabled. `ToolRegistry.execute` returns an "Unknown tool" result rather than throwing when a name is not registered.
 
 ### Agentic UseCase
 
@@ -283,37 +292,40 @@ protocol AgentStreamUseCaseProtocol: Sendable {
     func execute(
         messages: [ChatMessage],
         model: String,
-        tools: [ToolDefinition]
+        parameters: ModelParameters,
+        contextWindowTokens: Int?,
+        toolRegistry: ToolRegistry
     ) -> AsyncThrowingStream<AgentEvent, Error>
 }
 
 enum AgentEvent: Sendable {
-    case token(String)                           // Streaming text token
-    case toolCallStarted(ToolCall)               // Model requested a tool call
-    case toolCallCompleted(String, String)        // toolCallId, result
-    case completed                                // Final response done
-    case error(String)                           // Error message
+    case token(String)
+    case reasoning(String)
+    case toolCallStarted(ToolCall)
+    case toolCallCompleted(toolCallId: String, result: String, searchResults: [LiteLLMSearchResult]?)
+    case transcriptAppended([ChatMessage])
+    case usage(TokenUsage)
+    case promptUsage(Int)
+    case image(Data)
+    case completed
 }
 ```
 
-The use case manages the full agentic loop internally, emitting events for the UI.
+The use case manages non-streaming completion requests for the full loop, then emits final content and reasoning in small chunks for the existing streaming UI. Failures terminate the `AsyncThrowingStream`; there is no `.error` event. Assistant tool-call messages and matching tool messages are emitted through `.transcriptAppended` and persisted before the next round.
 
 ### ViewModel Integration
 
-The `ChatViewModel` needs to:
-1. Detect if agent mode is enabled for the conversation
-2. Use `AgentStreamUseCase` instead of `StreamMessageUseCase` when tools are active
-3. Handle `AgentEvent` updates to show tool execution progress in the UI
+`ChatViewModel.streamWithWebSearch` uses `AgentStreamUseCase` whenever the selected model has `.functionCalling`, whether or not web search is enabled. It uses `StreamMessageUseCase` only for models without that capability. Web search changes the registry contents; it does not select agent routing.
 
 ## Streaming Considerations
 
 Tool calling and streaming can interact in two ways:
 
-### Non-Streaming Tool Calls (Recommended for v1)
+### Current Behavior
 
-- Send request with `stream: false` during the agentic loop
-- Only stream the **final response** after all tool calls are resolved
-- Simpler to implement, easier to manage the loop
+- Agent rounds use non-streaming chat completions.
+- Final content and reasoning are chunked locally into `AgentEvent` values.
+- Tools remain present after a normal tool round, allowing multiple rounds. They are omitted only when forcing a final response because of iteration or tool-call safeguards, or when an empty/`{}` model response requires a final retry.
 
 ### Streaming Tool Calls (Advanced)
 
@@ -321,15 +333,15 @@ Tool calling and streaming can interact in two ways:
 - Must accumulate argument fragments before parsing JSON
 - More complex but provides real-time feedback
 
-> **Recommendation**: Start with non-streaming for tool call rounds, stream only the final answer.
+Do not implement streamed tool-call deltas unless the repository and event contract are deliberately changed and covered by tests.
 
 ## UI Design
 
-### Agent Mode Toggle
+### Automatic Agent Routing
 
-- Show a "Tools" or "Agent" chip/toggle near the input bar (next to web browsing toggle)
-- Only visible for models with `supports_function_calling: true`
-- When enabled, available tools are shown as small icons/badges
+- There is no separate Tools or Agent toggle.
+- Function-calling models automatically receive the default registry.
+- The globe control independently adds or removes `web_search` and requires both a configured search tool and a function-calling model.
 
 ### Tool Execution Feedback
 
@@ -371,7 +383,7 @@ When persisting conversations with tool calling:
 - **Invalid JSON in arguments**: Return error to model as tool result, let it retry
 - **Tool execution failure**: Return error description as tool content
 - **Model doesn't support tools**: Fall back to regular chat (no tools parameter)
-- **Loop stuck**: After max iterations, stop and show whatever the model last returned
+- **Loop stuck**: The final iteration omits tools; another tool-call response throws `AgentStreamError.iterationLimitReached`, while an invalid forced-final response throws `.invalidResponse`.
 - **Network error during tool execution**: Show error, allow retry
 - **Unknown tool name**: Return "Unknown tool" as result, model can self-correct
 
@@ -381,13 +393,13 @@ When persisting conversations with tool calling:
 - **No arbitrary code execution**: Tools are predefined, no dynamic tool loading
 - **Rate limiting**: Apply rate limits to tool executions (especially web search)
 - **Content sanitization**: Sanitize tool results before injecting into messages
-- **User consent**: User explicitly enables agent mode; tools don't execute without opt-in
+- **Tool scope**: Function-calling models receive built-in datetime and, outside Private Chat, memory tools automatically. Web search remains explicit opt-in through its toggle.
 
 ## Relationship with Web Browsing
 
 Web search (`web_search`) is the **first and primary tool** in the agent system:
 
-- When web search is ON + model has `.functionCalling` → Agent mode activates with `web_search` as a registered tool. The app's agentic loop executes the tool via `/v1/search`.
-- When web search is ON + model has no `.functionCalling` → **No search occurs**. The globe shows red to inform the user.
-- When web search is OFF → Regular streaming, no tools registered
+- A model with `.functionCalling` always uses the agent loop. When web search is ON, `web_search` joins the default registry and executes through `/v1/search/{search_tool_name}`.
+- Web search cannot be enabled unless the model has `.functionCalling` and a search tool name is configured; an unavailable globe is shown in red.
+- When web search is OFF, function-calling models still use the agent loop with datetime and eligible memory tools. Models without `.functionCalling` use regular streaming.
 - See `web-browsing.instructions.md` for the full flow table and implementation details

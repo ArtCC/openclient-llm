@@ -4,8 +4,8 @@ OpenClient follows **MVVM + UseCase + Repository + Manager** with Swift strict c
 
 ```
 View → ViewModel → UseCase → Repository → APIClient / LocalStorage
-                      ↑
-                   Manager (transversal services)
+          │            │          │
+          └────────────┴──────────→ Manager (transversal services)
 ```
 
 ## Project Structure
@@ -55,6 +55,7 @@ openclient-llm/                    # iOS target
 │   │   │   ├── Models/
 │   │   │   ├── ViewModels/
 │   │   │   └── Views/
+│   │   ├── Shortcuts/             # AppIntents and AppShortcutsProvider
 │   │   └── TextToSpeech/
 │   │       ├── Models/
 │   │       ├── Repositories/
@@ -64,7 +65,7 @@ openclient-llm/                    # iOS target
 │   │   │   ├── Foundation/
 │   │   │   └── SwiftUI/
 │   │   ├── Managers/              # ShareManager, SpotlightManager, ShortcutManager…
-│   │   ├── Models/                # ShareExtensionItem (shared with extension)
+│   │   ├── Models/                # App-side share payload and other core models
 │   │   ├── Networking/
 │   │   │   └── Models/
 │   │   ├── Utils/
@@ -85,7 +86,7 @@ ShareExtension/                    # iOS Share Extension target
 │       └── ShareExtensionStore.swift
 └── Resources/
 
-Widgets/                           # WidgetsExtension target (iOS 18+)
+Widgets/                           # WidgetsExtension target (iOS 26+)
 ├── App/
 │   ├── WidgetsBundle.swift        # @main entry point
 │   ├── Controls/
@@ -93,6 +94,7 @@ Widgets/                           # WidgetsExtension target (iOS 18+)
 │   │   └── NewChatControlIntent.swift
 │   ├── Models/
 │   │   ├── AppGroupStore.swift    # Reads/writes App Group shared container
+│   │   ├── WidgetControlStore.swift
 │   │   └── WidgetConversation.swift
 │   └── Widgets/
 │       ├── NewChatWidget.swift
@@ -116,25 +118,32 @@ openclient-llm-test/               # Unit tests
 └── Mocks/                         # MockXxx per protocol, @unchecked Sendable
 ```
 
+The Xcode project contains five native targets: `openclient-llm`, `openclient-llm-macOS`,
+`openclient-llm-test`, `ShareExtension`, and `WidgetsExtension`. It resolves three Swift packages:
+SwiftLintPlugins, VoticeSDK, and ConfettiSwiftUI.
+
 ## Layer Responsibilities
 
 | Layer | Responsibility |
 |---|---|
 | **View** | SwiftUI views. Observes ViewModel state, sends events. No business logic. |
-| **ViewModel** | `@Observable @MainActor`. Event/State pattern. Coordinates UseCases. |
+| **ViewModel** | `@Observable @MainActor`. Receives events through `send(_:)`; coordinates UseCases and selected Managers. Most expose a State enum; Home exposes focused observable routing properties. |
 | **UseCase** | Single business operation. Calls Repositories and Managers. |
 | **Repository** | Data access abstraction (network, cache, local storage). Protocol-based for testability. |
-| **Manager** | Transversal services shared across features (auth, settings, connectivity). |
-| **APIClient** | Single networking layer via `URLSession` + `async/await`. Communicates with LiteLLM. |
+| **Manager** | Transversal storage, device, sync, routing, and SDK coordination used where needed across layers. |
+| **APIClient** | Networking via `URLSession` + `async/await`; appends repository endpoint paths to the saved base URL. |
 
 ## Platform Strategy
 
-- **`Shared/`** — All business logic, models, networking, ViewModels, UseCases, Repositories, Managers. Referenced by both targets.
+- **`Shared/`** — Business logic, models, networking, ViewModels, UseCases, Repositories, Managers, and most views. Referenced by both app targets.
 - **`openclient-llm/`** (outside Shared) — iOS/iPadOS-specific views, app entry point, iOS resources.
 - **`openclient-llm-macOS/`** — macOS-specific views, app entry point, macOS resources. No shared logic duplicated here.
-- **`ShareExtension/`** — Share Extension target (iOS/iPadOS). Shares `ShareExtensionItem` model and `ShareExtensionStore` write-side with the main app via the App Group container (`group.com.artcc.openclient-llm`). Does not link against Shared code directly to keep the extension lightweight.
-- **`Widgets/`** — WidgetsExtension target (iOS 18+). Contains WidgetKit widgets and Control Center controls. Shares the App Group (`group.com.artcc.openclient-llm`) with the main app to read conversation data and settings. Does not link against Shared code directly.
+- **`ShareExtension/`** — iOS/iPadOS Share Extension. It owns compatible write-side payload/store types; the main app owns the read side. They exchange JSON and attachments through `group.com.artcc.openclient-llm`; the extension does not link `Shared/`.
+- **`Widgets/`** — Source folder for `WidgetsExtension` (iOS 26+), containing four home-screen widgets and a Control Center control. `AppGroupStore` and `WidgetConversation` compile into both apps and the extension; `WidgetControlStore` compiles into the iOS app and extension. The remaining widget UI does not link the shared feature layer.
 - **`#if os(iOS)` / `#if os(macOS)`** — Used inside shared views for platform-specific UI variations.
+
+The iOS and macOS app targets set `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`. The test and extension targets do not;
+tests that access app-isolated types declare `@MainActor` explicitly.
 
 ## Share Extension Data Flow
 

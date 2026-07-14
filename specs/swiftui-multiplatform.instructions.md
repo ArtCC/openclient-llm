@@ -17,7 +17,9 @@ Use conditional compilation for platform-specific UI:
 #endif
 ```
 
-Keep shared logic, ViewModels, UseCases, Repositories, and Models in `openclient-llm/Shared/`. Only platform-specific views go in the respective target folders (`openclient-llm/Views/` for iOS, `openclient-llm-macOS/Views/` for macOS).
+Shared views and logic live in `openclient-llm/Shared/`. The repository has no `openclient-llm/Views/` directory. The
+macOS target compiles Shared and adds only genuinely macOS-specific app, menu bar, and commands UI from
+`openclient-llm-macOS/`.
 
 For shared views that differ slightly by platform, use `#if os()` inside the view. Only create separate view files per target when the UI is fundamentally different.
 
@@ -66,7 +68,7 @@ private extension ChatView {}
 
 > **Generic vs. App-Specific**: Navigation patterns below are generic. The specific tab names, icons, and sidebar structure are marked as **app-specific** and should be adapted per project.
 
-### iOS / iPadOS — Tab Bar (Liquid Glass)
+### iOS / iPadOS - Current Tab Bar
 
 The app uses a `TabView` with Liquid Glass style as the root navigation on iOS and iPadOS. The Tab Bar gets Liquid Glass automatically with the iOS 26+ SDK.
 
@@ -75,35 +77,50 @@ The app uses a `TabView` with Liquid Glass style as the root navigation on iOS a
 | Tab | SF Symbol | Content |
 |---|---|---|
 | **Chats** | `bubble.left.and.bubble.right` | Conversation list + chat view (`NavigationStack`) |
-| **Models** | `cpu` | Available models from the LiteLLM server |
+| **Models** | `brain.head.profile` | Available models from the configured server |
 | **Settings** | `gearshape` | Server configuration, API key, preferences |
+| **Search** | `magnifyingglass` | Dedicated conversation search, using `role: .search` |
 
 > **App-Specific** — Adapt tab structure for your project.
 
 ```swift
-TabView {
-    Tab(String(localized: "Chats"), systemImage: "bubble.left.and.bubble.right") {
+TabView(selection: $selectedTab) {
+    Tab(value: AppTab.chats) {
         ChatsNavigationView()
+    } label: {
+        Label(String(localized: "Chats"), systemImage: "bubble.left.and.bubble.right")
     }
-    Tab(String(localized: "Models"), systemImage: "cpu") {
+    Tab(value: AppTab.models) {
         ModelsView()
+    } label: {
+        Label(String(localized: "Models"), systemImage: "brain.head.profile")
     }
-    Tab(String(localized: "Settings"), systemImage: "gearshape") {
+    Tab(value: AppTab.settings) {
         SettingsView()
+    } label: {
+        Label(String(localized: "Settings"), systemImage: "gearshape")
+    }
+    Tab(value: AppTab.search, role: .search) {
+        SearchConversationsView()
+    } label: {
+        Label(String(localized: "Search"), systemImage: "magnifyingglass")
     }
 }
+.tabViewStyle(.sidebarAdaptable)
 ```
 
-- Each tab contains its own `NavigationStack` for internal navigation
-- On iPadOS, the Tab Bar adapts to the larger screen — conversations can use `NavigationSplitView` inside the Chats tab for sidebar layout
+- `HomeView` uses `.tabViewStyle(.sidebarAdaptable)` and each destination owns navigation where needed.
+- Current iPadOS behavior uses the same iOS `NavigationStack` chat layout; it does not contain a separate
+  `NavigationSplitView` implementation.
 - Tabs are scalable — future features (e.g., "Images" for image generation) can be added as new tabs
 
 ### macOS — NavigationSplitView with Sidebar
 
 macOS does **not** use Tab Bar. Instead, use `NavigationSplitView` with a sidebar as the root navigation:
 
-- Sidebar shows conversation list + navigation to Models and Settings
-- Detail view shows the active chat
+- Sidebar contains Chats, Models, and Settings destinations.
+- The Chats detail owns a `NavigationStack` with the conversation list and chat navigation.
+- Search is not a macOS sidebar destination in the current implementation.
 - Use toolbar items and keyboard shortcuts for macOS-native interaction
 
 ### Navigation Destinations
@@ -114,7 +131,7 @@ macOS does **not** use Tab Bar. Instead, use `NavigationSplitView` with a sideba
 ## Layout Guidelines
 
 - **iOS**: `TabView` (Liquid Glass) as root → `NavigationStack` inside each tab
-- **iPadOS**: `TabView` (Liquid Glass) as root → `NavigationSplitView` inside Chats tab for sidebar + detail
+- **iPadOS**: Same `.sidebarAdaptable` `TabView` and Chats `NavigationStack` as iPhone; let SwiftUI adapt the tab chrome
 - **macOS**: `NavigationSplitView` with sidebar, toolbar items, keyboard shortcuts — no Tab Bar
 
 ## Reusable Components & Custom Modifiers
@@ -122,14 +139,16 @@ macOS does **not** use Tab Bar. Instead, use `NavigationSplitView` with a sideba
 ### Custom Views
 
 - When a piece of UI is used in more than one place, extract it into a **custom reusable View** (e.g., `LoadingButton`, `ErrorBanner`, `APIKeyField`)
-- Place shared custom views in `Shared/Core/Views/` — feature-specific reusable views stay in their feature's `Views/` folder
+- Place cross-feature shared views in `openclient-llm/Shared/Core/Views/`; feature-owned views stay under
+  `openclient-llm/Shared/Features/<Feature>/Views/`.
 - Custom views must be self-contained: receive data through initializer parameters, not by reaching into parent state
 - Always include a `#Preview` block in every custom view file
 
 ### Custom ViewModifiers
 
 - When the same combination of modifiers is applied in multiple places, create a **custom `ViewModifier`** (e.g., `.urlFieldStyle()`, `.cardStyle()`)
-- Place shared modifiers in `Shared/Core/Modifiers/`
+- Keep feature-only modifiers beside the feature (for example, Chat view modifiers currently live under Chat `Views/`).
+  Create `Shared/Core/Modifiers/` only when a genuinely cross-feature modifier warrants that directory.
 - Provide a convenience `View` extension for each modifier:
   ```swift
   struct URLFieldModifier: ViewModifier {
@@ -160,6 +179,8 @@ macOS does **not** use Tab Bar. Instead, use `NavigationSplitView` with a sideba
 - Prefer built-in SwiftUI components over custom implementations
 - Use `.searchable()` for search functionality
 - Use `.sheet()`, `.popover()`, `.confirmationDialog()` for modal presentations
+- For chat programmatic scrolling, use the current `ScrollPosition` plus `.scrollPosition(_:)`, scroll geometry, and scroll
+  phase APIs. Do not regress this feature to `ScrollViewReader` without a concrete compatibility reason.
 
 ## Platform-Specific Control Patterns
 
@@ -227,7 +248,7 @@ private extension CGFloat {
 
 The following parts of this document are specific to **OpenClient LLM**:
 
-- **Tab Bar configuration** — Specific tabs (Chats, Models, Settings), icons, and content
+- **Tab Bar configuration** — Specific tabs (Chats, Models, Settings, Search), icons, and content
 - **macOS sidebar structure** — Specific sidebar sections
 
 All other sections are **generic SwiftUI multi-platform patterns** reusable across projects.

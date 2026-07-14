@@ -12,11 +12,11 @@ The changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) a
 ### Version header
 
 ```markdown
-## [MAJOR.MINOR.PATCH-buildN] - YYYY-MM-DD
+## [MAJOR.MINOR.PATCH-build-N] - YYYY-MM-DD
 ```
 
 - `MAJOR.MINOR.PATCH` follows SemVer
-- `-buildN` suffix is included (e.g. `0.0.1-build-12`)
+- Released headers append `-build-N` inside the brackets (e.g. `## [1.4.5-build-57] - 2026-07-15`). Treat this as the project version format even though the build suffix is not SemVer build metadata.
 - Date is ISO 8601 (e.g. `2026-04-03`)
 - Unreleased work goes under `## [Unreleased]` at the top
 
@@ -33,7 +33,7 @@ The changelog follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) a
 
 ## Entry Style
 
-- One entry per bullet (`-`), no sub-bullets
+- Prefer one entry per bullet (`-`). Existing releases sometimes use nested bullets for a single grouped feature such as widget variants; preserve that historical structure and use it only when it materially improves clarity.
 - Start with a noun or past-tense verb describing what changed, not who changed it
 - Be specific: include the affected type, file, or feature name where helpful
 - Do not mention PR numbers, commit hashes, or author names
@@ -100,7 +100,9 @@ When a build is released, replace `[Unreleased]` with the version + date.
 
 ## Rules
 
-- Never delete or rewrite existing entries — only append new ones
+- Do not rewrite historical entries merely for tone, punctuation, formatting, or to match newer conventions.
+- Narrow historical corrections are allowed when current code or an authoritative release artifact proves an entry factually wrong (for example, storage location, endpoint, default value, or shipped widget behavior). Keep the original release placement, change only the inaccurate wording, and do not recast unreleased work as shipped.
 - Never group multiple distinct changes into a single bullet
 - The most recent version always appears at the top
 - Keep the introductory paragraph (Keep a Changelog + SemVer links) unchanged
+- Historical sections contain style and factual inconsistencies. Do not copy an inconsistency into a new release, and do not perform a bulk cleanup while making an unrelated changelog update.

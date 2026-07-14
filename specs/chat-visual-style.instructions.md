@@ -17,14 +17,15 @@ Modern, clean conversational interface inspired by leading AI chat applications.
 - Clear visual distinction between user and assistant roles
 - Content-first: minimize decorative elements around message text
 - Generous spacing between messages for readability (12-16pt)
-- New messages appear with entry animations (slide + fade)
+- New message rows currently use an opacity transition. Do not document or add slide motion unless the interaction is
+  deliberately redesigned.
 
 ### User Messages
 
 - Right-aligned with left margin (minimum 60pt spacer on leading side)
-- Subtle background treatment (glass effect or soft tinted background) — NOT bold colored bubbles
+- Accent-tinted regular glass background
 - Rounded container with moderate corner radius (16-20pt)
-- Standard body text, primary foreground color
+- Standard body text with fixed white foreground on the accent-tinted glass
 - No avatar needed — right alignment is sufficient to identify role
 
 ### Assistant Messages
@@ -43,12 +44,11 @@ Modern, clean conversational interface inspired by leading AI chat applications.
 - Use SF Symbols or app-branded icon for the assistant
 - User messages do NOT need avatars — alignment differentiates roles
 
-### Timestamps
+### Metadata
 
-- Hidden by default to keep the interface clean
-- `.caption2` font, `.tertiary` foreground style
-- Positioned below the message content
-- Consider showing on interaction (tap on iOS, hover on macOS) in future iterations
+- Message timestamps are not currently rendered in chat bubbles.
+- Optional token usage is shown after completed assistant messages in `.caption2`/tertiary styling.
+- Do not add hover-only timestamps as though that behavior already exists.
 
 ## Input Bar
 
@@ -65,9 +65,10 @@ Modern, clean conversational interface inspired by leading AI chat applications.
 
 - Circular filled icon positioned INSIDE the input pill, trailing edge
 - Icon: `arrow.up.circle.fill` with accent color
-- Appears only when there is non-empty text AND a model/agent is selected
+- Appears when trimmed input is non-empty and a model is selected; otherwise a microphone action is shown when speech
+  input is available
 - Smooth scale + opacity transition when appearing/disappearing
-- Minimum touch target: 44×44pt via `.font(.title2)`
+- Keep a minimum 44×44pt hit target even though the current icon uses `.font(.title)`
 
 ### Stop Button (During Streaming)
 
@@ -92,7 +93,7 @@ Modern, clean conversational interface inspired by leading AI chat applications.
 ### Welcome Content
 
 - Large assistant icon (60-80pt) with glass effect circle background
-- Friendly greeting text in `.title2` or `.title` font, `.primary` color
+- Friendly greeting text uses Poppins SemiBold relative to `.title2`; most surrounding text uses semantic system fonts
 - Optional subtitle in `.subheadline` font, `.secondary` color
 - Vertically centered with generous spacing between elements
 
@@ -122,23 +123,24 @@ Modern, clean conversational interface inspired by leading AI chat applications.
 
 ### Typing Cursor
 
-- Append a cursor character (`▌`) to the end of the streaming message text
-- The visual effect of streaming tokens + cursor creates a "typing" feel
-- Cursor is removed when streaming completes
-- **NO separate "Generating..." label** — the cursor integrated with the text IS the indicator
+- Append a blinking solid cursor character (`█`) to the final streaming text block.
+- Toggle it every 500 ms while streaming and remove it when streaming completes.
+- Before answer or reasoning content exists, show the current pulsing localized `Thinking...` label. Once text exists,
+  the integrated cursor is the answer-stream indicator.
+- Streaming reasoning also pulses the Thinking disclosure label.
 
 ### Progressive Rendering
 
 - Tokens appear immediately as they arrive from the stream
 - Smooth scroll-to-bottom as new content arrives
-- No loading spinners during active streaming (only cursor)
+- Do not show a loading spinner for answer generation; use the current cursor/Thinking states
 
 ## Message Entry Animations
 
-- New messages appear with a combined transition: slide from bottom + fade in
-- Animation: `.spring(duration: 0.3)` or `.easeOut(duration: 0.25)` timing
-- Apply `.animation()` on the message container, keyed to message count
-- Each message has `.transition(.move(edge: .bottom).combined(with: .opacity))`
+- Current message rows use `.transition(.opacity)`.
+- Top/bottom scroll buttons use scale plus opacity and spring when edge proximity changes.
+- Do not add a container-wide animation keyed to every token or message mutation; streaming updates should remain stable
+  and readable.
 
 ## Markdown Rendering
 
@@ -149,13 +151,13 @@ Modern, clean conversational interface inspired by leading AI chat applications.
 - Graceful fallback to plain text if markdown parsing fails
 - Apply to assistant messages only — user messages stay as plain text
 
-### Code Blocks (Future Enhancement)
+### Code Blocks (Current)
 
-- Distinct background color (semantic asset catalog color)
-- Monospaced font (`.system(.body, design: .monospaced)`)
-- Horizontal scroll for long lines
-- Optional copy button in the top-right corner
-- Language label when specified in the markdown fence
+- `MarkdownParser` splits fenced blocks from text and headings.
+- `CodeBlockView` uses `.system(.body, design: .monospaced)`, selectable text, and horizontal scrolling.
+- A language label, or localized "Code" fallback, appears in the header.
+- The copy button changes to a green checkmark/"Copied" state for two seconds.
+- The surface is `.ultraThinMaterial` with a subtle rounded stroke. Syntax highlighting is not implemented.
 
 ## Color Guidelines
 
@@ -199,25 +201,26 @@ The chat interface shares the same core layout across platforms, but macOS requi
 
 - Same layout rules as iOS (user right-aligned with glass, assistant left-aligned without background)
 - On macOS, user bubble glass may render slightly differently due to window backgrounds — test with various desktop wallpapers
-- Hover effect on messages: show timestamp on hover (future enhancement)
+- Current message rows do not add a macOS-only hover or timestamp state
 
 ### Action Buttons Inside Messages
 
-- Copy button, code block actions: use `.buttonStyle(.plain)` with `.onHover` highlight on macOS
-- Avoid `.buttonStyle(.bordered)` for small inline actions inside messages — it adds too much chrome
-- These inline icon buttons are **not** standard form actions, so plain style is correct on both platforms
+- Most inline message actions use `.buttonStyle(.plain)`.
+- `CodeBlockView` currently uses `.bordered` with `.controlSize(.small)` for its labeled copy action on macOS and plain
+  style on iOS. Preserve that implemented distinction unless the code-block header is redesigned.
 
 ### Scroll Behavior
 
-- macOS uses visible scroll indicators by default — don't hide them
+- The main macOS chat scroll keeps native indicators. `CodeBlockView` intentionally hides its horizontal indicator while
+  retaining horizontal scrolling for long lines.
 - `.scrollDismissesKeyboard()` is iOS-only — omit on macOS (already guarded by `#if os(iOS)`)
 - Elastic overscroll is native on macOS — don't disable it
 - On macOS the keyboard notification for scroll adjustment is not needed — the keyboard doesn't overlay content
 
 ### Model Selector (Toolbar)
 
-- Same `Menu` + chevron pattern as iOS
-- On macOS, `ToolbarItem(placement: .principal)` works but may render differently — test that the model name centers correctly in the macOS toolbar
+- Same `Menu` + chevron pattern as iOS, with Poppins SemiBold model text and middle truncation at 200 points
+- The shared Chat toolbar places it as a principal item where supported; verify placement on both platforms
 - macOS toolbar has built-in glass — don't add extra glass to the selector label
 
 ### Suggestion Chips
@@ -246,7 +249,7 @@ The chat interface shares the same core layout across platforms, but macOS requi
 
 ## Suggestion Prompts
 
-Default suggestion chips for the empty state:
+`ConversationStartersManager` currently chooses four random items from this localized pool:
 
 | Icon | English Key | Purpose |
 |---|---|---|
@@ -254,6 +257,10 @@ Default suggestion chips for the empty state:
 | `pencil.and.outline` | "Write a creative story" | Creative writing |
 | `chevron.left.forwardslash.chevron.right` | "Help me with my code" | Code assistance |
 | `globe` | "Translate text to another language" | Translation |
+| `book` | "Summarize a long text" | Summarization |
+| `questionmark.bubble` | "Answer a tricky question" | General questions |
+| `text.badge.checkmark` | "Review and improve my writing" | Editing |
+| `brain.head.profile` | "Brainstorm ideas for a project" | Ideation |
 
 All prompts must be localized via `String(localized:)` for every supported language.
 

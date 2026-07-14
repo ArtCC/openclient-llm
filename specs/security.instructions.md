@@ -49,7 +49,8 @@ print("User authenticated")
 Rules:
 - Never log: passwords, tokens, API keys, private keys, PII (name, email, phone, location)
 - Log events and outcomes — not the data involved
-- In debug builds, prefer `os_log` with `.debug` level (stripped in release by default)
+- `LogManager` currently uses `print` behind `#if DEBUG`; all levels are no-ops in release builds. Do not describe this as `os_log` or rely on debug-level privacy redaction.
+- `APIClient.request` currently prints successful generic JSON response bodies in full and prints up to 500 characters of HTTP error bodies in DEBUG builds. This is existing behavior, not endorsed guidance; do not add similar logging, and treat redaction/removal as unresolved hardening because model responses and server errors may contain sensitive content.
 
 ---
 
@@ -83,8 +84,8 @@ let response = try JSONDecoder().decode(APIResponse.self, from: data)
 ## Network security
 
 ```swift
-// ✅ Always use HTTPS — never allow HTTP in production
-// Info.plist: NSAppTransportSecurity must not have NSAllowsArbitraryLoads = true
+// Prefer HTTPS for internet-reachable servers.
+// This app also supports user-selected self-hosted HTTP endpoints on localhost/LAN.
 
 // ✅ Certificate pinning for high-sensitivity endpoints (if required)
 // Implement via URLSession delegate — do not use third-party libraries unless vetted
@@ -95,7 +96,9 @@ guard (200..<300).contains(httpResponse.statusCode) else {
 }
 ```
 
-- **`NSAllowsArbitraryLoads = true` is intentional in this project.** LiteLLM runs as a self-hosted server on user-controlled infrastructure (localhost, LAN, private network) and may serve over plain HTTP. Disabling ATS globally is the accepted trade-off; do not remove this setting.
+- The iOS and macOS targets currently set `NSAllowsArbitraryLoads = true` so users can reach self-hosted LiteLLM/OpenAI-compatible servers over HTTP on localhost, LANs, or private networks. This is a compatibility exception, not a statement that HTTP is secure.
+- Prefer HTTPS and valid certificate verification whenever the server is internet-reachable. Do not broaden HTTP use to app-owned or fixed third-party services, and do not add trust-all certificate delegates.
+- Do not remove or narrow the current ATS exception without a tested replacement that preserves user-configured self-hosted HTTP connectivity on every supported platform.
 - Do not log raw HTTP responses that may contain sensitive data
 - Set reasonable timeouts — never use `timeoutInterval: 0`
 
@@ -143,6 +146,9 @@ let apiKey = Configuration.apiKey  // Loaded from a non-committed source
 - No API keys, secrets, or credentials in source code
 - Add `*.xcconfig` files containing secrets to `.gitignore`
 - Use environment variables or a secrets manager for CI/CD
+- `Secrets.xcconfig` values used by Votice are expanded into the client bundle. They must be treated as recoverable client
+  configuration even though the local file and CI values are protected from source control. Never use this mechanism for
+  a privileged server-side secret.
 
 ---
 
@@ -160,7 +166,8 @@ let apiKey = Configuration.apiKey  // Loaded from a non-committed source
 - [ ] No secrets, API keys, or credentials in source code
 - [ ] No PII or tokens in logs
 - [ ] All user input validated at the boundary
-- [ ] Network: `NSAllowsArbitraryLoads = true` is kept (required for self-hosted LiteLLM over HTTP/LAN) — do not restrict user-entered server URLs
+- [ ] Network: HTTPS is preferred; the current ATS exception remains only to preserve user-configured self-hosted HTTP connectivity
+- [ ] Debug diagnostics do not add request, response, server-error, conversation, or credential payload logging
 - [ ] Cryptography uses `CryptoKit` — no custom implementations
 - [ ] Biometric gating uses `LocalAuthentication`
 - [ ] Sessions are fully invalidated on sign-out

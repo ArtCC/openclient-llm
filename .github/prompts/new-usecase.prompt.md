@@ -17,7 +17,7 @@ protocol ${input}UseCaseProtocol: Sendable {
     func execute(...) async throws -> ...
 }
 
-final class ${input}UseCase: ${input}UseCaseProtocol {
+struct ${input}UseCase: ${input}UseCaseProtocol {
     // MARK: - Properties
 
     private let repository: <Repository>Protocol
@@ -36,13 +36,16 @@ final class ${input}UseCase: ${input}UseCaseProtocol {
 }
 ```
 
-### Test (in `openclient-llm-test/`)
+### Test (in `openclient-llm-test/Features/<Feature>/`)
 
 2. **${input}UseCaseTests.swift** — Unit tests with mocked repository, Given-When-Then pattern
 
 ## Rules
 
 - Protocol must be `Sendable`
+- Prefer a `struct`; use a class only when the operation requires shared mutable state or reference semantics
 - Inject dependencies through init
 - One public `execute` method per UseCase
+- Every generated Swift file must start with the repository copyright header, using its actual file name and creation date
+- The test class must be `@MainActor`
 - Test naming: `test_execute_<scenario>_<expectedResult>()`

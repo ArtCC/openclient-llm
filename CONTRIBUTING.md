@@ -7,7 +7,7 @@ Thank you for your interest in contributing! This guide will help you get starte
 1. **Fork** the repository
 2. **Clone** your fork locally
 3. **Open** the project in Xcode 26+ or VS Code
-4. **Create a branch** for your feature or fix
+4. **Create a branch from `develop`** for your feature or fix
 
 ## Development Setup
 
@@ -19,10 +19,22 @@ Thank you for your interest in contributing! This guide will help you get starte
 
 ### Build
 
+Create the gitignored configuration required by both app targets. Empty placeholders are sufficient to build; real
+credentials are required to use the in-app Votice feedback screen:
+
+```bash
+cat > Secrets.xcconfig <<'EOF'
+VOTICE_API_KEY =
+VOTICE_API_SECRET =
+VOTICE_APP_ID =
+EOF
+```
+
 ```bash
 open openclient-llm.xcodeproj
 # Or build from terminal:
-xcodebuild build -scheme openclient-llm -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max'
+xcodebuild build -project openclient-llm.xcodeproj -scheme openclient-llm \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max'
 ```
 
 If you use VS Code with the **XcodeBuildMCP** extension, the `build-lint`, `run-app`, and `run-tests` agent prompts handle build, launch, and testing automatically — with or without MCP installed.
@@ -42,14 +54,14 @@ If you use VS Code with the **XcodeBuildMCP** extension, the `build-lint`, `run-
 
 ### Submitting Code
 
-1. Create a feature branch from `main`:
+1. Create a feature branch from `develop`:
    ```bash
    git checkout -b feature/your-feature-name
    ```
 2. Follow the project's code style (see below)
 3. Write or update tests if applicable
 4. Commit with clear, descriptive messages
-5. Push to your fork and open a Pull Request
+5. Push to your fork and open a Pull Request targeting `develop`
 
 ## Code Style
 
@@ -57,10 +69,13 @@ If you use VS Code with the **XcodeBuildMCP** extension, the `build-lint`, `run-
 - **SwiftUI** for all UI code
 - Use `@Observable` macro (not `ObservableObject`)
 - Prefer `async/await` over Combine
+- The iOS and macOS app targets default to `MainActor`; test and extension targets do not
 - Follow [Swift API Design Guidelines](https://www.swift.org/documentation/api-design-guidelines/)
 - One public type per file, file named after the type
 - Use `// MARK: -` for logical sections
 - Include `#Preview` in every SwiftUI view file
+- SwiftLint warning/error limits are 120/150 lines for line length, 50/80 for function bodies, 300/400 for type
+  bodies, and 500/650 for files; force unwraps and force casts are errors
 
 ## Commit Messages
 
@@ -78,6 +93,8 @@ Update settings view for macOS layout
 - Provide a clear description of what changed and why
 - Reference related issues (e.g., `Closes #12`)
 - Ensure the project builds without warnings
+- Run the smallest relevant unit-test set. The repository currently has no real-server integration-test suite
+- Do not commit `Secrets.xcconfig`
 
 ## Code of Conduct
 

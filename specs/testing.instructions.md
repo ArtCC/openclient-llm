@@ -6,7 +6,8 @@ description: "Use when writing unit tests, integration tests, creating mocks, te
 
 ## Overview
 
-All tests live in the `openclient-llm-test/` target, linked to the iOS target. Tests cover shared logic only — no UI tests.
+All current tests live in the iOS-hosted `openclient-llm-test/` XCTest target. There is no UI test target and no dedicated
+integration-test suite.
 
 ## Test Types
 
@@ -20,15 +21,10 @@ Test a single unit in isolation with mocked dependencies.
 - **Repositories**: Data mapping, caching logic (mock the APIClient)
 - **Managers**: Transversal service behavior
 
-### Integration Tests
-
-Test real interactions between layers or with external services.
-
-**What to test:**
-- **API integration**: Real HTTP calls against a LiteLLM server (guarded by environment variable or test configuration)
-- **Repository + APIClient**: Verify end-to-end data flow without mocks
-
-Integration tests that require a running server should be skipped by default and only run explicitly.
+Some tests exercise multiple local layers, persistence behavior, cloud-sync mapping, widget snapshots, or streaming logic,
+but they remain in the normal feature/core folders. The suite currently contains no tests guarded by `LITELLM_TEST_URL`,
+no real-server tests, and no `Integration/` directory. Do not create a network integration suite unless the task explicitly
+requires one and its opt-in configuration is defined.
 
 ## File Organization
 
@@ -37,19 +33,15 @@ openclient-llm-test/
 ├── Features/
 │   └── Chat/
 │       ├── ChatViewModelTests.swift
-│       ├── SendMessageUseCaseTests.swift
-│       └── ChatRepositoryTests.swift
+│       ├── ChatViewModelTests+StreamingConcern.swift
+│       └── SendMessageUseCaseTests.swift
 ├── Core/
-│   ├── Networking/
-│   │   └── APIClientTests.swift
 │   └── Managers/
-│       └── AuthManagerTests.swift
-├── Integration/
-│   └── LiteLLMIntegrationTests.swift
+│       └── SettingsManagerTTSTests.swift
 └── Mocks/
     ├── MockChatRepository.swift
     ├── MockAPIClient.swift
-    └── MockAuthManager.swift
+    └── MockSettingsManager.swift
 ```
 
 ## Naming Conventions
@@ -70,6 +62,7 @@ func test_fetchModels_serverUnavailable_returnsEmpty() async { }
 import XCTest
 @testable import openclient_llm
 
+@MainActor
 final class SendMessageUseCaseTests: XCTestCase {
     // MARK: - Properties
 
@@ -109,7 +102,8 @@ final class SendMessageUseCaseTests: XCTestCase {
 
 ## Mocking Pattern
 
-Use protocols for all dependencies. Create mock implementations in `Mocks/`:
+Use protocol-backed dependencies where production code exposes a protocol. Shared mocks live in `Mocks/`; a small helper
+used by only one test file may remain private in that file.
 
 ```swift
 // Protocol (in Shared/Features/Chat/Repositories/)
@@ -118,7 +112,8 @@ protocol ChatRepositoryProtocol: Sendable {
 }
 
 // Mock (in openclient-llm-test/Mocks/)
-final class MockChatRepository: ChatRepositoryProtocol {
+// Safety: Only used within serialized @MainActor test methods.
+final class MockChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
     var sendMessageResult: Result<ChatResponse, Error> = .failure(MockError.notConfigured)
 
     func sendMessage(_ message: String, model: String) async throws -> ChatResponse {
@@ -138,39 +133,30 @@ func test_fetchModels_returnsModelList() async throws {
 }
 ```
 
-For testing `@MainActor` ViewModels, mark the test method with `@MainActor`:
+Mark the **XCTest class**, not individual methods, `@MainActor`. The test target has no default actor isolation and the
+current suite applies this annotation to every XCTest class:
 
 ```swift
 @MainActor
-func test_send_viewAppeared_loadsData() async {
-    viewModel.send(.viewAppeared)
-    XCTAssertEqual(viewModel.state, .loaded(.init()))
-}
-```
-
-## Integration Tests
-
-Guard integration tests that need a running LiteLLM server:
-
-```swift
-final class LiteLLMIntegrationTests: XCTestCase {
-    private var isServerAvailable: Bool {
-        ProcessInfo.processInfo.environment["LITELLM_TEST_URL"] != nil
-    }
-
-    func test_healthCheck_serverResponds() async throws {
-        try XCTSkipUnless(isServerAvailable, "LiteLLM server not configured")
-
-        // Real API call
+final class FeatureTests: XCTestCase {
+    func test_send_viewAppeared_loadsData() async {
+        viewModel.send(.viewAppeared)
+        XCTAssertEqual(viewModel.state, .loaded(.init()))
     }
 }
 ```
+
+Large test types may be split with `Type+Concern.swift` extensions or into focused XCTest classes, matching the existing
+Chat and Settings suites. Keep each file under the corresponding `Features/<Feature>/` or `Core/<Area>/` path.
 
 ## Rules
 
-- Every UseCase and Repository must have corresponding tests
+- Add focused tests for changed behavior at the smallest useful boundary; do not require one ceremonial test file for
+  every pass-through type.
 - ViewModels should be tested for all Event → State transitions
 - Never test private methods — test through the public API
 - Use `@testable import` to access internal types
 - Keep tests fast — mock all external dependencies in unit tests
 - No sleep/delays — use async/await patterns for timing
+- `@unchecked Sendable` mocks require the standard safety comment and must only be mutated from the MainActor-isolated
+  tests that own them.

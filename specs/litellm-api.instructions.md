@@ -92,18 +92,29 @@ error. In that case, continue with `/models` and `/chat/completions`; model capa
 limits, pricing, and usage metadata must remain optional. Users can configure a manual context
 window per conversation when the server does not provide `max_input_tokens`.
 
-### Health Check — `GET /health`
+### Search — `POST /v1/search/{search_tool_name}` and `GET /v1/search/tools`
 
-Simple endpoint to validate server connectivity.
+`POST /v1/search/{search_tool_name}` executes the configured LiteLLM search tool. `GET /v1/search/tools` discovers search tools available on the server.
+
+### Audio — `POST /v1/audio/transcriptions` and `POST /v1/audio/speech`
+
+Transcription uses multipart form data. Speech synthesis returns raw audio data.
+
+### Connection And LiteLLM Detection
+
+- Connection tests call `GET /models` with an optional bearer token.
+- LiteLLM detection separately calls `GET /health/readiness` and treats a `200` JSON response containing `litellm_version` as LiteLLM.
+- There is no current `GET /health` `APIClient` operation.
 
 ## Networking Architecture
 
-- Single `APIClient` class with `URLSession` + `async/await`
+- `APIClient` is a `Sendable` struct conforming to `APIClientProtocol`; it stores a `URLSession` and `SettingsManagerProtocol`.
 - Request/response models as `Codable` structs in `Core/Networking/`
-- Use `JSONDecoder` with `.convertFromSnakeCase` key decoding strategy
+- Generic JSON and multipart responses use `JSONDecoder` with `.convertFromSnakeCase`; streaming decoding is performed by `ChatRepository`.
 - Handle HTTP errors with typed `APIError` enum
-- Support request timeout configuration
+- JSON/raw requests use a 60-second timeout, multipart requests use 120 seconds, and onboarding connection and readiness checks use 30 and 10 seconds respectively. These values are currently fixed rather than user-configurable.
 - SSE streaming via `URLSession.bytes(for:)` async sequence
+- Endpoints are passed as relative strings such as `models`, `model/info`, and `chat/completions`; `URL.appendingPathComponent` resolves them against the user-configured base URL.
 
 ## Architecture Integration
 
@@ -120,3 +131,7 @@ Simple endpoint to validate server connectivity.
 - Server unreachable: LiteLLM not running or wrong URL
 - Model-info unavailable: continue with minimal models and optional manual context settings
 - Present user-friendly error messages, log technical details
+
+## Current Debug Logging
+
+`LogManager` prints only in `DEBUG` builds. `APIClient` currently logs request metadata and byte counts, the complete raw body for successful generic JSON requests, and up to 500 characters of HTTP error bodies for generic, multipart, and raw requests. This is factual current behavior, not an approved security pattern: responses and server errors can contain conversation content or credentials, so new networking code must not add payload logging and production logging must remain disabled. Prefer status codes, endpoints, sizes, and redacted diagnostics; removal or redaction of the existing body logs remains a security hardening item.
