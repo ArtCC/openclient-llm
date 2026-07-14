@@ -17,6 +17,7 @@ struct ImportConversationsUseCase: ImportConversationsUseCaseProtocol {
 
     private let saveConversationUseCase: SaveConversationUseCaseProtocol
     private let deleteConversationUseCase: DeleteConversationUseCaseProtocol
+    private let loadConversationsUseCase: LoadConversationsUseCaseProtocol
     private let attachmentRepository: AttachmentRepositoryProtocol
 
     // MARK: - Init
@@ -24,10 +25,12 @@ struct ImportConversationsUseCase: ImportConversationsUseCaseProtocol {
     init(
         saveConversationUseCase: SaveConversationUseCaseProtocol = SaveConversationUseCase(),
         deleteConversationUseCase: DeleteConversationUseCaseProtocol = DeleteConversationUseCase(),
+        loadConversationsUseCase: LoadConversationsUseCaseProtocol = LoadConversationsUseCase(),
         attachmentRepository: AttachmentRepositoryProtocol = AttachmentRepository()
     ) {
         self.saveConversationUseCase = saveConversationUseCase
         self.deleteConversationUseCase = deleteConversationUseCase
+        self.loadConversationsUseCase = loadConversationsUseCase
         self.attachmentRepository = attachmentRepository
     }
 
@@ -39,7 +42,8 @@ struct ImportConversationsUseCase: ImportConversationsUseCaseProtocol {
         let context = ImportContext(
             conversationIds: makeConversationIds(for: document),
             messageIds: makeMessageIds(for: document),
-            attachmentData: makeAttachmentData(for: document)
+            attachmentData: makeAttachmentData(for: document),
+            tagColors: try makeTagColors(for: document)
         )
         return try importDocument(document, context: context)
     }
@@ -54,6 +58,7 @@ private extension ImportConversationsUseCase {
         let conversationIds: [UUID: UUID]
         let messageIds: [UUID: UUID]
         let attachmentData: AttachmentData
+        let tagColors: [String: TagColor]
     }
 
     struct RestoredConversation {
@@ -143,6 +148,16 @@ private extension ImportConversationsUseCase {
         }
     }
 
+    func makeTagColors(for document: ConversationExportDocument) throws -> [String: TagColor] {
+        let importedTags = document.conversations.flatMap(\.conversation.tags)
+        return (try loadConversationsUseCase.execute().flatMap(\.tags) + importedTags)
+            .reduce(into: [String: TagColor]()) { colors, tag in
+                if colors[tag.name] == nil {
+                    colors[tag.name] = tag.color
+                }
+            }
+    }
+
     func importDocument(
         _ document: ConversationExportDocument,
         context: ImportContext
@@ -228,7 +243,9 @@ private extension ImportConversationsUseCase {
                 messages: messages,
                 modelParameters: conversation.modelParameters,
                 isPinned: conversation.isPinned,
-                tags: conversation.tags,
+                tags: conversation.tags.map {
+                    ConversationTag(name: $0.name, color: context.tagColors[$0.name] ?? $0.color)
+                },
                 parentConversationId: conversation.parentConversationId.flatMap { context.conversationIds[$0] },
                 branchedFromMessageId: conversation.branchedFromMessageId.flatMap { context.messageIds[$0] },
                 createdAt: conversation.createdAt,

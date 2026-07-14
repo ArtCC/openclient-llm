@@ -12,19 +12,27 @@ struct ConversationTagsView: View {
     // MARK: - Properties
 
     let conversationTitle: String
-    let existingTags: [String]
-    let onSave: ([String]) -> Void
+    let existingTags: [ConversationTag]
+    let availableTags: [ConversationTag]
+    let onSave: ([ConversationTag]) -> Void
 
-    @State private var tags: [String]
+    @State private var tags: [ConversationTag]
     @State private var newTagText: String = ""
+    @State private var newTagColor: TagColor = .orange
     @Environment(\.dismiss) private var dismiss
     @FocusState private var isFieldFocused: Bool
 
     // MARK: - Init
 
-    init(conversationTitle: String, existingTags: [String], onSave: @escaping ([String]) -> Void) {
+    init(
+        conversationTitle: String,
+        existingTags: [ConversationTag],
+        availableTags: [ConversationTag],
+        onSave: @escaping ([ConversationTag]) -> Void
+    ) {
         self.conversationTitle = conversationTitle
         self.existingTags = existingTags
+        self.availableTags = availableTags
         self.onSave = onSave
         _tags = State(initialValue: existingTags)
     }
@@ -43,14 +51,24 @@ struct ConversationTagsView: View {
                             .textInputAutocapitalization(.never)
 #endif
                             .onSubmit { addTag() }
+                            .onChange(of: newTagText) { _, _ in
+                                if let existingTag {
+                                    newTagColor = existingTag.color
+                                }
+                            }
 
                         Button(String(localized: "Add")) {
                             addTag()
                         }
                         .disabled(newTagText.trimmingCharacters(in: .whitespaces).isEmpty || tags.count >= 3)
                     }
+                    colorPicker
                 } header: {
                     Text(String(localized: "New Tag"))
+                } footer: {
+                    if existingTag != nil {
+                        Text(String(localized: "Existing tags keep their assigned color."))
+                    }
                 }
 
                 if !tags.isEmpty {
@@ -58,9 +76,19 @@ struct ConversationTagsView: View {
                         ForEach(tags, id: \.self) { tag in
                             HStack {
                                 Image(systemName: "tag.fill")
-                                    .foregroundStyle(.secondary)
-                                Text(tag)
+                                    .foregroundStyle(tag.color.displayColor)
+                                Text(tag.name)
                                 Spacer()
+#if os(macOS)
+                                Button(role: .destructive) {
+                                    tags.removeAll { $0 == tag }
+                                } label: {
+                                    Image(systemName: "trash")
+                                }
+                                .buttonStyle(.borderless)
+                                .help(String(localized: "Delete"))
+                                .accessibilityLabel(String(localized: "Delete"))
+#endif
                             }
                         }
                         .onDelete { indexSet in
@@ -69,9 +97,15 @@ struct ConversationTagsView: View {
                     } header: {
                         Text(String(localized: "Tags"))
                     } footer: {
+#if os(iOS)
                         Text(tags.count >= 3
                             ? String(localized: "Maximum of 3 tags reached. Remove one to add another.")
                             : String(localized: "Swipe left to remove a tag."))
+#else
+                        if tags.count >= 3 {
+                            Text(String(localized: "Maximum of 3 tags reached. Remove one to add another."))
+                        }
+#endif
                     }
                 }
             }
@@ -105,17 +139,52 @@ struct ConversationTagsView: View {
 // MARK: - Private
 
 private extension ConversationTagsView {
+    var existingTag: ConversationTag? {
+        let name = newTagText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return availableTags.first { $0.name == name }
+    }
+
+    @ViewBuilder
+    var colorPicker: some View {
+        Picker(String(localized: "Color"), selection: $newTagColor) {
+            ForEach(TagColor.allCases) { color in
+                Label {
+                    Text(color.localizedName)
+                } icon: {
+                    Image(systemName: "tag.fill")
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(color.displayColor)
+                }
+                .tag(color)
+            }
+        }
+#if os(iOS)
+        .pickerStyle(.navigationLink)
+#else
+        .pickerStyle(.radioGroup)
+#endif
+        .disabled(existingTag != nil)
+    }
+
     func addTag() {
-        let trimmed = newTagText.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty, !tags.contains(trimmed), tags.count < 3 else { return }
-        tags.append(trimmed)
+        let name = newTagText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, !tags.contains(where: { $0.name == name }), tags.count < 3 else { return }
+        tags.append(existingTag ?? ConversationTag(name: name, color: newTagColor))
         newTagText = ""
+        newTagColor = .orange
     }
 }
 
 #Preview {
     ConversationTagsView(
         conversationTitle: "My conversation",
-        existingTags: ["swift", "ai"]
+        existingTags: [
+            ConversationTag(name: "swift", color: .orange),
+            ConversationTag(name: "ai", color: .blue)
+        ],
+        availableTags: [
+            ConversationTag(name: "swift", color: .orange),
+            ConversationTag(name: "ai", color: .blue)
+        ]
     ) { _ in }
 }
