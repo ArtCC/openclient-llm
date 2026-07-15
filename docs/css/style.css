@@ -232,8 +232,9 @@ a:focus-visible {
 
 .app-icon-frame {
   position: relative;
-  display: inline-block;
-  margin-bottom: 28px;
+  display: block;
+  width: fit-content;
+  margin: 0 auto 28px;
 }
 
 .app-icon-frame::before {
