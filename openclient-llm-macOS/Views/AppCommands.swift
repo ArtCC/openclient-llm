@@ -12,16 +12,23 @@ struct AppCommands: Commands {
     // MARK: - Properties
 
     @FocusedValue(\.newChatAction) private var newChatAction
+    @FocusedValue(\.newPrivateChatAction) private var newPrivateChatAction
 
     // MARK: - View
 
     var body: some Commands {
-        CommandGroup(after: .newItem) {
+        CommandGroup(replacing: .newItem) {
             Button(String(localized: "New Chat")) {
                 newChatAction?()
             }
-            .keyboardShortcut("n", modifiers: .command)
+            .keyboardShortcut("c", modifiers: .command)
             .disabled(newChatAction == nil)
+
+            Button(String(localized: "New Private Chat")) {
+                newPrivateChatAction?()
+            }
+            .keyboardShortcut("p", modifiers: [.command])
+            .disabled(newPrivateChatAction == nil)
 
             Divider()
         }
@@ -32,4 +39,5 @@ struct AppCommands: Commands {
 
 extension FocusedValues {
     @Entry var newChatAction: (() -> Void)?
+    @Entry var newPrivateChatAction: (() -> Void)?
 }

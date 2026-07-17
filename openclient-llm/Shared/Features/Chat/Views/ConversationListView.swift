@@ -50,9 +50,13 @@ struct ConversationListView: View {
         .focusedSceneValue(\.newChatAction) {
             viewModel.send(.newConversationTapped)
         }
+        .focusedSceneValue(\.newPrivateChatAction) {
+            viewModel.send(.newPrivateConversationTapped)
+        }
 #endif
         .task {
             viewModel.onConversationSelected = onConversationSelected
+            viewModel.onPrivateChatSelected = onPrivateChatSelected
             viewModel.send(.viewAppeared)
         }
         .onChange(of: scenePhase) { _, newPhase in
@@ -181,10 +185,18 @@ private extension ConversationListView {
             }
         }
         .toolbar {
-#if os(iOS)
             ToolbarItem(placement: .primaryAction) {
                 newChatToolbarMenu
             }
+#if os(macOS)
+            ToolbarItem(placement: .primaryAction) {
+                macSearchToolbarItem
+            }
+            ToolbarItem(placement: .primaryAction) {
+                overflowMenu
+            }
+#endif
+#if os(iOS)
             ToolbarItem(placement: .secondaryAction) {
                 Button {
                     viewModel.send(.exportBackupTapped)
@@ -199,8 +211,6 @@ private extension ConversationListView {
                     Label(String(localized: "Import Conversations"), systemImage: "square.and.arrow.down")
                 }
             }
-#else
-            macToolbarItems
 #endif
         }
         .onChange(of: loadedState.conversations.count, initial: true) { _, count in
@@ -400,7 +410,6 @@ private extension ConversationListView {
                         isSelected ? .regular.tint(Color.appAccent) : .regular,
                         in: .circle
                     )
-
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(conversationTitle(conversation))
@@ -409,19 +418,16 @@ private extension ConversationListView {
                             .frame(maxWidth: .infinity, alignment: .leading)
 
                         branchBadge(for: conversation)
-
                         Text(formattedDate(conversation.updatedAt))
                             .font(.caption2)
                             .foregroundStyle(.tertiary)
                     }
-
                     if let lastMessage = conversation.messages.last(where: { $0.role != .system }) {
                         Text(lastMessage.content)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .lineLimit(2)
                     }
-
                     HStack(spacing: 4) {
                         modelBadge(conversation.modelId)
                         ForEach(conversation.tags.prefix(3), id: \.self) { tag in
