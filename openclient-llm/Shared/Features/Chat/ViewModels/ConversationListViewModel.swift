@@ -16,6 +16,7 @@ final class ConversationListViewModel {
     enum Event {
         case viewAppeared
         case newConversationTapped
+        case newPrivateConversationTapped
         case refreshTapped
         case conversation(ConversationEvent)
         case filter(FilterEvent)
@@ -102,9 +103,10 @@ final class ConversationListViewModel {
     private let settingsManager: SettingsManagerProtocol
     private let conversationCloudObserver: ConversationCloudObserving
     private var errorDismissTask: Task<Void, Never>?
-    private var cloudChangeTask: Task<Void, Never>?
 
+    var cloudChangeTask: Task<Void, Never>?
     var onConversationSelected: ((Conversation?) -> Void)?
+    var onPrivateChatSelected: (() -> Void)?
 
     // MARK: - Init
 
@@ -146,6 +148,8 @@ final class ConversationListViewModel {
             loadData()
         case .newConversationTapped:
             createNewConversation()
+        case .newPrivateConversationTapped:
+            onPrivateChatSelected?()
         case .refreshTapped:
             refresh()
         case .conversation(let event):
@@ -164,6 +168,51 @@ final class ConversationListViewModel {
     func refreshAsync() async {
         reloadConversations()
         await Task.yield()
+    }
+
+    func loadData() {
+        state = .loading
+        conversationCloudObserver.start()
+
+        Task {
+            var models: [LLMModel] = []
+            do {
+                models = try await fetchModelsUseCase.execute()
+            } catch {
+                // Continue with empty models — user can still view conversations
+            }
+
+            do {
+                let conversations = try loadConversationsUseCase.execute()
+                state = .loaded(LoadedState(
+                    conversations: conversations,
+                    availableModels: models,
+                    filteredConversations: conversations
+                ))
+            } catch {
+                state = .loaded(LoadedState(
+                    availableModels: models,
+                    errorMessage: error.localizedDescription
+                ))
+                scheduleErrorDismiss()
+            }
+        }
+    }
+
+    func reloadConversations() {
+        guard case .loaded(var loadedState) = state else { return }
+        conversationCloudObserver.start()
+
+        do {
+            loadedState.conversations = try loadConversationsUseCase.execute()
+            loadedState.errorMessage = nil
+            applySearchFilter(&loadedState)
+            state = .loaded(loadedState)
+        } catch {
+            loadedState.errorMessage = error.localizedDescription
+            state = .loaded(loadedState)
+            scheduleErrorDismiss()
+        }
     }
 }
 
@@ -210,51 +259,6 @@ private extension ConversationListViewModel {
             showBackupImportReadError()
         case .exportWriteFailed:
             showBackupExportWriteError()
-        }
-    }
-
-    func loadData() {
-        state = .loading
-        conversationCloudObserver.start()
-
-        Task {
-            var models: [LLMModel] = []
-            do {
-                models = try await fetchModelsUseCase.execute()
-            } catch {
-                // Continue with empty models — user can still view conversations
-            }
-
-            do {
-                let conversations = try loadConversationsUseCase.execute()
-                state = .loaded(LoadedState(
-                    conversations: conversations,
-                    availableModels: models,
-                    filteredConversations: conversations
-                ))
-            } catch {
-                state = .loaded(LoadedState(
-                    availableModels: models,
-                    errorMessage: error.localizedDescription
-                ))
-                scheduleErrorDismiss()
-            }
-        }
-    }
-
-    func reloadConversations() {
-        guard case .loaded(var loadedState) = state else { return }
-        conversationCloudObserver.start()
-
-        do {
-            loadedState.conversations = try loadConversationsUseCase.execute()
-            loadedState.errorMessage = nil
-            applySearchFilter(&loadedState)
-            state = .loaded(loadedState)
-        } catch {
-            loadedState.errorMessage = error.localizedDescription
-            state = .loaded(loadedState)
-            scheduleErrorDismiss()
         }
     }
 
@@ -457,44 +461,6 @@ private extension ConversationListViewModel {
             guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
             currentState.errorMessage = nil
             state = .loaded(currentState)
-        }
-    }
-
-    func observeAppDataReset() {
-        Task { [weak self] in
-            let notifications = NotificationCenter.default
-                .notifications(named: .appDataDidReset)
-            for await _ in notifications {
-                guard let self else { return }
-                await MainActor.run { self.loadData() }
-            }
-        }
-    }
-
-    func observeConversationUpdated() {
-        Task { [weak self] in
-            let notifications = NotificationCenter.default
-                .notifications(named: .conversationDidUpdate)
-            for await _ in notifications {
-                guard let self else { return }
-                await MainActor.run { self.reloadConversations() }
-            }
-        }
-    }
-
-    func observeCloudConversationChanges() {
-        Task { [weak self] in
-            let notifications = NotificationCenter.default
-                .notifications(named: .conversationCloudDidChange)
-            for await _ in notifications {
-                guard let self else { return }
-                self.cloudChangeTask?.cancel()
-                self.cloudChangeTask = Task { [weak self] in
-                    try? await Task.sleep(for: .milliseconds(500))
-                    guard !Task.isCancelled else { return }
-                    self?.reloadConversations()
-                }
-            }
         }
     }
 }
