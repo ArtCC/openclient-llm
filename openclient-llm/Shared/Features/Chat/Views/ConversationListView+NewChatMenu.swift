@@ -24,15 +24,6 @@ extension ConversationListView {
         .popoverTip(canShowPrivateChatTip ? AppTips.privateChat : nil)
     }
 
-    var newChatEmptyStateMenu: some View {
-        Menu {
-            newChatActions
-        } label: {
-            Text(String(localized: "New Chat"))
-        }
-        .menuOrder(.fixed)
-    }
-
     var canShowPrivateChatTip: Bool {
         guard case .loaded(let loadedState) = viewModel.state else { return false }
         return !loadedState.conversations.isEmpty
