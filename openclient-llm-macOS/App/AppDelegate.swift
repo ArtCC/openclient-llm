@@ -15,8 +15,9 @@ import StoreKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Properties
 
-    private let menuBarManager = MenuBarManager()
     private var transactionObserverTask: Task<Void, Never>?
+
+    private let menuBarManager = MenuBarManager()
 
     // MARK: - NSApplicationDelegate
 

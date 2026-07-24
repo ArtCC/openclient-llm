@@ -40,7 +40,7 @@ final class LaunchViewModel {
         resetAppDataUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase(),
         configureVoticeUseCase: ConfigureVoticeUseCaseProtocol = ConfigureVoticeUseCase(),
         attachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol = AttachmentMigrationUseCase(),
-        launchDelay: Duration = .milliseconds(500)
+        launchDelay: Duration = .milliseconds(1000)
     ) {
         self.state = state
         self.checkOnboardingUseCase = checkOnboardingUseCase

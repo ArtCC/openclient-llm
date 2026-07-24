@@ -12,11 +12,13 @@ struct AppSplashView: View {
     // MARK: - Properties
 
     let showsLoadingIndicator: Bool
+    let backgroundMaterial: Material
 
     // MARK: - Init
 
-    init(showsLoadingIndicator: Bool = false) {
+    init(showsLoadingIndicator: Bool = false, backgroundMaterial: Material = .ultraThinMaterial) {
         self.showsLoadingIndicator = showsLoadingIndicator
+        self.backgroundMaterial = backgroundMaterial
     }
 
     // MARK: - View
@@ -24,7 +26,7 @@ struct AppSplashView: View {
     var body: some View {
         ZStack {
             Rectangle()
-                .fill(.ultraThinMaterial)
+                .fill(backgroundMaterial)
                 .ignoresSafeArea()
 
             VStack(spacing: 20) {

@@ -17,6 +17,21 @@ struct LaunchView: View {
 
     var body: some View {
         Group {
+#if os(macOS)
+            macOSBody
+#else
+            iOSBody
+#endif
+        }
+        .task {
+            viewModel.send(.viewAppeared)
+        }
+    }
+
+    // MARK: - iOS
+
+    var iOSBody: some View {
+        Group {
             switch viewModel.state {
             case .loading:
                 AppSplashView(showsLoadingIndicator: true)
@@ -30,9 +45,30 @@ struct LaunchView: View {
                 HomeView()
             }
         }
-        .task {
-            viewModel.send(.viewAppeared)
+    }
+
+    // MARK: - macOS
+
+    var macOSBody: some View {
+        ZStack {
+            HomeView()
+#if os(macOS)
+                .toolbar(viewModel.state == .loading ? .hidden : .automatic, for: .windowToolbar)
+#endif
+
+            if viewModel.state == .loading {
+                AppSplashView(showsLoadingIndicator: true, backgroundMaterial: .ultraThickMaterial)
+                    .transition(.opacity)
+            }
+
+            if viewModel.state == .onboarding {
+                OnboardingView {
+                    viewModel.send(.onboardingCompleted)
+                }
+                .transition(.opacity)
+            }
         }
+        .animation(.smooth, value: viewModel.state)
     }
 }
 

@@ -24,15 +24,6 @@ extension ConversationListView {
         .popoverTip(canShowPrivateChatTip ? AppTips.privateChat : nil)
     }
 
-    var newChatEmptyStateMenu: some View {
-        Menu {
-            newChatActions
-        } label: {
-            Text(String(localized: "New Chat"))
-        }
-        .menuOrder(.fixed)
-    }
-
     var canShowPrivateChatTip: Bool {
         guard case .loaded(let loadedState) = viewModel.state else { return false }
         return !loadedState.conversations.isEmpty
@@ -45,7 +36,7 @@ extension ConversationListView {
         } label: {
             Label(String(localized: "New Chat"), systemImage: "square.and.pencil")
         }
-        .keyboardShortcut("n", modifiers: .command)
+        .keyboardShortcut("c", modifiers: .command)
 
         Button {
             AppTips.privateChat.invalidate(reason: .actionPerformed)
@@ -53,5 +44,6 @@ extension ConversationListView {
         } label: {
             Label(String(localized: "New Private Chat"), systemImage: "lock.fill")
         }
+        .keyboardShortcut("p", modifiers: .command)
     }
 }

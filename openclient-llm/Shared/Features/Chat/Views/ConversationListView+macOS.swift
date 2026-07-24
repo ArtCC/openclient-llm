@@ -12,34 +12,27 @@ import SwiftUI
 extension ConversationListView {
     // MARK: - macOS Toolbar
 
-    @ToolbarContentBuilder
-    var macToolbarItems: some ToolbarContent {
-        ToolbarItemGroup(placement: .primaryAction) {
-            newChatToolbarMenu
-
+    var overflowMenu: some View {
+        Menu {
             Button {
                 viewModel.send(.exportBackupTapped)
             } label: {
-                Image(systemName: "archivebox")
+                Label(String(localized: "Export Backup"), systemImage: "archivebox")
             }
-            .help(String(localized: "Export Backup"))
+            .keyboardShortcut("e", modifiers: [.command, .shift])
 
             Button {
                 isShowingBackupImporter = true
             } label: {
-                Image(systemName: "square.and.arrow.down")
+                Label(String(localized: "Import Conversations"), systemImage: "square.and.arrow.down")
             }
-            .help(String(localized: "Import Conversations"))
-
-            Button {
-                viewModel.send(.refreshTapped)
-            } label: {
-                Image(systemName: "arrow.clockwise")
-            }
-            .help(String(localized: "Refresh"))
-
-            macSearchToolbarItem
+            .keyboardShortcut("i", modifiers: [.command, .shift])
+        } label: {
+            Image(systemName: "ellipsis.circle")
         }
+        .help(String(localized: "More"))
+        .accessibilityLabel(String(localized: "More"))
+        .menuOrder(.fixed)
     }
 
     var macSearchToolbarItem: some View {
