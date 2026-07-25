@@ -32,6 +32,7 @@ struct ChatView: View {
     @State private var showCameraPicker: Bool = false
     @State private var showImageFilePicker: Bool = false
     @State var showMCPSheet: Bool = false
+    @State private var showActions: Bool = false
     @State var editingMessage: ChatMessage?
     @State var editingMessageText: String = ""
 
@@ -318,7 +319,9 @@ private extension ChatView {
                         onMCPButtonTapped: {
                             showMCPSheet = true
                             viewModel.send(.mcpButtonTapped)
+                            showActions = false
                         },
+                        showActions: $showActions,
                         showImageFilePicker: $showImageFilePicker
                     )
                 }
@@ -492,7 +495,6 @@ private extension ChatView {
     }
 
 }
-
 #Preview {
     ChatView()
 }

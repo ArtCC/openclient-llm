@@ -46,7 +46,8 @@ private extension MCPToolsSheet {
         VStack {
             Spacer()
             ProgressView()
-            Text(String(localized: "Loading tools…"))
+                .tint(Color.appAccent)
+            Text(String(localized: "Loading tools..."))
                 .foregroundStyle(.secondary)
                 .padding(.top, 8)
             Spacer()
@@ -58,7 +59,7 @@ private extension MCPToolsSheet {
             Spacer()
             Label(
                 String(localized: "No MCP servers configured. Add them in your LiteLLM server's config.yaml."),
-                systemImage: "antenna.radiowaves.left.and.right"
+                systemImage: "server.rack"
             )
             .foregroundStyle(.secondary)
             .padding(.horizontal, 20)
@@ -196,6 +197,7 @@ private extension MCPToolsSheet {
                 if isLoading {
                     ProgressView()
                         .controlSize(.small)
+                        .tint(Color.appAccent)
                 } else {
                     Image(systemName: "arrow.clockwise")
                 }

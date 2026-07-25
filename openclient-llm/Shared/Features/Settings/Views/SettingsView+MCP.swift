@@ -23,7 +23,7 @@ extension SettingsView {
                     .foregroundStyle(.red)
             }
         } header: {
-            Text(String(localized: "MCP Tools"))
+            Text(String(localized: "MCP Servers"))
         } footer: {
             mcpSectionFooter(loadedState)
         }
@@ -33,7 +33,8 @@ extension SettingsView {
         HStack {
             ProgressView()
                 .controlSize(.small)
-            Text(String(localized: "Loading…"))
+                .tint(Color.appAccent)
+            Text(String(localized: "Loading..."))
                 .foregroundStyle(.secondary)
         }
     }
@@ -60,7 +61,7 @@ extension SettingsView {
     func mcpSectionFooter(_ loadedState: SettingsViewModel.LoadedState) -> some View {
         if loadedState.availableMCPServers.isEmpty {
             Text(String(localized: """
-                MCP tools are configured in your LiteLLM server. \
+                MCP servers are configured in your LiteLLM server. \
                 Fetch to see what's available and toggle them on or off.
                 """))
         } else {
@@ -112,16 +113,18 @@ extension SettingsView {
         if loadedState.availableMCPServers.isEmpty
             && !loadedState.isLoadingMCPTools
             && loadedState.mcpToolsError == nil {
+            // swiftlint:disable line_length
             Label(
-                String(localized: "No MCP tools loaded. Tap \"Load Available Tools\" to fetch them from your server."),
-                systemImage: "antenna.radiowaves.left.and.right"
+                String(localized: "No MCP servers loaded. Tap \"Load Available Tools\" to fetch them from your server."),
+                systemImage: "server.rack"
             )
             .font(.subheadline)
             .foregroundStyle(.secondary)
+            // swiftlint:enable line_length
         } else {
             Label(
                 String(localized: "\(loadedState.availableMCPServers.count) server(s) available"),
-                systemImage: "antenna.radiowaves.left.and.right.circle"
+                systemImage: "server.rack"
             )
         }
     }
@@ -135,7 +138,8 @@ extension SettingsView {
                 if loadedState.isLoadingMCPTools {
                     ProgressView()
                         .controlSize(.small)
-                    Text(String(localized: "Loading…"))
+                        .tint(Color.appAccent)
+                    Text(String(localized: "Loading..."))
                         .foregroundStyle(.secondary)
                 } else {
                     Label(

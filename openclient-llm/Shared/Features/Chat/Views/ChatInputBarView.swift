@@ -28,6 +28,7 @@ struct ChatInputBarView: View {
     let onMCPButtonTapped: () -> Void
 
     @State private var isPulsing = false
+    @Binding var showActions: Bool
     @Binding var showImageFilePicker: Bool
 
     // MARK: - View
@@ -38,7 +39,8 @@ struct ChatInputBarView: View {
                 HStack(spacing: 6) {
                     ProgressView()
                         .controlSize(.mini)
-                    Text(String(localized: "Searching the web…"))
+                        .tint(Color.appAccent)
+                    Text(String(localized: "Searching the web..."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -84,12 +86,19 @@ private extension ChatInputBarView {
     // MARK: Bar states
 
     var normalBar: some View {
-        HStack(spacing: 8) {
-            attachmentMenu
+        HStack(spacing: 5) {
+            actionsToggleButton
 
-            webSearchButton
+            if showActions {
+                attachmentMenu
+                    .transition(.scale.combined(with: .opacity))
 
-            mcpButton
+                webSearchButton
+                    .transition(.scale.combined(with: .opacity))
+
+                mcpButton
+                    .transition(.scale.combined(with: .opacity))
+            }
 
             TextField(
                 String(localized: "Message..."),
@@ -137,7 +146,7 @@ private extension ChatInputBarView {
 
             Button { onCancelRecording() } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.title)
+                    .font(.title2)
                     .foregroundStyle(.secondary)
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Circle())
@@ -147,7 +156,7 @@ private extension ChatInputBarView {
 
             Button { onStopRecording() } label: {
                 Image(systemName: "stop.circle.fill")
-                    .font(.title)
+                    .font(.title2)
                     .foregroundStyle(.red)
                     .frame(minWidth: 44, minHeight: 44)
                     .contentShape(Circle())
@@ -171,6 +180,7 @@ private extension ChatInputBarView {
 
             ProgressView()
                 .controlSize(.small)
+                .tint(Color.appAccent)
         }
         .frame(minHeight: 44)
     }
@@ -233,7 +243,7 @@ private extension ChatInputBarView {
             }
         } label: {
             Image(systemName: "plus.circle.fill")
-                .font(.title)
+                .font(.title2)
                 .foregroundStyle(.secondary)
                 .frame(minWidth: 44, minHeight: 44)
                 .contentShape(Circle())
@@ -273,6 +283,33 @@ private extension ChatInputBarView {
         .animation(.easeInOut(duration: 0.2), value: loadedState.isWebSearchEnabled)
     }
 
+    var actionsToggleButton: some View {
+        let hasActive = loadedState.isWebSearchEnabled || !loadedState.enabledMCPToolIds.isEmpty
+        return Button {
+            withAnimation(.easeInOut(duration: 0.25)) {
+                showActions.toggle()
+            }
+        } label: {
+            ZStack {
+                Image(systemName: showActions ? "xmark.circle" : "plus.circle")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+                if hasActive && !showActions {
+                    Circle()
+                        .fill(Color.appAccent)
+                        .frame(width: 8, height: 8)
+                        .offset(x: 10, y: -10)
+                }
+            }
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(showActions
+            ? String(localized: "Hide Actions")
+            : String(localized: "Show Actions"))
+    }
+
     var mcpButton: some View {
         let modelSupportsTools = loadedState.selectedModel.map {
             $0.capabilities.contains(.functionCalling)
@@ -295,19 +332,14 @@ private extension ChatInputBarView {
         .buttonStyle(.plain)
         .accessibilityLabel(
             loadedState.isMCPSupported && modelSupportsTools
-            ? String(localized: "MCP Tools")
-            : String(localized: "MCP Tools Unavailable")
+            ? String(localized: "MCP Servers")
+            : String(localized: "MCP Servers Unavailable")
         )
         .animation(.easeInOut(duration: 0.2), value: loadedState.enabledMCPToolIds)
     }
 
     func mcpIcon(_ modelSupportsTools: Bool) -> String {
-        if !loadedState.isMCPSupported || !modelSupportsTools {
-            return "antenna.radiowaves.left.and.right.slash"
-        }
-        return loadedState.enabledMCPToolIds.isEmpty
-            ? "antenna.radiowaves.left.and.right"
-            : "antenna.radiowaves.left.and.right.circle.fill"
+        "server.rack"
     }
 
     func mcpColor(supported: Bool, hasEnabled: Bool) -> Color {
@@ -341,7 +373,7 @@ private extension ChatInputBarView {
 
     var stopStreamingButton: some View {
         Button { onStopStreaming() } label: {
-            Image(systemName: "stop.circle.fill").font(.title).foregroundStyle(.red)
+            Image(systemName: "stop.circle.fill").font(.title2).foregroundStyle(.red)
                 .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -351,7 +383,7 @@ private extension ChatInputBarView {
 
     var sendButton: some View {
         Button { inputText = ""; onSend() } label: {
-            Image(systemName: "arrow.up.circle.fill").font(.title).foregroundStyle(Color.appAccent)
+            Image(systemName: "arrow.up.circle.fill").font(.title2).foregroundStyle(Color.appAccent)
                 .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -361,7 +393,7 @@ private extension ChatInputBarView {
 
     var micButton: some View {
         Button { onStartRecording() } label: {
-            Image(systemName: "mic.circle.fill").font(.title).foregroundStyle(.secondary)
+            Image(systemName: "mic.circle.fill").font(.title2).foregroundStyle(.secondary)
                 .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
         }
         .buttonStyle(.plain)
