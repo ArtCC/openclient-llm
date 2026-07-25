@@ -8,9 +8,6 @@
 
 import SwiftUI
 import TipKit
-#if canImport(UIKit)
-import SwiftUI
-#endif
 
 struct ChatView: View {
     // MARK: - Properties
