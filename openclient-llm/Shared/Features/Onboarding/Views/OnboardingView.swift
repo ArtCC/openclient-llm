@@ -25,6 +25,7 @@ struct OnboardingView: View {
             switch viewModel.state {
             case .loading:
                 ProgressView()
+                    .tint(.secondary)
             case .loaded(let loadedState):
                 loadedView(loadedState)
             }
@@ -309,24 +310,28 @@ private extension OnboardingView {
         }
     }
 
+    func connectionStatusLabel(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
+        HStack(spacing: 8) {
+            if loadedState.connectionStatus == .testing {
+                ProgressView()
+                    .tint(.secondary)
+                    .controlSize(.small)
+            } else {
+                Image(systemName: "bolt.fill")
+            }
+            Text(loadedState.connectionStatus == .testing
+                 ? String(localized: "Testing...")
+                 : String(localized: "Test Connection"))
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     func connectionSection(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
         VStack(spacing: 12) {
             Button {
                 viewModel.send(.testConnectionTapped)
             } label: {
-                HStack(spacing: 8) {
-                    if loadedState.connectionStatus == .testing {
-                        ProgressView().controlSize(.small)
-                    } else {
-                        Image(systemName: "bolt.fill")
-                    }
-                    Text(
-                        loadedState.connectionStatus == .testing
-                        ? String(localized: "Testing...")
-                        : String(localized: "Test Connection")
-                    )
-                }
-                .frame(maxWidth: .infinity)
+                connectionStatusLabel(loadedState)
             }
 #if os(macOS)
             .buttonStyle(.bordered)

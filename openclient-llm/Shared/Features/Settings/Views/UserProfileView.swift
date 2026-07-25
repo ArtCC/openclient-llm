@@ -25,6 +25,7 @@ struct UserProfileView: View {
                 switch viewModel.state {
                 case .loading:
                     ProgressView()
+                        .tint(.secondary)
                 case .loaded:
                     loadedView()
                 }

@@ -39,7 +39,7 @@ struct ChatInputBarView: View {
                 HStack(spacing: 6) {
                     ProgressView()
                         .controlSize(.mini)
-                        .tint(Color.appAccent)
+                        .tint(.secondary)
                     Text(String(localized: "Searching the web..."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -180,7 +180,7 @@ private extension ChatInputBarView {
 
             ProgressView()
                 .controlSize(.small)
-                .tint(Color.appAccent)
+                .tint(.secondary)
         }
         .frame(minHeight: 44)
     }

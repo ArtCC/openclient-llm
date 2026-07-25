@@ -70,7 +70,7 @@ private extension ChatContextUsageView {
         switch usage.percentage {
         case 90...: .red
         case 70...: .orange
-        default: Color.appAccent
+        default: .secondary
         }
     }
 }

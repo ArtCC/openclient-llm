@@ -91,6 +91,7 @@ private extension ChatView {
             switch viewModel.state {
             case .loading:
                 ProgressView()
+                    .tint(.secondary)
             case .loaded(let loadedState):
                 loadedView(loadedState)
             }
@@ -191,6 +192,7 @@ private extension ChatView {
                 switch viewModel.state {
                 case .loading:
                     ProgressView()
+                    .tint(.secondary)
                 case .loaded(let loadedState):
                     loadedView(loadedState)
                 }
@@ -495,6 +497,4 @@ private extension ChatView {
     }
 
 }
-#Preview {
-    ChatView()
-}
+#Preview { ChatView() }

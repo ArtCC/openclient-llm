@@ -56,6 +56,7 @@ private extension SettingsView {
             switch viewModel.state {
             case .loading:
                 ProgressView()
+                    .tint(.secondary)
             case .loaded(let loadedState):
                 loadedView(loadedState)
             }
@@ -204,6 +205,7 @@ private extension SettingsView {
                 HStack(spacing: 8) {
                     if loadedState.connectionStatus == .testing {
                         ProgressView()
+                            .tint(.secondary)
                             .controlSize(.small)
                     }
                     Text(

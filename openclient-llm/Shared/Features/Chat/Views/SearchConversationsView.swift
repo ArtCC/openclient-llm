@@ -25,6 +25,7 @@ struct SearchConversationsView: View {
                 switch viewModel.state {
                 case .loading:
                     ProgressView()
+                        .tint(.secondary)
                 case .loaded(let loadedState):
                     searchContent(loadedState)
                 }

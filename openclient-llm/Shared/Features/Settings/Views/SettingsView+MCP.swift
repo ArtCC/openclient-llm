@@ -33,7 +33,7 @@ extension SettingsView {
         HStack {
             ProgressView()
                 .controlSize(.small)
-                .tint(Color.appAccent)
+                .tint(.secondary)
             Text(String(localized: "Loading..."))
                 .foregroundStyle(.secondary)
         }
@@ -138,7 +138,7 @@ extension SettingsView {
                 if loadedState.isLoadingMCPTools {
                     ProgressView()
                         .controlSize(.small)
-                        .tint(Color.appAccent)
+                        .tint(.secondary)
                     Text(String(localized: "Loading..."))
                         .foregroundStyle(.secondary)
                 } else {

@@ -46,7 +46,7 @@ private extension MCPToolsSheet {
         VStack {
             Spacer()
             ProgressView()
-                .tint(Color.appAccent)
+                .tint(.secondary)
             Text(String(localized: "Loading tools..."))
                 .foregroundStyle(.secondary)
                 .padding(.top, 8)
@@ -197,7 +197,7 @@ private extension MCPToolsSheet {
                 if isLoading {
                     ProgressView()
                         .controlSize(.small)
-                        .tint(Color.appAccent)
+                        .tint(.secondary)
                 } else {
                     Image(systemName: "arrow.clockwise")
                 }
