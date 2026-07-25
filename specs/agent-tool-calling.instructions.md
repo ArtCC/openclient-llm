@@ -281,7 +281,7 @@ struct ToolFunctionDefinition: Codable, Sendable {
 }
 ```
 
-The default registry always includes `get_current_datetime`. Outside Private Chat it also includes `save_memory` and `delete_memory`. It includes `web_search` only while web search is enabled. `ToolRegistry.execute` returns an "Unknown tool" result rather than throwing when a name is not registered.
+The default registry always includes `get_current_datetime`. Outside Private Chat it also includes `save_memory` and `delete_memory`. It includes `web_search` only while web search is enabled. When MCP tools are configured on the LiteLLM server and enabled by the user, each enabled tool is wrapped in an `MCPTool` instance (conforming to `ChatToolProtocol`) and added to the registry. `ToolRegistry.execute` returns an "Unknown tool" result rather than throwing when a name is not registered.
 
 ### Agentic UseCase
 
@@ -402,4 +402,43 @@ Web search (`web_search`) is the **first and primary tool** in the agent system:
 - A model with `.functionCalling` always uses the agent loop. When web search is ON, `web_search` joins the default registry and executes through `/v1/search/{search_tool_name}`.
 - Web search cannot be enabled unless the model has `.functionCalling` and a search tool name is configured; an unavailable globe is shown in red.
 - When web search is OFF, function-calling models still use the agent loop with datetime and eligible memory tools. Models without `.functionCalling` use regular streaming.
+
+## MCP Tools
+
+MCP (Model Context Protocol) tools are external tools provided by MCP servers configured on the user's LiteLLM backend. They are discovered, persisted, and executed through a dedicated client-side pipeline that integrates transparently with the agent loop.
+
+### Discovery
+
+- `FetchMCPToolsUseCase.execute()` (never throws, returns `[]` on failure) calls `GET /v1/mcp/server` to list configured MCP servers, then concurrently calls `GET /mcp-rest/tools/list?server_id=X` for each server.
+- Discovered tools are stored in `ChatViewModel.LoadedState.availableMCPTools` and populated during `fetchAndBuildInitialState()` alongside model data.
+- If the server does not expose MCP endpoints, the use case returns `[]` and `isMCPSupported` remains `false`.
+
+### Tool Definition Conversion
+
+Each `MCPToolInfo` is wrapped in an `MCPTool` that conforms to `ChatToolProtocol`. `MCPTool.toolParameters(from:)` converts the `MCPJSONSchema` (recursive JSON Schema class) into the flat `ToolParameters` format used by the agent loop:
+
+- Top-level `type` and `required` are forwarded directly.
+- Nested property schemas are resolved to a `type` string (e.g. `"array of string"` for arrays with items).
+- Complex nested schemas beyond surface depth are described through their textual descriptions rather than full schema fidelity.
+
+### Execution
+
+- `MCPTool.execute(arguments:)` delegates to `MCPRepository.executeTool()` → `APIClient.callMCPTool()` → `POST /mcp-rest/tools/call`.
+- The request body includes `server_id`, `name` (the original un-prefixed tool name), and `arguments` parsed from the JSON string the LLM produced.
+- The response `content` items are joined and returned as a `ToolExecutionResult`.
+
+### User Management
+
+- An MCP antenna icon next to the web search globe opens the `MCPToolsSheet`.
+- The sheet lists every discovered tool with a toggle; toggling a tool persists the `enabledMCPToolIds` set via `SettingsManager`.
+- The `ChatViewModel+Agent.makeToolRegistry()` method reads the enabled set and only injects activated `MCPTool` instances.
+- The system prompt in `buildAgentSystemPrompt()` includes a short description line for each enabled MCP tool.
+- A corresponding MCP section in Settings allows the same tool management and re-fetch from a Settings context.
+
+### Relationship with Web Search
+
+- MCP tools and web search are independent: a model with `.functionCalling` can use both simultaneously.
+- Web search requires a configured search tool in Settings and the web search toggle to be on.
+- MCP tools require the LiteLLM server to have at least one MCP server configured and individual tools to be enabled in the MCP Tools sheet.
+- Both are integrated through the same `ToolRegistry` → `AgentStreamUseCase` pipeline.
 - See `web-browsing.instructions.md` for the full flow table and implementation details

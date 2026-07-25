@@ -27,6 +27,7 @@ struct SettingsView: View {
     @State var isShowingHelp = false
     @State var isShowingTipJar = false
     @State private var showResetAlert = false
+    @State var mcpServerSheet: MCPServerInfo?
     @State private var presentedWebURL: WebDestination?
     @State private var canShowMemoryTip = false
     @FocusState private var focusedField: Field?
@@ -172,6 +173,7 @@ private extension SettingsView {
                 personalizationSection()
                 chatSection(loadedState)
                 webSearchSection(loadedState)
+                mcpSection(loadedState)
                 supportSection()
                 legalSection()
                 dangerSection()
@@ -180,6 +182,12 @@ private extension SettingsView {
             .scrollDismissesKeyboard(.immediately)
 #elseif os(macOS)
             .formStyle(.grouped)
+#endif
+        }
+        .sheet(item: $mcpServerSheet) { server in
+            mcpToolSheet(server: server, loadedState: loadedState)
+#if os(macOS)
+                .frame(minWidth: 500, maxWidth: 500, minHeight: 460, maxHeight: 460)
 #endif
         }
     }

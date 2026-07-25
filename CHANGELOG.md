@@ -12,6 +12,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 ### Added
 
 - **Steering messages while streaming** — send a follow-up message while the model is still generating; the current stream is cancelled, the partial response is preserved, and the new message is sent with full conversation context
+- **MCP (Model Context Protocol) tools** — connect to MCP servers configured on your LiteLLM backend to give the model access to external tools like GitHub, filesystems, databases, and more; tools are discovered automatically, enabled from a dedicated sheet in the chat input bar or from Settings, and executed transparently through the existing agent tool-calling loop
 
 ## [1.4.6-build-61] - 2026-07-24
 

@@ -39,6 +39,9 @@ protocol APIClientProtocol: Sendable {
         body: LiteLLMSearchRequest
     ) async throws -> LiteLLMSearchResponse
     func fetchSearchTools() async throws -> SearchToolsResponse
+    func listMCPServers() async throws -> [MCPServerInfo]
+    func listMCPTools(serverId: String) async throws -> [MCPToolInfo]
+    func callMCPTool(serverId: String, toolName: String, arguments: String) async throws -> String
 }
 
 enum HTTPMethod: String, Sendable {
@@ -230,6 +233,55 @@ struct APIClient: APIClientProtocol, Sendable {
         try await request(endpoint: "v1/search/tools", method: .get, body: nil)
     }
 
+    func listMCPServers() async throws -> [MCPServerInfo] {
+        LogManager.network("→ GET /v1/mcp/server")
+        let response: [MCPServerInfo] = try await request(
+            endpoint: "v1/mcp/server",
+            method: .get,
+            body: nil
+        )
+        LogManager.success("listMCPServers returned \(response.count) servers")
+        return response
+    }
+
+    func listMCPTools(serverId: String) async throws -> [MCPToolInfo] {
+        LogManager.network("→ GET /mcp-rest/tools/list server_id=\(serverId)")
+        let rawTools: [MCPToolInfo] = try await request(
+            endpoint: "mcp-rest/tools/list",
+            method: .get,
+            body: nil,
+            queryItems: [URLQueryItem(name: "server_id", value: serverId)]
+        )
+        let tools = rawTools.map { tool in
+            MCPToolInfo(
+                name: tool.name,
+                description: tool.description,
+                serverId: serverId,
+                serverName: serverId,
+                inputSchema: tool.inputSchema
+            )
+        }
+        LogManager.success("listMCPTools server=\(serverId) tools=\(tools.count)")
+        return tools
+    }
+
+    func callMCPTool(serverId: String, toolName: String, arguments: String) async throws -> String {
+        LogManager.network("→ POST /mcp-rest/tools/call server=\(serverId) tool=\(toolName)")
+        let parsedArguments = parseArgumentsJSON(arguments)
+        let body = MCPCallRequest(serverId: serverId, name: toolName, arguments: parsedArguments)
+        let response: MCPCallResponse = try await request(
+            endpoint: "mcp-rest/tools/call",
+            method: .post,
+            body: body
+        )
+        guard let content = response.content, !content.isEmpty else {
+            throw APIError.invalidResponse
+        }
+        let text = content.compactMap(\.text).joined(separator: "\n")
+        LogManager.success("callMCPTool \(toolName) result=\(text.count) chars isError=\(response.isError ?? false)")
+        return text
+    }
+
     func rawDataRequest(
         endpoint: String,
         body: any Encodable & Sendable
@@ -260,11 +312,27 @@ private extension APIClient {
     func buildRequest(
         endpoint: String,
         method: HTTPMethod,
-        body: (any Encodable & Sendable)?
+        body: (any Encodable & Sendable)?,
+        queryItems: [URLQueryItem]? = nil
     ) throws -> URLRequest {
         let baseURL = settingsManager.getServerBaseURL()
-        guard let url = URL(string: baseURL)?.appendingPathComponent(endpoint) else {
-            throw APIError.invalidURL
+
+        let url: URL
+        if let queryItems, !queryItems.isEmpty {
+            guard var components = URLComponents(string: baseURL) else {
+                throw APIError.invalidURL
+            }
+            components.path = (components.path as NSString).appendingPathComponent(endpoint)
+            components.queryItems = queryItems
+            guard let builtURL = components.url else {
+                throw APIError.invalidURL
+            }
+            url = builtURL
+        } else {
+            guard let builtURL = URL(string: baseURL)?.appendingPathComponent(endpoint) else {
+                throw APIError.invalidURL
+            }
+            url = builtURL
         }
 
         var request = URLRequest(url: url)
@@ -282,6 +350,48 @@ private extension APIClient {
         }
 
         return request
+    }
+
+    func request<T: Decodable & Sendable>(
+        endpoint: String,
+        method: HTTPMethod,
+        body: (any Encodable & Sendable)?,
+        queryItems: [URLQueryItem]?
+    ) async throws -> T {
+        let urlRequest = try buildRequest(endpoint: endpoint, method: method, body: body, queryItems: queryItems)
+        LogManager.network("→ \(method.rawValue) /\(endpoint)")
+
+        do {
+            let (data, response) = try await performRequest(urlRequest)
+            if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+                let responseBody = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
+                LogManager.error("HTTP \(http.statusCode) /\(endpoint) body: \(String(responseBody.prefix(500)))")
+            }
+            try validateResponse(response)
+
+            let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
+            LogManager.network("← \(method.rawValue) /\(endpoint) [\(statusCode)] \(data.count) bytes")
+
+            do {
+                let decoder = JSONDecoder()
+                decoder.keyDecodingStrategy = .convertFromSnakeCase
+                return try decoder.decode(T.self, from: data)
+            } catch {
+                LogManager.error("Decoding failed for /\(endpoint): \(error)")
+                throw APIError.decodingError
+            }
+        } catch let error as APIError {
+            LogManager.error("Request failed /\(endpoint): \(error.localizedDescription)")
+            throw error
+        }
+    }
+
+    func parseArgumentsJSON(_ arguments: String) -> [String: MCPCallValue] {
+        guard let data = arguments.data(using: .utf8),
+              let dict = try? JSONDecoder().decode([String: MCPCallValue].self, from: data) else {
+            return [:]
+        }
+        return dict
     }
 
     func performRequest(_ request: URLRequest) async throws -> (Data, URLResponse) {

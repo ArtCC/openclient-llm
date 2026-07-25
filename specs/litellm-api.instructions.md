@@ -96,6 +96,27 @@ window per conversation when the server does not provide `max_input_tokens`.
 
 `POST /v1/search/{search_tool_name}` executes the configured LiteLLM search tool. `GET /v1/search/tools` discovers search tools available on the server.
 
+### MCP Tools — `GET /v1/mcp/server`, `GET /mcp-rest/tools/list`, `POST /mcp-rest/tools/call`
+
+`GET /v1/mcp/server` returns the list of MCP servers configured on the LiteLLM instance:
+
+```json
+{
+  "data": [
+    { "server_name": "github_mcp", "server_id": "github_mcp" }
+  ]
+}
+```
+
+`GET /mcp-rest/tools/list?server_id={id}` lists the tools exposed by a given MCP server,
+each with a `name`, optional `description`, and an `inputSchema` (recursive JSON Schema).
+
+`POST /mcp-rest/tools/call` executes a tool with the given server ID, tool name, and
+JSON `arguments` payload, returning `content` items with text and an optional `isError` flag.
+
+These endpoints are LiteLLM-specific. If the server does not expose them, the app continues
+without MCP tools and the MCP antenna icon in the chat input bar shows in grey.
+
 ### Audio — `POST /v1/audio/transcriptions` and `POST /v1/audio/speech`
 
 Transcription uses multipart form data. Speech synthesis returns raw audio data.

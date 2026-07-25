@@ -31,6 +31,8 @@ final class SettingsViewModel {
         case requestNotificationPermissionTapped
         case notificationStatusRefresh
         case privacyScreenToggled(Bool)
+        case fetchMCPToolsTapped
+        case mcpToolToggled(toolId: String, enabled: Bool)
     }
 
     enum State: Equatable {
@@ -56,6 +58,11 @@ final class SettingsViewModel {
         var notificationPermissionStatus: NotificationPermissionStatus = .notDetermined
         var isPrivacyScreenEnabled: Bool = true
         var conversationSyncResult: ConversationSyncResult?
+        var availableMCPTools: [MCPToolInfo] = []
+        var availableMCPServers: [MCPServerInfo] = []
+        var enabledMCPToolIds: Set<String> = []
+        var isLoadingMCPTools: Bool = false
+        var mcpToolsError: String?
     }
 
     enum ConnectionStatus: Equatable {
@@ -71,6 +78,7 @@ final class SettingsViewModel {
     private let testServerConnectionUseCase: TestServerConnectionUseCaseProtocol
     private let checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol
     private let fetchSearchToolsUseCase: FetchSearchToolsUseCaseProtocol
+    private let fetchMCPToolsUseCase: FetchMCPToolsUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
     private let cloudSyncManager: CloudSyncManagerProtocol
     private let syncConversationsUseCase: SyncConversationsUseCaseProtocol
@@ -87,6 +95,7 @@ final class SettingsViewModel {
         testServerConnectionUseCase: TestServerConnectionUseCaseProtocol = TestServerConnectionUseCase(),
         checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol = CheckLiteLLMHealthUseCase(),
         fetchSearchToolsUseCase: FetchSearchToolsUseCaseProtocol = FetchSearchToolsUseCase(),
+        fetchMCPToolsUseCase: FetchMCPToolsUseCaseProtocol = FetchMCPToolsUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
         syncConversationsUseCase: SyncConversationsUseCaseProtocol = SyncConversationsUseCase(),
@@ -100,6 +109,7 @@ final class SettingsViewModel {
         self.testServerConnectionUseCase = testServerConnectionUseCase
         self.checkLiteLLMHealthUseCase = checkLiteLLMHealthUseCase
         self.fetchSearchToolsUseCase = fetchSearchToolsUseCase
+        self.fetchMCPToolsUseCase = fetchMCPToolsUseCase
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
         self.syncConversationsUseCase = syncConversationsUseCase
@@ -127,8 +137,9 @@ final class SettingsViewModel {
             handleCloudSyncEvent(event)
         case .showTokenUsageToggled, .privacyScreenToggled:
             handlePreferenceToggleEvent(event)
-        case .webSearchToolNameChanged, .webSearchMaxResultsChanged, .fetchSearchToolsTapped:
-            handleWebSearchEvent(event)
+        case .webSearchToolNameChanged, .webSearchMaxResultsChanged, .fetchSearchToolsTapped,
+             .fetchMCPToolsTapped, .mcpToolToggled:
+            handleServerDiscoveryEvent(event)
         case .resetConfirmed:
             resetApp()
         case .requestNotificationPermissionTapped, .notificationStatusRefresh:
@@ -156,7 +167,8 @@ private extension SettingsViewModel {
             webSearchToolName: settingsManager.getWebSearchToolName(),
             webSearchMaxResults: settingsManager.getWebSearchMaxResults(),
             availableSearchTools: settingsManager.getAvailableSearchTools(),
-            isPrivacyScreenEnabled: settingsManager.getIsPrivacyScreenEnabled()
+            isPrivacyScreenEnabled: settingsManager.getIsPrivacyScreenEnabled(),
+            enabledMCPToolIds: Set(settingsManager.getEnabledMCPToolIds())
         )
         state = .loaded(loadedState)
         let serverURL = loadedState.serverURL
@@ -166,6 +178,7 @@ private extension SettingsViewModel {
             }
         }
         refreshNotificationStatus()
+        fetchMCPTools()
     }
 
     func updateServerURL(_ url: String) {
@@ -418,5 +431,53 @@ private extension SettingsViewModel {
         default:
             break
         }
+    }
+
+    func handleServerDiscoveryEvent(_ event: Event) {
+        handleWebSearchEvent(event)
+        handleMCPEvent(event)
+    }
+
+    func handleMCPEvent(_ event: Event) {
+        switch event {
+        case .fetchMCPToolsTapped:
+            fetchMCPTools()
+        case .mcpToolToggled(let toolId, let enabled):
+            toggleMCPTool(toolId: toolId, enabled: enabled)
+        default:
+            break
+        }
+    }
+
+    func fetchMCPTools() {
+        guard case .loaded(let loadedState) = state, !loadedState.isLoadingMCPTools else { return }
+        var update = loadedState
+        update.isLoadingMCPTools = true
+        update.mcpToolsError = nil
+        state = .loaded(update)
+
+        Task { [weak self] in
+            guard let self else { return }
+            let result = await fetchMCPToolsUseCase.execute()
+            guard case .loaded(var currentState) = state else { return }
+            let enabledIds = Set(settingsManager.getEnabledMCPToolIds())
+                .intersection(Set(result.tools.map(\.prefixedName)))
+            currentState.availableMCPTools = result.tools
+            currentState.availableMCPServers = result.servers
+            currentState.enabledMCPToolIds = enabledIds
+            currentState.isLoadingMCPTools = false
+            state = .loaded(currentState)
+        }
+    }
+
+    func toggleMCPTool(toolId: String, enabled: Bool) {
+        guard case .loaded(var loadedState) = state else { return }
+        if enabled {
+            loadedState.enabledMCPToolIds.insert(toolId)
+        } else {
+            loadedState.enabledMCPToolIds.remove(toolId)
+        }
+        settingsManager.setEnabledMCPToolIds(Array(loadedState.enabledMCPToolIds))
+        state = .loaded(loadedState)
     }
 }

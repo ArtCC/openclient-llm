@@ -137,6 +137,7 @@ extension ChatViewModelTests {
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
+            fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
             getConversationStartersUseCase: mockGetConversationStarters
         )
 

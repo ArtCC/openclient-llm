@@ -123,12 +123,27 @@ private extension ChatViewModel {
     }
 
     func makeToolRegistry(webSearchEnabled: Bool) -> ToolRegistry {
-        ToolRegistry.default(
-            webSearchEnabled: webSearchEnabled,
-            includesMemoryTools: !isPrivateChat,
-            webSearchUseCase: webSearchUseCase,
-            memoryManager: memoryManager
-        )
+        var tools: [any ChatToolProtocol] = [GetCurrentDatetimeTool()]
+        if isPrivateChat == false {
+            tools.append(SaveMemoryTool(memoryManager: memoryManager ?? MemoryManager()))
+            tools.append(DeleteMemoryTool(memoryManager: memoryManager ?? MemoryManager()))
+        }
+        if webSearchEnabled {
+            tools.append(WebSearchTool(webSearchUseCase: webSearchUseCase))
+        }
+        if case .loaded(let loadedState) = state {
+            for mcpTool in loadedState.availableMCPTools
+                where loadedState.enabledMCPToolIds.contains(mcpTool.prefixedName) {
+                tools.append(MCPTool(
+                    serverId: mcpTool.serverName,
+                    toolName: mcpTool.prefixedName,
+                    rawName: mcpTool.name,
+                    description: mcpTool.description ?? mcpTool.name,
+                    parameters: MCPTool.toolParameters(from: mcpTool.inputSchema)
+                ))
+            }
+        }
+        return ToolRegistry(tools: tools)
     }
 
     func buildAgentSystemPrompt(_ conversationSystemPrompt: String, webSearchEnabled: Bool) -> String {
@@ -155,6 +170,13 @@ private extension ChatViewModel {
             - `delete_memory`: Use it when the user asks to forget something, corrects outdated information, \
             or explicitly requests a memory to be removed.
             """
+        }
+        if case .loaded(let loadedState) = state {
+            for mcpTool in loadedState.availableMCPTools
+                where loadedState.enabledMCPToolIds.contains(mcpTool.prefixedName) {
+                toolDescriptions +=
+                    "- `\(mcpTool.prefixedName)`: \(mcpTool.description ?? mcpTool.name)\n"
+            }
         }
         let toolInstructions = """
         You have access to the following tools:

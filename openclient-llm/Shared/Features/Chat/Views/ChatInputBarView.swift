@@ -25,6 +25,7 @@ struct ChatInputBarView: View {
     let onStopRecording: () -> Void
     let onCancelRecording: () -> Void
     let onWebSearchToggled: () -> Void
+    let onMCPButtonTapped: () -> Void
 
     @State private var isPulsing = false
     @Binding var showImageFilePicker: Bool
@@ -87,6 +88,8 @@ private extension ChatInputBarView {
             attachmentMenu
 
             webSearchButton
+
+            mcpButton
 
             TextField(
                 String(localized: "Message..."),
@@ -268,6 +271,48 @@ private extension ChatInputBarView {
             : String(localized: "Enable Web Search")
         )
         .animation(.easeInOut(duration: 0.2), value: loadedState.isWebSearchEnabled)
+    }
+
+    var mcpButton: some View {
+        let modelSupportsTools = loadedState.selectedModel.map {
+            $0.capabilities.contains(.functionCalling)
+        } ?? false
+
+        return Button {
+            onMCPButtonTapped()
+        } label: {
+            Image(systemName: mcpIcon(modelSupportsTools))
+                .font(.title2)
+                .foregroundStyle(
+                    mcpColor(
+                        supported: loadedState.isMCPSupported && modelSupportsTools,
+                        hasEnabled: !loadedState.enabledMCPToolIds.isEmpty
+                    )
+                )
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(
+            loadedState.isMCPSupported && modelSupportsTools
+            ? String(localized: "MCP Tools")
+            : String(localized: "MCP Tools Unavailable")
+        )
+        .animation(.easeInOut(duration: 0.2), value: loadedState.enabledMCPToolIds)
+    }
+
+    func mcpIcon(_ modelSupportsTools: Bool) -> String {
+        if !loadedState.isMCPSupported || !modelSupportsTools {
+            return "antenna.radiowaves.left.and.right.slash"
+        }
+        return loadedState.enabledMCPToolIds.isEmpty
+            ? "antenna.radiowaves.left.and.right"
+            : "antenna.radiowaves.left.and.right.circle.fill"
+    }
+
+    func mcpColor(supported: Bool, hasEnabled: Bool) -> Color {
+        guard supported else { return .red }
+        return hasEnabled ? Color.appAccent : .secondary
     }
 
     @ViewBuilder

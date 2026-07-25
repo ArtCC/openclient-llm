@@ -31,6 +31,7 @@ struct ChatView: View {
     @State private var showDocumentPicker: Bool = false
     @State private var showCameraPicker: Bool = false
     @State private var showImageFilePicker: Bool = false
+    @State var showMCPSheet: Bool = false
     @State var editingMessage: ChatMessage?
     @State var editingMessageText: String = ""
 
@@ -142,12 +143,13 @@ private extension ChatView {
 #endif
             }
         }
-        .sheet(item: $editingMessage) { message in
-            editMessageSheet(
-                message,
-                viewModel: viewModel,
-                editingMessage: $editingMessage,
-                editingMessageText: $editingMessageText
+            .sheet(isPresented: $showMCPSheet, content: mcpToolsSheet)
+            .sheet(item: $editingMessage) { message in
+                editMessageSheet(
+                    message,
+                    viewModel: viewModel,
+                    editingMessage: $editingMessage,
+                    editingMessageText: $editingMessageText
             )
         }
         .imagePicker(isPresented: $showImagePicker) { data, fileName, type in
@@ -238,6 +240,7 @@ private extension ChatView {
                     MediaFilesGalleryView(messages: loadedSt.messages) { scrollToMessageId = $0 }
                 }
             }
+            .sheet(isPresented: $showMCPSheet, content: mcpToolsSheet)
             .sheet(item: $editingMessage) { message in
                 editMessageSheet(
                     message,
@@ -312,6 +315,10 @@ private extension ChatView {
                         onStopRecording: { viewModel.send(.stopRecordingTapped) },
                         onCancelRecording: { viewModel.send(.cancelRecordingTapped) },
                         onWebSearchToggled: { viewModel.send(.webSearchToggled) },
+                        onMCPButtonTapped: {
+                            showMCPSheet = true
+                            viewModel.send(.mcpButtonTapped)
+                        },
                         showImageFilePicker: $showImageFilePicker
                     )
                 }
