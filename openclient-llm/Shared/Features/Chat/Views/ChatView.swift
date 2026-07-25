@@ -294,17 +294,6 @@ private extension ChatView {
                 VStack(spacing: 0) {
                     errorBanner(loadedState.errorMessage)
                     attachmentPreview(loadedState, send: { viewModel.send($0) })
-                    if let usage = loadedState.contextUsage {
-                        ChatContextUsageView(usage: usage)
-                            .popoverTip(
-                                usage.percentage >= 50 && !loadedState.isStreaming
-                                ? AppTips.contextUsage
-                                : nil,
-                                arrowEdge: .bottom
-                            )
-                            .padding(.horizontal, 24)
-                            .padding(.bottom, 2)
-                    }
                     ChatInputBarView(
                         inputText: $inputText,
                         showImagePicker: $showImagePicker,

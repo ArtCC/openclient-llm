@@ -35,44 +35,60 @@ struct ChatInputBarView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if loadedState.isSearchingWeb {
-                HStack(spacing: 6) {
-                    ProgressView()
-                        .controlSize(.mini)
-                        .tint(.secondary)
-                    Text(String(localized: "Searching the web..."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
+            VStack(spacing: 0) {
+                if loadedState.isSearchingWeb {
+                    HStack(spacing: 6) {
+                        ProgressView()
+                            .controlSize(.mini)
+                            .tint(.secondary)
+                        Text(String(localized: "Searching the web..."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
+                    .padding(.bottom, 4)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 4)
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
 
-            ZStack {
-                if loadedState.isRecording {
-                    recordingBar
-                        .transition(.asymmetric(
-                            insertion: .push(from: .trailing).combined(with: .opacity),
-                            removal: .push(from: .leading).combined(with: .opacity)
-                        ))
-                } else if loadedState.isTranscribing {
-                    transcribingBar
-                        .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .center)))
-                } else {
-                    normalBar
-                        .transition(.asymmetric(
-                            insertion: .push(from: .leading).combined(with: .opacity),
-                            removal: .push(from: .trailing).combined(with: .opacity)
-                        ))
+                if let usage = loadedState.contextUsage {
+                    ChatContextUsageView(usage: usage)
+                        .popoverTip(
+                            usage.percentage >= 50 && !loadedState.isStreaming
+                                ? AppTips.contextUsage
+                                : nil,
+                            arrowEdge: .bottom
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.top, loadedState.isSearchingWeb ? 4 : 10)
+                        .padding(.bottom, 4)
                 }
+
+                ZStack {
+                    if loadedState.isRecording {
+                        recordingBar
+                            .transition(.asymmetric(
+                                insertion: .push(from: .trailing).combined(with: .opacity),
+                                removal: .push(from: .leading).combined(with: .opacity)
+                            ))
+                    } else if loadedState.isTranscribing {
+                        transcribingBar
+                            .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .center)))
+                    } else {
+                        normalBar
+                            .transition(.asymmetric(
+                                insertion: .push(from: .leading).combined(with: .opacity),
+                                removal: .push(from: .trailing).combined(with: .opacity)
+                            ))
+                    }
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 8)
             }
+            .glassEffect(.regular, in: .rect(cornerRadius: 25))
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .glassEffect(.regular, in: .capsule)
         }
-        .padding(.horizontal, 16)
         .padding(.bottom, 8)
         .animation(.spring(duration: 0.35), value: loadedState.isRecording)
         .animation(.spring(duration: 0.35), value: loadedState.isTranscribing)
