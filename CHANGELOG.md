@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.5.0-build-62] - 2026-07-25
+
+### Added
+
+- **Steering messages while streaming** — send a follow-up message while the model is still generating; the current stream is cancelled, the partial response is preserved, and the new message is sent with full conversation context
+
 ## [1.4.6-build-61] - 2026-07-24
 
 ### Fixed

@@ -272,16 +272,20 @@ private extension ChatInputBarView {
 
     @ViewBuilder
     var actionButton: some View {
-        if loadedState.isStreaming {
-            stopStreamingButton
-        } else {
-            let hasText = !loadedState.inputText
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-                .isEmpty
-            let hasModel = loadedState.selectedModel != nil
-            let hasAttachments = !loadedState.pendingAttachments.isEmpty
-            let hasTranscriptionModel = loadedState.transcriptionModelId != nil
+        let hasText = !loadedState.inputText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .isEmpty
+        let hasModel = loadedState.selectedModel != nil
+        let hasAttachments = !loadedState.pendingAttachments.isEmpty
+        let hasTranscriptionModel = loadedState.transcriptionModelId != nil
 
+        if loadedState.isStreaming {
+            if (hasText || hasAttachments) && hasModel {
+                sendButton
+            } else {
+                stopStreamingButton
+            }
+        } else {
             if (hasText || hasAttachments) && hasModel {
                 sendButton
             } else if hasModel && hasTranscriptionModel {
