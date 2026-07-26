@@ -298,7 +298,10 @@ private extension ChatView {
                         showCameraPicker: $showCameraPicker,
                         loadedState: loadedState,
                         onInputChanged: { viewModel.send(.inputChanged($0)) },
-                        onSend: { viewModel.send(.sendTapped) },
+                        onSend: {
+                            viewModel.send(.sendTapped)
+                            showActions = false
+                        },
                         onStopStreaming: { viewModel.send(.stopStreamingTapped) },
                         onStartRecording: { viewModel.send(.startRecordingTapped) },
                         onStopRecording: { viewModel.send(.stopRecordingTapped) },
