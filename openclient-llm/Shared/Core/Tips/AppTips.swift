@@ -22,6 +22,7 @@ enum AppTips {
     static let contextUsage = ContextUsageTip()
     static let memory = MemoryTip()
     static let conversationOrganization = ConversationOrganizationTip()
+    static let mcpServers = MCPServersTip()
 
     static let allTips: [any Tip] = [
         modelSelector,
@@ -32,7 +33,8 @@ enum AppTips {
         privateChat,
         contextUsage,
         memory,
-        conversationOrganization
+        conversationOrganization,
+        mcpServers
     ]
 
     // MARK: - Configuration

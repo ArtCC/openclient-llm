@@ -96,3 +96,14 @@ struct MemoryTip: Tip {
         Text(String(localized: "Review, edit, disable, or delete the memories used in future conversations."))
     }
 }
+
+struct MCPServersTip: Tip {
+    var title: Text { Text(String(localized: "Connect external tools")) }
+
+    var message: Text? {
+        Text(String(localized: """
+            Enable tools from MCP servers like GitHub, databases, \
+            and more to let the model work with external services.
+            """))
+    }
+}

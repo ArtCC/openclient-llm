@@ -332,6 +332,7 @@ private extension ChatInputBarView {
         } ?? false
 
         return Button {
+            AppTips.mcpServers.invalidate(reason: .actionPerformed)
             onMCPButtonTapped()
         } label: {
             Image(systemName: mcpIcon(modelSupportsTools))
@@ -346,6 +347,7 @@ private extension ChatInputBarView {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
+        .popoverTip(canShowMCPTip ? AppTips.mcpServers : nil, arrowEdge: .bottom)
         .accessibilityLabel(
             loadedState.isMCPSupported && modelSupportsTools
             ? String(localized: "MCP Servers")
@@ -442,6 +444,12 @@ private extension ChatInputBarView {
     var canShowWebSearchTip: Bool {
         canShowInputTips
             && loadedState.isWebSearchToolConfigured
+            && loadedState.selectedModel?.capabilities.contains(.functionCalling) == true
+    }
+
+    var canShowMCPTip: Bool {
+        canShowInputTips
+            && loadedState.isMCPSupported
             && loadedState.selectedModel?.capabilities.contains(.functionCalling) == true
     }
 }
