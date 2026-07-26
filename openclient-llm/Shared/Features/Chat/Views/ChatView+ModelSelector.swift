@@ -41,9 +41,11 @@ extension ChatView {
                     .truncationMode(.middle)
                     .frame(maxWidth: 200)
 
+#if os(iOS)
                     Image(systemName: "chevron.down")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+#endif
                 }
             }
             .popoverTip(loadedState.availableModels.count > 1 ? AppTips.modelSelector : nil)

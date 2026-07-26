@@ -39,35 +39,16 @@ extension ChatViewModel {
         guard case .loaded(var loadedState) = state else { return }
         let text = loadedState.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty || !loadedState.pendingAttachments.isEmpty,
-              let model = loadedState.selectedModel, !loadedState.isStreaming else { return }
-        LogManager.info("sendMessage model=\(model.id) attachments=\(loadedState.pendingAttachments.count)")
+              let model = loadedState.selectedModel else { return }
 
-        let assistantId = prepareMessageState(text: text, model: model, loadedState: &loadedState)
-        let currentMessages = loadedState.messages.filter { $0.id != assistantId }
-        let systemPrompt = loadedState.systemPrompt
-        let parameters = loadedState.modelParameters
-        let webSearchEnabled = loadedState.isWebSearchEnabled
-        let modelCapabilities = model.capabilities
-
-        cancelCompaction()
-        streamTask?.cancel()
-        activeAssistantMessageId = assistantId
-        beginStreamingBackground(for: assistantId)
-        streamTask = Task {
-            await streamWithWebSearch(SendMessageContext(
-                text: text,
-                messages: currentMessages,
-                modelId: model.id,
-                assistantId: assistantId,
-                systemPrompt: systemPrompt,
-                parameters: parameters,
-                webSearchEnabled: webSearchEnabled,
-                modelCapabilities: modelCapabilities,
-                selectedModel: model,
-                contextWindowTokens: loadedState.contextWindowTokens,
-                contextSummary: loadedState.conversation?.contextSummary,
-                contextSummaryCursorMessageId: loadedState.conversation?.contextSummaryCursorMessageId
-            ))
+        if loadedState.isStreaming {
+            cancelActiveStreaming()
+            guard case .loaded(var loadedState) = state else { return }
+            let followUpText = loadedState.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !followUpText.isEmpty || !loadedState.pendingAttachments.isEmpty else { return }
+            performSend(text: followUpText, model: model, loadedState: &loadedState)
+        } else {
+            performSend(text: text, model: model, loadedState: &loadedState)
         }
     }
 
@@ -95,5 +76,40 @@ extension ChatViewModel {
         }
         state = .loaded(loadedState)
         return assistantMessage.id
+    }
+
+    private func performSend(text: String, model: LLMModel, loadedState: inout LoadedState) {
+        LogManager.info("sendMessage model=\(model.id) attachments=\(loadedState.pendingAttachments.count)")
+
+        let assistantId = prepareMessageState(text: text, model: model, loadedState: &loadedState)
+        let currentMessages = loadedState.messages.filter { $0.id != assistantId }
+        let systemPrompt = loadedState.systemPrompt
+        let parameters = loadedState.modelParameters
+        let webSearchEnabled = loadedState.isWebSearchEnabled
+        let modelCapabilities = model.capabilities
+        let contextWindowTokens = loadedState.contextWindowTokens
+        let contextSummary = loadedState.conversation?.contextSummary
+        let contextSummaryCursorMessageId = loadedState.conversation?.contextSummaryCursorMessageId
+
+        cancelCompaction()
+        streamTask?.cancel()
+        activeAssistantMessageId = assistantId
+        beginStreamingBackground(for: assistantId)
+        streamTask = Task {
+            await streamWithWebSearch(SendMessageContext(
+                text: text,
+                messages: currentMessages,
+                modelId: model.id,
+                assistantId: assistantId,
+                systemPrompt: systemPrompt,
+                parameters: parameters,
+                webSearchEnabled: webSearchEnabled,
+                modelCapabilities: modelCapabilities,
+                selectedModel: model,
+                contextWindowTokens: contextWindowTokens,
+                contextSummary: contextSummary,
+                contextSummaryCursorMessageId: contextSummaryCursorMessageId
+            ))
+        }
     }
 }

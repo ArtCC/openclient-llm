@@ -23,6 +23,7 @@ final class ChatViewModelCompactionTests: XCTestCase {
             fetchModelsUseCase: fetchModels,
             streamMessageUseCase: stream,
             saveConversationUseCase: MockSaveConversationUseCase(),
+            fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
             compactConversationUseCase: compaction
         )
         sut.send(.viewAppeared)

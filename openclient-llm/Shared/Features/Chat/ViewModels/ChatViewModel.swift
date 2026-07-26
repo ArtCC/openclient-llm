@@ -39,6 +39,9 @@ final class ChatViewModel {
         case forkFromMessage(UUID)
         case branchedConversationConsumed
         case webSearchToggled
+        case mcpButtonTapped
+        case mcpToolsRefreshed
+        case mcpToolToggled(toolId: String, enabled: Bool)
         case toggleFavourite(UUID)
     }
 
@@ -76,6 +79,11 @@ final class ChatViewModel {
         var isWebSearchToolConfigured: Bool = false
         var isSearchingWeb: Bool = false
         var activeToolCallIds: Set<String> = []
+        var isMCPSupported: Bool = false
+        var availableMCPTools: [MCPToolInfo] = []
+        var availableMCPServers: [MCPServerInfo] = []
+        var enabledMCPToolIds: Set<String> = []
+        var isLoadingMCPTools: Bool = false
     }
 
     var state: State
@@ -97,11 +105,13 @@ final class ChatViewModel {
     let getChatPreferencesUseCase: GetChatPreferencesUseCaseProtocol
     private let saveSelectedModelUseCase: SaveSelectedModelUseCaseProtocol
     let setWebSearchEnabledUseCase: SetWebSearchEnabledUseCaseProtocol
-    private let resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol
+    let fetchMCPToolsUseCase: FetchMCPToolsUseCaseProtocol
+    let settingsManager: SettingsManagerProtocol
+    let resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol
     let getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol?
     let getMemoryContextUseCase: GetMemoryContextUseCaseProtocol?
     let memoryManager: MemoryManagerProtocol?
-    private let getConversationStartersUseCase: GetConversationStartersUseCaseProtocol
+    let getConversationStartersUseCase: GetConversationStartersUseCaseProtocol
     private let playAudioUseCase: any PlayAudioUseCaseProtocol
     let recordAudioUseCase: any RecordAudioUseCaseProtocol
     let triggerHapticFeedbackUseCase: TriggerHapticFeedbackUseCaseProtocol
@@ -135,6 +145,8 @@ final class ChatViewModel {
         getChatPreferencesUseCase: GetChatPreferencesUseCaseProtocol = GetChatPreferencesUseCase(),
         saveSelectedModelUseCase: SaveSelectedModelUseCaseProtocol = SaveSelectedModelUseCase(),
         setWebSearchEnabledUseCase: SetWebSearchEnabledUseCaseProtocol = SetWebSearchEnabledUseCase(),
+        fetchMCPToolsUseCase: FetchMCPToolsUseCaseProtocol = FetchMCPToolsUseCase(),
+        settingsManager: SettingsManagerProtocol = SettingsManager(),
         resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol = ResolveAudioModelIdsUseCase(),
         getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol? = nil,
         getMemoryContextUseCase: GetMemoryContextUseCaseProtocol? = nil,
@@ -163,6 +175,8 @@ final class ChatViewModel {
         self.getChatPreferencesUseCase = getChatPreferencesUseCase
         self.saveSelectedModelUseCase = saveSelectedModelUseCase
         self.setWebSearchEnabledUseCase = setWebSearchEnabledUseCase
+        self.fetchMCPToolsUseCase = fetchMCPToolsUseCase
+        self.settingsManager = settingsManager
         self.resolveAudioModelIdsUseCase = resolveAudioModelIdsUseCase
         self.getUserProfileContextUseCase = getUserProfileContextUseCase ?? (
             isPrivateChat ? nil : GetUserProfileContextUseCase()
@@ -233,6 +247,8 @@ final class ChatViewModel {
             handlePhase6Event(event)
         case .webSearchToggled:
             toggleWebSearch()
+        case .mcpButtonTapped, .mcpToolsRefreshed, .mcpToolToggled:
+            handleMCPEvent(event)
         case .viewDisappeared, .viewAppeared, .conversationLoaded, .inputChanged, .sendTapped, .stopStreamingTapped:
             return
         }
@@ -252,61 +268,30 @@ private extension ChatViewModel {
     }
 
     func fetchAndBuildInitialState() async {
+        var resolvedModels: [LLMModel] = []
+        var modelError: String?
+
         do {
-            let models = try await fetchModelsUseCase.execute()
-            guard !Task.isCancelled else { return }
-            let pending = pendingConversation
-            pendingConversation = nil
-            state = .loaded(makeLoadedState(models: models, pending: pending))
-            loadTask = nil
+            resolvedModels = try await fetchModelsUseCase.execute()
         } catch {
-            guard !Task.isCancelled else { return }
-            LogManager.error("fetchAndBuildInitialState failed: \(error)")
-            let pending = pendingConversation
-            pendingConversation = nil
-            state = .loaded(makeLoadedState(
-                models: [],
-                pending: pending,
-                errorMessage: error.localizedDescription
-            ))
-            loadTask = nil
+            modelError = error.localizedDescription
+        }
+
+        guard !Task.isCancelled else { return }
+        let pending = pendingConversation
+        pendingConversation = nil
+        let loadedState = makeLoadedState(
+            models: resolvedModels,
+            pending: pending,
+            errorMessage: modelError
+        )
+        state = .loaded(loadedState)
+        loadTask = nil
+        if modelError != nil {
             scheduleErrorDismiss()
         }
-    }
 
-    func makeLoadedState(
-        models: [LLMModel],
-        pending: Conversation?,
-        errorMessage: String? = nil
-    ) -> LoadedState {
-        let chatModels = models.filter {
-            [.chat, .completion, .unknown, .imageGeneration].contains($0.mode)
-        }
-        let savedModelID = getChatPreferencesUseCase.getSelectedModelId()
-        let selectedModel = chatModels.first(where: { $0.id == pending?.modelId })
-            ?? chatModels.first(where: { $0.id == savedModelID })
-            ?? chatModels.first
-        let audioModelIDs = resolveAudioModelIdsUseCase.execute(from: models)
-        var loadedState = LoadedState(
-            conversation: pending,
-            messages: pending?.messages ?? [],
-            selectedModel: selectedModel,
-            availableModels: chatModels,
-            conversationStarters: (pending?.messages ?? []).isEmpty
-                ? getConversationStartersUseCase.execute(count: 4)
-                : [],
-            errorMessage: errorMessage,
-            systemPrompt: pending?.systemPrompt ?? "",
-            modelParameters: pending?.modelParameters ?? .default,
-            contextWindowTokens: pending?.contextWindowTokens,
-            showTokenUsage: getChatPreferencesUseCase.getShowTokenUsage(),
-            ttsModelId: audioModelIDs.ttsModelId,
-            transcriptionModelId: audioModelIDs.transcriptionModelId,
-            isWebSearchEnabled: getChatPreferencesUseCase.getIsWebSearchEnabled(),
-            isWebSearchToolConfigured: !getChatPreferencesUseCase.getWebSearchToolName().isEmpty
-        )
-        refreshContextUsage(in: &loadedState)
-        return loadedState
+        refreshMCPTools()
     }
 
     func handleConfigurationEvent(_ event: Event) {

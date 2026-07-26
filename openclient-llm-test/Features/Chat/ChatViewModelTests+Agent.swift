@@ -29,6 +29,7 @@ extension ChatViewModelTests {
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
+            fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
             getConversationStartersUseCase: mockGetConversationStarters
         )
 
@@ -71,6 +72,7 @@ extension ChatViewModelTests {
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
+            fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
             getConversationStartersUseCase: mockGetConversationStarters
         )
 
@@ -112,6 +114,7 @@ extension ChatViewModelTests {
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
+            fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
             getConversationStartersUseCase: mockGetConversationStarters
         )
 
@@ -158,6 +161,7 @@ extension ChatViewModelTests {
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
+            fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
             getConversationStartersUseCase: mockGetConversationStarters
         )
         viewModel.applyAgentEvent(.token("Hello "), to: &loadedState, assistantMessageId: assistantId)
@@ -185,6 +189,7 @@ extension ChatViewModelTests {
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
+            fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
             getConversationStartersUseCase: mockGetConversationStarters
         )
 
@@ -208,6 +213,7 @@ extension ChatViewModelTests {
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
+            fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
             getConversationStartersUseCase: mockGetConversationStarters
         )
 
@@ -257,6 +263,7 @@ extension ChatViewModelTests {
             exportConversationUseCase: mockExportConversation,
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
+            fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
             getConversationStartersUseCase: mockGetConversationStarters
         )
 

@@ -18,7 +18,7 @@ extension ConversationListView {
         if let firstUserMessage = conversation.messages.first(where: { $0.role == .user }) {
             let preview = firstUserMessage.content.prefix(50)
             return preview.count < firstUserMessage.content.count
-            ? "\(preview)…"
+            ? "\(preview)..."
             : String(preview)
         }
         return String(localized: "New Chat")

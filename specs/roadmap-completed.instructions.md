@@ -90,6 +90,7 @@ Goal: Prompt templates, web search, and agentic tool-calling loop.
 - [x] **Prompt templates/library**: Library of predefined system prompts (coding assistant, translator, summarizer...) that users can save and reuse
 - [x] **Web browsing**: Function-calling models can invoke `web_search` in the agent loop; `WebSearchTool` delegates to the user's LiteLLM proxy through `POST /v1/search/{search_tool_name}` and returns source metadata to the chat UI. Search providers and their credentials remain server-side. Web search defaults off, the search tool name defaults to an empty string, Settings discovers configured tools through `GET /v1/search/tools`, and the globe cannot enable search until a tool is configured. See `web-browsing.instructions.md`.
 - [x] **Agent mode (tool calling)**: Support LiteLLM function/tool calling loop — parse tool_calls from model responses, execute registered tools, send results back, and repeat until final answer
+- [x] **MCP tools support**: Discover, list, enable, and execute tools from Model Context Protocol servers configured on the LiteLLM backend. `MCPTool` conforms to `ChatToolProtocol` and is automatically added to the agent tool registry. Users manage tools through a dedicated MCP Tools sheet accessible from the chat input bar or Settings.
 
 ## Phase 8 — System Integration & Shortcuts
 

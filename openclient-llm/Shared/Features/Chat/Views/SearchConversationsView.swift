@@ -25,6 +25,7 @@ struct SearchConversationsView: View {
                 switch viewModel.state {
                 case .loading:
                     ProgressView()
+                        .tint(.secondary)
                 case .loaded(let loadedState):
                     searchContent(loadedState)
                 }
@@ -149,7 +150,7 @@ private extension SearchConversationsView {
         if let firstUserMessage = conversation.messages.first(where: { $0.role == .user }) {
             let preview = firstUserMessage.content.prefix(50)
             return preview.count < firstUserMessage.content.count
-                ? "\(preview)…"
+                ? "\(preview)..."
                 : String(preview)
         }
         return String(localized: "New Chat")

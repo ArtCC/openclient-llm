@@ -89,7 +89,8 @@ extension SettingsView {
                 if loadedState.isLoadingSearchTools {
                     ProgressView()
                         .controlSize(.small)
-                    Text(String(localized: "Loading…"))
+                        .tint(.secondary)
+                    Text(String(localized: "Loading..."))
                         .foregroundStyle(.secondary)
                 } else {
                     Label(

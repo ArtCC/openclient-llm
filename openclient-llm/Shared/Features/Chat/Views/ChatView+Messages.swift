@@ -19,31 +19,38 @@ extension ChatView {
         return LazyVStack(spacing: 16) {
             ForEach(loadedState.messages) { message in
                 let isLast = message.id == loadedState.messages.last?.id
-                MessageBubbleView(
-                    message: message,
-                    isStreaming: loadedState.isStreaming && isLast,
-                    isSpeaking: loadedState.speakingMessageId == message.id,
-                    hasTTS: loadedState.ttsModelId != nil,
-                    showTokenUsage: loadedState.showTokenUsage,
-                    isLastMessage: isLast,
-                    isRunningTool: isLast && !loadedState.activeToolCallIds.isEmpty,
-                    showsMessageActionsTip: message.id == tipMessageId && !loadedState.isStreaming,
-                    onSpeakTapped: { viewModel.send(.speakMessageTapped(message)) },
-                    onStopSpeakingTapped: { viewModel.send(.stopSpeakingTapped) },
-                    onEditTapped: message.role == .user ? {
-                        editingMessage = message
-                        editingMessageText = message.content
-                    } : nil,
-                    onRegenerateTapped: (message.role == .assistant && isLast) ? {
-                        viewModel.send(.regenerateLastResponse)
-                    } : nil,
-                    onForkTapped: loadedState.conversation != nil ? {
-                        viewModel.send(.forkFromMessage(message.id))
-                    } : nil,
-                    onFavouriteTapped: { viewModel.send(.toggleFavourite(message.id)) }
-                )
-                .id(message.id)
-                .transition(.opacity)
+                let isStreamingMsg = loadedState.isStreaming && isLast
+                let isEmptyAssistant = message.role == .assistant
+                    && message.content.isEmpty
+                    && message.reasoningContent == nil
+
+                if !isEmptyAssistant || isStreamingMsg {
+                    MessageBubbleView(
+                        message: message,
+                        isStreaming: isStreamingMsg,
+                        isSpeaking: loadedState.speakingMessageId == message.id,
+                        hasTTS: loadedState.ttsModelId != nil,
+                        showTokenUsage: loadedState.showTokenUsage,
+                        isLastMessage: isLast,
+                        isRunningTool: isLast && !loadedState.activeToolCallIds.isEmpty,
+                        showsMessageActionsTip: message.id == tipMessageId && !loadedState.isStreaming,
+                        onSpeakTapped: { viewModel.send(.speakMessageTapped(message)) },
+                        onStopSpeakingTapped: { viewModel.send(.stopSpeakingTapped) },
+                        onEditTapped: message.role == .user ? {
+                            editingMessage = message
+                            editingMessageText = message.content
+                        } : nil,
+                        onRegenerateTapped: (message.role == .assistant && isLast) ? {
+                            viewModel.send(.regenerateLastResponse)
+                        } : nil,
+                        onForkTapped: loadedState.conversation != nil ? {
+                            viewModel.send(.forkFromMessage(message.id))
+                        } : nil,
+                        onFavouriteTapped: { viewModel.send(.toggleFavourite(message.id)) }
+                    )
+                    .id(message.id)
+                    .transition(.opacity)
+                }
             }
         }
         .padding(.horizontal, 20)
