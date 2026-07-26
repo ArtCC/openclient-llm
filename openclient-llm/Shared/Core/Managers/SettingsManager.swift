@@ -39,6 +39,8 @@ protocol SettingsManagerProtocol: Sendable {
     func setIsPrivacyScreenEnabled(_ value: Bool)
     func getHasEnoughConversationsForMemoryTip() -> Bool
     func setHasEnoughConversationsForMemoryTip(_ value: Bool)
+    func getEnabledMCPToolIds() -> [String]
+    func setEnabledMCPToolIds(_ ids: [String])
     func deleteAll()
 }
 
@@ -60,6 +62,7 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         static let availableSearchTools = "availableSearchTools"
         static let isPrivacyScreenEnabled = "isPrivacyScreenEnabled"
         static let hasEnoughConversationsForMemoryTip = "hasEnoughConversationsForMemoryTip"
+        static let enabledMCPToolIds = "enabledMCPToolIds"
 
         static func ttsVoiceKey(forModelId modelId: String) -> String {
             "tts_voice_\(modelId)"
@@ -215,6 +218,14 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         defaults.set(value, forKey: Keys.hasEnoughConversationsForMemoryTip)
     }
 
+    func getEnabledMCPToolIds() -> [String] {
+        defaults.stringArray(forKey: Keys.enabledMCPToolIds) ?? []
+    }
+
+    func setEnabledMCPToolIds(_ ids: [String]) {
+        defaults.set(ids, forKey: Keys.enabledMCPToolIds)
+    }
+
     func deleteAll() {
         defaults.removeObject(forKey: Keys.isOnboardingCompleted)
         defaults.removeObject(forKey: Keys.selectedModelId)
@@ -228,6 +239,7 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         defaults.removeObject(forKey: Keys.availableSearchTools)
         defaults.removeObject(forKey: Keys.isPrivacyScreenEnabled)
         defaults.removeObject(forKey: Keys.hasEnoughConversationsForMemoryTip)
+        defaults.removeObject(forKey: Keys.enabledMCPToolIds)
         defaults.removeObject(forKey: LegacyKeys.serverBaseURL)
         defaults.removeObject(forKey: LegacyKeys.apiKey)
         keychainManager.deleteAll()

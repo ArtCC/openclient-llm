@@ -24,6 +24,7 @@ struct TipJarView: View {
                 switch viewModel.state {
                 case .loading:
                     ProgressView()
+                        .tint(.secondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .loaded(let loadedState):
                     loadedView(loadedState)
@@ -190,6 +191,7 @@ private extension TipJarView {
 
             VStack(spacing: 12) {
                 ProgressView()
+                    .tint(.secondary)
                     .controlSize(.large)
                 Text(String(localized: "Processing..."))
                     .font(.subheadline)

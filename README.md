@@ -29,6 +29,7 @@ servers that provide the endpoints used by your selected features; point the app
 - Receive generated images from compatible models and servers that return images in chat-completion streams
 - Web search powered by your server's configured provider (Brave, Firecrawl, and more)
 - Agentic tool-calling loop for models that support function calling
+- MCP (Model Context Protocol) tools — connect to external services (GitHub, filesystems, databases, and more) through MCP servers configured on your LiteLLM backend; discover, enable, and execute them from the chat input bar
 - Favourite any message to bookmark it and jump back instantly
 - Custom system prompt and model parameters (temperature, max tokens, top-p) per conversation
 

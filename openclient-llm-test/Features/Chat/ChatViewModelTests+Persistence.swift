@@ -272,6 +272,7 @@ extension ChatViewModelTests {
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
+            fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
             getConversationStartersUseCase: mockGetConversationStarters
         )
 
@@ -303,6 +304,7 @@ extension ChatViewModelTests {
             streamMessageUseCase: mockStreamMessage,
             saveConversationUseCase: mockSaveConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
+            fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
             getConversationStartersUseCase: mockGetConversationStarters
         )
 

@@ -200,6 +200,7 @@ struct PDFPreviewView: View {
                     PDFKitRepresentable(data: data)
                 } else {
                     ProgressView()
+                        .tint(.secondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }

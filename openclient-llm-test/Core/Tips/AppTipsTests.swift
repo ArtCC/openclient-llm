@@ -14,7 +14,7 @@ import XCTest
 final class AppTipsTests: XCTestCase {
     func test_allTips_containsEveryFeatureTip() {
         // Given
-        let expectedCount = 9
+        let expectedCount = 10
 
         // When
         let tips = AppTips.allTips

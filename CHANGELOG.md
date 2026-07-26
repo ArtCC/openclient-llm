@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.5.0-build-62] - 2026-07-26
+
+### Added
+
+- **Steering messages while streaming** — send a follow-up message while the model is still generating; the current stream is cancelled, the partial response is preserved, and the new message is sent with full conversation context
+- **MCP (Model Context Protocol) tools** — connect to MCP servers configured on your LiteLLM backend to give the model access to external tools like GitHub, filesystems, databases, and more
+- **Server-first UI**: browse servers (name, description, enabled/total tools), then drill into each to enable or disable individual tools with a master toggle
+- **Discovery**: servers and their tools are discovered automatically from the LiteLLM API; the same server and tool list is available in both the chat sheet and the Settings MCP section
+- **Execution**: enabled tools are embedded in the agent tool-calling loop as standard `ChatToolProtocol` instances and executed through the LiteLLM MCP REST API
+- **Collapsible actions bar** — attachment, web search, and MCP buttons now reside behind a single expandable `+` / `×` toggle; actions auto-collapse after use or when sending a message, and a subtle accent dot indicates an active action when collapsed
+- **MCP servers TipKit tip** — a contextual popover introduces the MCP servers feature when it becomes available, following the same pattern as the existing feature tips
+
 ## [1.4.6-build-61] - 2026-07-24
 
 ### Fixed

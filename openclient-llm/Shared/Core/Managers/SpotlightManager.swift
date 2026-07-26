@@ -24,7 +24,7 @@ nonisolated struct SpotlightManager: Sendable {
             title = conversation.title
         } else if let first = conversation.messages.first(where: { $0.role == .user }) {
             let preview = first.content.prefix(60)
-            title = preview.count < first.content.count ? "\(preview)…" : String(preview)
+            title = preview.count < first.content.count ? "\(preview)..." : String(preview)
         } else {
             title = String(localized: "New Chat")
         }
@@ -33,7 +33,7 @@ nonisolated struct SpotlightManager: Sendable {
         if let last = conversation.messages.last(where: { $0.role != .system }),
            !last.content.isEmpty {
             let truncated = last.content.prefix(160)
-            snippet = truncated.count < last.content.count ? "\(truncated)…" : String(truncated)
+            snippet = truncated.count < last.content.count ? "\(truncated)..." : String(truncated)
         }
 
         Task.detached(priority: .background) {

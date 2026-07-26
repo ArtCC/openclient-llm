@@ -106,6 +106,7 @@ private extension AttachmentImageView {
                 .fill(.quaternary)
                 .frame(width: thumbnailSize, height: thumbnailSize)
             ProgressView()
+                .tint(.secondary)
         }
     }
 

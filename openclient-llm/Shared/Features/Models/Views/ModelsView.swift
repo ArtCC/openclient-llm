@@ -37,6 +37,7 @@ private extension ModelsView {
             switch viewModel.state {
             case .loading:
                 ProgressView()
+                    .tint(.secondary)
             case .loaded(let loadedState):
                 loadedView(loadedState)
             }
@@ -326,7 +327,7 @@ private extension ModelsView {
                 }
             }
             Divider()
-            Button(String(localized: "Custom…")) {
+            Button(String(localized: "Custom...")) {
                 ttsCustomModeActive.insert(model.id)
                 if !isPresetVoice {
                     ttsCustomVoiceTexts[model.id] = currentVoice
@@ -336,7 +337,7 @@ private extension ModelsView {
             HStack(spacing: 4) {
                 Text(isPresetVoice && !ttsCustomModeActive.contains(model.id)
                      ? currentVoice.capitalized
-                     : String(localized: "Custom…"))
+                     : String(localized: "Custom..."))
                 .font(.subheadline)
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption2)

@@ -49,6 +49,7 @@ struct AppSplashView: View {
 
                 if showsLoadingIndicator {
                     ProgressView()
+                        .tint(.secondary)
                         .controlSize(.small)
                         .padding(.top, 5)
                 }

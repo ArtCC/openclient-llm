@@ -28,6 +28,7 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     var availableSearchTools: [SearchToolItem] = []
     var isPrivacyScreenEnabled: Bool = true
     var hasEnoughConversationsForMemoryTip: Bool = false
+    var enabledMCPToolIds: [String] = []
     var deleteAllCalled: Bool = false
 
     // MARK: - Public
@@ -150,6 +151,14 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
     func setHasEnoughConversationsForMemoryTip(_ value: Bool) {
         hasEnoughConversationsForMemoryTip = value
+    }
+
+    func getEnabledMCPToolIds() -> [String] {
+        enabledMCPToolIds
+    }
+
+    func setEnabledMCPToolIds(_ ids: [String]) {
+        enabledMCPToolIds = ids
     }
 
     func deleteAll() {

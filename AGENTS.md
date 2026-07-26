@@ -168,7 +168,8 @@ final class FeatureViewModel {
 
 ## Change Completion
 
-- Run the smallest relevant test set after a focused change; run the full iOS suite after shared-code changes.
+- After completing implementation work, **always ask the user** before compiling, checking SwiftLint, or running tests. Never do these automatically.
+- When the user wants to verify: run the smallest relevant test set after a focused change; run the full iOS suite after shared-code changes.
 - Build both iOS and macOS after changing shared SwiftUI or shared business logic.
 - Run `git diff --check` before reporting completion.
 - Do not include generated files, `Secrets.xcconfig`, or unrelated working-tree changes in a commit.

@@ -28,6 +28,7 @@ final class ChatViewModelTests: XCTestCase {
     var mockBranchConversation: MockBranchConversationUseCase!
     var mockAttachmentRepository: MockAttachmentRepository!
     var mockCompactConversation: MockCompactConversationUseCase!
+    var mockFetchMCPTools: MockFetchMCPToolsUseCase!
 
     // MARK: - Setup
 
@@ -48,6 +49,7 @@ final class ChatViewModelTests: XCTestCase {
         mockBranchConversation = MockBranchConversationUseCase()
         mockAttachmentRepository = MockAttachmentRepository()
         mockCompactConversation = MockCompactConversationUseCase()
+        mockFetchMCPTools = MockFetchMCPToolsUseCase()
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
             attachmentRepository: mockAttachmentRepository,
@@ -59,6 +61,7 @@ final class ChatViewModelTests: XCTestCase {
             getChatPreferencesUseCase: mockGetChatPreferences,
             saveSelectedModelUseCase: mockSaveSelectedModel,
             setWebSearchEnabledUseCase: mockSetWebSearchEnabled,
+            fetchMCPToolsUseCase: mockFetchMCPTools,
             resolveAudioModelIdsUseCase: mockResolveAudioModelIds,
             getUserProfileContextUseCase: mockGetUserProfileContext,
             getConversationStartersUseCase: mockGetConversationStarters,
@@ -82,6 +85,7 @@ final class ChatViewModelTests: XCTestCase {
         mockBranchConversation = nil
         mockAttachmentRepository = nil
         mockCompactConversation = nil
+        mockFetchMCPTools = nil
 
         try await super.tearDown()
     }

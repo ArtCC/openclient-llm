@@ -104,4 +104,34 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
         }
         return result
     }
+
+    func listMCPServers() async throws -> [MCPServerInfo] {
+        if let error = requestError {
+            throw error
+        }
+        guard let result = requestResult as? [MCPServerInfo] else {
+            throw APIError.decodingError
+        }
+        return result
+    }
+
+    func listMCPTools(serverId: String) async throws -> [MCPToolInfo] {
+        if let error = requestError {
+            throw error
+        }
+        guard let result = requestResult as? [MCPToolInfo] else {
+            throw APIError.decodingError
+        }
+        return result
+    }
+
+    func callMCPTool(serverId: String, toolName: String, arguments: String) async throws -> String {
+        if let error = requestError {
+            throw error
+        }
+        guard let result = requestResult as? String else {
+            throw APIError.decodingError
+        }
+        return result
+    }
 }

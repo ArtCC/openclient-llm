@@ -8,9 +8,6 @@
 
 import SwiftUI
 import TipKit
-#if canImport(UIKit)
-import SwiftUI
-#endif
 
 struct ChatView: View {
     // MARK: - Properties
@@ -31,6 +28,8 @@ struct ChatView: View {
     @State private var showDocumentPicker: Bool = false
     @State private var showCameraPicker: Bool = false
     @State private var showImageFilePicker: Bool = false
+    @State var showMCPSheet: Bool = false
+    @State private var showActions: Bool = false
     @State var editingMessage: ChatMessage?
     @State var editingMessageText: String = ""
 
@@ -89,6 +88,7 @@ private extension ChatView {
             switch viewModel.state {
             case .loading:
                 ProgressView()
+                    .tint(.secondary)
             case .loaded(let loadedState):
                 loadedView(loadedState)
             }
@@ -142,12 +142,13 @@ private extension ChatView {
 #endif
             }
         }
-        .sheet(item: $editingMessage) { message in
-            editMessageSheet(
-                message,
-                viewModel: viewModel,
-                editingMessage: $editingMessage,
-                editingMessageText: $editingMessageText
+            .sheet(isPresented: $showMCPSheet, content: mcpToolsSheet)
+            .sheet(item: $editingMessage) { message in
+                editMessageSheet(
+                    message,
+                    viewModel: viewModel,
+                    editingMessage: $editingMessage,
+                    editingMessageText: $editingMessageText
             )
         }
         .imagePicker(isPresented: $showImagePicker) { data, fileName, type in
@@ -188,6 +189,7 @@ private extension ChatView {
                 switch viewModel.state {
                 case .loading:
                     ProgressView()
+                    .tint(.secondary)
                 case .loaded(let loadedState):
                     loadedView(loadedState)
                 }
@@ -238,6 +240,7 @@ private extension ChatView {
                     MediaFilesGalleryView(messages: loadedSt.messages) { scrollToMessageId = $0 }
                 }
             }
+            .sheet(isPresented: $showMCPSheet, content: mcpToolsSheet)
             .sheet(item: $editingMessage) { message in
                 editMessageSheet(
                     message,
@@ -288,17 +291,6 @@ private extension ChatView {
                 VStack(spacing: 0) {
                     errorBanner(loadedState.errorMessage)
                     attachmentPreview(loadedState, send: { viewModel.send($0) })
-                    if let usage = loadedState.contextUsage {
-                        ChatContextUsageView(usage: usage)
-                            .popoverTip(
-                                usage.percentage >= 50 && !loadedState.isStreaming
-                                ? AppTips.contextUsage
-                                : nil,
-                                arrowEdge: .bottom
-                            )
-                            .padding(.horizontal, 24)
-                            .padding(.bottom, 2)
-                    }
                     ChatInputBarView(
                         inputText: $inputText,
                         showImagePicker: $showImagePicker,
@@ -306,12 +298,21 @@ private extension ChatView {
                         showCameraPicker: $showCameraPicker,
                         loadedState: loadedState,
                         onInputChanged: { viewModel.send(.inputChanged($0)) },
-                        onSend: { viewModel.send(.sendTapped) },
+                        onSend: {
+                            viewModel.send(.sendTapped)
+                            showActions = false
+                        },
                         onStopStreaming: { viewModel.send(.stopStreamingTapped) },
                         onStartRecording: { viewModel.send(.startRecordingTapped) },
                         onStopRecording: { viewModel.send(.stopRecordingTapped) },
                         onCancelRecording: { viewModel.send(.cancelRecordingTapped) },
                         onWebSearchToggled: { viewModel.send(.webSearchToggled) },
+                        onMCPButtonTapped: {
+                            showMCPSheet = true
+                            viewModel.send(.mcpButtonTapped)
+                            showActions = false
+                        },
+                        showActions: $showActions,
                         showImageFilePicker: $showImageFilePicker
                     )
                 }
@@ -485,7 +486,4 @@ private extension ChatView {
     }
 
 }
-
-#Preview {
-    ChatView()
-}
+#Preview { ChatView() }
