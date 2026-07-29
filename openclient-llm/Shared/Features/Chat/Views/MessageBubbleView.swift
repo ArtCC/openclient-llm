@@ -320,12 +320,17 @@ private extension MessageBubbleView {
                 case .heading(let text, let level):
                     headingBlockView(text, level: level)
                 case .codeBlock(let code, let language):
-                    CodeBlockView(
-                        code: isStreaming && isLastBlock
-                            ? code
-                            : code,
-                        language: language
-                    )
+                    CodeBlockView(code: code, language: language)
+                case .blockquote(let content):
+                    BlockquoteView(content: content)
+                case .unorderedList(let items):
+                    BulletedListView(items: items)
+                case .orderedList(let items):
+                    NumberedListView(items: items)
+                case .horizontalRule:
+                    HorizontalRuleView()
+                case .table(let headers, let rows):
+                    MarkdownTableView(headers: headers, rows: rows)
                 }
             }
         }

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.0-build-63] - 2026-07-29
+
+### Added
+
+- **Full markdown block rendering** — blockquotes (`>`), horizontal rules (`---`), unordered and ordered lists with nesting, and tables (`| col |`) are now parsed and rendered natively in assistant messages, replacing the previous inline-only markdown support
+- **`MarkdownParser` extended** — new `MessageBlock` cases for `.blockquote`, `.unorderedList`, `.orderedList`, `.horizontalRule`, and `.table`; each with dedicated SwiftUI views
+
+### Fixed
+
+- **Minor bug fixes**
+
 ## [1.5.0-build-62] - 2026-07-26
 
 ### Added
