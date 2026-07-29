@@ -331,6 +331,10 @@ private extension MessageBubbleView {
                     HorizontalRuleView()
                 case .table(let headers, let rows):
                     MarkdownTableView(headers: headers, rows: rows)
+                case .taskList(let items):
+                    TaskListView(items: items)
+                case .image(let alt, let url):
+                    MarkdownImageView(alt: alt, urlString: url)
                 }
             }
         }

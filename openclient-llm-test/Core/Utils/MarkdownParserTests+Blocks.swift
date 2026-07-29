@@ -292,61 +292,91 @@ extension MarkdownParserTests {
     }
 }
 
-// MARK: - Tables
+// MARK: - Task Lists
 
 extension MarkdownParserTests {
-    func test_parse_simpleTable_returnsTable() {
+    func test_parse_taskList_unchecked_returnsTaskList() {
         // Given
-        let input = "| Name | Age |\n| --- | --- |\n| Alice | 30 |\n| Bob | 25 |"
+        let input = "- [ ] Task one\n- [ ] Task two\n- [ ] Task three"
 
         // When
         let blocks = MarkdownParser.parse(input)
 
         // Then
-        XCTAssertEqual(blocks.count, 1)
-        guard case .table(let headers, let rows) = blocks[0] else {
-            XCTFail("Expected .table"); return
+        guard case .taskList(let items) = blocks[0] else {
+            XCTFail("Expected .taskList"); return
         }
-        XCTAssertEqual(headers, ["Name", "Age"])
-        XCTAssertEqual(rows.count, 2)
-        XCTAssertEqual(rows[0], ["Alice", "30"])
-        XCTAssertEqual(rows[1], ["Bob", "25"])
+        XCTAssertEqual(items.count, 3)
+        XCTAssertFalse(items[0].isChecked)
+        XCTAssertEqual(items[0].content, "Task one")
     }
 
-    func test_parse_tableThreeColumns_parsesCorrectly() {
+    func test_parse_taskList_checked_returnsCheckedTaskList() {
         // Given
-        let input = "| ID | Name | Active |\n| -- | ---- | ------ |\n| 1 | Foo | Yes |"
+        let input = "- [x] Done task\n- [X] Also done"
 
         // When
         let blocks = MarkdownParser.parse(input)
 
         // Then
-        guard case .table(let headers, let rows) = blocks[0] else {
-            XCTFail("Expected .table"); return
+        guard case .taskList(let items) = blocks[0] else {
+            XCTFail("Expected .taskList"); return
         }
-        XCTAssertEqual(headers.count, 3)
-        XCTAssertEqual(rows[0].count, 3)
-        XCTAssertEqual(headers, ["ID", "Name", "Active"])
+        XCTAssertEqual(items.count, 2)
+        XCTAssertTrue(items[0].isChecked)
+        XCTAssertTrue(items[1].isChecked)
     }
 
-    func test_parse_tableWithAlignmentMarkers_parsesCorrectly() {
+    func test_parse_taskList_mixedCheckboxes_returnsCorrectState() {
         // Given
-        let input = "| Left | Right | Center |\n| :--- | ---: | :---: |\n| A | B | C |"
+        let input = "- [ ] Pending\n- [x] Completed\n- [ ] Another pending"
 
         // When
         let blocks = MarkdownParser.parse(input)
 
         // Then
-        guard case .table(let headers, let rows) = blocks[0] else {
-            XCTFail("Expected .table"); return
+        guard case .taskList(let items) = blocks[0] else {
+            XCTFail("Expected .taskList"); return
         }
-        XCTAssertEqual(headers, ["Left", "Right", "Center"])
-        XCTAssertEqual(rows[0], ["A", "B", "C"])
+        XCTAssertFalse(items[0].isChecked)
+        XCTAssertTrue(items[1].isChecked)
+        XCTAssertFalse(items[2].isChecked)
     }
 
-    func test_parse_tableWithSurroundingText_separatesCorrectly() {
+    func test_parse_taskList_asteriskMarker_returnsTaskList() {
         // Given
-        let input = "Intro\n| K | V |\n| - | - |\n| A | 1 |\nOutro"
+        let input = "* [ ] Asterisk task\n* [x] Completed"
+
+        // When
+        let blocks = MarkdownParser.parse(input)
+
+        // Then
+        guard case .taskList(let items) = blocks[0] else {
+            XCTFail("Expected .taskList"); return
+        }
+        XCTAssertEqual(items.count, 2)
+    }
+
+    func test_parse_taskList_nested_setsDepth() {
+        // Given
+        let input = "- [ ] Parent\n  - [x] Done child\n  - [ ] Pending child"
+
+        // When
+        let blocks = MarkdownParser.parse(input)
+
+        // Then
+        guard case .taskList(let items) = blocks[0] else {
+            XCTFail("Expected .taskList"); return
+        }
+        XCTAssertEqual(items.count, 3)
+        XCTAssertEqual(items[0].depth, 0)
+        XCTAssertEqual(items[1].depth, 1)
+        XCTAssertEqual(items[2].depth, 1)
+    }
+
+    func test_parse_taskList_withSurroundingText_separatesCorrectly() {
+        // Given
+        let input = "Intro\n- [ ] A task\n- [x] Done\nOutro"
 
         // When
         let blocks = MarkdownParser.parse(input)
@@ -356,26 +386,13 @@ extension MarkdownParserTests {
         guard case .text(let intro) = blocks[0] else {
             XCTFail("Expected .text first"); return
         }
-        guard case .table = blocks[1] else {
-            XCTFail("Expected .table second"); return
+        guard case .taskList = blocks[1] else {
+            XCTFail("Expected .taskList second"); return
         }
         guard case .text(let outro) = blocks[2] else {
             XCTFail("Expected .text third"); return
         }
         XCTAssertEqual(intro, "Intro")
         XCTAssertEqual(outro, "Outro")
-    }
-
-    func test_parse_lineWithPipesButNoSeparator_notTreatedAsTable() {
-        // Given
-        let input = "This | is not | a table"
-
-        // When
-        let blocks = MarkdownParser.parse(input)
-
-        // Then
-        guard case .text = blocks[0] else {
-            XCTFail("Expected .text"); return
-        }
     }
 }

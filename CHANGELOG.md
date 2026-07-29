@@ -11,8 +11,8 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 ### Added
 
-- **Full markdown block rendering** — blockquotes (`>`), horizontal rules (`---`), unordered and ordered lists with nesting, and tables (`| col |`) are now parsed and rendered natively in assistant messages, replacing the previous inline-only markdown support
-- **`MarkdownParser` extended** — new `MessageBlock` cases for `.blockquote`, `.unorderedList`, `.orderedList`, `.horizontalRule`, and `.table`; each with dedicated SwiftUI views
+- **Full markdown block rendering** — blockquotes (`>`), horizontal rules (`---`), task lists (`- [ ]` / `- [x]`), unordered and ordered lists with nesting, markdown images (`![alt](url)`), and tables (`| col |`) are now parsed and rendered natively in assistant messages, replacing the previous inline-only markdown support
+- **`MarkdownParser` extended** — new `MessageBlock` cases for `.blockquote`, `.taskList`, `.unorderedList`, `.orderedList`, `.horizontalRule`, `.image`, and `.table`; each with dedicated SwiftUI views
 
 ### Fixed
 

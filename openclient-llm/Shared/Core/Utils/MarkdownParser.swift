@@ -19,6 +19,8 @@ enum MessageBlock: Equatable, Sendable {
     case orderedList(items: [MarkdownOrderedListItem])
     case horizontalRule
     case table(headers: [String], rows: [[String]])
+    case taskList(items: [MarkdownTaskItem])
+    case image(alt: String, url: String)
 }
 
 // MARK: - MarkdownListItem
@@ -32,6 +34,14 @@ struct MarkdownListItem: Equatable, Sendable {
 
 struct MarkdownOrderedListItem: Equatable, Sendable {
     let number: Int
+    let content: String
+    let depth: Int
+}
+
+// MARK: - MarkdownTaskItem
+
+struct MarkdownTaskItem: Equatable, Sendable {
+    let isChecked: Bool
     let content: String
     let depth: Int
 }
@@ -84,7 +94,6 @@ struct MarkdownParser: Sendable {
 // MARK: - Private: Mixed Block Parsing
 
 private extension MarkdownParser {
-    /// Parses a contiguous region of non-code-block lines, grouping by type.
     static func parseMixedBlock(lines: [String], startIndex: inout Int, into blocks: inout [MessageBlock]) {
         var accumulatedText: [String] = []
 
@@ -94,6 +103,11 @@ private extension MarkdownParser {
             if isHorizontalRule(currentLine) {
                 flushText(&accumulatedText, into: &blocks)
                 blocks.append(.horizontalRule)
+                startIndex += 1
+                continue
+            } else if let image = parseImageLine(currentLine) {
+                flushText(&accumulatedText, into: &blocks)
+                blocks.append(image)
                 startIndex += 1
                 continue
             }
@@ -109,15 +123,17 @@ private extension MarkdownParser {
                 flushText(&accumulatedText, into: &blocks)
                 startIndex = parseBlockquote(lines: lines, startIndex: startIndex, into: &blocks)
                 continue
+            } else if parseTaskListItem(currentLine) != nil {
+                flushText(&accumulatedText, into: &blocks)
+                startIndex = parseTaskList(lines: lines, startIndex: startIndex, into: &blocks)
+                continue
             }
 
             if parseUnorderedListItem(currentLine) != nil {
                 flushText(&accumulatedText, into: &blocks)
                 startIndex = parseUnorderedList(lines: lines, startIndex: startIndex, into: &blocks)
                 continue
-            }
-
-            if parseOrderedListItem(currentLine) != nil {
+            } else if parseOrderedListItem(currentLine) != nil {
                 flushText(&accumulatedText, into: &blocks)
                 startIndex = parseOrderedList(lines: lines, startIndex: startIndex, into: &blocks)
                 continue
@@ -202,6 +218,91 @@ private struct OrderedListItemMatch {
     let number: Int
     let depth: Int
     let content: String
+}
+
+// MARK: - Private: Image
+
+private extension MarkdownParser {
+    static func parseImageLine(_ line: String) -> MessageBlock? {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard trimmed.hasPrefix("![") else { return nil }
+
+        let afterBang = trimmed.dropFirst(2)
+        guard let altEnd = afterBang.firstIndex(of: "]") else { return nil }
+        let alt = String(afterBang.prefix(upTo: altEnd))
+
+        let afterAlt = afterBang[afterBang.index(after: altEnd)...]
+        guard afterAlt.hasPrefix("(") else { return nil }
+
+        let afterParen = afterAlt.dropFirst()
+        guard let urlEnd = afterParen.firstIndex(of: ")") else { return nil }
+        let url = String(afterParen.prefix(upTo: urlEnd)).trimmingCharacters(in: .whitespaces)
+
+        // Only consume trailing characters that are part of the image syntax
+        let remaining = afterParen[afterParen.index(after: urlEnd)...]
+            .trimmingCharacters(in: .whitespaces)
+        if !remaining.isEmpty {
+            return nil
+        }
+
+        guard !url.isEmpty else { return nil }
+        return .image(alt: alt, url: url)
+    }
+}
+
+// MARK: - Private: Task Lists
+
+private extension MarkdownParser {
+    static func parseTaskListItem(_ line: String) -> MarkdownTaskItem? {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        let leadingSpaces = line.prefix(while: { $0 == " " }).count
+
+        guard trimmed.count >= 5 else { return nil }
+
+        let marker = String(trimmed.prefix(2))
+        guard marker == "- " || marker == "* " || marker == "+ " else { return nil }
+
+        let afterMarker = trimmed.dropFirst(2)
+        let bracketStart = afterMarker.prefix(1)
+        guard bracketStart == "[" else { return nil }
+
+        let afterBracket = afterMarker.dropFirst()
+        guard let closeBracket = afterBracket.firstIndex(of: "]") else { return nil }
+
+        let checkChar = String(afterBracket.prefix(upTo: closeBracket))
+        guard checkChar == " " || checkChar == "x" || checkChar == "X" else { return nil }
+
+        let afterClose = afterBracket[afterBracket.index(after: closeBracket)...]
+        guard afterClose.hasPrefix(" ") || afterClose.isEmpty else { return nil }
+
+        let content = String(afterClose).trimmingPrefix(" ")
+        return MarkdownTaskItem(
+            isChecked: checkChar != " ",
+            content: content,
+            depth: leadingSpaces / 2
+        )
+    }
+
+    static func parseTaskList(
+        lines: [String],
+        startIndex: Int,
+        into blocks: inout [MessageBlock]
+    ) -> Int {
+        var index = startIndex
+        var items: [MarkdownTaskItem] = []
+
+        while index < lines.count {
+            guard let item = parseTaskListItem(lines[index]) else { break }
+            items.append(item)
+            index += 1
+        }
+
+        if !items.isEmpty {
+            blocks.append(.taskList(items: items))
+        }
+
+        return index
+    }
 }
 
 // MARK: - Private: Lists
