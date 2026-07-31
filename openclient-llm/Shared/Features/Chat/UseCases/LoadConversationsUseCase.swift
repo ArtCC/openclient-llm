@@ -10,6 +10,7 @@ import Foundation
 
 protocol LoadConversationsUseCaseProtocol: Sendable {
     func execute() throws -> [Conversation]
+    func executeLocally() throws -> [Conversation]
 }
 
 struct LoadConversationsUseCase: LoadConversationsUseCaseProtocol {
@@ -26,7 +27,21 @@ struct LoadConversationsUseCase: LoadConversationsUseCaseProtocol {
     // MARK: - Execute
 
     func execute() throws -> [Conversation] {
-        var conversations = try repository.loadAll()
+        let conversations = try repository.loadAll()
+        return normalizeTags(in: conversations)
+    }
+
+    func executeLocally() throws -> [Conversation] {
+        let conversations = try repository.loadLocal()
+        return normalizeTags(in: conversations)
+    }
+}
+
+// MARK: - Private
+
+private extension LoadConversationsUseCase {
+    func normalizeTags(in conversations: [Conversation]) -> [Conversation] {
+        var conversations = conversations
         let colorsByName = conversations.flatMap(\.tags).reduce(into: [String: TagColor]()) { colors, tag in
             if colors[tag.name] == nil {
                 colors[tag.name] = tag.color

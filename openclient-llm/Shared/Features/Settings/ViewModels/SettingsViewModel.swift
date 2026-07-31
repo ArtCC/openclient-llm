@@ -448,28 +448,39 @@ private extension SettingsViewModel {
             break
         }
     }
-
     func fetchMCPTools() {
         guard case .loaded(let loadedState) = state, !loadedState.isLoadingMCPTools else { return }
         var update = loadedState
         update.isLoadingMCPTools = true
         update.mcpToolsError = nil
         state = .loaded(update)
-
         Task { [weak self] in
             guard let self else { return }
             let result = await fetchMCPToolsUseCase.execute()
             guard case .loaded(var currentState) = state else { return }
-            let enabledIds = Set(settingsManager.getEnabledMCPToolIds())
-                .intersection(Set(result.tools.map(\.prefixedName)))
-            currentState.availableMCPTools = result.tools
+            if result.errorMessage != nil && result.servers.isEmpty {
+                currentState.isLoadingMCPTools = false
+                currentState.mcpToolsError = result.errorMessage
+                state = .loaded(currentState)
+                return
+            }
+            let retainedTools = currentState.availableMCPTools.filter {
+                result.failedServerIds.contains($0.serverId)
+            }
+            let discoveredTools = result.tools + retainedTools
+            currentState.availableMCPTools = discoveredTools
             currentState.availableMCPServers = result.servers
-            currentState.enabledMCPToolIds = enabledIds
+            let normalizedEnabledIds = enabledMCPToolIds(
+                savedIds: settingsManager.getEnabledMCPToolIds(),
+                tools: discoveredTools
+            )
+            settingsManager.setEnabledMCPToolIds(Array(normalizedEnabledIds))
+            currentState.enabledMCPToolIds = normalizedEnabledIds
+            currentState.mcpToolsError = result.errorMessage
             currentState.isLoadingMCPTools = false
             state = .loaded(currentState)
         }
     }
-
     func toggleMCPTool(toolId: String, enabled: Bool) {
         guard case .loaded(var loadedState) = state else { return }
         if enabled {
@@ -479,5 +490,10 @@ private extension SettingsViewModel {
         }
         settingsManager.setEnabledMCPToolIds(Array(loadedState.enabledMCPToolIds))
         state = .loaded(loadedState)
+    }
+    func enabledMCPToolIds(savedIds: [String], tools: [MCPToolInfo]) -> Set<String> {
+        let currentIds = Set(tools.map(\.id))
+        let legacyIds = Dictionary(uniqueKeysWithValues: tools.map { ($0.prefixedName, $0.id) })
+        return Set(savedIds.compactMap { currentIds.contains($0) ? $0 : legacyIds[$0] })
     }
 }

@@ -19,6 +19,48 @@ nonisolated struct MCPServerInfo: Codable, Equatable, Identifiable, Sendable {
     var id: String { serverId }
 }
 
+// MARK: - MCP list responses
+
+nonisolated struct MCPServersResponse: Decodable, Sendable {
+    let data: [MCPServerInfo]
+
+    init(from decoder: Decoder) throws {
+        if let container = try? decoder.container(keyedBy: CodingKeys.self),
+           let data = try? container.decode([MCPServerInfo].self, forKey: .data) {
+            self.data = data
+            return
+        }
+        self.data = try [MCPServerInfo](from: decoder)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case data
+    }
+}
+
+nonisolated struct MCPToolsResponse: Decodable, Sendable {
+    let data: [MCPToolInfo]
+
+    init(from decoder: Decoder) throws {
+        if let container = try? decoder.container(keyedBy: CodingKeys.self),
+           let data = try? container.decode([MCPToolInfo].self, forKey: .data) {
+            self.data = data
+            return
+        }
+        if let container = try? decoder.container(keyedBy: CodingKeys.self),
+           let tools = try? container.decode([MCPToolInfo].self, forKey: .tools) {
+            self.data = tools
+            return
+        }
+        self.data = try [MCPToolInfo](from: decoder)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case data
+        case tools
+    }
+}
+
 // MARK: - MCPToolInfo
 
 nonisolated struct MCPToolInfo: Codable, Equatable, Identifiable, Sendable {
@@ -31,6 +73,16 @@ nonisolated struct MCPToolInfo: Codable, Equatable, Identifiable, Sendable {
     var prefixedName: String { "\(serverName)-\(name)" }
     var id: String { "\(serverId)-\(name)" }
 
+    func withServer(_ server: MCPServerInfo) -> MCPToolInfo {
+        MCPToolInfo(
+            name: name,
+            description: description,
+            serverId: server.serverId,
+            serverName: server.serverName,
+            inputSchema: inputSchema
+        )
+    }
+
     enum CodingKeys: String, CodingKey {
         case name
         case description
@@ -41,7 +93,9 @@ nonisolated struct MCPToolInfo: Codable, Equatable, Identifiable, Sendable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         name = try container.decode(String.self, forKey: .name)
         description = try container.decodeIfPresent(String.self, forKey: .description)
-        inputSchema = try container.decodeIfPresent(MCPJSONSchema.self, forKey: .inputSchema)
+        // LiteLLM may omit the schema or return a provider-specific placeholder.
+        // Tool discovery must remain usable when optional schema data is malformed.
+        inputSchema = try? container.decode(MCPJSONSchema.self, forKey: .inputSchema)
         serverId = ""
         serverName = ""
     }
@@ -65,6 +119,22 @@ final class MCPJSONSchema: Codable, Equatable, @unchecked Sendable {
     let description: String?
     let items: MCPJSONSchema?
     let `enum`: [String]?
+
+    init(
+        type: String?,
+        properties: [String: MCPJSONSchema]?,
+        required: [String]?,
+        description: String?,
+        items: MCPJSONSchema?,
+        `enum`: [String]?
+    ) {
+        self.type = type
+        self.properties = properties
+        self.required = required
+        self.description = description
+        self.items = items
+        self.enum = `enum`
+    }
 
     nonisolated static func == (lhs: MCPJSONSchema, rhs: MCPJSONSchema) -> Bool {
         lhs.type == rhs.type

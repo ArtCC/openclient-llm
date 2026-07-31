@@ -71,7 +71,7 @@ private extension MCPToolsSheet {
         List {
             Section(String(localized: "Available Servers")) {
                 ForEach(loadedState.availableMCPServers) { server in
-                    let serverTools = loadedState.toolsForServer(server.serverName)
+                    let serverTools = loadedState.toolsForServer(server.serverId)
                     NavigationLink {
                         serverDetailView(
                             server: server,
@@ -91,7 +91,7 @@ private extension MCPToolsSheet {
         tools: [MCPToolInfo],
         loadedState: ChatViewModel.LoadedState
     ) -> some View {
-        let enabled = tools.filter { loadedState.enabledMCPToolIds.contains($0.prefixedName) }.count
+        let enabled = tools.filter { loadedState.enabledMCPToolIds.contains($0.id) }.count
         return HStack {
             Image(systemName: enabled > 0 ? "server.rack" : "server.rack")
                 .foregroundStyle(enabled > 0 ? Color.appAccent : .secondary)
@@ -117,7 +117,7 @@ private extension MCPToolsSheet {
         tools: [MCPToolInfo],
         loadedState: ChatViewModel.LoadedState
     ) -> some View {
-        let allEnabled = tools.allSatisfy { loadedState.enabledMCPToolIds.contains($0.prefixedName) }
+        let allEnabled = tools.allSatisfy { loadedState.enabledMCPToolIds.contains($0.id) }
         let serverId = server.serverName
         return List {
             Section {
@@ -125,8 +125,8 @@ private extension MCPToolsSheet {
                     get: { allEnabled },
                     set: { enable in
                         for tool in tools {
-                            viewModel.send(.mcpToolToggled(
-                                toolId: tool.prefixedName,
+                             viewModel.send(.mcpToolToggled(
+                                 toolId: tool.id,
                                 enabled: enable
                             ))
                         }
@@ -159,11 +159,11 @@ private extension MCPToolsSheet {
         _ tool: MCPToolInfo,
         loadedState: ChatViewModel.LoadedState
     ) -> some View {
-        let isEnabled = loadedState.enabledMCPToolIds.contains(tool.prefixedName)
+        let isEnabled = loadedState.enabledMCPToolIds.contains(tool.id)
         return Toggle(isOn: Binding(
             get: { isEnabled },
             set: { enabled in
-                viewModel.send(.mcpToolToggled(toolId: tool.prefixedName, enabled: enabled))
+                viewModel.send(.mcpToolToggled(toolId: tool.id, enabled: enabled))
             }
         )) {
             VStack(alignment: .leading, spacing: 2) {
@@ -211,8 +211,8 @@ private extension MCPToolsSheet {
 // MARK: - Helpers
 
 extension ChatViewModel.LoadedState {
-    func toolsForServer(_ serverName: String) -> [MCPToolInfo] {
-        availableMCPTools.filter { $0.serverName == serverName }
+    func toolsForServer(_ serverId: String) -> [MCPToolInfo] {
+        availableMCPTools.filter { $0.serverId == serverId }
     }
 }
 
@@ -229,7 +229,7 @@ extension ChatViewModel.LoadedState {
             isMCPSupported: true,
             availableMCPTools: [tool1, tool2],
             availableMCPServers: servers,
-            enabledMCPToolIds: ["github-search_issues"]
+            enabledMCPToolIds: ["gh-search_issues"]
         ))),
         isPresented: .constant(true)
     )

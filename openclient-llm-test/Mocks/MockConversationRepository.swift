@@ -28,6 +28,11 @@ final class MockConversationRepository: ConversationRepositoryProtocol, @uncheck
         return conversations
     }
 
+    func loadLocal() throws -> [Conversation] {
+        if let loadError { throw loadError }
+        return conversations
+    }
+
     func save(_ conversation: Conversation) throws {
         if let saveError { throw saveError }
         savedConversations.append(conversation)

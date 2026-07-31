@@ -78,16 +78,12 @@ struct APIClient: APIClientProtocol, Sendable {
         do {
             let (data, response) = try await performRequest(urlRequest)
             if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-                let body = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
-                LogManager.error("HTTP \(http.statusCode) /\(endpoint) body: \(String(body.prefix(500)))")
+                LogManager.error("HTTP \(http.statusCode) /\(endpoint) (\(data.count) bytes)")
             }
             try validateResponse(response)
 
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
             LogManager.network("← \(method.rawValue) /\(endpoint) [\(statusCode)] \(data.count) bytes")
-
-            let rawBody = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
-            LogManager.debug("RAW RESPONSE /\(endpoint):\n\(rawBody)")
 
             do {
                 let decoder = JSONDecoder()
@@ -200,8 +196,7 @@ struct APIClient: APIClientProtocol, Sendable {
         do {
             let (data, response) = try await performRequest(request)
             if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-                let body = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
-                LogManager.error("HTTP \(http.statusCode) /\(endpoint) body: \(String(body.prefix(500)))")
+                LogManager.error("HTTP \(http.statusCode) /\(endpoint) (\(data.count) bytes)")
             }
             try validateResponse(response)
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -235,24 +230,24 @@ struct APIClient: APIClientProtocol, Sendable {
 
     func listMCPServers() async throws -> [MCPServerInfo] {
         LogManager.network("→ GET /v1/mcp/server")
-        let response: [MCPServerInfo] = try await request(
+        let response: MCPServersResponse = try await request(
             endpoint: "v1/mcp/server",
             method: .get,
             body: nil
         )
-        LogManager.success("listMCPServers returned \(response.count) servers")
-        return response
+        LogManager.success("listMCPServers returned \(response.data.count) servers")
+        return response.data
     }
 
     func listMCPTools(serverId: String) async throws -> [MCPToolInfo] {
         LogManager.network("→ GET /mcp-rest/tools/list server_id=\(serverId)")
-        let rawTools: [MCPToolInfo] = try await request(
+        let response: MCPToolsResponse = try await request(
             endpoint: "mcp-rest/tools/list",
             method: .get,
             body: nil,
             queryItems: [URLQueryItem(name: "server_id", value: serverId)]
         )
-        let tools = rawTools.map { tool in
+        let tools = response.data.map { tool in
             MCPToolInfo(
                 name: tool.name,
                 description: tool.description,
@@ -267,7 +262,7 @@ struct APIClient: APIClientProtocol, Sendable {
 
     func callMCPTool(serverId: String, toolName: String, arguments: String) async throws -> String {
         LogManager.network("→ POST /mcp-rest/tools/call server=\(serverId) tool=\(toolName)")
-        let parsedArguments = parseArgumentsJSON(arguments)
+        let parsedArguments = try parseArgumentsJSON(arguments)
         let body = MCPCallRequest(serverId: serverId, name: toolName, arguments: parsedArguments)
         let response: MCPCallResponse = try await request(
             endpoint: "mcp-rest/tools/call",
@@ -277,7 +272,10 @@ struct APIClient: APIClientProtocol, Sendable {
         guard let content = response.content, !content.isEmpty else {
             throw APIError.invalidResponse
         }
-        let text = content.compactMap(\.text).joined(separator: "\n")
+        let text = String(content.compactMap(\.text).joined(separator: "\n").prefix(100_000))
+        if response.isError == true {
+            throw APIError.toolExecutionFailed(String(localized: "The MCP server reported a tool error."))
+        }
         LogManager.success("callMCPTool \(toolName) result=\(text.count) chars isError=\(response.isError ?? false)")
         return text
     }
@@ -292,8 +290,7 @@ struct APIClient: APIClientProtocol, Sendable {
         do {
             let (data, response) = try await performRequest(urlRequest)
             if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-                let body = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
-                LogManager.error("HTTP \(http.statusCode) /\(endpoint) body: \(String(body.prefix(500)))")
+                LogManager.error("HTTP \(http.statusCode) /\(endpoint) (\(data.count) bytes)")
             }
             try validateResponse(response)
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -319,10 +316,13 @@ private extension APIClient {
 
         let url: URL
         if let queryItems, !queryItems.isEmpty {
-            guard var components = URLComponents(string: baseURL) else {
+            guard let endpointURL = URL(string: baseURL)?.appendingPathComponent(endpoint),
+                  var components = URLComponents(
+                      url: endpointURL,
+                      resolvingAgainstBaseURL: false
+                  ) else {
                 throw APIError.invalidURL
             }
-            components.path = (components.path as NSString).appendingPathComponent(endpoint)
             components.queryItems = queryItems
             guard let builtURL = components.url else {
                 throw APIError.invalidURL
@@ -364,8 +364,7 @@ private extension APIClient {
         do {
             let (data, response) = try await performRequest(urlRequest)
             if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
-                let responseBody = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
-                LogManager.error("HTTP \(http.statusCode) /\(endpoint) body: \(String(responseBody.prefix(500)))")
+                LogManager.error("HTTP \(http.statusCode) /\(endpoint) (\(data.count) bytes)")
             }
             try validateResponse(response)
 
@@ -386,10 +385,10 @@ private extension APIClient {
         }
     }
 
-    func parseArgumentsJSON(_ arguments: String) -> [String: MCPCallValue] {
+    func parseArgumentsJSON(_ arguments: String) throws -> [String: MCPCallValue] {
         guard let data = arguments.data(using: .utf8),
               let dict = try? JSONDecoder().decode([String: MCPCallValue].self, from: data) else {
-            return [:]
+            throw APIError.invalidRequest(String(localized: "The MCP tool arguments are not valid JSON."))
         }
         return dict
     }

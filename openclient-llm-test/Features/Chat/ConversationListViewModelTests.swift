@@ -20,6 +20,7 @@ final class ConversationListViewModelTests: XCTestCase {
     var mockUpdateTags: MockUpdateConversationTagsUseCase!
     var mockRenameConversation: MockRenameConversationUseCase!
     var mockFetchModels: MockFetchModelsUseCase!
+    var mockSyncConversations: MockSyncConversationsUseCase!
     var mockSettingsManager: MockSettingsManager!
     var mockExportBackup: MockExportBackupUseCase!
     var mockImportConversations: MockImportConversationsUseCase!
@@ -35,6 +36,7 @@ final class ConversationListViewModelTests: XCTestCase {
         mockUpdateTags = MockUpdateConversationTagsUseCase()
         mockRenameConversation = MockRenameConversationUseCase()
         mockFetchModels = MockFetchModelsUseCase()
+        mockSyncConversations = MockSyncConversationsUseCase()
         mockSettingsManager = MockSettingsManager()
         mockExportBackup = MockExportBackupUseCase()
         mockImportConversations = MockImportConversationsUseCase()
@@ -45,6 +47,7 @@ final class ConversationListViewModelTests: XCTestCase {
             updateConversationTagsUseCase: mockUpdateTags,
             renameConversationUseCase: mockRenameConversation,
             fetchModelsUseCase: mockFetchModels,
+            syncConversationsUseCase: mockSyncConversations,
             exportBackupUseCase: mockExportBackup,
             importConversationsUseCase: mockImportConversations,
             settingsManager: mockSettingsManager
@@ -59,6 +62,7 @@ final class ConversationListViewModelTests: XCTestCase {
         mockUpdateTags = nil
         mockRenameConversation = nil
         mockFetchModels = nil
+        mockSyncConversations = nil
         mockSettingsManager = nil
         mockExportBackup = nil
         mockImportConversations = nil
@@ -86,7 +90,7 @@ final class ConversationListViewModelTests: XCTestCase {
 
         // When
         sut.send(.viewAppeared)
-        try await Task.sleep(for: .milliseconds(100))
+        for _ in 0..<10 { await Task.yield() }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -96,6 +100,27 @@ final class ConversationListViewModelTests: XCTestCase {
         XCTAssertEqual(loadedState.conversations.count, 2)
         XCTAssertEqual(loadedState.availableModels.count, 1)
         XCTAssertNil(loadedState.errorMessage)
+    }
+
+    func test_send_viewAppeared_loadsLocallyBeforeSyncing() async throws {
+        // Given
+        let conversations = [Conversation(modelId: "gpt-4")]
+        mockLoadConversations.result = .success(conversations)
+        mockFetchModels.result = .success([])
+        mockSyncConversations.result = .synchronized
+
+        // When
+        sut.send(.viewAppeared)
+        for _ in 0..<10 { await Task.yield() }
+
+        // Then
+        XCTAssertEqual(mockLoadConversations.executeLocallyCallCount, 2)
+        XCTAssertEqual(mockSyncConversations.executeCallCount, 1)
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.conversations, conversations)
     }
 
     func test_send_viewAppeared_withError_setsErrorMessage() async throws {
