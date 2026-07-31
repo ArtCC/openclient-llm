@@ -17,6 +17,8 @@ enum APIError: LocalizedError, Sendable, Equatable {
     case serverUnreachable
     case unauthorized
     case rateLimited
+    case invalidRequest(String)
+    case toolExecutionFailed(String)
     case streamingError(String)
 
     // MARK: - LocalizedError
@@ -39,6 +41,10 @@ enum APIError: LocalizedError, Sendable, Equatable {
             String(localized: "Invalid API key. Please check your credentials.")
         case .rateLimited:
             String(localized: "Too many requests. Please try again later.")
+        case .invalidRequest(let message):
+            message
+        case .toolExecutionFailed(let message):
+            message
         case .streamingError(let message):
             message
         }

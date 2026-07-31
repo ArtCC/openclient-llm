@@ -14,6 +14,8 @@ struct ConversationListView: View {
     // MARK: - Properties
 
     @Environment(\.scenePhase) private var scenePhase
+    @State private var hasBeenActive = false
+    @State private var didEnterBackground = false
 
     @State var viewModel = ConversationListViewModel()
     @State private var editingTagsConversation: Conversation?
@@ -63,8 +65,14 @@ struct ConversationListView: View {
         .onChange(of: scenePhase) { _, newPhase in
             // Reload when the app comes back to the foreground so iCloud-synced
             // conversations from other devices are picked up automatically.
-            if newPhase == .active {
+            if newPhase == .active, hasBeenActive, didEnterBackground {
+                didEnterBackground = false
                 viewModel.refresh()
+            } else if newPhase == .active {
+                hasBeenActive = true
+                didEnterBackground = false
+            } else if hasBeenActive, newPhase == .inactive || newPhase == .background {
+                didEnterBackground = true
             }
         }
         .sheet(item: $editingTagsConversation) { conversation in

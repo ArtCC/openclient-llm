@@ -15,7 +15,10 @@ extension ConversationListViewModel {
                 .notifications(named: .appDataDidReset)
             for await _ in notifications {
                 guard let self else { return }
-                await MainActor.run { self.loadData() }
+                await MainActor.run {
+                    self.hasStartedInitialLoad = false
+                    self.loadData()
+                }
             }
         }
     }

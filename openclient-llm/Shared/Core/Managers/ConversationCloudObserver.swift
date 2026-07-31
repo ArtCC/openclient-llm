@@ -22,6 +22,7 @@ final class ConversationCloudObserver: ConversationCloudObserving, @unchecked Se
     private nonisolated(unsafe) var metadataQuery: NSMetadataQuery?
     private nonisolated(unsafe) var queryObserver: NSObjectProtocol?
     private var contentChangeDates: [String: Date] = [:]
+    private var hasEstablishedBaseline = false
 
     // MARK: - Init
 
@@ -58,6 +59,10 @@ final class ConversationCloudObserver: ConversationCloudObserving, @unchecked Se
                       let query = self.metadataQuery,
                       self.settingsManager.getIsCloudSyncEnabled() else { return }
                 guard self.hasContentChanges(in: query) else { return }
+                guard self.hasEstablishedBaseline else {
+                    self.hasEstablishedBaseline = true
+                    return
+                }
                 NotificationCenter.default.post(name: .conversationCloudDidChange, object: nil)
             }
         }

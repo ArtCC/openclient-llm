@@ -98,11 +98,13 @@ final class ConversationListViewModel {
     private let updateConversationTagsUseCase: UpdateConversationTagsUseCaseProtocol
     private let renameConversationUseCase: RenameConversationUseCaseProtocol
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
+    private let syncConversationsUseCase: SyncConversationsUseCaseProtocol
     private let exportBackupUseCase: ExportBackupUseCaseProtocol
     private let importConversationsUseCase: ImportConversationsUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
     private let conversationCloudObserver: ConversationCloudObserving
     private var errorDismissTask: Task<Void, Never>?
+    var hasStartedInitialLoad = false
 
     var cloudChangeTask: Task<Void, Never>?
     var onConversationSelected: ((Conversation?) -> Void)?
@@ -118,6 +120,7 @@ final class ConversationListViewModel {
         updateConversationTagsUseCase: UpdateConversationTagsUseCaseProtocol = UpdateConversationTagsUseCase(),
         renameConversationUseCase: RenameConversationUseCaseProtocol = RenameConversationUseCase(),
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
+        syncConversationsUseCase: SyncConversationsUseCaseProtocol = SyncConversationsUseCase(),
         exportBackupUseCase: ExportBackupUseCaseProtocol = ExportBackupUseCase(),
         importConversationsUseCase: ImportConversationsUseCaseProtocol = ImportConversationsUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
@@ -130,6 +133,7 @@ final class ConversationListViewModel {
         self.updateConversationTagsUseCase = updateConversationTagsUseCase
         self.renameConversationUseCase = renameConversationUseCase
         self.fetchModelsUseCase = fetchModelsUseCase
+        self.syncConversationsUseCase = syncConversationsUseCase
         self.exportBackupUseCase = exportBackupUseCase
         self.importConversationsUseCase = importConversationsUseCase
         self.settingsManager = settingsManager
@@ -171,10 +175,30 @@ final class ConversationListViewModel {
     }
 
     func loadData() {
+        guard !hasStartedInitialLoad else { return }
+        hasStartedInitialLoad = true
         state = .loading
         conversationCloudObserver.start()
 
         Task {
+            do {
+                let conversations = try loadConversationsUseCase.executeLocally()
+                state = .loaded(LoadedState(
+                    conversations: conversations,
+                    filteredConversations: conversations
+                ))
+
+                // Let SwiftUI render local data before doing synchronous iCloud work.
+                await Task.yield()
+                if syncConversationsUseCase.execute() == .synchronized {
+                    reloadConversations()
+                }
+            } catch {
+                state = .loaded(LoadedState(errorMessage: error.localizedDescription))
+                scheduleErrorDismiss()
+                return
+            }
+
             var models: [LLMModel] = []
             do {
                 models = try await fetchModelsUseCase.execute()
@@ -182,20 +206,9 @@ final class ConversationListViewModel {
                 // Continue with empty models — user can still view conversations
             }
 
-            do {
-                let conversations = try loadConversationsUseCase.execute()
-                state = .loaded(LoadedState(
-                    conversations: conversations,
-                    availableModels: models,
-                    filteredConversations: conversations
-                ))
-            } catch {
-                state = .loaded(LoadedState(
-                    availableModels: models,
-                    errorMessage: error.localizedDescription
-                ))
-                scheduleErrorDismiss()
-            }
+            guard case .loaded(var loadedState) = state else { return }
+            loadedState.availableModels = models
+            state = .loaded(loadedState)
         }
     }
 
@@ -204,7 +217,7 @@ final class ConversationListViewModel {
         conversationCloudObserver.start()
 
         do {
-            loadedState.conversations = try loadConversationsUseCase.execute()
+            loadedState.conversations = try loadConversationsUseCase.executeLocally()
             loadedState.errorMessage = nil
             applySearchFilter(&loadedState)
             state = .loaded(loadedState)
@@ -411,7 +424,7 @@ private extension ConversationListViewModel {
         guard case .loaded(var loadedState) = state else { return }
         do {
             let result = try importConversationsUseCase.execute(data)
-            loadedState.conversations = try loadConversationsUseCase.execute()
+            loadedState.conversations = try loadConversationsUseCase.executeLocally()
             loadedState.importResult = result
             loadedState.errorMessage = nil
             applySearchFilter(&loadedState)

@@ -133,13 +133,14 @@ private extension ChatViewModel {
         }
         if case .loaded(let loadedState) = state {
             for mcpTool in loadedState.availableMCPTools
-                where loadedState.enabledMCPToolIds.contains(mcpTool.prefixedName) {
+                where loadedState.enabledMCPToolIds.contains(mcpTool.id) {
                 tools.append(MCPTool(
-                    serverId: mcpTool.serverName,
+                    serverId: mcpTool.serverId,
                     toolName: mcpTool.prefixedName,
                     rawName: mcpTool.name,
                     description: mcpTool.description ?? mcpTool.name,
-                    parameters: MCPTool.toolParameters(from: mcpTool.inputSchema)
+                    parameters: MCPTool.toolParameters(from: mcpTool.inputSchema),
+                    inputSchema: mcpTool.inputSchema
                 ))
             }
         }
@@ -173,7 +174,7 @@ private extension ChatViewModel {
         }
         if case .loaded(let loadedState) = state {
             for mcpTool in loadedState.availableMCPTools
-                where loadedState.enabledMCPToolIds.contains(mcpTool.prefixedName) {
+                where loadedState.enabledMCPToolIds.contains(mcpTool.id) {
                 toolDescriptions +=
                     "- `\(mcpTool.prefixedName)`: \(mcpTool.description ?? mcpTool.name)\n"
             }
