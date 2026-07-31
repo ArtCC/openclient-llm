@@ -356,18 +356,34 @@ private extension ConversationRepository {
     func updateWidgetSnapshot(conversations: [Conversation]? = nil) {
         let conversations = conversations ?? (try? loadLocalConversations()) ?? []
         let sorted = conversations.sorted { $0.updatedAt > $1.updatedAt }
-        let widgetConversations = sorted.prefix(6).map { conversation in
+        let recentConversations = makeWidgetConversations(from: Array(sorted.prefix(6)))
+        let pinnedConversations = makeWidgetConversations(from: sorted.filter(\.isPinned))
+        let recentChanged = AppGroupStore.saveConversations(recentConversations)
+        let pinnedChanged = AppGroupStore.savePinnedConversations(pinnedConversations)
+        if recentChanged {
+            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.conversationsWidgetKind)
+        }
+        if pinnedChanged {
+            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.pinnedConversationsWidgetKind)
+        }
+        if recentChanged {
+            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.latestConversationWidgetKind)
+        }
+    }
+}
+
+private extension ConversationRepository {
+    func makeWidgetConversations(from conversations: [Conversation]) -> [WidgetConversation] {
+        conversations.map { conversation in
             WidgetConversation(
                 id: conversation.id,
                 title: conversation.title.isEmpty ? String(localized: "New Chat") : conversation.title,
                 modelId: conversation.modelId,
                 lastMessagePreview: conversation.messages.last?.content
                     .trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
-                updatedAt: conversation.updatedAt
+                updatedAt: conversation.updatedAt,
+                isPinned: conversation.isPinned
             )
-        }
-        if AppGroupStore.saveConversations(Array(widgetConversations)) {
-            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.conversationsWidgetKind)
         }
     }
 }

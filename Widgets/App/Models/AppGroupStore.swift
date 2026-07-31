@@ -17,8 +17,11 @@ enum AppGroupStore {
 
     static let suiteName = "group.com.artcc.openclient-llm"
     static let conversationsWidgetKind = "com.artcc.openclient-llm.widget.conversations-overview"
+    static let pinnedConversationsWidgetKind = "com.artcc.openclient-llm.widget.pinned-conversations"
+    static let latestConversationWidgetKind = "com.artcc.openclient-llm.widget.latest-conversation"
 
     private static let conversationsKey = "widgetConversations"
+    private static let pinnedConversationsKey = "widgetPinnedConversations"
 
     // MARK: - Public
 
@@ -46,10 +49,22 @@ enum AppGroupStore {
     }
 
     @discardableResult
+    static func savePinnedConversations(_ conversations: [WidgetConversation]) -> Bool {
+        save(conversations, forKey: pinnedConversationsKey)
+    }
+
+    static func loadPinnedConversations() -> [WidgetConversation] {
+        load(forKey: pinnedConversationsKey)
+    }
+
+    @discardableResult
     static func clearConversations() -> Bool {
-        guard let defaults = UserDefaults(suiteName: suiteName),
-              defaults.object(forKey: conversationsKey) != nil else { return false }
+        guard let defaults = UserDefaults(suiteName: suiteName) else { return false }
+        let hasConversations = defaults.object(forKey: conversationsKey) != nil
+        let hasPinnedConversations = defaults.object(forKey: pinnedConversationsKey) != nil
+        guard hasConversations || hasPinnedConversations else { return false }
         defaults.removeObject(forKey: conversationsKey)
+        defaults.removeObject(forKey: pinnedConversationsKey)
         return true
     }
 }
@@ -68,4 +83,27 @@ private extension AppGroupStore {
         decoder.dateDecodingStrategy = .iso8601
         return decoder
     }()
+
+    @discardableResult
+    static func save(_ conversations: [WidgetConversation], forKey key: String) -> Bool {
+        guard let defaults = UserDefaults(suiteName: suiteName),
+              let data = try? encoder.encode(conversations) else { return false }
+        if let currentData = defaults.data(forKey: key),
+           let currentConversations = try? decoder.decode([WidgetConversation].self, from: currentData),
+           let newConversations = try? decoder.decode([WidgetConversation].self, from: data),
+           currentConversations == newConversations {
+            return false
+        }
+        defaults.set(data, forKey: key)
+        return true
+    }
+
+    static func load(forKey key: String) -> [WidgetConversation] {
+        guard let defaults = UserDefaults(suiteName: suiteName),
+              let data = defaults.data(forKey: key),
+              let conversations = try? decoder.decode([WidgetConversation].self, from: data) else {
+            return []
+        }
+        return conversations
+    }
 }

@@ -17,5 +17,7 @@ struct WidgetsBundle: WidgetBundle {
         SearchWidget()
         QuickActionsWidget()
         ConversationsOverviewWidget()
+        PinnedConversationsWidget()
+        LatestConversationWidget()
     }
 }
