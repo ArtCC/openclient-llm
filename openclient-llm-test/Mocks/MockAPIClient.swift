@@ -15,6 +15,9 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
 
     var requestResult: Any?
     var requestError: Error?
+    var lastMCPServerId: String?
+    var lastMCPToolName: String?
+    var lastMCPArguments: String?
     var streamChunks: [Data] = []
     var streamError: Error?
     var multipartResult: Any?
@@ -116,6 +119,7 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     }
 
     func listMCPTools(serverId: String) async throws -> [MCPToolInfo] {
+        lastMCPServerId = serverId
         if let error = requestError {
             throw error
         }
@@ -126,6 +130,9 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     }
 
     func callMCPTool(serverId: String, toolName: String, arguments: String) async throws -> String {
+        lastMCPServerId = serverId
+        lastMCPToolName = toolName
+        lastMCPArguments = arguments
         if let error = requestError {
             throw error
         }

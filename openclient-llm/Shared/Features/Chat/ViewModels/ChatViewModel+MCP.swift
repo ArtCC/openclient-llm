@@ -45,8 +45,10 @@ extension ChatViewModel {
             isMCPSupported: !mcpTools.isEmpty,
             availableMCPTools: mcpTools,
             availableMCPServers: mcpServers,
-            enabledMCPToolIds: Set(settingsManager.getEnabledMCPToolIds())
-                .intersection(Set(mcpTools.map(\.prefixedName)))
+            enabledMCPToolIds: enabledMCPToolIds(
+                savedIds: settingsManager.getEnabledMCPToolIds(),
+                tools: mcpTools
+            )
         )
         refreshContextUsage(in: &loadedState)
         return loadedState
@@ -74,12 +76,26 @@ extension ChatViewModel {
             guard let self else { return }
             let result = await fetchMCPToolsUseCase.execute()
             guard case .loaded(var currentState) = state else { return }
+            if result.errorMessage != nil && result.servers.isEmpty {
+                currentState.isLoadingMCPTools = false
+                currentState.errorMessage = result.errorMessage
+                state = .loaded(currentState)
+                return
+            }
             let enabledIds = settingsManager.getEnabledMCPToolIds()
-            currentState.isMCPSupported = !result.tools.isEmpty
-            currentState.availableMCPTools = result.tools
+            let retainedTools = currentState.availableMCPTools.filter {
+                result.failedServerIds.contains($0.serverId)
+            }
+            let discoveredTools = result.tools + retainedTools
+            currentState.isMCPSupported = !discoveredTools.isEmpty
+            currentState.availableMCPTools = discoveredTools
             currentState.availableMCPServers = result.servers
-            currentState.enabledMCPToolIds = Set(enabledIds)
-                .intersection(Set(result.tools.map(\.prefixedName)))
+            let normalizedEnabledIds = enabledMCPToolIds(
+                savedIds: enabledIds,
+                tools: discoveredTools
+            )
+            settingsManager.setEnabledMCPToolIds(Array(normalizedEnabledIds))
+            currentState.enabledMCPToolIds = normalizedEnabledIds
             currentState.isLoadingMCPTools = false
             refreshContextUsage(in: &currentState)
             state = .loaded(currentState)
@@ -97,5 +113,14 @@ extension ChatViewModel {
         settingsManager.setEnabledMCPToolIds(Array(loadedState.enabledMCPToolIds))
         refreshContextUsage(in: &loadedState)
         state = .loaded(loadedState)
+    }
+
+    func enabledMCPToolIds(savedIds: [String], tools: [MCPToolInfo]) -> Set<String> {
+        let currentIds = Set(tools.map(\.id))
+        let legacyIds = Dictionary(uniqueKeysWithValues: tools.map { ($0.prefixedName, $0.id) })
+        return Set(savedIds.compactMap { savedId in
+            if currentIds.contains(savedId) { return savedId }
+            return legacyIds[savedId]
+        })
     }
 }

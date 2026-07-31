@@ -43,9 +43,9 @@ extension SettingsView {
     func mcpServerRows(_ loadedState: SettingsViewModel.LoadedState) -> some View {
         if !loadedState.availableMCPServers.isEmpty {
             ForEach(loadedState.availableMCPServers) { server in
-                let serverTools = loadedState.toolsForServer(server.serverName)
+                let serverTools = loadedState.toolsForServer(server.serverId)
                 let enabled = serverTools.filter {
-                    loadedState.enabledMCPToolIds.contains($0.prefixedName)
+                    loadedState.enabledMCPToolIds.contains($0.id)
                 }.count
                 Button {
                     mcpServerSheet = server
@@ -79,7 +79,7 @@ extension SettingsView {
         loadedState: SettingsViewModel.LoadedState
     ) -> some View {
         NavigationStack {
-            let tools = loadedState.toolsForServer(server.serverName)
+            let tools = loadedState.toolsForServer(server.serverId)
             serverToolListView(server: server, tools: tools, loadedState: loadedState)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
@@ -161,7 +161,7 @@ extension SettingsView {
         loadedState: SettingsViewModel.LoadedState
     ) -> some View {
         let allEnabled = tools.allSatisfy {
-            loadedState.enabledMCPToolIds.contains($0.prefixedName)
+            loadedState.enabledMCPToolIds.contains($0.id)
         }
         return List {
             Section {
@@ -169,8 +169,8 @@ extension SettingsView {
                     get: { allEnabled },
                     set: { enable in
                         for tool in tools {
-                            viewModel.send(.mcpToolToggled(
-                                toolId: tool.prefixedName, enabled: enable
+                             viewModel.send(.mcpToolToggled(
+                                 toolId: tool.id, enabled: enable
                             ))
                         }
                     }
@@ -201,12 +201,12 @@ extension SettingsView {
         _ tool: MCPToolInfo,
         loadedState: SettingsViewModel.LoadedState
     ) -> some View {
-        let isEnabled = loadedState.enabledMCPToolIds.contains(tool.prefixedName)
+        let isEnabled = loadedState.enabledMCPToolIds.contains(tool.id)
         Toggle(isOn: Binding(
             get: { isEnabled },
             set: { enabled in
-                viewModel.send(.mcpToolToggled(
-                    toolId: tool.prefixedName, enabled: enabled
+                 viewModel.send(.mcpToolToggled(
+                     toolId: tool.id, enabled: enabled
                 ))
             }
         )) {
@@ -224,7 +224,7 @@ extension SettingsView {
 }
 
 extension SettingsViewModel.LoadedState {
-    func toolsForServer(_ serverName: String) -> [MCPToolInfo] {
-        availableMCPTools.filter { $0.serverName == serverName }
+    func toolsForServer(_ serverId: String) -> [MCPToolInfo] {
+        availableMCPTools.filter { $0.serverId == serverId }
     }
 }

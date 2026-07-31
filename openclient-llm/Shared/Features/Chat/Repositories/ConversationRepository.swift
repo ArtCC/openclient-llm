@@ -11,6 +11,7 @@ import WidgetKit
 
 protocol ConversationRepositoryProtocol: Sendable {
     func loadAll() throws -> [Conversation]
+    func loadLocal() throws -> [Conversation]
     func save(_ conversation: Conversation) throws
     func delete(_ conversationId: UUID) throws
     func deleteAll() throws
@@ -57,11 +58,18 @@ struct ConversationRepository: ConversationRepositoryProtocol {
         if settingsManager.getIsCloudSyncEnabled() {
             _ = synchronize()
         }
+        return try loadLocal()
+    }
+
+    func loadLocal() throws -> [Conversation] {
+        LogManager.debug("loadLocal conversations")
+        try ensureDirectoryExists()
+
         let localConversations = try loadLocalConversations()
 
         let sorted = localConversations.sorted { $0.updatedAt > $1.updatedAt }
         updateWidgetSnapshot(conversations: sorted)
-        LogManager.success("loadAll returned \(sorted.count) conversations")
+        LogManager.success("loadLocal returned \(sorted.count) conversations")
         return sorted
     }
 

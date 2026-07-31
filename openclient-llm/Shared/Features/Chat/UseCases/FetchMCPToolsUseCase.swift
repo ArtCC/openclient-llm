@@ -8,9 +8,23 @@
 
 import Foundation
 
-struct MCPDiscoveryResult: Sendable {
+nonisolated struct MCPDiscoveryResult: Sendable {
     let servers: [MCPServerInfo]
     let tools: [MCPToolInfo]
+    let errorMessage: String?
+    let failedServerIds: Set<String>
+
+    init(
+        servers: [MCPServerInfo],
+        tools: [MCPToolInfo],
+        errorMessage: String? = nil,
+        failedServerIds: Set<String> = []
+    ) {
+        self.servers = servers
+        self.tools = tools
+        self.errorMessage = errorMessage
+        self.failedServerIds = failedServerIds
+    }
 }
 
 protocol FetchMCPToolsUseCaseProtocol: Sendable {
@@ -42,22 +56,40 @@ struct FetchMCPToolsUseCase: FetchMCPToolsUseCaseProtocol {
             let servers = try await repository.fetchServers()
             guard !servers.isEmpty else { return empty }
 
-            let tools = servers.flatMap { server in
-                let toolNames = server.allowedTools ?? []
-                return toolNames.map { name in
-                    MCPToolInfo(
-                        name: name,
-                        description: nil,
-                        serverId: server.serverName,
-                        serverName: server.serverName,
-                        inputSchema: nil
-                    )
+            var tools: [MCPToolInfo] = []
+            var failedServerNames: [String] = []
+            var failedServerIds: Set<String> = []
+            for server in servers {
+                do {
+                    let discoveredTools = try await repository.fetchTools(serverId: server.serverId)
+                    let allowedTools = server.allowedTools
+                    tools += discoveredTools
+                        .map { $0.withServer(server) }
+                        .filter { tool in
+                            guard let allowedTools else { return true }
+                            return allowedTools.contains(tool.name)
+                        }
+                } catch {
+                    failedServerNames.append(server.serverName)
+                    failedServerIds.insert(server.serverId)
                 }
             }
-            return MCPDiscoveryResult(servers: servers, tools: tools)
+            let errorMessage = failedServerNames.isEmpty ? nil : String(
+                localized: "Some MCP servers could not be loaded: \(failedServerNames.joined(separator: ", "))."
+            )
+            return MCPDiscoveryResult(
+                servers: servers,
+                tools: tools,
+                errorMessage: errorMessage,
+                failedServerIds: failedServerIds
+            )
         } catch {
             LogManager.debug("FetchMCPToolsUseCase: MCP not available — \(error.localizedDescription)")
-            return empty
+            return MCPDiscoveryResult(
+                servers: [],
+                tools: [],
+                errorMessage: error.localizedDescription
+            )
         }
     }
 }

@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.1-build-64] - 2026-07-31
+
+### Changed
+
+- **LiteLLM MCP discovery** — fetches tool descriptions and recursive input schemas for each configured server instead of relying only on the server allow-list
+- **MCP tool identity** — separates LiteLLM `server_id`, display name, raw tool name, and model-facing function name across discovery, settings, and agent execution
+- **Conversation loading** — displays local conversations before synchronizing with iCloud and then applies any synchronized changes
+
+### Fixed
+
+- MCP calls now use the LiteLLM `server_id` and raw tool name, including when a server's technical ID differs from its display name
+- Existing MCP tool selections migrate from display-name IDs to stable server-ID-based IDs
+- Partial MCP discovery failures retain previously loaded tools from unavailable servers
+- MCP discovery now keeps servers and tools available when LiteLLM returns an optional or provider-specific input schema
+- MCP tool discovery now builds the LiteLLM `server_id` query URL correctly
+- Initial conversation loading no longer performs redundant refreshes from SwiftUI lifecycle events or the first iCloud metadata update
+
+### Security
+
+- MCP arguments are limited and validated as JSON against discovered schemas before execution
+- MCP error and HTTP response logging no longer includes response payload content
+
 ## [1.6.0-build-63] - 2026-07-29
 
 ### Added
