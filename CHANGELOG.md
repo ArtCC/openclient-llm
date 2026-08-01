@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.5-build-66] - 2026-08-01
+
+### Fixed
+
+- **Minor bug fixes**
+
 ## [1.6.2-build-65] - 2026-08-01
 
 ### Added
