@@ -104,9 +104,9 @@ private extension ConversationsOverviewWidgetView {
                         ZStack {
                             Circle()
                                 .fill(Color.accentColor.opacity(0.15))
-                                .frame(width: 30, height: 30)
+                                .frame(width: 25, height: 25)
                             Image(systemName: "square.and.pencil")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.system(size: 12.5, weight: .semibold))
                                 .foregroundStyle(Color.accentColor)
                         }
                     }
@@ -116,9 +116,9 @@ private extension ConversationsOverviewWidgetView {
                         ZStack {
                             Circle()
                                 .fill(Color.accentColor.opacity(0.15))
-                                .frame(width: 30, height: 30)
+                                .frame(width: 25, height: 25)
                             Image(systemName: "magnifyingglass")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.system(size: 12.5, weight: .semibold))
                                 .foregroundStyle(Color.accentColor)
                         }
                     }

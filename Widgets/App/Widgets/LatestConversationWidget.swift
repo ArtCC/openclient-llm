@@ -26,7 +26,7 @@ struct LatestConversationWidget: Widget {
         }
         .configurationDisplayName(String(localized: "Continue Chat"))
         .description(String(localized: "Jump back into your latest conversation."))
-        .supportedFamilies([.systemMedium, .systemLarge])
+        .supportedFamilies([.systemMedium])
     }
 }
 
@@ -117,21 +117,21 @@ private extension LatestConversationWidgetView {
                             .foregroundStyle(.tertiary)
                     }
                     Text(conversation.title.isEmpty ? String(localized: "New Chat") : conversation.title)
-                        .font(.title3)
+                        .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
-                        .lineLimit(2)
+                        .lineLimit(1)
                         .privacySensitive()
                     if !conversation.lastMessagePreview.isEmpty {
                         Text(conversation.lastMessagePreview)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .lineLimit(3)
+                            .lineLimit(2)
                             .privacySensitive()
                     }
                     Spacer(minLength: 0)
                     Text(conversation.updatedAt, style: .relative)
-                        .font(.caption2)
+                        .font(.system(size: 8))
                         .foregroundStyle(.secondary)
                         .privacySensitive()
                 }
