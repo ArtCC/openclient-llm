@@ -12,10 +12,13 @@ import SwiftUI
 @main
 struct WidgetsBundle: WidgetBundle {
     var body: some Widget {
+        ConversationsOverviewWidget()
+        LatestConversationWidget()
         NewChatControlWidget()
         NewChatWidget()
-        SearchWidget()
+        PinnedConversationsWidget()
         QuickActionsWidget()
-        ConversationsOverviewWidget()
+        SearchWidget()
+        TaggedConversationsWidget()
     }
 }

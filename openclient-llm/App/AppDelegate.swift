@@ -25,19 +25,19 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
             UIApplicationShortcutItem(
                 type: ShortcutAction.newChat.rawValue,
                 localizedTitle: String(localized: "New Chat"),
-                localizedSubtitle: nil,
+                localizedSubtitle: String(localized: "Start a new conversation"),
                 icon: UIApplicationShortcutIcon(type: .compose)
             ),
             UIApplicationShortcutItem(
                 type: ShortcutAction.newPrivateChat.rawValue,
                 localizedTitle: String(localized: "New Private Chat"),
-                localizedSubtitle: nil,
+                localizedSubtitle: String(localized: "Chat without saving history"),
                 icon: UIApplicationShortcutIcon(systemImageName: "lock.fill")
             ),
             UIApplicationShortcutItem(
                 type: ShortcutAction.search.rawValue,
                 localizedTitle: String(localized: "Search"),
-                localizedSubtitle: nil,
+                localizedSubtitle: String(localized: "Find a conversation"),
                 icon: UIApplicationShortcutIcon(type: .search)
             )
         ]

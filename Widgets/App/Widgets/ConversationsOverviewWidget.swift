@@ -104,9 +104,9 @@ private extension ConversationsOverviewWidgetView {
                         ZStack {
                             Circle()
                                 .fill(Color.accentColor.opacity(0.15))
-                                .frame(width: 30, height: 30)
+                                .frame(width: 25, height: 25)
                             Image(systemName: "square.and.pencil")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.system(size: 12.5, weight: .semibold))
                                 .foregroundStyle(Color.accentColor)
                         }
                     }
@@ -116,9 +116,9 @@ private extension ConversationsOverviewWidgetView {
                         ZStack {
                             Circle()
                                 .fill(Color.accentColor.opacity(0.15))
-                                .frame(width: 30, height: 30)
+                                .frame(width: 25, height: 25)
                             Image(systemName: "magnifyingglass")
-                                .font(.system(size: 13, weight: .semibold))
+                                .font(.system(size: 12.5, weight: .semibold))
                                 .foregroundStyle(Color.accentColor)
                         }
                     }
@@ -148,68 +148,10 @@ private extension ConversationsOverviewWidgetView {
                     Divider()
                         .padding(.leading, 12)
                 }
-                ConversationRow(conversation: conversation)
+                WidgetConversationRow(conversation: conversation)
             }
             Spacer(minLength: 0)
         }
-    }
-}
-
-// MARK: - ConversationRow
-
-private struct ConversationRow: View {
-    // MARK: - Properties
-
-    let conversation: WidgetConversation
-
-    // MARK: - View
-
-    var body: some View {
-        if let url = URL(string: "openclient://conversation?id=\(conversation.id.uuidString)") {
-            Link(destination: url) {
-                HStack(alignment: .top, spacing: 12) {
-                    Circle()
-                        .fill(conversation.modelColor)
-                        .frame(width: 8, height: 8)
-                        .padding(.top, 4)
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack {
-                            Text(conversation.title.isEmpty ? String(localized: "New Chat") : conversation.title)
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
-                            Spacer()
-                            Text(conversation.updatedAt, style: .relative)
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                        if !conversation.lastMessagePreview.isEmpty {
-                            Text(conversation.lastMessagePreview)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
-                        }
-                    }
-                }
-                .padding(.horizontal, 2.5)
-                .padding(.vertical, 7)
-            }
-        }
-    }
-}
-
-// MARK: - WidgetConversation + modelColor
-
-private extension WidgetConversation {
-    var modelColor: Color {
-        let colors: [Color] = [.blue, .purple, .orange, .teal, .pink, .indigo]
-        let hash = modelId.utf8.reduce(UInt64(5_381)) { partialResult, byte in
-            (partialResult &* 33) &+ UInt64(byte)
-        }
-        let index = Int(hash % UInt64(colors.count))
-
-        return colors[index]
     }
 }
 
