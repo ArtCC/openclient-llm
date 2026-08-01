@@ -124,6 +124,7 @@ struct ConversationRepository: ConversationRepositoryProtocol {
 
         if AppGroupStore.clearConversations() {
             WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.conversationsWidgetKind)
+            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.taggedConversationsWidgetKind)
         }
     }
 
@@ -358,8 +359,10 @@ private extension ConversationRepository {
         let sorted = conversations.sorted { $0.updatedAt > $1.updatedAt }
         let recentConversations = makeWidgetConversations(from: Array(sorted.prefix(6)))
         let pinnedConversations = makeWidgetConversations(from: sorted.filter(\.isPinned))
+        let tags = Array(Set(conversations.flatMap(\.tags).map(\.name))).sorted()
         let recentChanged = AppGroupStore.saveConversations(recentConversations)
         let pinnedChanged = AppGroupStore.savePinnedConversations(pinnedConversations)
+        let tagsChanged = AppGroupStore.saveTags(tags)
         if recentChanged {
             WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.conversationsWidgetKind)
         }
@@ -368,6 +371,9 @@ private extension ConversationRepository {
         }
         if recentChanged {
             WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.latestConversationWidgetKind)
+        }
+        if tagsChanged || recentChanged || pinnedChanged {
+            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.taggedConversationsWidgetKind)
         }
     }
 }
@@ -382,7 +388,8 @@ private extension ConversationRepository {
                 lastMessagePreview: conversation.messages.last?.content
                     .trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
                 updatedAt: conversation.updatedAt,
-                isPinned: conversation.isPinned
+                isPinned: conversation.isPinned,
+                tags: conversation.tags.map(\.name)
             )
         }
     }

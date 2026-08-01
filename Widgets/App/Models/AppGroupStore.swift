@@ -19,9 +19,11 @@ enum AppGroupStore {
     static let conversationsWidgetKind = "com.artcc.openclient-llm.widget.conversations-overview"
     static let pinnedConversationsWidgetKind = "com.artcc.openclient-llm.widget.pinned-conversations"
     static let latestConversationWidgetKind = "com.artcc.openclient-llm.widget.latest-conversation"
+    static let taggedConversationsWidgetKind = "com.artcc.openclient-llm.widget.tagged-conversations"
 
     private static let conversationsKey = "widgetConversations"
     private static let pinnedConversationsKey = "widgetPinnedConversations"
+    private static let tagsKey = "widgetConversationTags"
 
     // MARK: - Public
 
@@ -58,13 +60,25 @@ enum AppGroupStore {
     }
 
     @discardableResult
+    static func saveTags(_ tags: [String]) -> Bool {
+        save(tags, forKey: tagsKey)
+    }
+
+    static func loadTags() -> [String] {
+        guard let defaults = UserDefaults(suiteName: suiteName) else { return [] }
+        return defaults.stringArray(forKey: tagsKey) ?? []
+    }
+
+    @discardableResult
     static func clearConversations() -> Bool {
         guard let defaults = UserDefaults(suiteName: suiteName) else { return false }
         let hasConversations = defaults.object(forKey: conversationsKey) != nil
         let hasPinnedConversations = defaults.object(forKey: pinnedConversationsKey) != nil
-        guard hasConversations || hasPinnedConversations else { return false }
+        let hasTags = defaults.object(forKey: tagsKey) != nil
+        guard hasConversations || hasPinnedConversations || hasTags else { return false }
         defaults.removeObject(forKey: conversationsKey)
         defaults.removeObject(forKey: pinnedConversationsKey)
+        defaults.removeObject(forKey: tagsKey)
         return true
     }
 }
@@ -95,6 +109,15 @@ private extension AppGroupStore {
             return false
         }
         defaults.set(data, forKey: key)
+        return true
+    }
+
+    @discardableResult
+    static func save(_ tags: [String], forKey key: String) -> Bool {
+        guard let defaults = UserDefaults(suiteName: suiteName) else { return false }
+        let currentTags = defaults.stringArray(forKey: key) ?? []
+        guard currentTags != tags else { return false }
+        defaults.set(tags, forKey: key)
         return true
     }
 

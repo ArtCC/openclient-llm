@@ -22,6 +22,7 @@ struct WidgetConversation: Codable, Identifiable, Equatable, Sendable {
     let lastMessagePreview: String
     let updatedAt: Date
     let isPinned: Bool
+    let tags: [String]
 
     // MARK: - Init
 
@@ -31,7 +32,8 @@ struct WidgetConversation: Codable, Identifiable, Equatable, Sendable {
         modelId: String,
         lastMessagePreview: String,
         updatedAt: Date,
-        isPinned: Bool = false
+        isPinned: Bool = false,
+        tags: [String] = []
     ) {
         self.id = id
         self.title = title
@@ -39,6 +41,7 @@ struct WidgetConversation: Codable, Identifiable, Equatable, Sendable {
         self.lastMessagePreview = lastMessagePreview
         self.updatedAt = updatedAt
         self.isPinned = isPinned
+        self.tags = tags
     }
 
     init(from decoder: Decoder) throws {
@@ -49,6 +52,7 @@ struct WidgetConversation: Codable, Identifiable, Equatable, Sendable {
         lastMessagePreview = try container.decode(String.self, forKey: .lastMessagePreview)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
         isPinned = try container.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
+        tags = try container.decodeIfPresent([String].self, forKey: .tags) ?? []
     }
 }
 
@@ -60,5 +64,6 @@ private extension WidgetConversation {
         case lastMessagePreview
         case updatedAt
         case isPinned
+        case tags
     }
 }
