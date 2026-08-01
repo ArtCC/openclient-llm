@@ -13,6 +13,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 - **Pinned Conversations widget** — shows pinned conversations in medium and large widget sizes with direct links back to each chat
 - **Continue Chat widget** — opens the most recently updated conversation from medium and large widget sizes
+- **Tagged Conversations widget** — shows conversations filtered by a tag selected in the widget configuration, in medium and large sizes
 - **Privacy-sensitive widget content** — marks conversation titles, previews, and timestamps for system redaction in protected contexts
 
 ## [1.6.1-build-64] - 2026-07-31
