@@ -21,4 +21,49 @@ struct WidgetConversation: Codable, Identifiable, Equatable, Sendable {
     let modelId: String
     let lastMessagePreview: String
     let updatedAt: Date
+    let isPinned: Bool
+    let tags: [String]
+
+    // MARK: - Init
+
+    init(
+        id: UUID,
+        title: String,
+        modelId: String,
+        lastMessagePreview: String,
+        updatedAt: Date,
+        isPinned: Bool = false,
+        tags: [String] = []
+    ) {
+        self.id = id
+        self.title = title
+        self.modelId = modelId
+        self.lastMessagePreview = lastMessagePreview
+        self.updatedAt = updatedAt
+        self.isPinned = isPinned
+        self.tags = tags
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        title = try container.decode(String.self, forKey: .title)
+        modelId = try container.decode(String.self, forKey: .modelId)
+        lastMessagePreview = try container.decode(String.self, forKey: .lastMessagePreview)
+        updatedAt = try container.decode(Date.self, forKey: .updatedAt)
+        isPinned = try container.decodeIfPresent(Bool.self, forKey: .isPinned) ?? false
+        tags = try container.decodeIfPresent([String].self, forKey: .tags) ?? []
+    }
+}
+
+private extension WidgetConversation {
+    enum CodingKeys: String, CodingKey {
+        case id
+        case title
+        case modelId
+        case lastMessagePreview
+        case updatedAt
+        case isPinned
+        case tags
+    }
 }

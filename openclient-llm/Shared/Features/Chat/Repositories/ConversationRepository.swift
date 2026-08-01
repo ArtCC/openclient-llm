@@ -124,6 +124,7 @@ struct ConversationRepository: ConversationRepositoryProtocol {
 
         if AppGroupStore.clearConversations() {
             WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.conversationsWidgetKind)
+            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.taggedConversationsWidgetKind)
         }
     }
 
@@ -356,18 +357,40 @@ private extension ConversationRepository {
     func updateWidgetSnapshot(conversations: [Conversation]? = nil) {
         let conversations = conversations ?? (try? loadLocalConversations()) ?? []
         let sorted = conversations.sorted { $0.updatedAt > $1.updatedAt }
-        let widgetConversations = sorted.prefix(6).map { conversation in
+        let recentConversations = makeWidgetConversations(from: Array(sorted.prefix(6)))
+        let pinnedConversations = makeWidgetConversations(from: sorted.filter(\.isPinned))
+        let tags = Array(Set(conversations.flatMap(\.tags).map(\.name))).sorted()
+        let recentChanged = AppGroupStore.saveConversations(recentConversations)
+        let pinnedChanged = AppGroupStore.savePinnedConversations(pinnedConversations)
+        let tagsChanged = AppGroupStore.saveTags(tags)
+        if recentChanged {
+            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.conversationsWidgetKind)
+        }
+        if pinnedChanged {
+            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.pinnedConversationsWidgetKind)
+        }
+        if recentChanged {
+            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.latestConversationWidgetKind)
+        }
+        if tagsChanged || recentChanged || pinnedChanged {
+            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.taggedConversationsWidgetKind)
+        }
+    }
+}
+
+private extension ConversationRepository {
+    func makeWidgetConversations(from conversations: [Conversation]) -> [WidgetConversation] {
+        conversations.map { conversation in
             WidgetConversation(
                 id: conversation.id,
                 title: conversation.title.isEmpty ? String(localized: "New Chat") : conversation.title,
                 modelId: conversation.modelId,
                 lastMessagePreview: conversation.messages.last?.content
                     .trimmingCharacters(in: .whitespacesAndNewlines) ?? "",
-                updatedAt: conversation.updatedAt
+                updatedAt: conversation.updatedAt,
+                isPinned: conversation.isPinned,
+                tags: conversation.tags.map(\.name)
             )
-        }
-        if AppGroupStore.saveConversations(Array(widgetConversations)) {
-            WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.conversationsWidgetKind)
         }
     }
 }

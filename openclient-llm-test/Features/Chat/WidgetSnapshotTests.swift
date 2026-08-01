@@ -50,6 +50,7 @@ final class WidgetSnapshotTests: XCTestCase {
             Conversation(
                 title: "Conversation \(index)",
                 modelId: "model",
+                isPinned: index == 0,
                 updatedAt: Date(timeIntervalSince1970: TimeInterval(index))
             )
         }
@@ -61,6 +62,7 @@ final class WidgetSnapshotTests: XCTestCase {
         // Then
         let snapshot = AppGroupStore.loadConversations()
         XCTAssertEqual(snapshot.map(\.id), conversations.reversed().prefix(6).map(\.id))
+        XCTAssertEqual(AppGroupStore.loadPinnedConversations().map(\.id), [conversations[0].id])
     }
 
     func test_saveConversations_unchangedSnapshot_doesNotWriteAgain() {
@@ -76,6 +78,26 @@ final class WidgetSnapshotTests: XCTestCase {
         // When
         let firstWriteChanged = AppGroupStore.saveConversations([conversation])
         let secondWriteChanged = AppGroupStore.saveConversations([conversation])
+
+        // Then
+        XCTAssertTrue(firstWriteChanged)
+        XCTAssertFalse(secondWriteChanged)
+    }
+
+    func test_savePinnedConversations_unchangedSnapshot_doesNotWriteAgain() {
+        // Given
+        let conversation = WidgetConversation(
+            id: UUID(),
+            title: "Pinned conversation",
+            modelId: "model",
+            lastMessagePreview: "Preview",
+            updatedAt: Date(),
+            isPinned: true
+        )
+
+        // When
+        let firstWriteChanged = AppGroupStore.savePinnedConversations([conversation])
+        let secondWriteChanged = AppGroupStore.savePinnedConversations([conversation])
 
         // Then
         XCTAssertTrue(firstWriteChanged)
