@@ -55,9 +55,22 @@ struct ModelsRepository: ModelsRepositoryProtocol {
                 from: info.modelInfo?.litellmProvider,
                 modelParam: info.litellmParams?.model
             )
+            let supportsStructuredToolCalling = Self.supportsStructuredToolCalling(
+                explicitProvider: info.modelInfo?.litellmProvider,
+                modelParam: info.litellmParams?.model
+            )
+            if info.modelInfo?.supportsFunctionCalling == true, !supportsStructuredToolCalling {
+                LogManager.warning(
+                    "Model \(info.modelName) uses LiteLLM ollama/ JSON tool emulation; " +
+                        "configure ollama_chat/ to enable native tool calling"
+                )
+            }
             return LLMModel(
                 id: info.modelName,
-                capabilities: Self.capabilitiesFromModelInfo(info.modelInfo),
+                capabilities: Self.capabilitiesFromModelInfo(
+                    info.modelInfo,
+                    includeFunctionCalling: supportsStructuredToolCalling
+                ),
                 provider: LLMModel.Provider.from(inferredProvider),
                 mode: LLMModel.Mode(rawString: info.modelInfo?.mode),
                 providerName: LLMModel.Provider.displayName(from: inferredProvider),
@@ -96,6 +109,16 @@ struct ModelsRepository: ModelsRepositoryProtocol {
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         return try? decoder.decode(OllamaShowResponse.self, from: data)
     }
+
+    nonisolated static func supportsStructuredToolCalling(
+        explicitProvider: String?,
+        modelParam: String?
+    ) -> Bool {
+        let normalizedModel = modelParam?.lowercased() ?? ""
+        if normalizedModel.hasPrefix("ollama_chat/") { return true }
+        if normalizedModel.hasPrefix("ollama/") { return false }
+        return explicitProvider?.lowercased() != "ollama"
+    }
 }
 
 // MARK: - Private
@@ -104,16 +127,20 @@ private struct OllamaSupplementItem {
     let llmModelId: String
     let nativeModelId: String
     let apiBase: String
+    let supportsStructuredToolCalling: Bool
 }
 
 private extension ModelsRepository {
     nonisolated static func capabilitiesFromModelInfo(
-        _ modelInfo: ModelInfoResponse.ModelInfo?
+        _ modelInfo: ModelInfoResponse.ModelInfo?,
+        includeFunctionCalling: Bool
     ) -> [LLMModel.Capability] {
         var caps: [LLMModel.Capability] = []
         if modelInfo?.supportsVision == true { caps.append(.vision) }
-        if modelInfo?.supportsFunctionCalling == true { caps.append(.functionCalling) }
-        if modelInfo?.supportsParallelFunctionCalling == true { caps.append(.parallelFunctionCalling) }
+        if includeFunctionCalling, modelInfo?.supportsFunctionCalling == true { caps.append(.functionCalling) }
+        if includeFunctionCalling, modelInfo?.supportsParallelFunctionCalling == true {
+            caps.append(.parallelFunctionCalling)
+        }
         if modelInfo?.supportsResponseSchema == true { caps.append(.jsonSchema) }
         if modelInfo?.supportsWebSearch == true { caps.append(.webSearch) }
         if modelInfo?.mode == LLMModel.Mode.imageGeneration.rawValue { caps.append(.imageGeneration) }
@@ -132,7 +159,15 @@ private extension ModelsRepository {
             let nativeId = rawModel
                 .replacingOccurrences(of: "ollama_chat/", with: "")
                 .replacingOccurrences(of: "ollama/", with: "")
-            return OllamaSupplementItem(llmModelId: info.modelName, nativeModelId: nativeId, apiBase: apiBase)
+            return OllamaSupplementItem(
+                llmModelId: info.modelName,
+                nativeModelId: nativeId,
+                apiBase: apiBase,
+                supportsStructuredToolCalling: supportsStructuredToolCalling(
+                    explicitProvider: info.modelInfo?.litellmProvider,
+                    modelParam: info.litellmParams?.model
+                )
+            )
         }
     }
 
@@ -148,7 +183,11 @@ private extension ModelsRepository {
                         for: item.nativeModelId,
                         rootURL: item.apiBase
                     ) else { return (item.llmModelId, []) }
-                    return (item.llmModelId, Self.ollamaCapabilitiesFromNative(detail.capabilities ?? []))
+                    let capabilities = Self.ollamaCapabilitiesFromNative(detail.capabilities ?? [])
+                    let filtered = item.supportsStructuredToolCalling
+                        ? capabilities
+                        : capabilities.filter { $0 != .functionCalling }
+                    return (item.llmModelId, filtered)
                 }
             }
             for await (id, caps) in group where !caps.isEmpty {

@@ -17,6 +17,10 @@ final class LLMModelTests: XCTestCase {
         XCTAssertEqual(LLMModel.Provider.from("ollama"), .local)
     }
 
+    func test_providerFrom_localProvider_ollamaChat_returnsLocal() {
+        XCTAssertEqual(LLMModel.Provider.from("ollama_chat"), .local)
+    }
+
     func test_providerFrom_localProvider_vllm_returnsLocal() {
         XCTAssertEqual(LLMModel.Provider.from("vllm"), .local)
     }
@@ -81,6 +85,33 @@ final class LLMModelTests: XCTestCase {
 
     func test_displayName_ollama_returnsOllama() {
         XCTAssertEqual(LLMModel.Provider.displayName(from: "ollama"), "Ollama")
+    }
+
+    func test_displayName_ollamaChat_returnsOllama() {
+        XCTAssertEqual(LLMModel.Provider.displayName(from: "ollama_chat"), "Ollama")
+    }
+
+    // MARK: - Tests — LiteLLM tool adapter
+
+    func test_supportsStructuredToolCalling_ollamaGenerate_returnsFalse() {
+        XCTAssertFalse(ModelsRepository.supportsStructuredToolCalling(
+            explicitProvider: "ollama",
+            modelParam: "ollama/gemma4:12b"
+        ))
+    }
+
+    func test_supportsStructuredToolCalling_ollamaChat_returnsTrue() {
+        XCTAssertTrue(ModelsRepository.supportsStructuredToolCalling(
+            explicitProvider: "ollama",
+            modelParam: "ollama_chat/gemma4:12b"
+        ))
+    }
+
+    func test_supportsStructuredToolCalling_openAI_returnsTrue() {
+        XCTAssertTrue(ModelsRepository.supportsStructuredToolCalling(
+            explicitProvider: "openai",
+            modelParam: "gpt-5"
+        ))
     }
 
     func test_displayName_vllm_returnsVLLM() {
