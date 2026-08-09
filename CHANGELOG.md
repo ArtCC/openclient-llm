@@ -12,6 +12,9 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 ### Added
 
 - **Dedicated image-generation models in chat** — routes LiteLLM models with `image_generation` mode through `/images/generations` and persists generated images as assistant attachments
+- **Static remote configuration** — loads and caches the Firebase Hosting configuration used by iOS and macOS at launch
+- **Mandatory updates** — blocks access when Remote Config requires a newer app version and links to the configured update URL
+- **Maintenance mode** — displays a blocking launch screen on iOS and macOS while remote maintenance mode is enabled
 
 ### Fixed
 
