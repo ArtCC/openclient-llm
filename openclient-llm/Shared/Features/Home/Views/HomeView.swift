@@ -18,6 +18,7 @@ struct HomeView: View {
     @State private var viewModel = HomeViewModel()
     @State private var selectedConversation: Conversation?
     @State private var isPrivateChatActive: Bool = false
+    @State private var requestedSettingsPresentation: SettingsPresentation?
 
 #if os(macOS)
     @State private var sidebarDestination: SidebarDestination = .chats
@@ -142,7 +143,7 @@ private extension HomeView {
                 }
             }
             Tab(value: AppTab.settings) {
-                SettingsView()
+                SettingsView(requestedPresentation: $requestedSettingsPresentation)
             } label: {
                 Label {
                     Text(String(localized: "Settings"))
@@ -279,7 +280,7 @@ private extension HomeView {
         case .models:
             ModelsView()
         case .settings:
-            SettingsView()
+            SettingsView(requestedPresentation: $requestedSettingsPresentation)
         }
     }
 #endif
@@ -290,12 +291,37 @@ private extension HomeView {
             RemoteBannerView(
                 banner: remoteBanner,
                 onDismiss: onRemoteBannerDismiss,
-                onAction: onRemoteBannerAction
+                onAction: handleRemoteBannerAction
             )
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .transition(.move(edge: .top).combined(with: .opacity))
         }
+    }
+
+    func handleRemoteBannerAction() {
+        guard let action = remoteBanner?.item.action else { return }
+
+        switch action {
+        case .close:
+            onRemoteBannerDismiss()
+        case .openURL:
+            onRemoteBannerAction()
+        case .feedback:
+            routeToSettings(.feedback)
+        case .tip:
+            routeToSettings(.tipJar)
+        }
+    }
+
+    func routeToSettings(_ presentation: SettingsPresentation) {
+#if os(iOS)
+        selectedTab = .settings
+#else
+        sidebarDestination = .settings
+#endif
+        requestedSettingsPresentation = presentation
+        onRemoteBannerDismiss()
     }
 }
 

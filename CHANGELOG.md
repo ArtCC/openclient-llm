@@ -16,7 +16,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - **Mandatory updates** — blocks access when Remote Config requires a newer app version and links to the configured update URL
 - **Optional update notifications** — shows a native alert on Home with actions to postpone or open the configured update URL
 - **Maintenance mode** — displays a blocking launch screen on iOS and macOS while remote maintenance mode is enabled
-- **Remote Home banners** — shows localized, platform-targeted announcements with persistent dismissal and optional links
+- **Remote Home banners** — shows localized, platform-targeted announcements with persistent dismissal and actions for links, feedback, and tips
 
 ### Fixed
 

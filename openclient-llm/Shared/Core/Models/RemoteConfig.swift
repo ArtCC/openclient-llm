@@ -49,6 +49,8 @@ nonisolated struct RemoteConfig: Codable, Equatable, Sendable {
     enum Action: String, Codable, Equatable, Sendable {
         case close
         case openURL = "open_url"
+        case feedback
+        case tip
     }
 
     let schemaVersion: Int
