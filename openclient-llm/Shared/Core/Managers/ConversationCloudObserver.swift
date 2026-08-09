@@ -20,7 +20,7 @@ final class ConversationCloudObserver: ConversationCloudObserving, @unchecked Se
     private let settingsManager: SettingsManagerProtocol
     private let cloudSyncManager: CloudSyncManagerProtocol
     private nonisolated(unsafe) var metadataQuery: NSMetadataQuery?
-    private nonisolated(unsafe) var queryObserver: NSObjectProtocol?
+    private nonisolated(unsafe) var queryObservers: [NSObjectProtocol] = []
     private var contentChangeDates: [String: Date] = [:]
     private var hasEstablishedBaseline = false
 
@@ -41,15 +41,31 @@ final class ConversationCloudObserver: ConversationCloudObserving, @unchecked Se
         let query = NSMetadataQuery()
         query.searchScopes = [NSMetadataQueryUbiquitousDocumentsScope]
         query.predicate = NSPredicate(
-            format: "%K CONTAINS %@ OR %K CONTAINS %@ OR %K CONTAINS %@",
+            format: "%K CONTAINS %@ OR %K CONTAINS %@ OR %K CONTAINS %@ OR %K CONTAINS %@",
             NSMetadataItemPathKey,
             "/Conversations/",
             NSMetadataItemPathKey,
             "/ConversationTombstones/",
             NSMetadataItemPathKey,
-            "/Attachments/"
+            "/Attachments/",
+            NSMetadataItemPathKey,
+            "ConversationDeleteAll.json"
         )
-        queryObserver = NotificationCenter.default.addObserver(
+        let gatheringObserver = NotificationCenter.default.addObserver(
+            forName: .NSMetadataQueryDidFinishGathering,
+            object: query,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self,
+                      let query = self.metadataQuery,
+                      self.settingsManager.getIsCloudSyncEnabled() else { return }
+                _ = self.hasContentChanges(in: query)
+                self.hasEstablishedBaseline = true
+                NotificationCenter.default.post(name: .conversationCloudDidChange, object: nil)
+            }
+        }
+        let updateObserver = NotificationCenter.default.addObserver(
             forName: .NSMetadataQueryDidUpdate,
             object: query,
             queue: .main
@@ -58,14 +74,12 @@ final class ConversationCloudObserver: ConversationCloudObserving, @unchecked Se
                 guard let self,
                       let query = self.metadataQuery,
                       self.settingsManager.getIsCloudSyncEnabled() else { return }
+                guard self.hasEstablishedBaseline else { return }
                 guard self.hasContentChanges(in: query) else { return }
-                guard self.hasEstablishedBaseline else {
-                    self.hasEstablishedBaseline = true
-                    return
-                }
                 NotificationCenter.default.post(name: .conversationCloudDidChange, object: nil)
             }
         }
+        queryObservers = [gatheringObserver, updateObserver]
         metadataQuery = query
         query.start()
     }
@@ -88,8 +102,8 @@ final class ConversationCloudObserver: ConversationCloudObserving, @unchecked Se
 
     deinit {
         metadataQuery?.stop()
-        if let queryObserver {
-            NotificationCenter.default.removeObserver(queryObserver)
+        for observer in queryObservers {
+            NotificationCenter.default.removeObserver(observer)
         }
     }
 }

@@ -60,4 +60,24 @@ final class ConversationTests: XCTestCase {
         // Then
         XCTAssertEqual(decoded.tags, [ConversationTag(name: "future", color: .orange)])
     }
+
+    func test_decode_legacyMessageWithoutFavourite_assignsFalse() throws {
+        // Given
+        let conversation = Conversation(
+            modelId: "gpt-4",
+            messages: [ChatMessage(role: .user, content: "Hello")]
+        )
+        let data = try JSONEncoder().encode(conversation)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        var messages = try XCTUnwrap(object["messages"] as? [[String: Any]])
+        messages[0].removeValue(forKey: "isFavourite")
+        object["messages"] = messages
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+
+        // When
+        let decoded = try JSONDecoder().decode(Conversation.self, from: legacyData)
+
+        // Then
+        XCTAssertFalse(try XCTUnwrap(decoded.messages.first).isFavourite)
+    }
 }

@@ -12,10 +12,14 @@ import Foundation
 // Safety: Only used within serialized @MainActor test methods.
 final class MockSyncConversationsUseCase: SyncConversationsUseCaseProtocol, @unchecked Sendable {
     var result: ConversationSyncResult = .synchronized
+    var results: [ConversationSyncResult] = []
     var executeCallCount = 0
 
     func execute() -> ConversationSyncResult {
         executeCallCount += 1
+        if !results.isEmpty {
+            return results.removeFirst()
+        }
         return result
     }
 }

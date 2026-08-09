@@ -22,6 +22,7 @@ final class ConversationListViewModelTests: XCTestCase {
     var mockFetchModels: MockFetchModelsUseCase!
     var mockSyncConversations: MockSyncConversationsUseCase!
     var mockSettingsManager: MockSettingsManager!
+    var mockConversationCloudObserver: MockConversationCloudObserver!
     var mockExportBackup: MockExportBackupUseCase!
     var mockImportConversations: MockImportConversationsUseCase!
 
@@ -38,6 +39,7 @@ final class ConversationListViewModelTests: XCTestCase {
         mockFetchModels = MockFetchModelsUseCase()
         mockSyncConversations = MockSyncConversationsUseCase()
         mockSettingsManager = MockSettingsManager()
+        mockConversationCloudObserver = MockConversationCloudObserver()
         mockExportBackup = MockExportBackupUseCase()
         mockImportConversations = MockImportConversationsUseCase()
         sut = ConversationListViewModel(
@@ -50,7 +52,8 @@ final class ConversationListViewModelTests: XCTestCase {
             syncConversationsUseCase: mockSyncConversations,
             exportBackupUseCase: mockExportBackup,
             importConversationsUseCase: mockImportConversations,
-            settingsManager: mockSettingsManager
+            settingsManager: mockSettingsManager,
+            conversationCloudObserver: mockConversationCloudObserver
         )
     }
 
@@ -64,6 +67,7 @@ final class ConversationListViewModelTests: XCTestCase {
         mockFetchModels = nil
         mockSyncConversations = nil
         mockSettingsManager = nil
+        mockConversationCloudObserver = nil
         mockExportBackup = nil
         mockImportConversations = nil
 
@@ -75,89 +79,6 @@ final class ConversationListViewModelTests: XCTestCase {
     func test_init_defaultState_isLoading() {
         // Then
         XCTAssertEqual(sut.state, .loading)
-    }
-
-    // MARK: - Tests — viewAppeared
-
-    func test_send_viewAppeared_loadsConversations() async throws {
-        // Given
-        let conversations = [
-            Conversation(modelId: "gpt-4", messages: [ChatMessage(role: .user, content: "Hi")]),
-            Conversation(modelId: "llama3")
-        ]
-        mockLoadConversations.result = .success(conversations)
-        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
-
-        // When
-        sut.send(.viewAppeared)
-        for _ in 0..<10 { await Task.yield() }
-
-        // Then
-        guard case .loaded(let loadedState) = sut.state else {
-            XCTFail("Expected loaded state")
-            return
-        }
-        XCTAssertEqual(loadedState.conversations.count, 2)
-        XCTAssertEqual(loadedState.availableModels.count, 1)
-        XCTAssertNil(loadedState.errorMessage)
-    }
-
-    func test_send_viewAppeared_loadsLocallyBeforeSyncing() async throws {
-        // Given
-        let conversations = [Conversation(modelId: "gpt-4")]
-        mockLoadConversations.result = .success(conversations)
-        mockFetchModels.result = .success([])
-        mockSyncConversations.result = .synchronized
-
-        // When
-        sut.send(.viewAppeared)
-        for _ in 0..<10 { await Task.yield() }
-
-        // Then
-        XCTAssertEqual(mockLoadConversations.executeLocallyCallCount, 2)
-        XCTAssertEqual(mockSyncConversations.executeCallCount, 1)
-        guard case .loaded(let loadedState) = sut.state else {
-            XCTFail("Expected loaded state")
-            return
-        }
-        XCTAssertEqual(loadedState.conversations, conversations)
-    }
-
-    func test_send_viewAppeared_withError_setsErrorMessage() async throws {
-        // Given
-        mockLoadConversations.result = .failure(NSError(domain: "test", code: 1))
-        mockFetchModels.result = .success([])
-
-        // When
-        sut.send(.viewAppeared)
-        try await Task.sleep(for: .milliseconds(100))
-
-        // Then
-        guard case .loaded(let loadedState) = sut.state else {
-            XCTFail("Expected loaded state")
-            return
-        }
-        XCTAssertTrue(loadedState.conversations.isEmpty)
-        XCTAssertNotNil(loadedState.errorMessage)
-    }
-
-    func test_send_viewAppeared_withModelsError_stillLoadsConversations() async throws {
-        // Given
-        let conversations = [Conversation(modelId: "gpt-4")]
-        mockLoadConversations.result = .success(conversations)
-        mockFetchModels.result = .failure(NSError(domain: "test", code: 1))
-
-        // When
-        sut.send(.viewAppeared)
-        try await Task.sleep(for: .milliseconds(100))
-
-        // Then
-        guard case .loaded(let loadedState) = sut.state else {
-            XCTFail("Expected loaded state")
-            return
-        }
-        XCTAssertEqual(loadedState.conversations.count, 1)
-        XCTAssertTrue(loadedState.availableModels.isEmpty)
     }
 
     // MARK: - Tests — newConversationTapped

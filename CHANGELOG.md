@@ -16,6 +16,12 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 ### Fixed
 
 - Image-generation requests now allow LiteLLM's documented 10-minute timeout without extending the 60-second timeout used by regular API requests
+- Conversation refresh and foreground activation now synchronize iCloud changes before reloading the local list
+- External iCloud conversation changes now trigger a cloud merge instead of only reloading local storage
+- Pending iCloud conversation downloads now receive one delayed synchronization retry
+- The iCloud metadata observer now establishes its baseline after initial gathering without discarding the first subsequent change
+- Delete-all markers are now included in iCloud conversation change observation
+- Conversations created by earlier app versions now sync when message favourite metadata is absent
 
 ## [1.6.5-build-66] - 2026-08-01
 

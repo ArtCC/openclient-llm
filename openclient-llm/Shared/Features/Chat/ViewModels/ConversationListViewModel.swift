@@ -107,6 +107,7 @@ final class ConversationListViewModel {
     var hasStartedInitialLoad = false
 
     var cloudChangeTask: Task<Void, Never>?
+    var cloudRetryTask: Task<Void, Never>?
     var onConversationSelected: ((Conversation?) -> Void)?
     var onPrivateChatSelected: (() -> Void)?
 
@@ -166,11 +167,11 @@ final class ConversationListViewModel {
     }
 
     func refresh() {
-        reloadConversations()
+        synchronizeAndReloadConversations()
     }
 
     func refreshAsync() async {
-        reloadConversations()
+        synchronizeAndReloadConversations()
         await Task.yield()
     }
 
@@ -190,9 +191,7 @@ final class ConversationListViewModel {
 
                 // Let SwiftUI render local data before doing synchronous iCloud work.
                 await Task.yield()
-                if syncConversationsUseCase.execute() == .synchronized {
-                    reloadConversations()
-                }
+                synchronizeAndReloadConversations()
             } catch {
                 state = .loaded(LoadedState(errorMessage: error.localizedDescription))
                 scheduleErrorDismiss()
@@ -225,6 +224,25 @@ final class ConversationListViewModel {
             loadedState.errorMessage = error.localizedDescription
             state = .loaded(loadedState)
             scheduleErrorDismiss()
+        }
+    }
+
+    func synchronizeAndReloadConversations(scheduleRetry: Bool = true) {
+        let result = syncConversationsUseCase.execute()
+        reloadConversations()
+
+        guard result == .pendingDownload, scheduleRetry else {
+            if result != .pendingDownload {
+                cloudRetryTask?.cancel()
+                cloudRetryTask = nil
+            }
+            return
+        }
+        cloudRetryTask?.cancel()
+        cloudRetryTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1))
+            guard !Task.isCancelled else { return }
+            self?.synchronizeAndReloadConversations(scheduleRetry: false)
         }
     }
 }
