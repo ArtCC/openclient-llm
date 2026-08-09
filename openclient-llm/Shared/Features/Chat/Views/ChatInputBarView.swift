@@ -376,7 +376,11 @@ private extension ChatInputBarView {
         let hasAttachments = !loadedState.pendingAttachments.isEmpty
         let hasTranscriptionModel = loadedState.transcriptionModelId != nil
 
-        if loadedState.isStreaming {
+        if loadedState.isPreparingAttachment {
+            ProgressView()
+                .frame(minWidth: 44, minHeight: 44)
+                .accessibilityLabel(String(localized: "Preparing image"))
+        } else if loadedState.isStreaming {
             if (hasText || hasAttachments) && hasModel {
                 sendButton
             } else {

@@ -17,6 +17,7 @@ final class LaunchViewModelTests: XCTestCase {
     private var mockUseCase: MockCheckOnboardingUseCase!
     private var mockResetAppData: MockResetAppDataUseCase!
     private var mockAttachmentMigration: MockAttachmentMigrationUseCase!
+    private var mockRemoteConfigManager: MockRemoteConfigManager!
 
     // MARK: - Setup
 
@@ -26,10 +27,12 @@ final class LaunchViewModelTests: XCTestCase {
         mockUseCase = MockCheckOnboardingUseCase()
         mockResetAppData = MockResetAppDataUseCase()
         mockAttachmentMigration = MockAttachmentMigrationUseCase()
+        mockRemoteConfigManager = MockRemoteConfigManager()
         sut = LaunchViewModel(
             checkOnboardingUseCase: mockUseCase,
             resetAppDataUseCase: mockResetAppData,
             attachmentMigrationUseCase: mockAttachmentMigration,
+            remoteConfigManager: mockRemoteConfigManager,
             launchDelay: .zero
         )
     }
@@ -39,6 +42,7 @@ final class LaunchViewModelTests: XCTestCase {
         mockUseCase = nil
         mockResetAppData = nil
         mockAttachmentMigration = nil
+        mockRemoteConfigManager = nil
 
         try await super.tearDown()
     }
@@ -90,6 +94,7 @@ final class LaunchViewModelTests: XCTestCase {
             checkOnboardingUseCase: mockUseCase,
             resetAppDataUseCase: mockResetAppData,
             attachmentMigrationUseCase: mockAttachmentMigration,
+            remoteConfigManager: mockRemoteConfigManager,
             launchDelay: .milliseconds(500)
         )
 
@@ -118,6 +123,7 @@ final class LaunchViewModelTests: XCTestCase {
             checkOnboardingUseCase: mockUseCase,
             resetAppDataUseCase: mockResetAppData,
             attachmentMigrationUseCase: mockAttachmentMigration,
+            remoteConfigManager: mockRemoteConfigManager,
             launchDelay: .zero
         )
 

@@ -15,6 +15,7 @@ final class ChatViewModelTests: XCTestCase {
 
     var sut: ChatViewModel!
     var mockFetchModels: MockFetchModelsUseCase!
+    var mockPrepareImageAttachment: MockPrepareImageAttachmentUseCase!
     var mockStreamMessage: MockStreamMessageUseCase!
     var mockGenerateImage: MockGenerateImageUseCase!
     var mockWebSearch: MockWebSearchUseCase!
@@ -37,6 +38,7 @@ final class ChatViewModelTests: XCTestCase {
         try await super.setUp()
 
         mockFetchModels = MockFetchModelsUseCase()
+        mockPrepareImageAttachment = MockPrepareImageAttachmentUseCase()
         mockStreamMessage = MockStreamMessageUseCase()
         mockGenerateImage = MockGenerateImageUseCase()
         mockWebSearch = MockWebSearchUseCase()
@@ -54,6 +56,7 @@ final class ChatViewModelTests: XCTestCase {
         mockFetchMCPTools = MockFetchMCPToolsUseCase()
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
+            prepareImageAttachmentUseCase: mockPrepareImageAttachment,
             attachmentRepository: mockAttachmentRepository,
             streamMessageUseCase: mockStreamMessage,
             generateImageUseCase: mockGenerateImage,
@@ -75,6 +78,7 @@ final class ChatViewModelTests: XCTestCase {
     override func tearDown() async throws {
         sut = nil
         mockFetchModels = nil
+        mockPrepareImageAttachment = nil
         mockStreamMessage = nil
         mockGenerateImage = nil
         mockWebSearch = nil

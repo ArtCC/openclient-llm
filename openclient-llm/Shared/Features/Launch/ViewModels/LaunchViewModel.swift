@@ -30,6 +30,7 @@ final class LaunchViewModel {
     private let resetAppDataUseCase: ResetAppDataUseCaseProtocol
     private let configureVoticeUseCase: ConfigureVoticeUseCaseProtocol
     private let attachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol
+    private let remoteConfigManager: RemoteConfigManagerProtocol
     private let launchDelay: Duration
 
     // MARK: - Init
@@ -40,6 +41,7 @@ final class LaunchViewModel {
         resetAppDataUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase(),
         configureVoticeUseCase: ConfigureVoticeUseCaseProtocol = ConfigureVoticeUseCase(),
         attachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol = AttachmentMigrationUseCase(),
+        remoteConfigManager: RemoteConfigManagerProtocol = RemoteConfigManager(),
         launchDelay: Duration = .milliseconds(1000)
     ) {
         self.state = state
@@ -47,6 +49,7 @@ final class LaunchViewModel {
         self.resetAppDataUseCase = resetAppDataUseCase
         self.configureVoticeUseCase = configureVoticeUseCase
         self.attachmentMigrationUseCase = attachmentMigrationUseCase
+        self.remoteConfigManager = remoteConfigManager
         self.launchDelay = launchDelay
     }
 
@@ -55,6 +58,7 @@ final class LaunchViewModel {
     func send(_ event: Event) {
         switch event {
         case .viewAppeared:
+            loadRemoteConfig()
             configureVotice()
             attachmentMigrationUseCase.execute()
 
@@ -89,6 +93,17 @@ final class LaunchViewModel {
             try configureVoticeUseCase.execute(userIsPremium: false)
         } catch {
             LogManager.error("LaunchViewModel: configureVoticeUseCase: execute: error: \(error)")
+        }
+    }
+
+    func loadRemoteConfig() {
+        Task { [remoteConfigManager] in
+            do {
+                _ = try await remoteConfigManager.loadConfig()
+                LogManager.info("LaunchViewModel: Remote Config loaded")
+            } catch {
+                LogManager.error("LaunchViewModel: Remote Config load failed: \(error)")
+            }
         }
     }
 }
