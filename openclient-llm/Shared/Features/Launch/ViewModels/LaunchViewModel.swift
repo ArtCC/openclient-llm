@@ -22,6 +22,8 @@ final class LaunchViewModel {
         case loading
         case onboarding
         case home
+        case maintenance
+        case forceUpdate(RemoteConfig.PlatformUpdate)
     }
 
     private(set) var state: State
@@ -31,6 +33,7 @@ final class LaunchViewModel {
     private let configureVoticeUseCase: ConfigureVoticeUseCaseProtocol
     private let attachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol
     private let remoteConfigManager: RemoteConfigManagerProtocol
+    private let currentVersion: String?
     private let launchDelay: Duration
 
     // MARK: - Init
@@ -42,6 +45,7 @@ final class LaunchViewModel {
         configureVoticeUseCase: ConfigureVoticeUseCaseProtocol = ConfigureVoticeUseCase(),
         attachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol = AttachmentMigrationUseCase(),
         remoteConfigManager: RemoteConfigManagerProtocol = RemoteConfigManager(),
+        currentVersion: String? = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
         launchDelay: Duration = .milliseconds(1000)
     ) {
         self.state = state
@@ -50,6 +54,7 @@ final class LaunchViewModel {
         self.configureVoticeUseCase = configureVoticeUseCase
         self.attachmentMigrationUseCase = attachmentMigrationUseCase
         self.remoteConfigManager = remoteConfigManager
+        self.currentVersion = currentVersion
         self.launchDelay = launchDelay
     }
 
@@ -58,7 +63,6 @@ final class LaunchViewModel {
     func send(_ event: Event) {
         switch event {
         case .viewAppeared:
-            loadRemoteConfig()
             configureVotice()
             attachmentMigrationUseCase.execute()
 
@@ -67,20 +71,7 @@ final class LaunchViewModel {
                 resetAppDataUseCase.execute()
             }
 
-            let destination: State = isCompleted ? .home : .onboarding
-            guard launchDelay > .zero else {
-                state = destination
-                return
-            }
-
-            Task { [weak self, launchDelay] in
-                do {
-                    try await Task.sleep(for: launchDelay)
-                } catch {
-                    return
-                }
-                self?.state = destination
-            }
+            startLaunch(isOnboardingCompleted: isCompleted)
         case .onboardingCompleted:
             state = .home
         }
@@ -96,14 +87,54 @@ final class LaunchViewModel {
         }
     }
 
-    func loadRemoteConfig() {
-        Task { [remoteConfigManager] in
-            do {
-                _ = try await remoteConfigManager.loadConfig()
-                LogManager.info("LaunchViewModel: Remote Config loaded")
-            } catch {
-                LogManager.error("LaunchViewModel: Remote Config load failed: \(error)")
-            }
+    func startLaunch(isOnboardingCompleted: Bool) {
+        Task { [weak self, launchDelay] in
+            guard let self else { return }
+
+            async let launchDelayCompleted: Void = Self.waitForLaunchDelay(launchDelay)
+            let remoteConfig = await loadRemoteConfig()
+            await launchDelayCompleted
+            finishLaunch(remoteConfig: remoteConfig, isOnboardingCompleted: isOnboardingCompleted)
         }
+    }
+
+    func loadRemoteConfig() async -> RemoteConfig? {
+        do {
+            let config = try await remoteConfigManager.loadConfig()
+            LogManager.info("LaunchViewModel: Remote Config loaded")
+            return config
+        } catch {
+            LogManager.error("LaunchViewModel: Remote Config load failed: \(error)")
+            return nil
+        }
+    }
+
+    func finishLaunch(remoteConfig: RemoteConfig?, isOnboardingCompleted: Bool) {
+        if remoteConfig?.maintenanceMode.enabled == true {
+            state = .maintenance
+        } else if let update = requiredUpdate(from: remoteConfig) {
+            state = .forceUpdate(update)
+        } else {
+            state = isOnboardingCompleted ? .home : .onboarding
+        }
+    }
+
+    func requiredUpdate(from remoteConfig: RemoteConfig?) -> RemoteConfig.PlatformUpdate? {
+        guard let remoteConfig, let currentVersion else { return nil }
+
+#if os(iOS)
+        let update = remoteConfig.appUpdate.ios
+#else
+        let update = remoteConfig.appUpdate.macos
+#endif
+
+        guard update.enabled, update.forceUpdate else { return nil }
+        guard currentVersion.compare(update.latestVersion, options: .numeric) == .orderedAscending else { return nil }
+        return update
+    }
+
+    nonisolated static func waitForLaunchDelay(_ launchDelay: Duration) async {
+        guard launchDelay > .zero else { return }
+        try? await Task.sleep(for: launchDelay)
     }
 }

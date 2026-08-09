@@ -11,9 +11,31 @@ import Foundation
 
 // Safety: Only used within serialized @MainActor test methods.
 final class MockRemoteConfigManager: RemoteConfigManagerProtocol, @unchecked Sendable {
-    var result: Result<RemoteConfig, Error> = .failure(RemoteConfigManagerError.invalidResponse)
+    var result: Result<RemoteConfig, Error> = .success(.stub())
 
     func loadConfig() async throws -> RemoteConfig {
         try result.get()
+    }
+}
+
+extension RemoteConfig {
+    static func stub(
+        isMaintenanceEnabled: Bool = false,
+        isUpdateEnabled: Bool = true,
+        isForceUpdate: Bool = false,
+        latestVersion: String = "1.6.10"
+    ) -> RemoteConfig {
+        let update = PlatformUpdate(
+            enabled: isUpdateEnabled,
+            forceUpdate: isForceUpdate,
+            latestVersion: latestVersion,
+            updateURL: URL(filePath: "/update")
+        )
+        return RemoteConfig(
+            schemaVersion: 1,
+            maintenanceMode: .init(enabled: isMaintenanceEnabled),
+            appUpdate: .init(ios: update, macos: update),
+            banner: .init(active: false, dismissBannerKey: "test", platforms: [], items: [:])
+        )
     }
 }

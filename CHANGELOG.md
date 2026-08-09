@@ -15,6 +15,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 ### Fixed
 
+- RAW images selected from the photo library are now converted to size-limited JPEG attachments instead of being silently omitted from requests
 - Image-generation requests now allow LiteLLM's documented 10-minute timeout without extending the 60-second timeout used by regular API requests
 - Conversation refresh and foreground activation now synchronize iCloud changes before reloading the local list
 - External iCloud conversation changes now trigger a cloud merge instead of only reloading local storage

@@ -68,6 +68,7 @@ final class RemoteConfigManager: RemoteConfigManagerProtocol, @unchecked Sendabl
     func loadConfig() async throws -> RemoteConfig {
         let cachedConfig = loadCachedConfig()
         if !shouldFetchRemoteConfig(), let cachedConfig {
+            LogManager.debug("RemoteConfigManager: Using cached config")
             return cachedConfig
         }
 
@@ -75,6 +76,7 @@ final class RemoteConfigManager: RemoteConfigManagerProtocol, @unchecked Sendabl
             return try await fetchRemoteConfig()
         } catch {
             guard let cachedConfig else { throw error }
+            LogManager.warning("RemoteConfigManager: Download failed, using cached config")
             return cachedConfig
         }
     }
@@ -94,6 +96,8 @@ private extension RemoteConfigManager {
     func fetchRemoteConfig() async throws -> RemoteConfig {
         guard let endpoint else { throw RemoteConfigManagerError.invalidEndpoint }
 
+        LogManager.network("RemoteConfigManager: Downloading config")
+
         var request = URLRequest(url: endpoint)
         request.cachePolicy = .reloadIgnoringLocalCacheData
         request.timeoutInterval = 15
@@ -111,6 +115,7 @@ private extension RemoteConfigManager {
 
         defaults.set(data, forKey: Keys.cachedConfig)
         defaults.set(now(), forKey: Keys.lastFetchDate)
+        LogManager.success("RemoteConfigManager: Config downloaded and cached")
         return config
     }
 
