@@ -94,7 +94,9 @@ extension LLMModel {
         // MARK: - Static
 
         static func from(_ providerString: String?) -> Provider {
-            let localProviders: Set<String> = ["ollama", "lm_studio", "llamacpp", "hosted_vllm", "vllm"]
+            let localProviders: Set<String> = [
+                "ollama", "ollama_chat", "lm_studio", "llamacpp", "hosted_vllm", "vllm"
+            ]
             guard let value = providerString?.lowercased() else { return .cloud }
             return localProviders.contains(value) ? .local : .cloud
         }
@@ -112,6 +114,7 @@ extension LLMModel {
                 "cohere": "Cohere",
                 "mistral": "Mistral",
                 "groq": "Groq",
+                "ollama_chat": "Ollama",
                 "azure": "Azure",
                 "azure_ai": "Azure",
                 "bedrock": "AWS Bedrock",

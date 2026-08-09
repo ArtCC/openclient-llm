@@ -35,6 +35,7 @@ final class PromptTemplatesViewModel {
     private let loadTemplatesUseCase: LoadPromptTemplatesUseCaseProtocol
     private let saveTemplateUseCase: SavePromptTemplateUseCaseProtocol
     private let deleteTemplateUseCase: DeletePromptTemplateUseCaseProtocol
+    private let appReviewManager: AppReviewManagerProtocol
 
     // MARK: - Init
 
@@ -42,12 +43,14 @@ final class PromptTemplatesViewModel {
         state: State = .loading,
         loadTemplatesUseCase: LoadPromptTemplatesUseCaseProtocol = LoadPromptTemplatesUseCase(),
         saveTemplateUseCase: SavePromptTemplateUseCaseProtocol = SavePromptTemplateUseCase(),
-        deleteTemplateUseCase: DeletePromptTemplateUseCaseProtocol = DeletePromptTemplateUseCase()
+        deleteTemplateUseCase: DeletePromptTemplateUseCaseProtocol = DeletePromptTemplateUseCase(),
+        appReviewManager: AppReviewManagerProtocol = AppReviewManager()
     ) {
         self.state = state
         self.loadTemplatesUseCase = loadTemplatesUseCase
         self.saveTemplateUseCase = saveTemplateUseCase
         self.deleteTemplateUseCase = deleteTemplateUseCase
+        self.appReviewManager = appReviewManager
     }
 
     // MARK: - Input functions
@@ -93,6 +96,9 @@ private extension PromptTemplatesViewModel {
         }
         do {
             try saveTemplateUseCase.execute(template)
+            if editingTemplate == nil {
+                appReviewManager.requestReview()
+            }
             loadTemplates()
         } catch {
             if case .loaded(var loadedState) = state {

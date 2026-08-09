@@ -255,7 +255,7 @@ private extension ChatRepository {
             }
             switch attachment.type {
             case .image:
-                guard data.count <= Self.maximumImageBytes else {
+                guard data.count <= ImageAttachmentConstraints.maximumBytes else {
                     LogManager.warning("buildCompletionMessage: image exceeds size limit — skipping")
                     continue
                 }
@@ -280,10 +280,4 @@ private extension ChatRepository {
         let base64 = String(dataURL[dataURL.index(after: commaIndex)...])
         return Data(base64Encoded: base64)
     }
-}
-
-// MARK: - Private constants
-
-private extension ChatRepository {
-    static let maximumImageBytes = 5_000_000
 }

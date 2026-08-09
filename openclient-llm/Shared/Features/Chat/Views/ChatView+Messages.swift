@@ -23,6 +23,7 @@ extension ChatView {
                 let isEmptyAssistant = message.role == .assistant
                     && message.content.isEmpty
                     && message.reasoningContent == nil
+                    && message.attachments.isEmpty
 
                 if !isEmptyAssistant || isStreamingMsg {
                     MessageBubbleView(

@@ -26,6 +26,7 @@ struct ConversationListView: View {
     @State private var isShowingBackupExporter = false
     @State private var backupFileDocument: ConversationBackupFileDocument?
     let settingsManager: SettingsManagerProtocol = SettingsManager()
+    private let appReviewManager: AppReviewManagerProtocol = AppReviewManager()
 
 #if os(macOS)
     @State var isMacSearchExpanded = false
@@ -127,11 +128,11 @@ struct ConversationListView: View {
             String(localized: "Import Complete"),
             isPresented: Binding(
                 get: { importResult != nil },
-                set: { if !$0 { viewModel.send(.importResultConsumed) } }
+                set: { if !$0 { consumeImportResult() } }
             )
         ) {
             Button(String(localized: "OK")) {
-                viewModel.send(.importResultConsumed)
+                consumeImportResult()
             }
         } message: {
             Text(importResultMessage)
@@ -161,8 +162,13 @@ struct ConversationListView: View {
             contentType: .json,
             defaultFilename: "OpenClient-backup"
         ) { result in
-            if case .failure(let error) = result, !isUserCancellation(error) {
-                viewModel.send(.backupExportWriteFailed)
+            switch result {
+            case .success:
+                appReviewManager.requestReview()
+            case .failure(let error):
+                if !isUserCancellation(error) {
+                    viewModel.send(.backupExportWriteFailed)
+                }
             }
             backupFileDocument = nil
         }
@@ -178,6 +184,12 @@ struct ConversationListView: View {
 // MARK: - Private
 
 private extension ConversationListView {
+    func consumeImportResult() {
+        guard importResult != nil else { return }
+        viewModel.send(.importResultConsumed)
+        appReviewManager.requestReview()
+    }
+
     var availableTags: [ConversationTag] {
         guard case .loaded(let loadedState) = viewModel.state else { return [] }
         return loadedState.allTags

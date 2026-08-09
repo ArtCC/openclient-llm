@@ -33,16 +33,19 @@ final class MemoryViewModel {
     private(set) var state: State
 
     private let memoryManager: MemoryManagerProtocol
+    private let appReviewManager: AppReviewManagerProtocol
     private var cloudSyncTask: Task<Void, Never>?
 
     // MARK: - Init
 
     init(
         state: State = .loading,
-        memoryManager: MemoryManagerProtocol = MemoryManager()
+        memoryManager: MemoryManagerProtocol = MemoryManager(),
+        appReviewManager: AppReviewManagerProtocol = AppReviewManager()
     ) {
         self.state = state
         self.memoryManager = memoryManager
+        self.appReviewManager = appReviewManager
     }
 
     // MARK: - Input functions
@@ -57,6 +60,7 @@ final class MemoryViewModel {
             guard !trimmed.isEmpty else { return }
             let item = MemoryItem(content: trimmed, source: .user)
             memoryManager.add(item)
+            appReviewManager.requestReview()
             loadItems()
         case .editItem(let id, let content):
             let trimmed = content.trimmingCharacters(in: .whitespaces)

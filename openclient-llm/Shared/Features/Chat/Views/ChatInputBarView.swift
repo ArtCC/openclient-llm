@@ -103,17 +103,19 @@ private extension ChatInputBarView {
 
     var normalBar: some View {
         HStack(spacing: 5) {
-            actionsToggleButton
+            if loadedState.selectedModel?.mode != .imageGeneration {
+                actionsToggleButton
 
-            if showActions {
-                attachmentMenu
-                    .transition(.scale.combined(with: .opacity))
+                if showActions {
+                    attachmentMenu
+                        .transition(.scale.combined(with: .opacity))
 
-                webSearchButton
-                    .transition(.scale.combined(with: .opacity))
+                    webSearchButton
+                        .transition(.scale.combined(with: .opacity))
 
-                mcpButton
-                    .transition(.scale.combined(with: .opacity))
+                    mcpButton
+                        .transition(.scale.combined(with: .opacity))
+                }
             }
 
             TextField(
@@ -374,7 +376,11 @@ private extension ChatInputBarView {
         let hasAttachments = !loadedState.pendingAttachments.isEmpty
         let hasTranscriptionModel = loadedState.transcriptionModelId != nil
 
-        if loadedState.isStreaming {
+        if loadedState.isPreparingAttachment {
+            ProgressView()
+                .frame(minWidth: 44, minHeight: 44)
+                .accessibilityLabel(String(localized: "Preparing image"))
+        } else if loadedState.isStreaming {
             if (hasText || hasAttachments) && hasModel {
                 sendButton
             } else {

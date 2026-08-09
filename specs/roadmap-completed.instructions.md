@@ -58,7 +58,7 @@ Goal: Power user features.
 - [x] **Model parameters**: Temperature, max tokens, top_p per conversation
 - [x] **Search conversations**: Full-text search across conversations
 - [x] **iCloud sync**: Sync conversations across devices through iCloud Drive with one JSON file per conversation, attachment folders, safe first-time reconciliation, remote-change observation, offline deletion tombstones, and manual sync status in Settings; sync is private to devices signed into the same Apple ID
-- [x] **Generated images in chat**: Display images returned by compatible models and servers in chat-completion responses. The former dedicated `/v1/images/generations` flow is no longer part of the app.
+- [x] **Generated images in chat**: Display images returned by compatible chat models and support dedicated image-generation models through `/v1/images/generations`.
 - [x] **Audio transcription (Speech-to-Text)**: Dictate messages in chat via microphone; audio transcribed via POST /v1/audio/transcriptions (Whisper, Groq, Deepgram, Gemini) and inserted into the chat input field
 - [x] **Text-to-Speech**: Read assistant responses aloud via POST /v1/audio/speech (OpenAI TTS, AWS Polly, ElevenLabs, Gemini TTS)
 

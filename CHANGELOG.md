@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.10-build-67] - 2026-08-09
+
+### Added
+
+- **Dedicated image-generation models in chat** — routes LiteLLM models with `image_generation` mode through `/images/generations` and persists generated images as assistant attachments
+- **Static remote configuration** — loads and caches the Firebase Hosting configuration used by iOS and macOS at launch
+- **Mandatory updates** — blocks access when Remote Config requires a newer app version and links to the configured update URL
+- **Optional update notifications** — shows a native alert on Home with actions to postpone or open the configured update URL
+- **Maintenance mode** — displays a blocking launch screen on iOS and macOS while remote maintenance mode is enabled
+- **Remote Home banners** — shows localized, platform-targeted announcements with persistent dismissal and actions for links, feedback, and tips
+
+### Fixed
+
+- RAW images selected from the photo library are now converted to size-limited JPEG attachments instead of being silently omitted from requests
+- Image-generation requests now allow LiteLLM's documented 10-minute timeout without extending the 60-second timeout used by regular API requests
+- Conversation refresh and foreground activation now synchronize iCloud changes before reloading the local list
+- External iCloud conversation changes now trigger a cloud merge instead of only reloading local storage
+- Pending iCloud conversation downloads now receive one delayed synchronization retry
+- The iCloud metadata observer now establishes its baseline after initial gathering without discarding the first subsequent change
+- Delete-all markers are now included in iCloud conversation change observation
+- Conversations created by earlier app versions now sync when message favourite metadata is absent
+
 ## [1.6.5-build-66] - 2026-08-01
 
 ### Fixed

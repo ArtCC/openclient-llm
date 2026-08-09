@@ -1,0 +1,52 @@
+//
+//  SettingsView+Legal.swift
+//  openclient-llm
+//
+//  Created by Arturo Carretero Calvo on 09/08/2026.
+//  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
+//
+
+import SwiftUI
+
+extension SettingsView {
+    func legalSection() -> some View {
+        Section {
+            Button {
+                presentedWebURL = .privacyPolicy
+            } label: {
+                Label(String(localized: "Privacy Policy"), systemImage: "hand.raised")
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                presentedWebURL = .termsOfUse
+            } label: {
+                Label(String(localized: "Terms of Use"), systemImage: "doc.text")
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                presentedWebURL = .authorGitHub
+            } label: {
+                HStack {
+                    Label(String(localized: "Author"), systemImage: "person.circle")
+                    Spacer()
+                    Image(systemName: "arrow.up.right.square")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .buttonStyle(.plain)
+
+            HStack {
+                Text(String(localized: "Version \(appVersion) (\(appBuild))"))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 5)
+                Spacer()
+            }
+        } header: {
+            Text(String(localized: "About"))
+        }
+    }
+}

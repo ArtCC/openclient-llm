@@ -86,6 +86,11 @@ Key capability fields in `model_info`:
 - `litellm_provider` — provider name (openai, anthropic, ollama, etc.)
 - `max_input_tokens` / `max_output_tokens` — context window limits
 
+For Ollama models, `litellm_params.model` determines the tool-calling transport. `ollama_chat/<model>` uses Ollama's
+native `/api/chat` structured `tool_calls` protocol. The legacy `ollama/<model>` adapter uses `/api/generate`, forces JSON
+output, and emulates function calls through the prompt. The app therefore does not expose `.functionCalling` for
+`ollama/<model>` routes even if model metadata advertises it; configure `ollama_chat/<model>` to enable agent routing.
+
 `/model/info` is LiteLLM-specific enrichment, not a prerequisite for the OpenAI-compatible
 chat API. Servers such as Ollama, vLLM, llama.cpp, or custom proxies may omit it or return an
 error. In that case, continue with `/models` and `/chat/completions`; model capabilities, token

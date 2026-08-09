@@ -224,6 +224,10 @@ The `GET /model/info` endpoint provides capability flags:
 | Groq | ✅ | ✅ | Full support |
 | Mistral | ✅ | ✅ | Full support |
 
+LiteLLM Ollama models must use the `ollama_chat/<model>` adapter for agent routing. The legacy `ollama/<model>` adapter
+forces JSON output through `/api/generate`; the model repository removes `.functionCalling` for that route so regular chat
+streaming is used instead.
+
 ## Implementation Architecture
 
 ### Models

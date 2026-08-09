@@ -60,6 +60,24 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
         self.toolName = toolName
         self.isFavourite = isFavourite
     }
+
+    // MARK: - Decodable
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        role = try container.decode(Role.self, forKey: .role)
+        content = try container.decode(String.self, forKey: .content)
+        reasoningContent = try container.decodeIfPresent(String.self, forKey: .reasoningContent)
+        timestamp = try container.decode(Date.self, forKey: .timestamp)
+        attachments = try container.decodeIfPresent([Attachment].self, forKey: .attachments) ?? []
+        tokenUsage = try container.decodeIfPresent(TokenUsage.self, forKey: .tokenUsage)
+        webSearchResults = try container.decodeIfPresent([LiteLLMSearchResult].self, forKey: .webSearchResults)
+        toolCalls = try container.decodeIfPresent([ToolCall].self, forKey: .toolCalls)
+        toolCallId = try container.decodeIfPresent(String.self, forKey: .toolCallId)
+        toolName = try container.decodeIfPresent(String.self, forKey: .toolName)
+        isFavourite = try container.decodeIfPresent(Bool.self, forKey: .isFavourite) ?? false
+    }
 }
 
 // MARK: - Attachment
@@ -162,4 +180,21 @@ private enum ChatMessageAttachmentCodingKeys: String, CodingKey {
     case fileName
     case mimeType
     case fileRelativePath
+}
+
+private extension ChatMessage {
+    enum CodingKeys: String, CodingKey {
+        case id
+        case role
+        case content
+        case reasoningContent
+        case timestamp
+        case attachments
+        case tokenUsage
+        case webSearchResults
+        case toolCalls
+        case toolCallId
+        case toolName
+        case isFavourite
+    }
 }

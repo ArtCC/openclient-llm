@@ -340,13 +340,14 @@ extension ChatViewModel {
 
     func generatedImageAttachment(
         data: Data,
+        mimeType: String = "image/png",
         state: LoadedState
     ) -> ChatMessage.Attachment? {
         if isPrivateChat {
             return ChatMessage.Attachment(
                 type: .image,
                 fileName: String(localized: "Generated Image"),
-                mimeType: "image/png",
+                mimeType: mimeType,
                 fileRelativePath: "",
                 transientData: data
             )
@@ -356,7 +357,7 @@ extension ChatViewModel {
             id: attachmentID,
             type: .image,
             fileName: String(localized: "Generated Image"),
-            mimeType: "image/png",
+            mimeType: mimeType,
             fileRelativePath: ""
         )
         guard let relativePath = try? attachmentRepository.save(
@@ -371,7 +372,7 @@ extension ChatViewModel {
             id: attachmentID,
             type: .image,
             fileName: String(localized: "Generated Image"),
-            mimeType: "image/png",
+            mimeType: mimeType,
             fileRelativePath: relativePath
         )
     }

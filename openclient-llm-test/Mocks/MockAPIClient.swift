@@ -15,6 +15,8 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
 
     var requestResult: Any?
     var requestError: Error?
+    var lastRequestEndpoint: String?
+    var lastRequestTimeoutInterval: TimeInterval?
     var lastMCPServerId: String?
     var lastMCPToolName: String?
     var lastMCPArguments: String?
@@ -24,14 +26,19 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
     var multipartError: Error?
     var rawDataResult: Data?
     var rawDataError: Error?
+    var downloadResult: (data: Data, mimeType: String)?
+    var downloadError: Error?
 
     // MARK: - Public
 
     func request<T: Decodable & Sendable>(
         endpoint: String,
         method: HTTPMethod,
-        body: (any Encodable & Sendable)?
+        body: (any Encodable & Sendable)?,
+        timeoutInterval: TimeInterval
     ) async throws -> T {
+        lastRequestEndpoint = endpoint
+        lastRequestTimeoutInterval = timeoutInterval
         if let error = requestError {
             throw error
         }
@@ -83,6 +90,12 @@ final class MockAPIClient: APIClientProtocol, @unchecked Sendable {
             throw error
         }
         return rawDataResult ?? Data()
+    }
+
+    func downloadData(from url: URL) async throws -> (data: Data, mimeType: String) {
+        if let downloadError { throw downloadError }
+        guard let downloadResult else { throw APIError.invalidResponse }
+        return downloadResult
     }
 
     func searchRequest(
