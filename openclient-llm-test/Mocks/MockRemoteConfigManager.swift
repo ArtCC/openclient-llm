@@ -23,7 +23,8 @@ extension RemoteConfig {
         isMaintenanceEnabled: Bool = false,
         isUpdateEnabled: Bool = true,
         isForceUpdate: Bool = false,
-        latestVersion: String = "1.6.10"
+        latestVersion: String = "1.6.10",
+        banner: Banner? = nil
     ) -> RemoteConfig {
         let update = PlatformUpdate(
             enabled: isUpdateEnabled,
@@ -35,7 +36,7 @@ extension RemoteConfig {
             schemaVersion: 1,
             maintenanceMode: .init(enabled: isMaintenanceEnabled),
             appUpdate: .init(ios: update, macos: update),
-            banner: .init(active: false, dismissBannerKey: "test", platforms: [], items: [:])
+            banner: banner ?? .init(active: false, dismissBannerKey: "test", platforms: [], items: [:])
         )
     }
 }

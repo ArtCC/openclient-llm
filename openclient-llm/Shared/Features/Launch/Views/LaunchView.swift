@@ -13,6 +13,7 @@ struct LaunchView: View {
 
     @Environment(\.openURL) private var openURL
     @State private var viewModel = LaunchViewModel()
+    @State private var presentedBannerWebDestination: BannerWebDestination?
 
     // MARK: - View
 
@@ -43,6 +44,9 @@ struct LaunchView: View {
         } message: {
             Text(availableUpdateMessage)
         }
+        .sheet(item: $presentedBannerWebDestination) { destination in
+            WebContentView(title: destination.title, url: destination.url)
+        }
     }
 
     // MARK: - iOS
@@ -59,7 +63,7 @@ struct LaunchView: View {
                     }
                 }
             case .home:
-                HomeView()
+                homeView
             case .maintenance:
                 MaintenanceView()
             case .forceUpdate(let update):
@@ -72,7 +76,7 @@ struct LaunchView: View {
 
     var macOSBody: some View {
         ZStack {
-            HomeView()
+            homeView
                 .allowsHitTesting(viewModel.state == .home)
                 .accessibilityHidden(viewModel.state != .home)
 #if os(macOS)
@@ -115,6 +119,31 @@ struct LaunchView: View {
 // MARK: - Private
 
 private extension LaunchView {
+    var homeView: some View {
+        HomeView(
+            remoteBanner: viewModel.remoteBanner,
+            onRemoteBannerDismiss: {
+                viewModel.send(.remoteBannerDismissed)
+            },
+            onRemoteBannerAction: handleRemoteBannerAction
+        )
+    }
+
+    func handleRemoteBannerAction() {
+        guard let remoteBanner = viewModel.remoteBanner else { return }
+
+        if remoteBanner.item.action == .openURL,
+           let url = URL(string: remoteBanner.item.url),
+           let scheme = url.scheme?.lowercased(),
+           ["http", "https"].contains(scheme) {
+            presentedBannerWebDestination = BannerWebDestination(
+                title: remoteBanner.item.title,
+                url: url
+            )
+        }
+        viewModel.send(.remoteBannerDismissed)
+    }
+
     var availableUpdateAlertBinding: Binding<Bool> {
         Binding(
             get: { viewModel.state == .home && viewModel.availableUpdate != nil },
@@ -140,6 +169,13 @@ private extension LaunchView {
         case .onboarding, .home:
             false
         }
+    }
+
+    struct BannerWebDestination: Identifiable {
+        let title: String
+        let url: URL
+
+        var id: URL { url }
     }
 }
 

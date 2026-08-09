@@ -17,6 +17,7 @@ final class LaunchViewModel {
         case viewAppeared
         case onboardingCompleted
         case availableUpdateDismissed
+        case remoteBannerDismissed
     }
 
     enum State: Equatable {
@@ -29,13 +30,16 @@ final class LaunchViewModel {
 
     private(set) var state: State
     private(set) var availableUpdate: RemoteConfig.PlatformUpdate?
+    private(set) var remoteBanner: RemoteBanner?
 
     private let checkOnboardingUseCase: CheckOnboardingUseCaseProtocol
     private let resetAppDataUseCase: ResetAppDataUseCaseProtocol
     private let configureVoticeUseCase: ConfigureVoticeUseCaseProtocol
     private let attachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol
     private let remoteConfigManager: RemoteConfigManagerProtocol
+    private let settingsManager: SettingsManagerProtocol
     private let currentVersion: String?
+    private let localeIdentifier: String
     private let launchDelay: Duration
 
     // MARK: - Init
@@ -47,7 +51,9 @@ final class LaunchViewModel {
         configureVoticeUseCase: ConfigureVoticeUseCaseProtocol = ConfigureVoticeUseCase(),
         attachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol = AttachmentMigrationUseCase(),
         remoteConfigManager: RemoteConfigManagerProtocol = RemoteConfigManager(),
+        settingsManager: SettingsManagerProtocol = SettingsManager(),
         currentVersion: String? = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
+        localeIdentifier: String = Locale.current.identifier,
         launchDelay: Duration = .milliseconds(1000)
     ) {
         self.state = state
@@ -56,7 +62,9 @@ final class LaunchViewModel {
         self.configureVoticeUseCase = configureVoticeUseCase
         self.attachmentMigrationUseCase = attachmentMigrationUseCase
         self.remoteConfigManager = remoteConfigManager
+        self.settingsManager = settingsManager
         self.currentVersion = currentVersion
+        self.localeIdentifier = localeIdentifier
         self.launchDelay = launchDelay
     }
 
@@ -78,6 +86,10 @@ final class LaunchViewModel {
             state = .home
         case .availableUpdateDismissed:
             availableUpdate = nil
+        case .remoteBannerDismissed:
+            guard let remoteBanner else { return }
+            settingsManager.setDismissedRemoteBannerKey(remoteBanner.id)
+            self.remoteBanner = nil
         }
     }
 
@@ -115,6 +127,7 @@ final class LaunchViewModel {
 
     func finishLaunch(remoteConfig: RemoteConfig?, isOnboardingCompleted: Bool) {
         availableUpdate = nil
+        remoteBanner = nil
         let update = availableUpdate(from: remoteConfig)
 
         if remoteConfig?.maintenanceMode.enabled == true {
@@ -123,6 +136,7 @@ final class LaunchViewModel {
             state = .forceUpdate(update)
         } else {
             availableUpdate = update
+            remoteBanner = availableBanner(from: remoteConfig)
             state = isOnboardingCompleted ? .home : .onboarding
         }
     }
@@ -139,6 +153,38 @@ final class LaunchViewModel {
         guard update.enabled else { return nil }
         guard currentVersion.compare(update.latestVersion, options: .numeric) == .orderedAscending else { return nil }
         return update
+    }
+
+    func availableBanner(from remoteConfig: RemoteConfig?) -> RemoteBanner? {
+        guard let banner = remoteConfig?.banner, banner.active else { return nil }
+
+#if os(iOS)
+        let platform = RemoteConfig.Platform.ios
+#else
+        let platform = RemoteConfig.Platform.macos
+#endif
+
+        guard banner.platforms.contains(platform) else { return nil }
+        guard settingsManager.getDismissedRemoteBannerKey() != banner.dismissBannerKey else { return nil }
+        guard let item = localizedBannerItem(from: banner.items) else { return nil }
+        return RemoteBanner(id: banner.dismissBannerKey, item: item)
+    }
+
+    func localizedBannerItem(from items: [String: RemoteConfig.Item]) -> RemoteConfig.Item? {
+        let baseIdentifier = localeIdentifier
+            .split(separator: "@", maxSplits: 1)
+            .first
+            .map(String.init) ?? localeIdentifier
+        let normalizedIdentifier = baseIdentifier.replacingOccurrences(of: "_", with: "-")
+        let languageCode = normalizedIdentifier.split(separator: "-").first.map(String.init)
+        let candidates = [normalizedIdentifier, languageCode, "en"].compactMap { $0 }
+
+        for candidate in candidates {
+            if let item = items.first(where: { $0.key.caseInsensitiveCompare(candidate) == .orderedSame })?.value {
+                return item
+            }
+        }
+        return nil
     }
 
     nonisolated static func waitForLaunchDelay(_ launchDelay: Duration) async {

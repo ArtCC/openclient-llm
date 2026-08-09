@@ -11,6 +11,10 @@ import SwiftUI
 struct HomeView: View {
     // MARK: - Properties
 
+    let remoteBanner: RemoteBanner?
+    let onRemoteBannerDismiss: () -> Void
+    let onRemoteBannerAction: () -> Void
+
     @State private var viewModel = HomeViewModel()
     @State private var selectedConversation: Conversation?
     @State private var isPrivateChatActive: Bool = false
@@ -23,6 +27,18 @@ struct HomeView: View {
     @State private var selectedTab: AppTab = .chats
 #endif
 
+    // MARK: - Init
+
+    init(
+        remoteBanner: RemoteBanner? = nil,
+        onRemoteBannerDismiss: @escaping () -> Void = {},
+        onRemoteBannerAction: @escaping () -> Void = {}
+    ) {
+        self.remoteBanner = remoteBanner
+        self.onRemoteBannerDismiss = onRemoteBannerDismiss
+        self.onRemoteBannerAction = onRemoteBannerAction
+    }
+
     // MARK: - View
 
     var body: some View {
@@ -31,6 +47,9 @@ struct HomeView: View {
             macOSLayout
 #else
             iOSLayout
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    remoteBannerInset
+                }
 #endif
         }
         .onContinueUserActivity(SpotlightConstants.activityType) { activity in
@@ -92,6 +111,7 @@ struct HomeView: View {
             viewModel.send(.urlSchemeActionReceived)
         }
 #endif
+        .animation(.smooth, value: remoteBanner?.id)
     }
 }
 
@@ -202,6 +222,9 @@ private extension HomeView {
             sidebar
         } detail: {
             detailContent
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    remoteBannerInset
+                }
         }
         .onChange(of: sidebarDestination) { _, _ in
             selectedConversation = nil
@@ -260,6 +283,20 @@ private extension HomeView {
         }
     }
 #endif
+
+    @ViewBuilder
+    var remoteBannerInset: some View {
+        if let remoteBanner {
+            RemoteBannerView(
+                banner: remoteBanner,
+                onDismiss: onRemoteBannerDismiss,
+                onAction: onRemoteBannerAction
+            )
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
 }
 
 // MARK: - Hashable
