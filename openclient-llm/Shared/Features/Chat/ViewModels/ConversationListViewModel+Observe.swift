@@ -44,7 +44,7 @@ extension ConversationListViewModel {
                 self.cloudChangeTask = Task { [weak self] in
                     try? await Task.sleep(for: .milliseconds(500))
                     guard !Task.isCancelled else { return }
-                    self?.reloadConversations()
+                    self?.synchronizeAndReloadConversations()
                 }
             }
         }

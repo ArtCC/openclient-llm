@@ -17,6 +17,7 @@ final class PromptTemplatesViewModelTests: XCTestCase {
     var mockLoadTemplates: MockLoadPromptTemplatesUseCase!
     var mockSaveTemplate: MockSavePromptTemplateUseCase!
     var mockDeleteTemplate: MockDeletePromptTemplateUseCase!
+    var mockAppReviewManager: MockAppReviewManager!
 
     // MARK: - Setup
 
@@ -26,10 +27,12 @@ final class PromptTemplatesViewModelTests: XCTestCase {
         mockLoadTemplates = MockLoadPromptTemplatesUseCase()
         mockSaveTemplate = MockSavePromptTemplateUseCase()
         mockDeleteTemplate = MockDeletePromptTemplateUseCase()
+        mockAppReviewManager = MockAppReviewManager()
         sut = PromptTemplatesViewModel(
             loadTemplatesUseCase: mockLoadTemplates,
             saveTemplateUseCase: mockSaveTemplate,
-            deleteTemplateUseCase: mockDeleteTemplate
+            deleteTemplateUseCase: mockDeleteTemplate,
+            appReviewManager: mockAppReviewManager
         )
     }
 
@@ -38,6 +41,7 @@ final class PromptTemplatesViewModelTests: XCTestCase {
         mockLoadTemplates = nil
         mockSaveTemplate = nil
         mockDeleteTemplate = nil
+        mockAppReviewManager = nil
 
         try await super.tearDown()
     }
@@ -113,6 +117,7 @@ final class PromptTemplatesViewModelTests: XCTestCase {
         XCTAssertEqual(mockSaveTemplate.savedTemplates.count, 1)
         XCTAssertEqual(mockSaveTemplate.savedTemplates.first?.title, "New")
         XCTAssertFalse(mockSaveTemplate.savedTemplates.first?.isBuiltIn ?? true)
+        XCTAssertEqual(mockAppReviewManager.requestReviewCallCount, 1)
     }
 
     func test_send_saveTapped_newTemplate_reloadsAfterSave() {
@@ -140,6 +145,7 @@ final class PromptTemplatesViewModelTests: XCTestCase {
         XCTAssertEqual(mockSaveTemplate.savedTemplates.first?.id, existing.id)
         XCTAssertEqual(mockSaveTemplate.savedTemplates.first?.createdAt, existing.createdAt)
         XCTAssertEqual(mockSaveTemplate.savedTemplates.first?.title, "Updated")
+        XCTAssertEqual(mockAppReviewManager.requestReviewCallCount, 0)
     }
 
     func test_send_saveTapped_whenSaveFails_setsErrorMessage() {
@@ -156,6 +162,7 @@ final class PromptTemplatesViewModelTests: XCTestCase {
             return XCTFail("Expected loaded state")
         }
         XCTAssertEqual(loadedState.errorMessage, "Save failed")
+        XCTAssertEqual(mockAppReviewManager.requestReviewCallCount, 0)
     }
 
     // MARK: - Tests — deleteTapped

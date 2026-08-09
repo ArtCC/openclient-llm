@@ -5,11 +5,12 @@
 <h1 align="center">OpenClient</h1>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/License-AGPL%20v3.0-blue?style=flat-square" alt="License" />
   <img src="https://img.shields.io/badge/Platform-iOS%2026+%20|%20iPadOS%2026+%20|%20macOS%2026+-blue?style=flat-square" alt="Platform" />
-  <img src="https://img.shields.io/badge/Xcode-26+-blue?style=flat-square&logo=xcode" alt="Xcode" />
   <img src="https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift" alt="Swift" />
   <img src="https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift" alt="SwiftUI" />
-  <img src="https://img.shields.io/badge/License-AGPL%20v3.0-blue?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/Version-1.6.10-brightgreen?style=flat-square" alt="Version 1.6.10" />
+  <img src="https://img.shields.io/badge/Xcode-26+-blue?style=flat-square&logo=xcode" alt="Xcode" />
 </p>
 
 ## Description
@@ -26,7 +27,7 @@ servers that provide the endpoints used by your selected features; point the app
 - Attach photos, camera shots, and PDF documents for multimodal conversations
 - Drag and drop text, images, and files from any app directly into the chat (Split View, Stage Manager, Finder on macOS)
 - Dictate messages with Speech-to-Text; have responses read aloud with Text-to-Speech
-- Receive generated images from compatible models and servers that return images in chat-completion streams
+- Generate images with dedicated LiteLLM image models and receive images returned in chat-completion streams
 - Web search powered by your server's configured provider (Brave, Firecrawl, and more)
 - Agentic tool-calling loop for models that support function calling
 - MCP (Model Context Protocol) tools — connect to external services (GitHub, filesystems, databases, and more) through MCP servers configured on your LiteLLM backend; discover, enable, and execute them from the chat input bar

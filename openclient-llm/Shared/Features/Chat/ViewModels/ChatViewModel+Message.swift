@@ -27,6 +27,10 @@ extension ChatViewModel {
     }
 
     func streamWithWebSearch(_ context: SendMessageContext) async {
+        if context.selectedModel.mode == .imageGeneration {
+            await performImageGeneration(context)
+            return
+        }
         let useAgentMode = context.modelCapabilities.contains(.functionCalling)
         if useAgentMode {
             await performAgentStreaming(context)
@@ -37,9 +41,16 @@ extension ChatViewModel {
 
     func sendMessage() {
         guard case .loaded(var loadedState) = state else { return }
+        guard !loadedState.isPreparingAttachment else { return }
         let text = loadedState.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty || !loadedState.pendingAttachments.isEmpty,
               let model = loadedState.selectedModel else { return }
+        guard model.mode != .imageGeneration || (!text.isEmpty && loadedState.pendingAttachments.isEmpty) else {
+            loadedState.errorMessage = String(localized: "Image generation requires a text prompt without attachments.")
+            state = .loaded(loadedState)
+            scheduleErrorDismiss()
+            return
+        }
 
         if loadedState.isStreaming {
             cancelActiveStreaming()

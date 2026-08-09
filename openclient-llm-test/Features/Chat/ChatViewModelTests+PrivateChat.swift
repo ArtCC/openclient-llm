@@ -13,18 +13,20 @@ import XCTest
 
 @MainActor
 extension ChatViewModelTests {
-    func test_send_attachmentAdded_inPrivateChat_keepsDataInMemory() throws {
+    func test_send_attachmentAdded_inPrivateChat_keepsDataInMemory() async throws {
         // Given
         let data = Data([0xFF, 0xD8])
         sut = ChatViewModel(
             isPrivateChat: true,
             state: .loaded(.init()),
+            prepareImageAttachmentUseCase: mockPrepareImageAttachment,
             attachmentRepository: mockAttachmentRepository,
             saveConversationUseCase: mockSaveConversation
         )
 
         // When
         sut.send(.attachmentAdded(data: data, fileName: "private.jpg", type: .image))
+        try await Task.sleep(for: .milliseconds(50))
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {

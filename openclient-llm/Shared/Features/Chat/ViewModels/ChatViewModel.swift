@@ -61,6 +61,7 @@ final class ChatViewModel {
         var errorMessage: String?
         var systemPrompt: String = ""
         var pendingAttachments: [ChatMessage.Attachment] = []
+        var isPreparingAttachment: Bool = false
         var pendingSessionId: UUID = UUID()
         var modelParameters: ModelParameters = .default
         var contextWindowTokens: Int?
@@ -93,8 +94,10 @@ final class ChatViewModel {
     let isPrivateChat: Bool
 
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
+    let prepareImageAttachmentUseCase: PrepareImageAttachmentUseCaseProtocol
     let attachmentRepository: AttachmentRepositoryProtocol
     let streamMessageUseCase: StreamMessageUseCaseProtocol
+    let generateImageUseCase: GenerateImageUseCaseProtocol
     let agentStreamUseCase: AgentStreamUseCaseProtocol
     let webSearchUseCase: WebSearchUseCaseProtocol
     let saveConversationUseCase: SaveConversationUseCaseProtocol
@@ -125,6 +128,7 @@ final class ChatViewModel {
     var errorDismissTask: Task<Void, Never>?
     var durationTrackingTask: Task<Void, Never>?
     private var pendingConversation: Conversation?
+    var attachmentPreparationCount = 0
 
     // MARK: - Init
 
@@ -133,8 +137,10 @@ final class ChatViewModel {
         isPrivateChat: Bool = false,
         state: State = .loading,
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
+        prepareImageAttachmentUseCase: PrepareImageAttachmentUseCaseProtocol = PrepareImageAttachmentUseCase(),
         attachmentRepository: AttachmentRepositoryProtocol = AttachmentRepository(),
         streamMessageUseCase: StreamMessageUseCaseProtocol = StreamMessageUseCase(),
+        generateImageUseCase: GenerateImageUseCaseProtocol = GenerateImageUseCase(),
         agentStreamUseCase: AgentStreamUseCaseProtocol = AgentStreamUseCase(),
         webSearchUseCase: WebSearchUseCaseProtocol = WebSearchUseCase(),
         saveConversationUseCase: SaveConversationUseCaseProtocol = SaveConversationUseCase(),
@@ -163,8 +169,10 @@ final class ChatViewModel {
         self.pendingConversation = conversation
         self.isPrivateChat = isPrivateChat
         self.fetchModelsUseCase = fetchModelsUseCase
+        self.prepareImageAttachmentUseCase = prepareImageAttachmentUseCase
         self.attachmentRepository = attachmentRepository
         self.streamMessageUseCase = streamMessageUseCase
+        self.generateImageUseCase = generateImageUseCase
         self.agentStreamUseCase = agentStreamUseCase
         self.webSearchUseCase = webSearchUseCase
         self.saveConversationUseCase = saveConversationUseCase
@@ -367,69 +375,6 @@ private extension ChatViewModel {
         }
         state = .loaded(loadedState)
         persistConversation()
-    }
-
-    func addAttachment(data: Data, fileName: String, type: ChatMessage.AttachmentType) {
-        guard case .loaded(var loadedState) = state else { return }
-        let mime = mimeType(for: type, fileName: fileName)
-        if isPrivateChat {
-            loadedState.pendingAttachments.append(ChatMessage.Attachment(
-                type: type,
-                fileName: fileName,
-                mimeType: mime,
-                fileRelativePath: "",
-                transientData: data
-            ))
-            state = .loaded(loadedState)
-            return
-        }
-        let folderId = loadedState.conversation?.id ?? loadedState.pendingSessionId
-        let attachmentId = UUID()
-        let placeholder = ChatMessage.Attachment(
-            id: attachmentId,
-            type: type,
-            fileName: fileName,
-            mimeType: mime,
-            fileRelativePath: ""
-        )
-        do {
-            let relativePath = try attachmentRepository.save(data: data, for: placeholder, conversationId: folderId)
-            let saved = ChatMessage.Attachment(
-                id: attachmentId,
-                type: type,
-                fileName: fileName,
-                mimeType: mime,
-                fileRelativePath: relativePath
-            )
-            loadedState.pendingAttachments.append(saved)
-            state = .loaded(loadedState)
-        } catch {
-            LogManager.error("addAttachment failed to save to disk: \(error)")
-        }
-    }
-
-    func removeAttachment(_ id: UUID) {
-        guard case .loaded(var loadedState) = state else { return }
-        if !isPrivateChat,
-           let attachment = loadedState.pendingAttachments.first(where: { $0.id == id }) {
-            try? attachmentRepository.delete(attachment: attachment)
-        }
-        loadedState.pendingAttachments.removeAll { $0.id == id }
-        state = .loaded(loadedState)
-    }
-
-    func mimeType(for type: ChatMessage.AttachmentType, fileName: String) -> String {
-        switch type {
-        case .pdf: return "application/pdf"
-        case .image:
-            let ext = (fileName as NSString).pathExtension.lowercased()
-            switch ext {
-            case "png": return "image/png"
-            case "gif": return "image/gif"
-            case "webp": return "image/webp"
-            default: return "image/jpeg"
-            }
-        }
     }
 
     func speakMessage(_ message: ChatMessage) {

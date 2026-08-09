@@ -11,9 +11,14 @@ import SwiftUI
 struct HomeView: View {
     // MARK: - Properties
 
+    let remoteBanner: RemoteBanner?
+    let onRemoteBannerDismiss: () -> Void
+    let onRemoteBannerAction: () -> Void
+
     @State private var viewModel = HomeViewModel()
     @State private var selectedConversation: Conversation?
     @State private var isPrivateChatActive: Bool = false
+    @State private var requestedSettingsPresentation: SettingsPresentation?
 
 #if os(macOS)
     @State private var sidebarDestination: SidebarDestination = .chats
@@ -23,6 +28,18 @@ struct HomeView: View {
     @State private var selectedTab: AppTab = .chats
 #endif
 
+    // MARK: - Init
+
+    init(
+        remoteBanner: RemoteBanner? = nil,
+        onRemoteBannerDismiss: @escaping () -> Void = {},
+        onRemoteBannerAction: @escaping () -> Void = {}
+    ) {
+        self.remoteBanner = remoteBanner
+        self.onRemoteBannerDismiss = onRemoteBannerDismiss
+        self.onRemoteBannerAction = onRemoteBannerAction
+    }
+
     // MARK: - View
 
     var body: some View {
@@ -31,6 +48,9 @@ struct HomeView: View {
             macOSLayout
 #else
             iOSLayout
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    remoteBannerInset
+                }
 #endif
         }
         .onContinueUserActivity(SpotlightConstants.activityType) { activity in
@@ -92,6 +112,7 @@ struct HomeView: View {
             viewModel.send(.urlSchemeActionReceived)
         }
 #endif
+        .animation(.smooth, value: remoteBanner?.id)
     }
 }
 
@@ -122,7 +143,7 @@ private extension HomeView {
                 }
             }
             Tab(value: AppTab.settings) {
-                SettingsView()
+                SettingsView(requestedPresentation: $requestedSettingsPresentation)
             } label: {
                 Label {
                     Text(String(localized: "Settings"))
@@ -202,6 +223,9 @@ private extension HomeView {
             sidebar
         } detail: {
             detailContent
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    remoteBannerInset
+                }
         }
         .onChange(of: sidebarDestination) { _, _ in
             selectedConversation = nil
@@ -256,10 +280,49 @@ private extension HomeView {
         case .models:
             ModelsView()
         case .settings:
-            SettingsView()
+            SettingsView(requestedPresentation: $requestedSettingsPresentation)
         }
     }
 #endif
+
+    @ViewBuilder
+    var remoteBannerInset: some View {
+        if let remoteBanner {
+            RemoteBannerView(
+                banner: remoteBanner,
+                onDismiss: onRemoteBannerDismiss,
+                onAction: handleRemoteBannerAction
+            )
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .transition(.move(edge: .top).combined(with: .opacity))
+        }
+    }
+
+    func handleRemoteBannerAction() {
+        guard let action = remoteBanner?.item.action else { return }
+
+        switch action {
+        case .close:
+            onRemoteBannerDismiss()
+        case .openURL:
+            onRemoteBannerAction()
+        case .feedback:
+            routeToSettings(.feedback)
+        case .tip:
+            routeToSettings(.tipJar)
+        }
+    }
+
+    func routeToSettings(_ presentation: SettingsPresentation) {
+#if os(iOS)
+        selectedTab = .settings
+#else
+        sidebarDestination = .settings
+#endif
+        requestedSettingsPresentation = presentation
+        onRemoteBannerDismiss()
+    }
 }
 
 // MARK: - Hashable

@@ -41,6 +41,7 @@ struct ChatView: View {
     var onForkCreated: ((Conversation) -> Void)?
     var onShareItemProcessed: (() -> Void)?
     var onURLSchemeTextProcessed: (() -> Void)?
+    private let appReviewManager: AppReviewManagerProtocol
 
     // MARK: - Init
 
@@ -49,6 +50,7 @@ struct ChatView: View {
         isPrivateChat: Bool = false,
         shareItem: ShareExtensionItem? = nil,
         urlSchemeText: String? = nil,
+        appReviewManager: AppReviewManagerProtocol = AppReviewManager(),
         onConversationUpdated: (() -> Void)? = nil,
         onForkCreated: ((Conversation) -> Void)? = nil,
         onShareItemProcessed: (() -> Void)? = nil,
@@ -62,6 +64,7 @@ struct ChatView: View {
         self.isPrivateChat = isPrivateChat
         self.shareItem = shareItem
         self.urlSchemeText = urlSchemeText
+        self.appReviewManager = appReviewManager
         self.onConversationUpdated = onConversationUpdated
         self.onForkCreated = onForkCreated
         self.onShareItemProcessed = onShareItemProcessed
@@ -179,7 +182,7 @@ private extension ChatView {
                 viewModel.send(.conversationLoaded(newConversation))
             }
         }
-        .onDisappear { viewModel.send(.viewDisappeared) }
+        .onDisappear(perform: handleViewDisappeared)
     }
 #endif
 
@@ -270,7 +273,7 @@ private extension ChatView {
                 viewModel.send(.conversationLoaded(newConversation))
             }
         }
-        .onDisappear { viewModel.send(.viewDisappeared) }
+        .onDisappear(perform: handleViewDisappeared)
         .imagePicker(isPresented: $showImagePicker) { data, fileName, type in
             viewModel.send(.attachmentAdded(data: data, fileName: fileName, type: type))
         }
@@ -283,6 +286,7 @@ private extension ChatView {
         }
 #endif
     }
+
     func loadedView(
         _ loadedState: ChatViewModel.LoadedState
     ) -> some View {
@@ -324,6 +328,11 @@ private extension ChatView {
                     viewModel.send(.attachmentAdded(data: $0, fileName: $1, type: $2))
                 }
             ))
+    }
+
+    func handleViewDisappeared() {
+        viewModel.send(.viewDisappeared)
+        appReviewManager.requestReview()
     }
 
     // MARK: - Messages

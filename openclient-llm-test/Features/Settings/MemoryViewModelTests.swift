@@ -15,6 +15,7 @@ final class MemoryViewModelTests: XCTestCase {
 
     private var sut: MemoryViewModel!
     private var mockMemoryManager: MockMemoryManager!
+    private var mockAppReviewManager: MockAppReviewManager!
 
     // MARK: - Setup
 
@@ -22,12 +23,17 @@ final class MemoryViewModelTests: XCTestCase {
         try await super.setUp()
 
         mockMemoryManager = MockMemoryManager()
-        sut = MemoryViewModel(memoryManager: mockMemoryManager)
+        mockAppReviewManager = MockAppReviewManager()
+        sut = MemoryViewModel(
+            memoryManager: mockMemoryManager,
+            appReviewManager: mockAppReviewManager
+        )
     }
 
     override func tearDown() async throws {
         sut = nil
         mockMemoryManager = nil
+        mockAppReviewManager = nil
         try await super.tearDown()
     }
 
@@ -81,6 +87,7 @@ final class MemoryViewModelTests: XCTestCase {
         XCTAssertEqual(mockMemoryManager.addedItem?.content, "Prefers dark mode")
         XCTAssertEqual(mockMemoryManager.addedItem?.source, .user)
         XCTAssertTrue(mockMemoryManager.addedItem?.isEnabled ?? false)
+        XCTAssertEqual(mockAppReviewManager.requestReviewCallCount, 1)
     }
 
     func test_send_addItem_withEmptyContent_doesNotSave() {
@@ -92,6 +99,7 @@ final class MemoryViewModelTests: XCTestCase {
 
         // Then
         XCTAssertNil(mockMemoryManager.addedItem)
+        XCTAssertEqual(mockAppReviewManager.requestReviewCallCount, 0)
     }
 
     func test_send_addItem_trimsWhitespace() {

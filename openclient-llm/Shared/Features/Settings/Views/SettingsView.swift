@@ -17,6 +17,8 @@ import VoticeSDK
 struct SettingsView: View {
     // MARK: - Properties
 
+    @Binding var requestedPresentation: SettingsPresentation?
+
     @State var viewModel = SettingsViewModel()
     @State private var serverURL: String = ""
     @State private var apiKey: String = ""
@@ -28,12 +30,20 @@ struct SettingsView: View {
     @State var isShowingTipJar = false
     @State private var showResetAlert = false
     @State var mcpServerSheet: MCPServerInfo?
-    @State private var presentedWebURL: WebDestination?
+    @State var presentedWebURL: WebDestination?
     @State private var canShowMemoryTip = false
+    @State private var shouldRequestReviewAfterSync = false
     @FocusState private var focusedField: Field?
     @Environment(\.scenePhase) private var scenePhase
     private let liteLLMHintText = String(localized: "Optimised for LiteLLM. Any OpenAI-compatible server also works.")
     private let settingsManager: SettingsManagerProtocol = SettingsManager()
+    private let appReviewManager: AppReviewManagerProtocol = AppReviewManager()
+
+    // MARK: - Init
+
+    init(requestedPresentation: Binding<SettingsPresentation?> = .constant(nil)) {
+        _requestedPresentation = requestedPresentation
+    }
 
     // MARK: - View
 
@@ -91,6 +101,22 @@ private extension SettingsView {
                 .frame(width: 500, height: 460)
 #endif
         }
+        .task(id: requestedPresentation) {
+            guard let requestedPresentation else { return }
+            do {
+                try await Task.sleep(for: .milliseconds(500))
+            } catch {
+                return
+            }
+
+            switch requestedPresentation {
+            case .feedback:
+                isShowingVotice = true
+            case .tipJar:
+                isShowingTipJar = true
+            }
+            self.requestedPresentation = nil
+        }
         .alert(
             String(localized: "iCloud Sync Conflict"),
             isPresented: cloudSyncConflictBinding,
@@ -145,6 +171,7 @@ private extension SettingsView {
                 apiKey = loadedState.apiKey
             }
         }
+        .onDisappear(perform: requestReviewAfterSuccessfulSyncIfNeeded)
     }
 
     enum Field {
@@ -322,7 +349,7 @@ private extension SettingsView {
 
             if loadedState.isCloudSyncEnabled {
                 Button(String(localized: "Sync Now")) {
-                    viewModel.send(.syncConversationsTapped)
+                    synchronizeConversations()
                 }
             }
 
@@ -429,45 +456,17 @@ private extension SettingsView {
         }
     }
 
-    func legalSection() -> some View {
-        Section {
-            Button {
-                presentedWebURL = .privacyPolicy
-            } label: {
-                Label(String(localized: "Privacy Policy"), systemImage: "hand.raised")
-            }
-            .buttonStyle(.plain)
+    func synchronizeConversations() {
+        viewModel.send(.syncConversationsTapped)
+        guard case .loaded(let loadedState) = viewModel.state,
+              loadedState.conversationSyncResult == .synchronized else { return }
+        shouldRequestReviewAfterSync = true
+    }
 
-            Button {
-                presentedWebURL = .termsOfUse
-            } label: {
-                Label(String(localized: "Terms of Use"), systemImage: "doc.text")
-            }
-            .buttonStyle(.plain)
-
-            Button {
-                presentedWebURL = .authorGitHub
-            } label: {
-                HStack {
-                    Label(String(localized: "Author"), systemImage: "person.circle")
-                    Spacer()
-                    Image(systemName: "arrow.up.right.square")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .buttonStyle(.plain)
-
-            HStack {
-                Text(String(localized: "Version \(appVersion) (\(appBuild))"))
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 5)
-                Spacer()
-            }
-        } header: {
-            Text(String(localized: "About"))
-        }
+    func requestReviewAfterSuccessfulSyncIfNeeded() {
+        guard shouldRequestReviewAfterSync else { return }
+        shouldRequestReviewAfterSync = false
+        appReviewManager.requestReview()
     }
 
     func dangerSection() -> some View {
