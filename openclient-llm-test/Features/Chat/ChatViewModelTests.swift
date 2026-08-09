@@ -16,6 +16,7 @@ final class ChatViewModelTests: XCTestCase {
     var sut: ChatViewModel!
     var mockFetchModels: MockFetchModelsUseCase!
     var mockStreamMessage: MockStreamMessageUseCase!
+    var mockGenerateImage: MockGenerateImageUseCase!
     var mockWebSearch: MockWebSearchUseCase!
     var mockSaveConversation: MockSaveConversationUseCase!
     var mockGetChatPreferences: MockGetChatPreferencesUseCase!
@@ -37,6 +38,7 @@ final class ChatViewModelTests: XCTestCase {
 
         mockFetchModels = MockFetchModelsUseCase()
         mockStreamMessage = MockStreamMessageUseCase()
+        mockGenerateImage = MockGenerateImageUseCase()
         mockWebSearch = MockWebSearchUseCase()
         mockSaveConversation = MockSaveConversationUseCase()
         mockGetChatPreferences = MockGetChatPreferencesUseCase()
@@ -54,6 +56,7 @@ final class ChatViewModelTests: XCTestCase {
             fetchModelsUseCase: mockFetchModels,
             attachmentRepository: mockAttachmentRepository,
             streamMessageUseCase: mockStreamMessage,
+            generateImageUseCase: mockGenerateImage,
             webSearchUseCase: mockWebSearch,
             saveConversationUseCase: mockSaveConversation,
             exportConversationUseCase: mockExportConversation,
@@ -73,6 +76,7 @@ final class ChatViewModelTests: XCTestCase {
         sut = nil
         mockFetchModels = nil
         mockStreamMessage = nil
+        mockGenerateImage = nil
         mockWebSearch = nil
         mockSaveConversation = nil
         mockGetChatPreferences = nil
@@ -117,6 +121,20 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(loadedState.selectedModel?.id, "gpt-4")
         XCTAssertTrue(loadedState.messages.isEmpty)
         XCTAssertEqual(loadedState.conversationStarters.count, 4)
+    }
+
+    func test_makeLoadedState_withImageGenerationModel_includesItInSelectableModels() {
+        // Given
+        let models = [
+            LLMModel(id: "gpt-4", mode: .chat),
+            LLMModel(id: "gpt-image-2", mode: .imageGeneration)
+        ]
+
+        // When
+        let loadedState = sut.makeLoadedState(models: models, pending: nil)
+
+        // Then
+        XCTAssertEqual(loadedState.availableModels.map(\.id), ["gpt-4", "gpt-image-2"])
     }
 
     func test_send_viewAppeared_withError_setsErrorMessage() async throws {

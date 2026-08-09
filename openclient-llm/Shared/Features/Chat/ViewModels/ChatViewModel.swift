@@ -95,6 +95,7 @@ final class ChatViewModel {
     private let fetchModelsUseCase: FetchModelsUseCaseProtocol
     let attachmentRepository: AttachmentRepositoryProtocol
     let streamMessageUseCase: StreamMessageUseCaseProtocol
+    let generateImageUseCase: GenerateImageUseCaseProtocol
     let agentStreamUseCase: AgentStreamUseCaseProtocol
     let webSearchUseCase: WebSearchUseCaseProtocol
     let saveConversationUseCase: SaveConversationUseCaseProtocol
@@ -135,6 +136,7 @@ final class ChatViewModel {
         fetchModelsUseCase: FetchModelsUseCaseProtocol = FetchModelsUseCase(),
         attachmentRepository: AttachmentRepositoryProtocol = AttachmentRepository(),
         streamMessageUseCase: StreamMessageUseCaseProtocol = StreamMessageUseCase(),
+        generateImageUseCase: GenerateImageUseCaseProtocol = GenerateImageUseCase(),
         agentStreamUseCase: AgentStreamUseCaseProtocol = AgentStreamUseCase(),
         webSearchUseCase: WebSearchUseCaseProtocol = WebSearchUseCase(),
         saveConversationUseCase: SaveConversationUseCaseProtocol = SaveConversationUseCase(),
@@ -165,6 +167,7 @@ final class ChatViewModel {
         self.fetchModelsUseCase = fetchModelsUseCase
         self.attachmentRepository = attachmentRepository
         self.streamMessageUseCase = streamMessageUseCase
+        self.generateImageUseCase = generateImageUseCase
         self.agentStreamUseCase = agentStreamUseCase
         self.webSearchUseCase = webSearchUseCase
         self.saveConversationUseCase = saveConversationUseCase

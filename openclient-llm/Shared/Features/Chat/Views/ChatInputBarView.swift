@@ -103,17 +103,19 @@ private extension ChatInputBarView {
 
     var normalBar: some View {
         HStack(spacing: 5) {
-            actionsToggleButton
+            if loadedState.selectedModel?.mode != .imageGeneration {
+                actionsToggleButton
 
-            if showActions {
-                attachmentMenu
-                    .transition(.scale.combined(with: .opacity))
+                if showActions {
+                    attachmentMenu
+                        .transition(.scale.combined(with: .opacity))
 
-                webSearchButton
-                    .transition(.scale.combined(with: .opacity))
+                    webSearchButton
+                        .transition(.scale.combined(with: .opacity))
 
-                mcpButton
-                    .transition(.scale.combined(with: .opacity))
+                    mcpButton
+                        .transition(.scale.combined(with: .opacity))
+                }
             }
 
             TextField(

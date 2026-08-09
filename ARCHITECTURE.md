@@ -29,6 +29,10 @@ openclient-llm/                    # iOS target
 │   │   │   ├── UseCases/
 │   │   │   ├── ViewModels/
 │   │   │   └── Views/
+│   │   ├── ImageGeneration/
+│   │   │   ├── Models/
+│   │   │   ├── Repositories/
+│   │   │   └── UseCases/
 │   │   ├── Launch/
 │   │   │   ├── UseCases/
 │   │   │   ├── ViewModels/

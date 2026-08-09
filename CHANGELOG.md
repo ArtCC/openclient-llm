@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.10-build-67] - 2026-08-09
+
+### Added
+
+- **Dedicated image-generation models in chat** — routes LiteLLM models with `image_generation` mode through `/images/generations` and persists generated images as assistant attachments
+
+### Fixed
+
+- Image-generation requests now allow LiteLLM's documented 10-minute timeout without extending the 60-second timeout used by regular API requests
+
 ## [1.6.5-build-66] - 2026-08-01
 
 ### Fixed

@@ -19,7 +19,8 @@ protocol APIClientProtocol: Sendable {
     func request<T: Decodable & Sendable>(
         endpoint: String,
         method: HTTPMethod,
-        body: (any Encodable & Sendable)?
+        body: (any Encodable & Sendable)?,
+        timeoutInterval: TimeInterval
     ) async throws -> T
     func streamRequest(
         endpoint: String,
@@ -34,6 +35,7 @@ protocol APIClientProtocol: Sendable {
         endpoint: String,
         body: any Encodable & Sendable
     ) async throws -> Data
+    func downloadData(from url: URL) async throws -> (data: Data, mimeType: String)
     func searchRequest(
         toolName: String,
         body: LiteLLMSearchRequest
@@ -42,6 +44,16 @@ protocol APIClientProtocol: Sendable {
     func listMCPServers() async throws -> [MCPServerInfo]
     func listMCPTools(serverId: String) async throws -> [MCPToolInfo]
     func callMCPTool(serverId: String, toolName: String, arguments: String) async throws -> String
+}
+
+extension APIClientProtocol {
+    func request<T: Decodable & Sendable>(
+        endpoint: String,
+        method: HTTPMethod,
+        body: (any Encodable & Sendable)?
+    ) async throws -> T {
+        try await request(endpoint: endpoint, method: method, body: body, timeoutInterval: 60)
+    }
 }
 
 enum HTTPMethod: String, Sendable {
@@ -70,9 +82,15 @@ struct APIClient: APIClientProtocol, Sendable {
     func request<T: Decodable & Sendable>(
         endpoint: String,
         method: HTTPMethod,
-        body: (any Encodable & Sendable)? = nil
+        body: (any Encodable & Sendable)?,
+        timeoutInterval: TimeInterval
     ) async throws -> T {
-        let urlRequest = try buildRequest(endpoint: endpoint, method: method, body: body)
+        let urlRequest = try buildRequest(
+            endpoint: endpoint,
+            method: method,
+            body: body,
+            timeoutInterval: timeoutInterval
+        )
         LogManager.network("→ \(method.rawValue) /\(endpoint)")
 
         do {
@@ -301,6 +319,18 @@ struct APIClient: APIClientProtocol, Sendable {
             throw error
         }
     }
+
+    func downloadData(from url: URL) async throws -> (data: Data, mimeType: String) {
+        guard let scheme = url.scheme?.lowercased(), ["http", "https"].contains(scheme) else {
+            throw APIError.invalidURL
+        }
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 120
+        let (data, response) = try await session.data(for: request)
+        try validateResponse(response)
+        guard data.count <= 25 * 1_024 * 1_024 else { throw APIError.invalidResponse }
+        return (data, response.mimeType ?? "application/octet-stream")
+    }
 }
 
 // MARK: - Private
@@ -310,7 +340,8 @@ private extension APIClient {
         endpoint: String,
         method: HTTPMethod,
         body: (any Encodable & Sendable)?,
-        queryItems: [URLQueryItem]? = nil
+        queryItems: [URLQueryItem]? = nil,
+        timeoutInterval: TimeInterval = 60
     ) throws -> URLRequest {
         let baseURL = settingsManager.getServerBaseURL()
 
@@ -337,7 +368,7 @@ private extension APIClient {
 
         var request = URLRequest(url: url)
         request.httpMethod = method.rawValue
-        request.timeoutInterval = 60
+        request.timeoutInterval = timeoutInterval
 
         let apiKey = settingsManager.getAPIKey()
         if !apiKey.isEmpty {

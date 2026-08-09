@@ -106,7 +106,8 @@ private extension ChatViewModel {
     func removeEmptyAssistantMessage(_ assistantMessageId: UUID, from state: inout LoadedState) {
         guard let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }),
               state.messages[index].content.isEmpty,
-              state.messages[index].reasoningContent == nil else { return }
+              state.messages[index].reasoningContent == nil,
+              state.messages[index].attachments.isEmpty else { return }
         state.messages.remove(at: index)
         state.errorMessage = String(localized: "The model returned an empty response. Please try again.")
     }
