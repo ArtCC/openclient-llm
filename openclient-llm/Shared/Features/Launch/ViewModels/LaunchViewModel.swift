@@ -16,6 +16,7 @@ final class LaunchViewModel {
     enum Event {
         case viewAppeared
         case onboardingCompleted
+        case availableUpdateDismissed
     }
 
     enum State: Equatable {
@@ -27,6 +28,7 @@ final class LaunchViewModel {
     }
 
     private(set) var state: State
+    private(set) var availableUpdate: RemoteConfig.PlatformUpdate?
 
     private let checkOnboardingUseCase: CheckOnboardingUseCaseProtocol
     private let resetAppDataUseCase: ResetAppDataUseCaseProtocol
@@ -74,6 +76,8 @@ final class LaunchViewModel {
             startLaunch(isOnboardingCompleted: isCompleted)
         case .onboardingCompleted:
             state = .home
+        case .availableUpdateDismissed:
+            availableUpdate = nil
         }
     }
 
@@ -110,16 +114,20 @@ final class LaunchViewModel {
     }
 
     func finishLaunch(remoteConfig: RemoteConfig?, isOnboardingCompleted: Bool) {
+        availableUpdate = nil
+        let update = availableUpdate(from: remoteConfig)
+
         if remoteConfig?.maintenanceMode.enabled == true {
             state = .maintenance
-        } else if let update = requiredUpdate(from: remoteConfig) {
+        } else if let update, update.forceUpdate {
             state = .forceUpdate(update)
         } else {
+            availableUpdate = update
             state = isOnboardingCompleted ? .home : .onboarding
         }
     }
 
-    func requiredUpdate(from remoteConfig: RemoteConfig?) -> RemoteConfig.PlatformUpdate? {
+    func availableUpdate(from remoteConfig: RemoteConfig?) -> RemoteConfig.PlatformUpdate? {
         guard let remoteConfig, let currentVersion else { return nil }
 
 #if os(iOS)
@@ -128,7 +136,7 @@ final class LaunchViewModel {
         let update = remoteConfig.appUpdate.macos
 #endif
 
-        guard update.enabled, update.forceUpdate else { return nil }
+        guard update.enabled else { return nil }
         guard currentVersion.compare(update.latestVersion, options: .numeric) == .orderedAscending else { return nil }
         return update
     }

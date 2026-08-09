@@ -164,9 +164,10 @@ final class LaunchViewModelTests: XCTestCase {
             return XCTFail("Expected force update state")
         }
         XCTAssertEqual(update.latestVersion, "2.0.0")
+        XCTAssertNil(sut.availableUpdate)
     }
 
-    func test_send_viewAppeared_forceUpdateDisabled_setsHomeState() async {
+    func test_send_viewAppeared_optionalUpdateAvailable_setsHomeStateAndAvailableUpdate() async {
         // Given
         mockUseCase.result = true
         mockRemoteConfigManager.result = .success(.stub(isForceUpdate: false, latestVersion: "2.0.0"))
@@ -177,6 +178,7 @@ final class LaunchViewModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sut.state, .home)
+        XCTAssertEqual(sut.availableUpdate?.latestVersion, "2.0.0")
     }
 
     func test_send_viewAppeared_currentVersionIsNewer_setsHomeState() async {
@@ -190,6 +192,7 @@ final class LaunchViewModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sut.state, .home)
+        XCTAssertNil(sut.availableUpdate)
     }
 
     func test_send_viewAppeared_maintenanceEnabled_setsMaintenanceState() async {
@@ -203,6 +206,7 @@ final class LaunchViewModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sut.state, .maintenance)
+        XCTAssertNil(sut.availableUpdate)
     }
 
     func test_send_viewAppeared_maintenanceAndForceUpdateEnabled_setsMaintenanceState() async {
@@ -218,6 +222,36 @@ final class LaunchViewModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sut.state, .maintenance)
+        XCTAssertNil(sut.availableUpdate)
+    }
+
+    func test_send_availableUpdateDismissed_availableUpdateExists_clearsAvailableUpdate() async {
+        // Given
+        mockUseCase.result = true
+        mockRemoteConfigManager.result = .success(.stub(latestVersion: "2.0.0"))
+        sut.send(.viewAppeared)
+        await waitForLaunch()
+
+        // When
+        sut.send(.availableUpdateDismissed)
+
+        // Then
+        XCTAssertNil(sut.availableUpdate)
+    }
+
+    func test_send_onboardingCompleted_optionalUpdateAvailable_keepsUpdateForHome() async {
+        // Given
+        mockUseCase.result = false
+        mockRemoteConfigManager.result = .success(.stub(latestVersion: "2.0.0"))
+        sut.send(.viewAppeared)
+        await waitForLaunch()
+
+        // When
+        sut.send(.onboardingCompleted)
+
+        // Then
+        XCTAssertEqual(sut.state, .home)
+        XCTAssertEqual(sut.availableUpdate?.latestVersion, "2.0.0")
     }
 }
 

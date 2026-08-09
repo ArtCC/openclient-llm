@@ -11,6 +11,7 @@ import SwiftUI
 struct LaunchView: View {
     // MARK: - Properties
 
+    @Environment(\.openURL) private var openURL
     @State private var viewModel = LaunchViewModel()
 
     // MARK: - View
@@ -25,6 +26,22 @@ struct LaunchView: View {
         }
         .task {
             viewModel.send(.viewAppeared)
+        }
+        .alert(
+            String(localized: "Update available"),
+            isPresented: availableUpdateAlertBinding
+        ) {
+            Button(String(localized: "Not Now"), role: .cancel) {
+                viewModel.send(.availableUpdateDismissed)
+            }
+            Button(String(localized: "Update")) {
+                if let update = viewModel.availableUpdate {
+                    openURL(update.updateURL)
+                }
+                viewModel.send(.availableUpdateDismissed)
+            }
+        } message: {
+            Text(availableUpdateMessage)
         }
     }
 
@@ -98,6 +115,24 @@ struct LaunchView: View {
 // MARK: - Private
 
 private extension LaunchView {
+    var availableUpdateAlertBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.state == .home && viewModel.availableUpdate != nil },
+            set: { isPresented in
+                if !isPresented {
+                    viewModel.send(.availableUpdateDismissed)
+                }
+            }
+        )
+    }
+
+    var availableUpdateMessage: String {
+        guard let version = viewModel.availableUpdate?.latestVersion else { return "" }
+        return String(
+            localized: "OpenClient version \(version) is available. Would you like to update now?"
+        )
+    }
+
     var shouldCoverMacOSHome: Bool {
         switch viewModel.state {
         case .loading, .maintenance, .forceUpdate:
