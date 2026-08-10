@@ -27,3 +27,6 @@ Secrets.xcconfig
 
 # VS Code
 .vscode/
+
+# Remote config
+config.json
