@@ -123,24 +123,33 @@ extension ConversationRepositorySyncTests {
         XCTAssertEqual(cloudConversation.modelParameters, metadataUpdate.modelParameters)
     }
 
-    func test_delete_cloudApplyUnavailable_throwsRetryableSyncError() async throws {
+    func test_delete_cloudApplyUnavailable_throwsWithoutChangingCanonicalLocalPayload() async throws {
         // Given
         let conversation = Conversation(modelId: "model")
         settingsManager.isCloudSyncEnabled = false
         try await sut.save(conversation)
+        let payloadURL = directory.appendingPathComponent(
+            "Conversations/\(conversation.id.uuidString).json"
+        )
+        let canonicalData = try Data(contentsOf: payloadURL)
         settingsManager.isCloudSyncEnabled = true
         cloudSyncManager.syncError = CloudSyncError.containerIdentityChanged
 
         // When
         do {
             try await sut.delete(conversation.id)
-            XCTFail("Expected cloud deletion to remain retryable")
+            XCTFail("Expected unavailable cloud apply to reject the delete")
         } catch {
-            // Then
             XCTAssertEqual(error as? ConversationSyncOperationError, .unavailable)
-            let localConversations = try await sut.loadLocal()
-            XCTAssertEqual(localConversations.map(\.id), [conversation.id])
         }
+
+        // Then
+        XCTAssertEqual(try Data(contentsOf: payloadURL), canonicalData)
+        let pendingDeletionURL = directory.appendingPathComponent(
+            "ConversationPendingDeletions/\(conversation.id.uuidString).json"
+        )
+        XCTAssertTrue(FileManager.default.fileExists(atPath: pendingDeletionURL.path))
+        XCTAssertTrue(cloudSyncManager.cloudTombstones.isEmpty)
     }
 
     func test_delete_newerCloudRevision_createsBarrierAndDeletesBothCopies() async throws {
@@ -169,7 +178,7 @@ extension ConversationRepositorySyncTests {
         XCTAssertGreaterThan(tombstone.deletedAt, cloud.updatedAt)
     }
 
-    func test_delete_snapshotPreflightFails_preservesPayloadAndDoesNotReportSuccess() async throws {
+    func test_delete_snapshotPreflightUnavailable_throwsAndPreservesCanonicalLocalPayload() async throws {
         // Given
         let conversation = Conversation(modelId: "model")
         settingsManager.isCloudSyncEnabled = false
@@ -180,14 +189,19 @@ extension ConversationRepositorySyncTests {
         // When
         do {
             try await sut.delete(conversation.id)
-            XCTFail("Expected cloud preflight failure")
+            XCTFail("Expected unavailable preflight to reject the delete")
         } catch {
-            // Then
-            let localIds = try await sut.loadLocal().map(\.id)
             XCTAssertEqual(error as? ConversationSyncOperationError, .unavailable)
-            XCTAssertEqual(localIds, [conversation.id])
-            XCTAssertTrue(cloudSyncManager.cloudTombstones.isEmpty)
         }
+
+        // Then
+        let localIds = try await sut.loadLocal().map(\.id)
+        let payloadURL = directory.appendingPathComponent(
+            "Conversations/\(conversation.id.uuidString).json"
+        )
+        XCTAssertEqual(localIds, [conversation.id])
+        XCTAssertTrue(FileManager.default.fileExists(atPath: payloadURL.path))
+        XCTAssertTrue(cloudSyncManager.cloudTombstones.isEmpty)
     }
 
     func test_deleteAll_newestCloudRevision_createsNewerPurgeBarrier() async throws {

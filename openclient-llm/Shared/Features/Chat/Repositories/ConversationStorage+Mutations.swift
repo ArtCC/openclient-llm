@@ -35,7 +35,8 @@ extension ConversationStorage {
             )
         }
         let base = expectedBase ?? latestLocal
-        if Task.isCancelled || preservePendingBase {
+        try Task.checkCancellation()
+        if preservePendingBase {
             return try saveWithoutCloudIfAllowed(
                 incoming,
                 base: base,
@@ -190,7 +191,11 @@ extension ConversationStorage {
                 throw CloudSyncError.staleConversationRevision
             }
         }
-        guard synchronize, cloudSyncManager.isCloudAvailable() else {
+        guard synchronize else {
+            try persistNewLocalConversation(conversation, attachmentData: attachmentData)
+            return try loadLocalConversation(id: conversation.id)
+        }
+        guard cloudSyncManager.isCloudAvailable() else {
             try persistNewLocalConversation(conversation, attachmentData: attachmentData)
             return try loadLocalConversation(id: conversation.id)
         }

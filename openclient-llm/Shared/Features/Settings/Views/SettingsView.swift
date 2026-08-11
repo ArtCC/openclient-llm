@@ -123,7 +123,27 @@ private extension SettingsView {
             self.requestedPresentation = nil
         }
         .alert(
-            String(localized: "iCloud Sync Conflict"),
+            String(localized: "Review iCloud Account"),
+            isPresented: cloudAccountReviewBinding,
+            actions: {
+                Button(String(localized: "Merge and Enable Sync")) {
+                    viewModel.send(.cloudAccountReviewConfirmed)
+                }
+                Button(String(localized: "Cancel"), role: .cancel) {
+                    viewModel.send(.cloudAccountReviewCancelled)
+                }
+            },
+            message: {
+                Text(String(
+                    localized: """
+                    Your local data will be merged into the current iCloud account. \
+                    Cancel to keep iCloud Sync disabled.
+                    """
+                ))
+            }
+        )
+        .alert(
+            String(localized: "Profile Sync Conflict"),
             isPresented: cloudSyncConflictBinding,
             actions: {
                 Button(String(localized: "Use Local Data")) {
@@ -135,11 +155,13 @@ private extension SettingsView {
                 Button(String(localized: "Cancel"), role: .cancel) {
                     viewModel.send(.cloudSyncConflictCancelled)
                 }
-                .buttonStyle(.plain)
             },
             message: {
                 Text(String(
-                    localized: "Your local personal context differs from iCloud. Which version would you like to keep?"
+                    localized: """
+                    Your local profile and iCloud profile have different content with the same revision. \
+                    Which profile would you like to keep?
+                    """
                 ))
             }
         )
@@ -175,7 +197,7 @@ private extension SettingsView {
             if case .loaded(let loadedState) = newState {
                 serverURL = loadedState.serverURL
                 apiKey = loadedState.apiKey
-                if !loadedState.isSynchronizing,
+                if viewModel.cloudSyncStatus != .synchronizing,
                    let result = loadedState.synchronizationResult,
                    !result.isSuccessful {
                     shouldRequestReviewAfterSync = false
@@ -199,6 +221,20 @@ private extension SettingsView {
             set: { newValue in
                 if !newValue {
                     viewModel.send(.cloudSyncConflictCancelled)
+                }
+            }
+        )
+    }
+
+    var cloudAccountReviewBinding: Binding<Bool> {
+        Binding(
+            get: {
+                guard case .loaded(let loadedState) = viewModel.state else { return false }
+                return loadedState.showCloudAccountReviewAlert
+            },
+            set: { newValue in
+                if !newValue {
+                    viewModel.send(.cloudAccountReviewCancelled)
                 }
             }
         )

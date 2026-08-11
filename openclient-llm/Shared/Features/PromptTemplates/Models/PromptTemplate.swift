@@ -50,7 +50,41 @@ nonisolated struct PromptTemplate: Identifiable, Equatable, Sendable, Codable {
 }
 
 nonisolated struct PromptTemplateCloudSnapshot: Sendable {
+    let session: CloudSyncSession
     let templates: [PromptTemplate]
     let templateData: [UUID: Data]
+    let rawTemplates: [UUID: PromptTemplate]
+    let staleTemplateIds: Set<UUID>
     let deletionMarkers: [UUID: CloudDeletionMarker]
+    let templateDirectoryData: [String: Data]
+    let tombstoneDirectoryData: [String: Data]
+    let templateDirectoryExists: Bool
+    let tombstoneDirectoryExists: Bool
+    var purgeMarker: CloudPurgeMarker?
+
+    init(
+        session: CloudSyncSession,
+        templates: [PromptTemplate],
+        templateData: [UUID: Data],
+        rawTemplates: [UUID: PromptTemplate],
+        staleTemplateIds: Set<UUID>,
+        deletionMarkers: [UUID: CloudDeletionMarker],
+        templateDirectoryData: [String: Data],
+        tombstoneDirectoryData: [String: Data],
+        templateDirectoryExists: Bool,
+        tombstoneDirectoryExists: Bool,
+        purgeMarker: CloudPurgeMarker? = nil
+    ) {
+        self.session = session
+        self.templates = templates
+        self.templateData = templateData
+        self.rawTemplates = rawTemplates
+        self.staleTemplateIds = staleTemplateIds
+        self.deletionMarkers = deletionMarkers
+        self.templateDirectoryData = templateDirectoryData
+        self.tombstoneDirectoryData = tombstoneDirectoryData
+        self.templateDirectoryExists = templateDirectoryExists
+        self.tombstoneDirectoryExists = tombstoneDirectoryExists
+        self.purgeMarker = purgeMarker
+    }
 }

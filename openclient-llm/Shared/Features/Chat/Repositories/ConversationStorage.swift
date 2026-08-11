@@ -18,6 +18,7 @@ actor ConversationStorage {
     let deleteAllMarkerURL: URL
     let localResetMarkerURL: URL
     let pendingMutationsURL: URL
+    let pendingDeletionsURL: URL
     let recoveryDirectoryURL: URL
     let cloudSyncManager: CloudSyncManagerProtocol
     let attachmentRepository: AttachmentRepositoryProtocol
@@ -41,6 +42,10 @@ actor ConversationStorage {
             "ConversationPendingMutations",
             isDirectory: true
         )
+        self.pendingDeletionsURL = documentsURL.appendingPathComponent(
+            "ConversationPendingDeletions",
+            isDirectory: true
+        )
         self.recoveryDirectoryURL = documentsURL.appendingPathComponent("ConversationRecovery", isDirectory: true)
         self.cloudSyncManager = cloudSyncManager
         self.attachmentRepository = attachmentRepository
@@ -53,9 +58,16 @@ actor ConversationStorage {
         try ensureDirectoryExists()
         let tombstones = try loadTombstones()
         let marker = try loadDeleteAllMarker()
+        let pendingDeletionIds = try loadPendingDeletionIds()
         return try loadLocalConversations()
-            .filter { shouldKeep($0, tombstones: tombstones, marker: marker) }
-            .sorted { $0.updatedAt > $1.updatedAt }
+            .filter {
+                !pendingDeletionIds.contains($0.id)
+                    && shouldKeep($0, tombstones: tombstones, marker: marker)
+            }
+            .sorted {
+                if $0.updatedAt != $1.updatedAt { return $0.updatedAt > $1.updatedAt }
+                return $0.id.uuidString < $1.id.uuidString
+            }
     }
 
     func save(_ conversation: Conversation) throws {
@@ -88,6 +100,7 @@ actor ConversationStorage {
             try deleteLocally(conversationId)
             return
         }
+        try ensureDirectoryExists()
         guard cloudSyncManager.isCloudAvailable() else {
             throw CloudSyncError.containerUnavailable
         }
@@ -209,33 +222,6 @@ actor ConversationStorage {
 // MARK: - Synchronization
 
 extension ConversationStorage {
-    struct ConversationFiles {
-        var values: [UUID: Conversation] = [:]
-        var data: [UUID: Data] = [:]
-    }
-
-    struct MergedConversation {
-        let conversation: Conversation
-        let data: Data
-        let source: Source
-        let localInlineAttachmentData: [CloudAttachmentKey: Data]
-        let cloudInlineAttachmentData: [CloudAttachmentKey: Data]
-    }
-
-    enum Source: Equatable {
-        case local
-        case cloud
-        case equivalent
-    }
-
-    struct SynchronizationPlan {
-        let output: ConversationCloudSyncOutput
-        let mutatedConversation: Conversation?
-        let resolvedPendingMutationIds: Set<UUID>
-        let localAttachmentKeys: Set<CloudAttachmentKey>
-        let localConflictAttachmentKeys: Set<CloudAttachmentKey>
-    }
-
     @discardableResult
     func synchronize(
         with snapshot: ConversationCloudSyncSnapshot,
@@ -250,13 +236,7 @@ extension ConversationStorage {
             mutation: mutation
         )
         try Task.checkCancellation()
-        try commitSynchronization(
-            output: plan.output,
-            snapshot: snapshot,
-            resolvedPendingMutationIds: plan.resolvedPendingMutationIds,
-            localAttachmentKeys: plan.localAttachmentKeys,
-            localConflictAttachmentKeys: plan.localConflictAttachmentKeys
-        )
+        try commitSynchronization(plan: plan, snapshot: snapshot)
         return plan.mutatedConversation
     }
 
@@ -264,19 +244,21 @@ extension ConversationStorage {
         snapshot: ConversationCloudSyncSnapshot,
         conversationId: UUID?,
         mutationAttachmentData: [CloudAttachmentKey: Data] = [:],
-        additionalTombstones: [ConversationTombstone] = [],
         deleteAllMarkerOverride: ConversationDeleteAllMarker? = nil,
         mutation: ((inout Conversation, [Conversation]) throws -> Void)?
     ) throws -> SynchronizationPlan {
         let local = try loadLocalConversationFiles()
         let localAttachmentData = try loadLocalAttachmentFiles()
-        let localTombstones = try loadTombstones()
         let pendingMutationBases = try loadPendingMutationBases()
+        let pendingDeletionIds = try loadPendingDeletionIds()
         let marker = newestMarker(
             newestMarker(try loadDeleteAllMarker(), snapshot.deleteAllMarker),
             deleteAllMarkerOverride
         )
-        let tombstones = mergeTombstones(localTombstones + snapshot.tombstones + additionalTombstones)
+        let tombstones = try reconciliationTombstones(
+            snapshot: snapshot,
+            pendingDeletionIds: pendingDeletionIds
+        )
         var merged = try mergeConversations(context: MergeContext(
             local: local,
             snapshot: snapshot,
@@ -297,11 +279,7 @@ extension ConversationStorage {
             marker: marker,
             snapshot: snapshot
         )
-        let localAttachmentKeys = try local.values.values.reduce(
-            into: Set<CloudAttachmentKey>()
-        ) { keys, conversation in
-            keys.formUnion(try storedAttachmentKeys(in: conversation))
-        }
+        let localAttachmentKeys = try storedAttachmentKeys(in: Array(local.values.values))
         let localConflictAttachmentKeys = try localConflictAttachmentKeys(
             local: local,
             merged: merged,
@@ -312,9 +290,18 @@ extension ConversationStorage {
             output: output,
             mutatedConversation: mutatedConversation,
             resolvedPendingMutationIds: Set(pendingMutationBases.keys),
+            resolvedPendingDeletionIds: pendingDeletionIds,
             localAttachmentKeys: localAttachmentKeys,
             localConflictAttachmentKeys: localConflictAttachmentKeys
         )
+    }
+
+    func reconciliationTombstones(
+        snapshot: ConversationCloudSyncSnapshot,
+        pendingDeletionIds: Set<UUID>
+    ) throws -> [ConversationTombstone] {
+        let pending = try pendingDeletionIds.map { try deletionTombstone(for: $0, snapshot: snapshot) }
+        return mergeTombstones(try loadTombstones() + snapshot.tombstones + pending)
     }
 
     func makeSyncOutput(
@@ -485,5 +472,11 @@ extension ConversationStorage {
             }
         }
         return keys
+    }
+
+    func storedAttachmentKeys(in conversations: [Conversation]) throws -> Set<CloudAttachmentKey> {
+        try conversations.reduce(into: Set<CloudAttachmentKey>()) { keys, conversation in
+            keys.formUnion(try storedAttachmentKeys(in: conversation))
+        }
     }
 }

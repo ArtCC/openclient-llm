@@ -23,6 +23,7 @@ final class MockMemoryManager: MemoryManagerProtocol, @unchecked Sendable {
     var deleteAllError: Error?
     var synchronizeError: Error?
     var mutationError: Error?
+    var deleteLocalDataCalled = false
 
     // MARK: - MemoryManagerProtocol
 
@@ -55,9 +56,30 @@ final class MockMemoryManager: MemoryManagerProtocol, @unchecked Sendable {
         items.removeAll { $0.id == id }
     }
 
+    func deleteSynchronized(id: UUID) async throws {
+        try await delete(id: id)
+    }
+
     func deleteAll() async throws {
         if let deleteAllError { throw deleteAllError }
         deleteAllCalled = true
         items.removeAll()
+    }
+
+    func deleteLocalData() throws {
+        if let mutationError { throw mutationError }
+        deleteLocalDataCalled = true
+        items.removeAll()
+    }
+
+    func purgeLocalData(through marker: CloudPurgeMarker) throws {
+        if let mutationError { throw mutationError }
+        deleteLocalDataCalled = true
+        items.removeAll { $0.updatedAt <= marker.deletedAt }
+    }
+
+    func validateLocalReset() throws {
+        if let deleteAllError { throw deleteAllError }
+        if let mutationError { throw mutationError }
     }
 }

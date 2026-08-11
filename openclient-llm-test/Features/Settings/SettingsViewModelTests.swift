@@ -18,11 +18,14 @@ final class SettingsViewModelTests: XCTestCase {
     private var mockTestConnection: MockTestServerConnectionUseCase!
     private var mockCheckLiteLLMHealth: MockCheckLiteLLMHealthUseCase!
     var mockSettingsManager: MockSettingsManager!
-    private var mockCloudSyncManager: MockCloudSyncManager!
+    var mockCloudSyncManager: MockCloudSyncManager!
     var mockUserProfileManager: MockUserProfileManager!
     private var mockResetUseCase: MockResetAppDataUseCase!
     var mockFetchSearchTools: MockFetchSearchToolsUseCase!
     var mockSynchronizeAppData: MockSynchronizeAppDataUseCase!
+    var mockEnableCloudSync: MockEnableCloudSyncUseCase!
+    var cloudSyncRuntimeStore: CloudSyncRuntimeStore!
+    var mockCloudAccountAssociation: MockCloudAccountAssociation!
 
     // MARK: - Setup
 
@@ -38,6 +41,9 @@ final class SettingsViewModelTests: XCTestCase {
         mockResetUseCase = MockResetAppDataUseCase()
         mockFetchSearchTools = MockFetchSearchToolsUseCase()
         mockSynchronizeAppData = MockSynchronizeAppDataUseCase()
+        mockEnableCloudSync = MockEnableCloudSyncUseCase()
+        cloudSyncRuntimeStore = CloudSyncRuntimeStore()
+        mockCloudAccountAssociation = MockCloudAccountAssociation()
         sut = SettingsViewModel(
             saveServerConfigurationUseCase: mockSaveServerConfig,
             testServerConnectionUseCase: mockTestConnection,
@@ -46,7 +52,10 @@ final class SettingsViewModelTests: XCTestCase {
             settingsManager: mockSettingsManager,
             cloudSyncManager: mockCloudSyncManager,
             synchronizeAppDataUseCase: mockSynchronizeAppData,
+            cloudSyncCoordinator: mockEnableCloudSync,
             userProfileManager: mockUserProfileManager,
+            cloudSyncRuntimeStore: cloudSyncRuntimeStore,
+            cloudAccountAssociation: mockCloudAccountAssociation,
             resetAppUseCase: mockResetUseCase
         )
     }
@@ -62,11 +71,18 @@ final class SettingsViewModelTests: XCTestCase {
         mockResetUseCase = nil
         mockFetchSearchTools = nil
         mockSynchronizeAppData = nil
+        mockEnableCloudSync = nil
+        cloudSyncRuntimeStore = nil
+        mockCloudAccountAssociation = nil
 
         try await super.tearDown()
     }
+}
 
-    // MARK: - Tests — Init
+// MARK: - Tests
+
+extension SettingsViewModelTests {
+    // MARK: - Init
 
     func test_init_defaultState_isLoading() {
         // Then
@@ -190,39 +206,29 @@ final class SettingsViewModelTests: XCTestCase {
         XCTAssertTrue(loadedState.isSaved)
     }
 
-    func test_send_viewAppeared_loadsCloudAvailability() async {
+    func test_send_viewAppeared_cloudSyncEnabled_setsCheckingWithoutStartingCoordinator() {
         // Given
-        mockCloudSyncManager.cloudAvailable = true
+        mockSettingsManager.isCloudSyncEnabled = true
 
         // When
         sut.send(.viewAppeared)
-        await waitUntil {
-            guard case .loaded(let state) = self.sut.state else { return false }
-            return state.isCloudAvailable
-        }
 
         // Then
-        guard case .loaded(let loadedState) = sut.state else {
-            XCTFail("Expected loaded state")
-            return
-        }
-        XCTAssertTrue(loadedState.isCloudAvailable)
+        XCTAssertEqual(cloudSyncRuntimeStore.status, .checkingAvailability)
+        XCTAssertEqual(mockEnableCloudSync.startCallCount, 0)
+        XCTAssertEqual(mockCloudSyncManager.checkCloudAvailabilityCallCount, 0)
     }
 
-    func test_send_viewAppeared_cloudNotAvailable() async {
+    func test_send_viewAppeared_cloudSyncDisabled_keepsRuntimeDisabled() {
         // Given
-        mockCloudSyncManager.cloudAvailable = false
+        mockSettingsManager.isCloudSyncEnabled = false
 
         // When
         sut.send(.viewAppeared)
-        await waitUntil { self.mockCloudSyncManager.checkCloudAvailabilityCallCount == 1 }
 
         // Then
-        guard case .loaded(let loadedState) = sut.state else {
-            XCTFail("Expected loaded state")
-            return
-        }
-        XCTAssertFalse(loadedState.isCloudAvailable)
+        XCTAssertEqual(cloudSyncRuntimeStore.status, .disabled)
+        XCTAssertEqual(mockEnableCloudSync.startCallCount, 0)
     }
 
     // MARK: - Tests — showTokenUsageToggled
@@ -275,11 +281,14 @@ final class SettingsViewModelTests: XCTestCase {
         }
         XCTAssertFalse(loadedState.showTokenUsage)
     }
+}
 
-    // MARK: - Tests — cloudSyncToggled conflict
+// MARK: - Cloud Conflict Tests
 
+extension SettingsViewModelTests {
     func test_send_cloudSyncToggled_true_showsConflictAlert_whenBothHaveData() async {
         // Given
+        mockEnableCloudSync.result = .success(.profileConflict)
         mockUserProfileManager.localProfile = UserProfile(name: "Local", profileDescription: "", extraInfo: "")
         mockUserProfileManager.cloudProfile = UserProfile(name: "Cloud", profileDescription: "", extraInfo: "")
         sut.send(.viewAppeared)
@@ -297,7 +306,7 @@ final class SettingsViewModelTests: XCTestCase {
             return
         }
         XCTAssertTrue(loadedState.showCloudSyncConflictAlert)
-        XCTAssertFalse(loadedState.isCloudSyncEnabled)
+        XCTAssertTrue(loadedState.isCloudSyncEnabled)
     }
 
     func test_send_cloudSyncToggled_true_enablesDirectly_whenNoConflict() async {
@@ -308,7 +317,7 @@ final class SettingsViewModelTests: XCTestCase {
 
         // When
         sut.send(.cloudSyncToggled(true))
-        await waitUntil { self.mockSettingsManager.isCloudSyncEnabled }
+        await waitUntil { self.mockEnableCloudSync.startCallCount == 1 }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -328,14 +337,15 @@ final class SettingsViewModelTests: XCTestCase {
 
         // When
         sut.send(.cloudSyncToggled(true))
-        await waitUntil { self.mockUserProfileManager.resolvedKeepLocal != nil }
+        await waitUntil { self.mockEnableCloudSync.startCallCount == 1 }
 
         // Then
-        XCTAssertEqual(mockUserProfileManager.resolvedKeepLocal, true)
+        XCTAssertNil(mockUserProfileManager.resolvedKeepLocal)
     }
 
     func test_send_cloudSyncConflictResolved_keepLocal_enablesSyncAndResolvesConflict() async {
         // Given
+        mockEnableCloudSync.result = .success(.profileConflict)
         mockUserProfileManager.localProfile = UserProfile(name: "Local", profileDescription: "", extraInfo: "")
         mockUserProfileManager.cloudProfile = UserProfile(name: "Cloud", profileDescription: "", extraInfo: "")
         sut.send(.viewAppeared)
@@ -347,7 +357,7 @@ final class SettingsViewModelTests: XCTestCase {
 
         // When
         sut.send(.cloudSyncConflictResolved(keepLocal: true))
-        await waitUntil { self.mockSettingsManager.isCloudSyncEnabled }
+        await waitUntil { self.mockUserProfileManager.resolvedKeepLocal == true }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -362,6 +372,7 @@ final class SettingsViewModelTests: XCTestCase {
 
     func test_send_cloudSyncConflictResolved_keepCloud_enablesSyncAndResolvesConflict() async {
         // Given
+        mockEnableCloudSync.result = .success(.profileConflict)
         mockUserProfileManager.localProfile = UserProfile(name: "Local", profileDescription: "", extraInfo: "")
         mockUserProfileManager.cloudProfile = UserProfile(name: "Cloud", profileDescription: "", extraInfo: "")
         sut.send(.viewAppeared)
@@ -373,7 +384,7 @@ final class SettingsViewModelTests: XCTestCase {
 
         // When
         sut.send(.cloudSyncConflictResolved(keepLocal: false))
-        await waitUntil { self.mockSettingsManager.isCloudSyncEnabled }
+        await waitUntil { self.mockUserProfileManager.resolvedKeepLocal == false }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -385,8 +396,9 @@ final class SettingsViewModelTests: XCTestCase {
         XCTAssertEqual(mockUserProfileManager.resolvedKeepLocal, false)
     }
 
-    func test_send_cloudSyncConflictCancelled_dismissesAlertWithoutEnablingSync() async {
+    func test_send_cloudSyncConflictCancelled_dismissesAlertAndRetainsIntent() async {
         // Given
+        mockEnableCloudSync.result = .success(.profileConflict)
         mockUserProfileManager.localProfile = UserProfile(name: "Local", profileDescription: "", extraInfo: "")
         mockUserProfileManager.cloudProfile = UserProfile(name: "Cloud", profileDescription: "", extraInfo: "")
         sut.send(.viewAppeared)
@@ -405,7 +417,7 @@ final class SettingsViewModelTests: XCTestCase {
             return
         }
         XCTAssertFalse(loadedState.showCloudSyncConflictAlert)
-        XCTAssertFalse(loadedState.isCloudSyncEnabled)
+        XCTAssertTrue(loadedState.isCloudSyncEnabled)
     }
 
     // MARK: - Tests — resetConfirmed

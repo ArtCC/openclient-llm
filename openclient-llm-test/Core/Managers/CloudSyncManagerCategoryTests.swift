@@ -52,10 +52,16 @@ final class CloudSyncManagerCategoryTests: XCTestCase {
         // Given
         let provider = SwitchingCloudContainerProvider(url: rootURL)
         let sut = CloudSyncManager(containerProvider: provider)
+        let snapshot = CloudUserProfileSnapshot(
+            session: CloudSyncSession(containerURL: rootURL, identity: Data("first".utf8)),
+            state: .missing,
+            profileData: nil,
+            deletionMarkerData: nil
+        )
 
         // When
         do {
-            try await sut.saveProfileToCloud(UserProfile(name: "Local"))
+            try await sut.applyProfileSyncOutput(.profile(UserProfile(name: "Local")), basedOn: snapshot)
             XCTFail("Expected identity change")
         } catch {
             XCTAssertEqual(error as? CloudSyncError, .containerIdentityChanged)
@@ -75,7 +81,7 @@ final class CloudSyncManagerCategoryTests: XCTestCase {
 
         // When
         do {
-            _ = try await sut.loadProfileFromCloud()
+            _ = try await sut.loadProfileSyncSnapshot()
             XCTFail("Expected pending download")
         } catch {
             XCTAssertEqual(error as? CloudSyncError, .requiredDownloadPending)
@@ -96,7 +102,7 @@ final class CloudSyncManagerCategoryTests: XCTestCase {
         )
 
         // When
-        let state = try await makeManager().loadProfileStateFromCloud()
+        let state = try await makeManager().loadProfileSyncSnapshot().state
 
         // Then
         XCTAssertEqual(state, .deleted(marker))
@@ -116,7 +122,7 @@ final class CloudSyncManagerCategoryTests: XCTestCase {
         try encode(profile).write(to: documentsURL.appendingPathComponent("UserProfile.json"), options: .atomic)
 
         // When
-        let state = try await makeManager().loadProfileStateFromCloud()
+        let state = try await makeManager().loadProfileSyncSnapshot().state
 
         // Then
         XCTAssertEqual(state, .profile(profile))
@@ -133,10 +139,12 @@ final class CloudSyncManagerCategoryTests: XCTestCase {
             options: .atomic
         )
         let stale = UserProfile(name: "Stale", modifiedAt: Date(timeIntervalSince1970: 100))
+        let sut = makeManager()
+        let snapshot = try await sut.loadProfileSyncSnapshot()
 
         // When
         do {
-            try await makeManager().saveProfileToCloud(stale)
+            try await sut.applyProfileSyncOutput(.profile(stale), basedOn: snapshot)
             XCTFail("Expected stale profile rejection")
         } catch {
             // Then
@@ -147,7 +155,7 @@ final class CloudSyncManagerCategoryTests: XCTestCase {
         }
     }
 
-    func test_saveProfile_revisionNewerThanDeletion_recreatesAndClearsMarker() async throws {
+    func test_saveProfile_revisionNewerThanDeletion_recreatesAndRetainsMarker() async throws {
         // Given
         let markerURL = documentsURL.appendingPathComponent("UserProfileDeletion.json")
         let marker = CloudDeletionMarker(
@@ -156,21 +164,23 @@ final class CloudSyncManagerCategoryTests: XCTestCase {
         )
         try encode(marker).write(to: markerURL, options: .atomic)
         let recreated = UserProfile(name: "Recreated", modifiedAt: Date(timeIntervalSince1970: 200))
+        let sut = makeManager()
+        let snapshot = try await sut.loadProfileSyncSnapshot()
 
         // When
-        try await makeManager().saveProfileToCloud(recreated)
+        try await sut.applyProfileSyncOutput(.profile(recreated), basedOn: snapshot)
 
         // Then
-        let state = try await makeManager().loadProfileStateFromCloud()
+        let state = try await sut.loadProfileSyncSnapshot().state
         XCTAssertEqual(state, .profile(recreated))
-        XCTAssertFalse(FileManager.default.fileExists(atPath: markerURL.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: markerURL.path))
     }
 
     func test_deleteMemoryItem_stalePayloadReappears_tombstonePreventsResurrection() async throws {
         // Given
         let item = MemoryItem(content: "Forget me")
         let sut = makeManager()
-        try await sut.saveMemoryToCloud([item])
+        try encode([item]).write(to: documentsURL.appendingPathComponent("Memory.json"), options: .atomic)
         try await sut.deleteMemoryItemFromCloud(item.id, deletedAt: Date())
         try encode([item]).write(to: documentsURL.appendingPathComponent("Memory.json"), options: .atomic)
 
@@ -195,7 +205,7 @@ final class CloudSyncManagerCategoryTests: XCTestCase {
             updatedAt: Date(timeIntervalSince1970: 2_000)
         )
         let sut = makeManager()
-        try await sut.saveMemoryToCloud([recreated])
+        try encode([recreated]).write(to: documentsURL.appendingPathComponent("Memory.json"), options: .atomic)
 
         // When
         try await sut.deleteMemoryItemFromCloud(id, deletedAt: deletedAt)
@@ -210,8 +220,10 @@ final class CloudSyncManagerCategoryTests: XCTestCase {
         // Given
         let template = PromptTemplate(title: "Deleted", content: "Body")
         let sut = makeManager()
-        try await sut.syncTemplatesToCloud([template])
-        try await sut.deleteTemplateFromCloud(template.id, deletedAt: Date())
+        try seedTemplate(template)
+        let snapshot = try await sut.loadTemplatesFromCloud()
+        let marker = CloudDeletionMarker(id: template.id, deletedAt: Date())
+        try await sut.applyTemplateDeletion(marker, basedOn: snapshot)
         let payloadURL = documentsURL.appendingPathComponent("PromptTemplates/\(template.id.uuidString).json")
         try encode(template).write(to: payloadURL, options: .atomic)
 
@@ -239,15 +251,20 @@ final class CloudSyncManagerCategoryTests: XCTestCase {
             updatedAt: Date(timeIntervalSince1970: 3_000)
         )
         let sut = makeManager()
-        try await sut.deleteTemplateFromCloud(id, deletedAt: deletedAt)
-
-        // When
-        try await sut.syncTemplatesToCloud([recreated])
+        let deletionSnapshot = try await sut.loadTemplatesFromCloud()
+        try await sut.applyTemplateDeletion(
+            CloudDeletionMarker(id: id, deletedAt: deletedAt),
+            basedOn: deletionSnapshot
+        )
         let snapshot = try await sut.loadTemplatesFromCloud()
 
+        // When
+        try await sut.applyTemplateUploads([recreated], basedOn: snapshot)
+        let currentSnapshot = try await sut.loadTemplatesFromCloud()
+
         // Then
-        XCTAssertEqual(snapshot.templates, [recreated])
-        XCTAssertNil(snapshot.deletionMarkers[id])
+        XCTAssertEqual(currentSnapshot.templates, [recreated])
+        XCTAssertEqual(currentSnapshot.deletionMarkers[id]?.deletedAt, deletedAt)
     }
 
     // MARK: - Private
@@ -260,6 +277,15 @@ final class CloudSyncManagerCategoryTests: XCTestCase {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         return try encoder.encode(value)
+    }
+
+    private func seedTemplate(_ template: PromptTemplate) throws {
+        let directory = documentsURL.appendingPathComponent("PromptTemplates", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        try encode(template).write(
+            to: directory.appendingPathComponent("\(template.id.uuidString).json"),
+            options: .atomic
+        )
     }
 }
 

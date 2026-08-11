@@ -19,7 +19,7 @@ extension SettingsViewModelTests {
 
         // When
         sut.send(.cloudSyncToggled(true))
-        await waitUntil { self.mockSynchronizeAppData.executeCallCount == 1 }
+        await waitUntil { self.mockEnableCloudSync.startCallCount == 1 }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -28,19 +28,22 @@ extension SettingsViewModelTests {
         }
         XCTAssertTrue(loadedState.isCloudSyncEnabled)
         XCTAssertTrue(mockSettingsManager.isCloudSyncEnabled)
-        XCTAssertEqual(mockSynchronizeAppData.executeCallCount, 1)
+        XCTAssertEqual(mockEnableCloudSync.startCallCount, 1)
     }
 
-    func test_send_cloudSyncToggled_disablesSyncAfterCancellationQuiesces() async {
+    func test_send_cloudSyncToggled_false_cancelsCoordinatorPreflightAndDisablesImmediately() async {
         // Given
-        mockSettingsManager.isCloudSyncEnabled = true
-        sut.send(.viewAppeared)
         let gate = TestAsyncGate()
-        mockSynchronizeAppData.cancelHandler = { await gate.wait() }
+        mockEnableCloudSync.executeHandler = {
+            await gate.wait()
+            return .ready
+        }
+        sut.send(.viewAppeared)
+        sut.send(.cloudSyncToggled(true))
+        await waitUntil { self.mockEnableCloudSync.executeCallCount == 1 }
 
         // When
         sut.send(.cloudSyncToggled(false))
-        await waitUntil { self.mockSynchronizeAppData.cancelCallCount == 1 }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -49,31 +52,33 @@ extension SettingsViewModelTests {
         }
         XCTAssertFalse(loadedState.isCloudSyncEnabled)
         XCTAssertFalse(mockSettingsManager.isCloudSyncEnabled)
+        XCTAssertNil(sut.cloudEnableTask)
+        XCTAssertNil(sut.synchronizationTask)
+        XCTAssertEqual(mockEnableCloudSync.stopCallCount, 1)
+        XCTAssertEqual(cloudSyncRuntimeStore.status, .disabled)
         await gate.open()
-        await waitUntil {
-            guard case .loaded(let state) = self.sut.state else { return false }
-            return !state.isCloudSyncEnabled
-        }
+        await waitUntil { self.mockEnableCloudSync.executeCancellationCallCount == 1 }
     }
 
-    func test_send_cloudSyncToggled_profileDownloadPending_keepsIntentDisabledAndShowsPending() async {
+    func test_send_cloudSyncToggled_profileDownloadPending_keepsIntentEnabledAndShowsPending() async {
         // Given
-        mockUserProfileManager.cloudError = CloudSyncError.requiredDownloadPending
+        mockEnableCloudSync.result = .failure(CloudSyncError.requiredDownloadPending)
         sut.send(.viewAppeared)
 
         // When
         sut.send(.cloudSyncToggled(true))
-        await waitUntil { self.mockUserProfileManager.getCloudProfileCallCount == 1 }
+        await waitUntil { self.mockEnableCloudSync.executeCallCount == 1 }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
             XCTFail("Expected loaded state")
             return
         }
-        XCTAssertFalse(loadedState.isCloudSyncEnabled)
-        XCTAssertFalse(mockSettingsManager.isCloudSyncEnabled)
+        XCTAssertTrue(loadedState.isCloudSyncEnabled)
+        XCTAssertTrue(mockSettingsManager.isCloudSyncEnabled)
         XCTAssertNil(mockUserProfileManager.resolvedKeepLocal)
         XCTAssertEqual(mockSynchronizeAppData.executeCallCount, 0)
+        XCTAssertEqual(mockEnableCloudSync.startCallCount, 1)
     }
 
     func test_send_cloudSyncToggled_true_enablesDirectly_whenBothMatch() async {
@@ -95,6 +100,57 @@ extension SettingsViewModelTests {
         XCTAssertTrue(loadedState.isCloudSyncEnabled)
     }
 
+    func test_send_cloudSyncToggled_unassociated_requiresConfirmationBeforeExplicitApproval() async {
+        // Given
+        mockCloudAccountAssociation.associationState = .unassociated
+        sut.send(.viewAppeared)
+
+        // When
+        sut.send(.cloudSyncToggled(true))
+
+        // Then
+        guard case .loaded(let reviewState) = sut.state else {
+            return XCTFail("Expected loaded state")
+        }
+        XCTAssertTrue(reviewState.showCloudAccountReviewAlert)
+        XCTAssertFalse(reviewState.isCloudSyncEnabled)
+        XCTAssertFalse(mockSettingsManager.isCloudSyncEnabled)
+        XCTAssertEqual(mockEnableCloudSync.approveCurrentAccountCallCount, 0)
+
+        // When
+        sut.send(.cloudAccountReviewConfirmed)
+
+        // Then
+        await waitUntil { self.mockEnableCloudSync.approveCurrentAccountCallCount == 1 }
+        XCTAssertTrue(mockSettingsManager.isCloudSyncEnabled)
+    }
+
+    func test_send_cloudSyncToggled_disableDuringPreflight_doesNotLateReenable() async {
+        // Given
+        let gate = TestAsyncGate()
+        mockEnableCloudSync.executeHandler = {
+            await gate.wait()
+            return .ready
+        }
+        sut.send(.viewAppeared)
+        sut.send(.cloudSyncToggled(true))
+        await waitUntil { self.mockEnableCloudSync.executeCallCount == 1 }
+
+        // When
+        sut.send(.cloudSyncToggled(false))
+        await gate.open()
+        await waitUntil { self.mockEnableCloudSync.executeCancellationCallCount == 1 }
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            return XCTFail("Expected loaded state")
+        }
+        XCTAssertFalse(loadedState.isCloudSyncEnabled)
+        XCTAssertFalse(mockSettingsManager.isCloudSyncEnabled)
+        XCTAssertEqual(cloudSyncRuntimeStore.status, .disabled)
+        XCTAssertEqual(mockSynchronizeAppData.executeCallCount, 0)
+    }
+
     // MARK: - Manual Sync
 
     func test_send_syncNowTapped_partialFailure_retainsCategoryResult() async {
@@ -107,6 +163,8 @@ extension SettingsViewModelTests {
             .promptTemplates: .pendingDownload
         ])
         sut.send(.viewAppeared)
+        let generation = cloudSyncRuntimeStore.begin(.idle(lastSuccessfulSyncAt: nil))
+        cloudSyncRuntimeStore.completePreflight(generation: generation)
 
         // When
         sut.send(.syncNowTapped)
@@ -123,5 +181,54 @@ extension SettingsViewModelTests {
         XCTAssertEqual(loadedState.synchronizationResult?.categories(with: .failed), [.memory])
         XCTAssertEqual(loadedState.synchronizationResult?.categories(with: .pendingDownload), [.promptTemplates])
         XCTAssertFalse(loadedState.synchronizationResult?.isSuccessful ?? true)
+    }
+
+    func test_send_cloudAvailabilityRefresh_enabled_routesThroughCoordinatorPreflight() {
+        // Given
+        mockSettingsManager.isCloudSyncEnabled = true
+        sut.send(.viewAppeared)
+
+        // When
+        sut.send(.cloudAvailabilityRefresh)
+
+        // Then
+        XCTAssertEqual(mockEnableCloudSync.startCallCount, 1)
+        XCTAssertEqual(mockCloudSyncManager.checkCloudAvailabilityCallCount, 0)
+    }
+
+    func test_send_cloudAvailabilityRefresh_whileSynchronizing_doesNotRestartCoordinator() {
+        // Given
+        mockSettingsManager.isCloudSyncEnabled = true
+        sut.send(.viewAppeared)
+        _ = cloudSyncRuntimeStore.begin(.synchronizing)
+
+        // When
+        sut.send(.cloudAvailabilityRefresh)
+
+        // Then
+        XCTAssertEqual(mockEnableCloudSync.startCallCount, 0)
+    }
+
+    func test_send_cloudSyncConflictResolved_disableBeforeApply_cancelsWithoutRestartingCoordinator() async {
+        // Given
+        let gate = TestAsyncGate()
+        mockSettingsManager.isCloudSyncEnabled = true
+        mockUserProfileManager.resolveCloudSyncConflictHandler = { _ in
+            await gate.wait()
+        }
+        sut.send(.viewAppeared)
+        sut.send(.cloudSyncConflictResolved(keepLocal: true))
+        await waitUntil { self.mockUserProfileManager.resolveCloudSyncConflictCallCount == 1 }
+
+        // When
+        sut.send(.cloudSyncToggled(false))
+        await gate.open()
+        await waitUntil { self.mockUserProfileManager.conflictCancellationCallCount == 1 }
+
+        // Then
+        XCTAssertNil(mockUserProfileManager.resolvedKeepLocal)
+        XCTAssertNil(sut.cloudEnableTask)
+        XCTAssertEqual(mockEnableCloudSync.startCallCount, 0)
+        XCTAssertEqual(cloudSyncRuntimeStore.status, .disabled)
     }
 }

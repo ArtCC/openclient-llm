@@ -11,7 +11,7 @@ import XCTest
 
 @MainActor
 final class MemoryManagerCloudDeletionTests: XCTestCase {
-    func test_delete_cloudFailure_retainsIntentAndRetriesWithoutResurrection() async throws {
+    func test_delete_cloudUnavailable_throwsWithoutChangingCanonicalLocalPayload() async throws {
         // Given
         let documentsURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: documentsURL) }
@@ -19,18 +19,19 @@ final class MemoryManagerCloudDeletionTests: XCTestCase {
         let settings = MockSettingsManager()
         let cloud = MockCloudSyncManager()
         let userDefaults = try makeUserDefaults()
-        cloud.cloudAvailable = false
         let item = MemoryItem(content: "Deleted")
-        cloud.cloudMemoryItems = [item]
         let sut = MemoryManager(
             settingsManager: settings,
             cloudSyncManager: cloud,
             documentsURL: documentsURL,
             userDefaults: userDefaults
         )
-        settings.isCloudSyncEnabled = true
         try await sut.add(item)
-        cloud.syncError = CloudSyncError.containerUnavailable
+        let canonicalItems = sut.getItems()
+        let memoryURL = documentsURL.appendingPathComponent("Memory.json")
+        let canonicalData = try Data(contentsOf: memoryURL)
+        settings.isCloudSyncEnabled = true
+        cloud.cloudAvailable = false
 
         // When
         do {
@@ -39,19 +40,10 @@ final class MemoryManagerCloudDeletionTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? CloudSyncError, .containerUnavailable)
         }
-        do {
-            try await sut.synchronize()
-            XCTFail("Expected retained deletion retry to fail")
-        } catch {
-            XCTAssertEqual(error as? CloudSyncError, .containerUnavailable)
-        }
-        cloud.syncError = nil
-        try await sut.synchronize()
-
         // Then
-        XCTAssertFalse(sut.getItems().contains { $0.id == item.id })
-        XCTAssertFalse(cloud.cloudMemoryItems?.contains { $0.id == item.id } ?? true)
-        XCTAssertTrue(FileManager.default.fileExists(
+        XCTAssertEqual(sut.getItems(), canonicalItems)
+        XCTAssertEqual(try Data(contentsOf: memoryURL), canonicalData)
+        XCTAssertFalse(FileManager.default.fileExists(
             atPath: documentsURL.appendingPathComponent("MemoryTombstones.json").path
         ))
     }
@@ -133,6 +125,31 @@ final class MemoryManagerCloudDeletionTests: XCTestCase {
         XCTAssertGreaterThan(recreatedItem.updatedAt, marker.deletedAt)
         XCTAssertEqual(cloud.cloudMemoryItems?.map(\.content), ["Recreated"])
         XCTAssertEqual(cloud.cloudMemoryDeletionMarkers.count, 1)
+    }
+
+    func test_delete_repeatedAfterDurableCloudDeletion_reusesMarker() async throws {
+        // Given
+        let documentsURL = try makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: documentsURL) }
+        let settings = MockSettingsManager()
+        settings.isCloudSyncEnabled = true
+        let cloud = MockCloudSyncManager()
+        let item = MemoryItem(content: "Delete")
+        cloud.cloudMemoryItems = [item]
+        let sut = MemoryManager(
+            settingsManager: settings,
+            cloudSyncManager: cloud,
+            documentsURL: documentsURL,
+            userDefaults: try makeUserDefaults()
+        )
+
+        // When
+        try await sut.delete(id: item.id)
+        let firstDate = cloud.cloudMemoryDeletionMarkers.first { $0.id == item.id }?.deletedAt
+        try await sut.delete(id: item.id)
+
+        // Then
+        XCTAssertEqual(cloud.cloudMemoryDeletionMarkers.first { $0.id == item.id }?.deletedAt, firstDate)
     }
 
     func test_migration_legacyItemWithoutUpdatedAt_verifiesWriteBeforeRemovingSource() async throws {
@@ -256,9 +273,23 @@ private struct SyncResult {
 }
 
 private struct LegacyMemoryItem: Codable {
-    let id = UUID()
+    let id: UUID
     let content: String
-    let isEnabled = true
+    let isEnabled: Bool
     let createdAt: Date
-    let source = MemoryItem.Source.user
+    let source: MemoryItem.Source
+
+    init(
+        id: UUID = UUID(),
+        content: String,
+        isEnabled: Bool = true,
+        createdAt: Date,
+        source: MemoryItem.Source = .user
+    ) {
+        self.id = id
+        self.content = content
+        self.isEnabled = isEnabled
+        self.createdAt = createdAt
+        self.source = source
+    }
 }

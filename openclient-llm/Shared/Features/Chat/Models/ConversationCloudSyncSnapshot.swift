@@ -30,6 +30,38 @@ nonisolated struct ConversationCloudSyncSnapshot: Sendable {
     let deleteAllMarkerData: Data?
     let attachmentData: [CloudAttachmentKey: Data]
     let attachmentPlaceholders: Set<CloudAttachmentKey>
+    let attachmentConversationIds: Set<UUID>
+    var purgeMarker: CloudPurgeMarker?
+
+    init(
+        session: CloudSyncSession,
+        manifestData: Data?,
+        conversations: [UUID: Conversation],
+        conversationData: [UUID: Data],
+        tombstones: [ConversationTombstone],
+        tombstoneData: [UUID: Data],
+        legacyTombstoneData: Data?,
+        deleteAllMarker: ConversationDeleteAllMarker?,
+        deleteAllMarkerData: Data?,
+        attachmentData: [CloudAttachmentKey: Data],
+        attachmentPlaceholders: Set<CloudAttachmentKey>,
+        attachmentConversationIds: Set<UUID> = [],
+        purgeMarker: CloudPurgeMarker? = nil
+    ) {
+        self.session = session
+        self.manifestData = manifestData
+        self.conversations = conversations
+        self.conversationData = conversationData
+        self.tombstones = tombstones
+        self.tombstoneData = tombstoneData
+        self.legacyTombstoneData = legacyTombstoneData
+        self.deleteAllMarker = deleteAllMarker
+        self.deleteAllMarkerData = deleteAllMarkerData
+        self.attachmentData = attachmentData
+        self.attachmentPlaceholders = attachmentPlaceholders
+        self.attachmentConversationIds = attachmentConversationIds
+        self.purgeMarker = purgeMarker
+    }
 }
 
 nonisolated struct ConversationCloudSyncOutput: Sendable {

@@ -142,7 +142,20 @@ actor ConversationSyncCoordinator {
         }
         mutationTasks[id] = task
         defer { mutationTasks[id] = nil }
-        guard let saved = try await task.value else { throw CloudSyncError.staleConversationRevision }
+        let saved: Conversation?
+        do {
+            saved = try await task.value
+        } catch is CancellationError {
+            let retryToken = await self.admissionToken()
+            guard retryToken.generation == operationGeneration else { throw CancellationError() }
+            saved = try await storage.saveSynchronizing(
+                conversation,
+                expectedBase: expectedBase,
+                synchronize: false,
+                preservePendingBase: true
+            )
+        }
+        guard let saved else { throw CloudSyncError.staleConversationRevision }
         return saved
     }
 

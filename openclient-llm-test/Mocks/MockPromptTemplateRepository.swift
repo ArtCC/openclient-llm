@@ -20,6 +20,7 @@ final class MockPromptTemplateRepository: PromptTemplateRepositoryProtocol, @unc
     var savedTemplates: [PromptTemplate] = []
     var deletedIds: [UUID] = []
     var loadCallCount = 0
+    var deleteAllLocalCalled = false
 
     // MARK: - Public
 
@@ -43,5 +44,26 @@ final class MockPromptTemplateRepository: PromptTemplateRepositoryProtocol, @unc
         if let deleteError { throw deleteError }
         deletedIds.append(templateId)
         templates.removeAll { $0.id == templateId }
+    }
+
+    func deleteSynchronized(_ templateId: UUID) async throws {
+        try await delete(templateId)
+    }
+
+    func deleteAllLocal() async throws {
+        if let deleteError { throw deleteError }
+        deleteAllLocalCalled = true
+        templates.removeAll { !$0.isBuiltIn }
+    }
+
+    func purgeLocalData(through marker: CloudPurgeMarker) async throws {
+        if let deleteError { throw deleteError }
+        deleteAllLocalCalled = true
+        templates.removeAll { !$0.isBuiltIn && $0.updatedAt <= marker.deletedAt }
+    }
+
+    func validateLocalReset() async throws {
+        if let deleteError { throw deleteError }
+        if let loadError { throw loadError }
     }
 }

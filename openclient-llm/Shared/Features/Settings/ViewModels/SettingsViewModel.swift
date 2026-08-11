@@ -23,6 +23,9 @@ final class SettingsViewModel {
         case cloudSyncConflictResolved(keepLocal: Bool)
         case cloudSyncConflictCancelled
         case syncNowTapped
+        case cloudSyncRetryTapped
+        case cloudAccountReviewConfirmed
+        case cloudAccountReviewCancelled
         case cloudAvailabilityRefresh
         case showTokenUsageToggled(Bool)
         case webSearchToolNameChanged(String)
@@ -47,9 +50,9 @@ final class SettingsViewModel {
         var connectionStatus: ConnectionStatus = .idle
         var isSaved: Bool = false
         var isCloudSyncEnabled: Bool = false
-        var isCloudAvailable: Bool = false
         var showTokenUsage: Bool = true
         var showCloudSyncConflictAlert: Bool = false
+        var showCloudAccountReviewAlert: Bool = false
         var webSearchToolName: String = ""
         var webSearchMaxResults: Int = 10
         var availableSearchTools: [SearchToolItem] = []
@@ -59,7 +62,6 @@ final class SettingsViewModel {
         var notificationPermissionStatus: NotificationPermissionStatus = .notDetermined
         var isPrivacyScreenEnabled: Bool = true
         var synchronizationResult: AppSynchronizationResult?
-        var isSynchronizing: Bool = false
         var resetErrorMessage: String?
         var availableMCPTools: [MCPToolInfo] = []
         var availableMCPServers: [MCPServerInfo] = []
@@ -77,6 +79,14 @@ final class SettingsViewModel {
 
     var state: State
 
+    var cloudSyncStatus: CloudSyncStatus {
+        cloudSyncRuntimeStore.status
+    }
+
+    var lastSuccessfulCloudSyncAt: Date? {
+        settingsManager.getLastSuccessfulCloudSyncDate()
+    }
+
     private let saveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol
     private let testServerConnectionUseCase: TestServerConnectionUseCaseProtocol
     private let checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol
@@ -85,11 +95,16 @@ final class SettingsViewModel {
     let settingsManager: SettingsManagerProtocol
     let cloudSyncManager: CloudSyncManagerProtocol
     let synchronizeAppDataUseCase: SynchronizeAppDataUseCaseProtocol
+    let cloudSyncCoordinator: CloudSyncRuntimeCoordinating
     let userProfileManager: UserProfileManagerProtocol
+    let cloudSyncRuntimeStore: CloudSyncRuntimeStoreProtocol
+    let cloudAccountAssociation: CloudAccountAssociationProtocol
     private let resetAppUseCase: ResetAppDataUseCaseProtocol
     private let checkNotificationPermissionUseCase: NotificationStatusCheckProtocol
     let notificationPermissionUseCase: NotificationPermissionUseCaseProtocol
     var synchronizationTask: Task<Void, Never>?
+    var cloudEnableTask: Task<Void, Never>?
+    var cloudSyncGeneration = 0
 
     // MARK: - Init
 
@@ -103,7 +118,10 @@ final class SettingsViewModel {
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
         synchronizeAppDataUseCase: SynchronizeAppDataUseCaseProtocol = SynchronizeAppDataUseCase(),
+        cloudSyncCoordinator: CloudSyncRuntimeCoordinating = ConversationCloudObserver.shared,
         userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
+        cloudSyncRuntimeStore: CloudSyncRuntimeStoreProtocol = CloudSyncRuntimeStore.shared,
+        cloudAccountAssociation: CloudAccountAssociationProtocol = CloudAccountAssociation.shared,
         resetAppUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase(),
         checkNotificationPermissionUseCase: NotificationStatusCheckProtocol = CheckNotificationPermissionUseCase(),
         notificationPermissionUseCase: NotificationPermissionUseCaseProtocol = NotificationPermissionUseCase()
@@ -117,7 +135,10 @@ final class SettingsViewModel {
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
         self.synchronizeAppDataUseCase = synchronizeAppDataUseCase
+        self.cloudSyncCoordinator = cloudSyncCoordinator
         self.userProfileManager = userProfileManager
+        self.cloudSyncRuntimeStore = cloudSyncRuntimeStore
+        self.cloudAccountAssociation = cloudAccountAssociation
         self.resetAppUseCase = resetAppUseCase
         self.checkNotificationPermissionUseCase = checkNotificationPermissionUseCase
         self.notificationPermissionUseCase = notificationPermissionUseCase
@@ -138,7 +159,6 @@ extension SettingsViewModel {
             serverURL: getServerBaseURL,
             apiKey: settingsManager.getAPIKey(),
             isCloudSyncEnabled: settingsManager.getIsCloudSyncEnabled(),
-            isCloudAvailable: false,
             showTokenUsage: settingsManager.getShowTokenUsage(),
             webSearchToolName: settingsManager.getWebSearchToolName(),
             webSearchMaxResults: settingsManager.getWebSearchMaxResults(),
@@ -147,8 +167,20 @@ extension SettingsViewModel {
             enabledMCPToolIds: Set(settingsManager.getEnabledMCPToolIds())
         )
         state = .loaded(loadedState)
-        Task { [weak self] in
-            await self?.refreshCloudAvailability()
+        if loadedState.isCloudSyncEnabled {
+            switch cloudAccountAssociation.state() {
+            case .unassociated, .changed:
+                cloudSyncRuntimeStore.publish(.failed(.init(
+                    reason: .accountChanged,
+                    affectedCategories: Set(CloudSyncStatus.DataCategory.allCases)
+                )))
+            case .unavailable, .matched:
+                if cloudSyncRuntimeStore.status == .disabled {
+                    cloudSyncRuntimeStore.publish(.checkingAvailability)
+                }
+            }
+        } else if !loadedState.isCloudSyncEnabled {
+            cloudSyncRuntimeStore.publish(.disabled)
         }
         let serverURL = loadedState.serverURL
         if !serverURL.isEmpty {

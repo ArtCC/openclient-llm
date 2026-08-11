@@ -9,11 +9,29 @@
 import Foundation
 
 @MainActor
-final class ConversationCloudObserver {
+protocol CloudSyncRuntimeCoordinating: AnyObject {
+    func start(profileConflictHandler: (() -> Void)?)
+    func approveCurrentAccount(profileConflictHandler: (() -> Void)?)
+    func stop()
+}
+
+extension CloudSyncRuntimeCoordinating {
+    func start() {
+        start(profileConflictHandler: nil)
+    }
+
+    func approveCurrentAccount() {
+        approveCurrentAccount(profileConflictHandler: nil)
+    }
+}
+
+@MainActor
+final class ConversationCloudObserver: CloudSyncRuntimeCoordinating {
     // MARK: - Properties
 
     static let synchronizedPathComponents = [
         "SyncManifest.json",
+        "CloudPurgeMarker.json",
         "UserProfile.json",
         "UserProfileDeletion.json",
         "Memory.json",
@@ -26,44 +44,54 @@ final class ConversationCloudObserver {
         "ConversationDeleteAll.json",
         "/Attachments"
     ]
+    static let shared = ConversationCloudObserver()
 
-    private let settingsManager: SettingsManagerProtocol
-    private let cloudSyncManager: CloudSyncManagerProtocol
-    private let syncConversationsUseCase: SyncConversationsUseCaseProtocol
-    private let notificationCenter: NotificationCenter
-    private let metadataReadiness: CloudMetadataReadiness
-    private let containerProvider: CloudContainerProviding
-    private let fileManager: FileManager
-    private let metadataDebounceDuration: Duration
-    private var metadataQuery: NSMetadataQuery?
-    private var metadataSession: CloudSyncSession?
-    private var queryObservers: [NSObjectProtocol] = []
-    private var lifecycleObservers: [NSObjectProtocol] = []
-    private var contentFingerprints: [String: ContentFingerprint] = [:]
-    private var hasEstablishedBaseline = false
-    private var synchronizationTask: Task<Void, Never>?
-    private var cancellationTask: Task<Void, Never>?
-    private var metadataDebounceTask: Task<Void, Never>?
-    private var startTask: Task<Void, Never>?
-    private var needsSynchronization = false
-    private var synchronizationGeneration = 0
-    private var startGeneration = 0
+    let settingsManager: SettingsManagerProtocol
+    let cloudSyncManager: CloudSyncManagerProtocol
+    let synchronizeAppDataUseCase: SynchronizeAppDataUseCaseProtocol
+    let enableCloudSyncUseCase: EnableCloudSyncUseCaseProtocol
+    let notificationCenter: NotificationCenter
+    let metadataReadiness: CloudMetadataReadiness
+    let containerProvider: CloudContainerProviding
+    let fileManager: FileManager
+    let metadataDebounceDuration: Duration
+    let runtimeStore: CloudSyncRuntimeStoreProtocol
+    let accountAssociation: CloudAccountAssociationProtocol
+    var metadataQuery: NSMetadataQuery?
+    var metadataSession: CloudSyncSession?
+    var queryObservers: [NSObjectProtocol] = []
+    var lifecycleObservers: [NSObjectProtocol] = []
+    var contentFingerprints: [String: ContentFingerprint] = [:]
+    var hasEstablishedBaseline = false
+    var synchronizationTask: Task<Void, Never>?
+    var cancellationTask: Task<Void, Never>?
+    var metadataDebounceTask: Task<Void, Never>?
+    var startTask: Task<Void, Never>?
+    var needsSynchronization = false
+    var synchronizationGeneration = 0
+    var startGeneration = 0
+    var runtimeGeneration = 0
+    var profileConflictHandler: (() -> Void)?
 
     // MARK: - Init
 
     init(
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
-        syncConversationsUseCase: SyncConversationsUseCaseProtocol = SyncConversationsUseCase(),
+        synchronizeAppDataUseCase: SynchronizeAppDataUseCaseProtocol = SynchronizeAppDataUseCase(),
+        enableCloudSyncUseCase: EnableCloudSyncUseCaseProtocol = EnableCloudSyncUseCase(),
         notificationCenter: NotificationCenter = .default,
         metadataReadiness: CloudMetadataReadiness = .shared,
         containerProvider: CloudContainerProviding? = nil,
         fileManager: FileManager = .default,
-        metadataDebounceDuration: Duration = .milliseconds(500)
+        metadataDebounceDuration: Duration = .milliseconds(500),
+        runtimeStore: CloudSyncRuntimeStoreProtocol = CloudSyncRuntimeStore.shared,
+        accountAssociation: CloudAccountAssociationProtocol = CloudAccountAssociation.shared
     ) {
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
-        self.syncConversationsUseCase = syncConversationsUseCase
+        self.synchronizeAppDataUseCase = synchronizeAppDataUseCase
+        self.enableCloudSyncUseCase = enableCloudSyncUseCase
         self.notificationCenter = notificationCenter
         self.metadataReadiness = metadataReadiness
         self.containerProvider = containerProvider ?? UbiquityCloudContainerProvider(
@@ -72,49 +100,98 @@ final class ConversationCloudObserver {
         )
         self.fileManager = fileManager
         self.metadataDebounceDuration = metadataDebounceDuration
+        self.runtimeStore = runtimeStore
+        self.accountAssociation = accountAssociation
         observeLifecycleChanges()
     }
 
     // MARK: - Public
 
-    func start() {
+    func start(profileConflictHandler: (() -> Void)? = nil) {
+        start(approvingCurrentAccount: false, profileConflictHandler: profileConflictHandler)
+    }
+
+    func approveCurrentAccount(profileConflictHandler: (() -> Void)? = nil) {
+        start(approvingCurrentAccount: true, profileConflictHandler: profileConflictHandler)
+    }
+
+    private func start(
+        approvingCurrentAccount: Bool,
+        profileConflictHandler: (() -> Void)?
+    ) {
         guard settingsManager.getIsCloudSyncEnabled() else {
             stop()
             return
         }
+        self.profileConflictHandler = profileConflictHandler
         startGeneration += 1
         let generation = startGeneration
         startTask?.cancel()
-        let resolution = resolveCurrentSession()
+        resetObservation()
+        guard approvingCurrentAccount || canStartForAssociatedAccount() else { return }
+        let approvalFingerprint = approvingCurrentAccount ? accountAssociation.currentAccountFingerprint() : nil
+        let runtimeGeneration = runtimeStore.begin(.checkingAvailability)
+        self.runtimeGeneration = runtimeGeneration
+        let pendingCancellation = cancellationTask
+        let enableCloudSyncUseCase = enableCloudSyncUseCase
         startTask = Task { [weak self] in
-            let session = await resolution.value
-            guard !Task.isCancelled, let self else { return }
-            completeStart(session: session, generation: generation)
+            await pendingCancellation?.value
+            guard !Task.isCancelled else { return }
+            do {
+                let preflight = try await enableCloudSyncUseCase.execute()
+                guard !Task.isCancelled, let self else { return }
+                await completeEnabledStart(
+                    preflight: preflight,
+                    approvingCurrentAccount: approvingCurrentAccount,
+                    approvalFingerprint: approvalFingerprint,
+                    generation: generation,
+                    runtimeGeneration: runtimeGeneration
+                )
+            } catch {
+                guard let self else { return }
+                completePreflightFailure(
+                    error,
+                    generation: generation,
+                    runtimeGeneration: runtimeGeneration
+                )
+            }
         }
+    }
+
+    private func completeEnabledStart(
+        preflight: CloudSyncEnablementPreflight,
+        approvingCurrentAccount: Bool,
+        approvalFingerprint: String?,
+        generation: Int,
+        runtimeGeneration: Int
+    ) async {
+        guard generation == startGeneration,
+              settingsManager.getIsCloudSyncEnabled() else { return }
+        guard !approvingCurrentAccount || approveAccount(
+            fingerprint: approvalFingerprint,
+            generation: generation,
+            runtimeGeneration: runtimeGeneration
+        ) else { return }
+        guard preflight == .ready else {
+            completeProfileConflict(generation: generation, runtimeGeneration: runtimeGeneration)
+            return
+        }
+        guard runtimeStore.completePreflight(generation: runtimeGeneration) else { return }
+        let session = await resolveCurrentSession().value
+        guard !Task.isCancelled,
+              generation == startGeneration,
+              settingsManager.getIsCloudSyncEnabled(),
+              runtimeStore.isCurrent(generation: runtimeGeneration) else { return }
+        completeStart(session: session, generation: generation, runtimeGeneration: runtimeGeneration)
     }
 
     func stop() {
         startGeneration += 1
         startTask?.cancel()
         startTask = nil
-        metadataReadiness.reset()
-        metadataQuery?.stop()
-        metadataQuery = nil
-        metadataSession = nil
-        hasEstablishedBaseline = false
-        contentFingerprints = [:]
-        for observer in queryObservers {
-            notificationCenter.removeObserver(observer)
-        }
-        queryObservers = []
-        synchronizationGeneration += 1
-        synchronizationTask?.cancel()
-        synchronizationTask = nil
-        metadataDebounceTask?.cancel()
-        metadataDebounceTask = nil
-        needsSynchronization = false
-        let syncUseCase = syncConversationsUseCase
-        cancellationTask = Task { await syncUseCase.cancel() }
+        resetObservation()
+        profileConflictHandler = nil
+        runtimeStore.publish(settingsManager.getIsCloudSyncEnabled() ? .checkingAvailability : .disabled)
     }
 
     func handleMetadataChange() {
@@ -129,38 +206,16 @@ final class ConversationCloudObserver {
         }
     }
 
-    private func completeStart(session: CloudSyncSession?, generation: Int) {
-        guard generation == startGeneration else { return }
-        startTask = nil
-        guard let session else {
-            stop()
-            return
-        }
-        if metadataQuery != nil {
-            guard metadataSession != session else { return }
-            stop()
-            start()
-            return
-        }
-        metadataReadiness.reset()
-        metadataSession = session
-        let query = makeMetadataQuery()
-        let queryReference = MetadataQueryReference(query)
-        queryObservers = [
-            makeGatheringObserver(for: query, reference: queryReference),
-            makeUpdateObserver(for: query, reference: queryReference)
-        ]
-        metadataQuery = query
-        if !query.start() {
-            stop()
-        }
-    }
-
-    private func startSynchronization() {
+    func startSynchronization() {
         guard settingsManager.getIsCloudSyncEnabled(),
               hasEstablishedBaseline,
               let metadataSession,
               metadataReadiness.isReady(for: metadataSession) else { return }
+        synchronizeDetectedChanges()
+    }
+
+    func synchronizeDetectedChanges() {
+        guard settingsManager.getIsCloudSyncEnabled() else { return }
         guard synchronizationTask == nil else {
             needsSynchronization = true
             return
@@ -174,11 +229,11 @@ final class ConversationCloudObserver {
             guard synchronizationGeneration == generation else { return }
             repeat {
                 needsSynchronization = false
-                _ = await syncConversationsUseCase.execute()
+                let result = await synchronizeAppDataUseCase.execute()
                 guard synchronizationGeneration == generation else { return }
                 guard !Task.isCancelled,
                       settingsManager.getIsCloudSyncEnabled() else { break }
-                notificationCenter.post(name: .conversationDidUpdate, object: nil)
+                notifyConsumers(for: result)
             } while needsSynchronization
             if synchronizationGeneration == generation {
                 synchronizationTask = nil
@@ -189,32 +244,6 @@ final class ConversationCloudObserver {
     static func requiresDownload(forDownloadingStatus status: String?) -> Bool {
         guard let status else { return false }
         return status != NSMetadataUbiquitousItemDownloadingStatusCurrent
-    }
-
-    private func metadataState(in query: NSMetadataQuery) -> MetadataState {
-        query.disableUpdates()
-        defer { query.enableUpdates() }
-
-        var latestFingerprints: [String: ContentFingerprint] = [:]
-        var hasPendingDownloads = false
-        for case let item as NSMetadataItem in query.results {
-            guard let path = item.value(forAttribute: NSMetadataItemPathKey) as? String else { continue }
-            let changeDate = item.value(forAttribute: NSMetadataItemFSContentChangeDateKey) as? Date ?? .distantPast
-            let status = item.value(forAttribute: NSMetadataUbiquitousItemDownloadingStatusKey) as? String
-            latestFingerprints[path] = ContentFingerprint(changeDate: changeDate, downloadingStatus: status)
-            guard Self.requiresDownload(forDownloadingStatus: status) else { continue }
-            hasPendingDownloads = true
-            if let url = item.value(forAttribute: NSMetadataItemURLKey) as? URL {
-                try? fileManager.startDownloadingUbiquitousItem(at: url)
-            }
-        }
-
-        let hasContentChanges = latestFingerprints != contentFingerprints
-        contentFingerprints = latestFingerprints
-        return MetadataState(
-            hasContentChanges: hasContentChanges,
-            hasPendingDownloads: hasPendingDownloads
-        )
     }
 
     isolated deinit {
@@ -231,154 +260,4 @@ final class ConversationCloudObserver {
             notificationCenter.removeObserver(observer)
         }
     }
-}
-
-private extension ConversationCloudObserver {
-    // Safety: The query is created on MainActor and accessed only by callbacks delivered on the main queue.
-    final class MetadataQueryReference: @unchecked Sendable {
-        let query: NSMetadataQuery
-
-        init(_ query: NSMetadataQuery) {
-            self.query = query
-        }
-    }
-
-    struct ContentFingerprint: Equatable {
-        let changeDate: Date
-        let downloadingStatus: String?
-    }
-
-    struct MetadataState {
-        let hasContentChanges: Bool
-        let hasPendingDownloads: Bool
-    }
-
-    func resolveCurrentSession() -> Task<CloudSyncSession?, Never> {
-        let cloudSyncManager = cloudSyncManager
-        let containerProvider = containerProvider
-        return Task.detached(priority: .utility) {
-            guard cloudSyncManager.isCloudAvailable() else { return nil }
-            return containerProvider.currentSession()
-        }
-    }
-
-    func makeMetadataQuery() -> NSMetadataQuery {
-        let query = NSMetadataQuery()
-        query.searchScopes = [NSMetadataQueryUbiquitousDocumentsScope]
-        query.predicate = NSCompoundPredicate(
-            orPredicateWithSubpredicates: Self.synchronizedPathComponents.map {
-                NSPredicate(format: "%K CONTAINS %@", NSMetadataItemPathKey, $0)
-            }
-        )
-        return query
-    }
-
-    func establishBaseline(for query: NSMetadataQuery, session: CloudSyncSession) {
-        let resolution = resolveCurrentSession()
-        Task { [weak self] in
-            let currentSession = await resolution.value
-            guard let self,
-                  self.metadataQuery === query,
-                  self.settingsManager.getIsCloudSyncEnabled() else { return }
-            guard currentSession == session else {
-                self.stop()
-                self.start()
-                return
-            }
-            let state = self.metadataState(in: query)
-            guard !state.hasPendingDownloads else {
-                self.metadataReadiness.reset(for: session)
-                return
-            }
-            self.hasEstablishedBaseline = true
-            self.metadataReadiness.setReady(for: session)
-            self.handleMetadataChange()
-        }
-    }
-
-    func makeGatheringObserver(
-        for query: NSMetadataQuery,
-        reference: MetadataQueryReference
-    ) -> NSObjectProtocol {
-        notificationCenter.addObserver(
-            forName: .NSMetadataQueryDidFinishGathering,
-            object: query,
-            queue: .main
-        ) { [weak self, reference] _ in
-            MainActor.assumeIsolated {
-                let query = reference.query
-                guard let self,
-                      self.metadataQuery === query,
-                      let session = self.metadataSession else { return }
-                let state = self.metadataState(in: query)
-                guard !state.hasPendingDownloads else {
-                    self.metadataReadiness.reset(for: session)
-                    return
-                }
-                self.establishBaseline(for: query, session: session)
-            }
-        }
-    }
-
-    func makeUpdateObserver(
-        for query: NSMetadataQuery,
-        reference: MetadataQueryReference
-    ) -> NSObjectProtocol {
-        notificationCenter.addObserver(
-            forName: .NSMetadataQueryDidUpdate,
-            object: query,
-            queue: .main
-        ) { [weak self, reference] _ in
-            MainActor.assumeIsolated {
-                let query = reference.query
-                guard let self,
-                      self.metadataQuery === query,
-                      self.settingsManager.getIsCloudSyncEnabled(),
-                      let session = self.metadataSession else { return }
-                let state = self.metadataState(in: query)
-                guard !state.hasPendingDownloads else {
-                    self.hasEstablishedBaseline = false
-                    self.metadataReadiness.reset(for: session)
-                    return
-                }
-                guard self.hasEstablishedBaseline else {
-                    self.establishBaseline(for: query, session: session)
-                    return
-                }
-                guard state.hasContentChanges else { return }
-                self.handleMetadataChange()
-            }
-        }
-    }
-
-    func observeLifecycleChanges() {
-        let intentObserver = notificationCenter.addObserver(
-            forName: .cloudSyncIntentDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                guard let self else { return }
-                if self.settingsManager.getIsCloudSyncEnabled() {
-                    self.start()
-                } else {
-                    self.stop()
-                }
-            }
-        }
-        let identityObserver = notificationCenter.addObserver(
-            forName: NSNotification.Name.NSUbiquityIdentityDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            MainActor.assumeIsolated {
-                guard let self else { return }
-                self.metadataReadiness.reset()
-                self.stop()
-                self.start()
-            }
-        }
-        lifecycleObservers = [intentObserver, identityObserver]
-    }
-
 }

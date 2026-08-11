@@ -19,7 +19,9 @@ struct ResetAppDataUseCase: ResetAppDataUseCaseProtocol {
     private let conversationRepository: ConversationRepositoryProtocol
     private let userProfileManager: UserProfileManagerProtocol
     private let memoryManager: MemoryManagerProtocol
+    private let promptTemplateRepository: PromptTemplateRepositoryProtocol
     private let categoryOperationGate: CloudCategoryOperationGate
+    private let mutationGate: CloudSynchronizationMutationGate
 
     // MARK: - Init
 
@@ -28,24 +30,35 @@ struct ResetAppDataUseCase: ResetAppDataUseCaseProtocol {
         conversationRepository: ConversationRepositoryProtocol = ConversationRepository(),
         userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
         memoryManager: MemoryManagerProtocol = MemoryManager(),
-        categoryOperationGate: CloudCategoryOperationGate = .shared
+        promptTemplateRepository: PromptTemplateRepositoryProtocol = PromptTemplateRepository(),
+        categoryOperationGate: CloudCategoryOperationGate = .shared,
+        mutationGate: CloudSynchronizationMutationGate = .shared
     ) {
         self.settingsManager = settingsManager
         self.conversationRepository = conversationRepository
         self.userProfileManager = userProfileManager
         self.memoryManager = memoryManager
+        self.promptTemplateRepository = promptTemplateRepository
         self.categoryOperationGate = categoryOperationGate
+        self.mutationGate = mutationGate
     }
 
     // MARK: - Execute
 
     func execute() async throws {
-        try await categoryOperationGate.fence {
-            // Disable cloud sync while profile cloud operations remain fenced.
-            await settingsManager.deleteAll()
-            try await conversationRepository.cancelSynchronizationAndDeleteAll()
-            try await userProfileManager.deleteLocalProfile()
-            try await memoryManager.deleteAll()
+        try await mutationGate.perform {
+            try await self.categoryOperationGate.fence {
+                try await self.conversationRepository.validateLocalReset()
+                try await self.userProfileManager.validateLocalReset()
+                try await self.memoryManager.validateLocalReset()
+                try await self.promptTemplateRepository.validateLocalReset()
+
+                try await self.conversationRepository.cancelSynchronizationAndDeleteAll()
+                try await self.userProfileManager.deleteLocalProfile()
+                try await self.memoryManager.deleteLocalData()
+                try await self.promptTemplateRepository.deleteAllLocal()
+                await self.settingsManager.deleteAll()
+            }
         }
     }
 }

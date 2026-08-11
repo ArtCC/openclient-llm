@@ -10,8 +10,19 @@ This specification is the authoritative contract for OpenClient synchronization 
 Documents container. It covers conversations, attachments, the user profile, memory items, custom prompt templates, and
 the metadata required to reconcile or delete them.
 
-The synchronization implementation must remain file based. SwiftData, CloudKit records, third-party databases, and a
-server-side synchronization service are outside the scope of this feature.
+The synchronization implementation must remain file based through `Codable` and `FileManager`. SwiftData, CloudKit
+records, third-party databases, and a server-side synchronization service are outside the scope of this feature.
+
+## Implementation Status
+
+The file-based iCloud Documents synchronization stabilization was completed in this order:
+
+- [x] Synchronization contract, runtime-state contract, and compatible schema versioning.
+- [x] Testable serialized storage infrastructure and critical correctness fixes.
+- [x] Consistent reconciliation for conversations, attachments, profile, memory, and prompt templates.
+- [x] Accurate Settings state and user communication.
+- [x] Cloud inventory plus durable individual and global deletion.
+- [x] Automated two-device coverage.
 
 ## Core Guarantees
 
@@ -42,13 +53,19 @@ Documents/
   ConversationTombstones.json
   ConversationDeleteAll.json
   UserProfile.json
+  UserProfileDeletion.json
   PromptTemplates/<template UUID>.json
+  PromptTemplateTombstones/<template UUID>.json
   Memory.json
+  MemoryTombstones.json
+  CloudPurgeMarker.json
   SyncManifest.json
 ```
 
 `ConversationTombstones.json` is the legacy aggregate tombstone file. Readers must continue to merge it with per-record
 tombstones while it can exist in shipped installations. New user data must not be stored in synchronization metadata.
+`CloudPurgeMarker.json` is the verified global deletion barrier shared by every category. It is synchronization metadata,
+not an independently manageable user record.
 
 ## Schema Versioning
 
@@ -190,7 +207,6 @@ A synchronization behavior is not complete until it has:
 
 - Unit tests against an injectable temporary cloud root.
 - Deterministic two-device tests with separate local roots and a shared cloud root.
-- Migration fixtures for every shipped representation affected by the change.
 - Tests for local-only, cloud-only, equal, divergent, pending, unavailable, corrupt, deleted, and repeated inputs.
 - iOS and macOS verification.
 - Manual validation with two app installations using a real test iCloud account for placeholder and metadata behavior that

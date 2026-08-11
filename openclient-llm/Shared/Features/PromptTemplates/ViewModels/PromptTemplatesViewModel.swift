@@ -36,6 +36,8 @@ final class PromptTemplatesViewModel {
     private let saveTemplateUseCase: SavePromptTemplateUseCaseProtocol
     private let deleteTemplateUseCase: DeletePromptTemplateUseCaseProtocol
     private let appReviewManager: AppReviewManagerProtocol
+    private let notificationCenter: NotificationCenter
+    private var cloudSyncTask: Task<Void, Never>?
 
     // MARK: - Init
 
@@ -44,13 +46,20 @@ final class PromptTemplatesViewModel {
         loadTemplatesUseCase: LoadPromptTemplatesUseCaseProtocol = LoadPromptTemplatesUseCase(),
         saveTemplateUseCase: SavePromptTemplateUseCaseProtocol = SavePromptTemplateUseCase(),
         deleteTemplateUseCase: DeletePromptTemplateUseCaseProtocol = DeletePromptTemplateUseCase(),
-        appReviewManager: AppReviewManagerProtocol = AppReviewManager()
+        appReviewManager: AppReviewManagerProtocol = AppReviewManager(),
+        notificationCenter: NotificationCenter = .default
     ) {
         self.state = state
         self.loadTemplatesUseCase = loadTemplatesUseCase
         self.saveTemplateUseCase = saveTemplateUseCase
         self.deleteTemplateUseCase = deleteTemplateUseCase
         self.appReviewManager = appReviewManager
+        self.notificationCenter = notificationCenter
+        startObservingCloudChanges()
+    }
+
+    isolated deinit {
+        cloudSyncTask?.cancel()
     }
 
     // MARK: - Input functions
@@ -83,6 +92,18 @@ private extension PromptTemplatesViewModel {
                     customTemplates: [],
                     errorMessage: error.localizedDescription
                 ))
+            }
+        }
+    }
+
+    func startObservingCloudChanges() {
+        cloudSyncTask = Task { [weak self] in
+            guard let self else { return }
+            for await _ in self.notificationCenter.notifications(
+                named: .promptTemplatesDidChangeExternally
+            ) {
+                guard !Task.isCancelled else { break }
+                self.loadTemplates()
             }
         }
     }

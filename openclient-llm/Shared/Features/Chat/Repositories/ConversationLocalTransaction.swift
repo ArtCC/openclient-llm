@@ -15,6 +15,7 @@ nonisolated struct ConversationLocalTransaction {
         var attachments: [CloudAttachmentKey: Data] = [:]
         var absentConversationIds: Set<UUID> = []
         var absentPendingMutationIds: Set<UUID> = []
+        var absentPendingDeletionIds: Set<UUID> = []
         var absentAttachmentKeys: Set<CloudAttachmentKey> = []
         var exactConversationSet = false
         var emptyConversations = false
@@ -29,7 +30,8 @@ nonisolated struct ConversationLocalTransaction {
         "ConversationTombstones.json",
         "ConversationDeleteAll.json",
         "ConversationLocalReset.json",
-        "ConversationPendingMutations"
+        "ConversationPendingMutations",
+        "ConversationPendingDeletions"
     ]
 
     private struct Manifest: Codable {
@@ -237,6 +239,7 @@ private nonisolated extension ConversationLocalTransaction {
         let decoder = SyncJSONCoding.makeDecoder()
         try verifyConversations(verification, decoder: decoder)
         try verifyPendingMutations(verification, decoder: decoder)
+        try verifyPendingDeletions(verification)
         try verifyAttachments(verification)
         try verifyEmptyDirectories(verification)
     }
@@ -274,6 +277,15 @@ private nonisolated extension ConversationLocalTransaction {
         }
         for id in verification.absentPendingMutationIds {
             let url = documentsURL.appendingPathComponent("ConversationPendingMutations/\(id.uuidString).json")
+            guard !fileManager.fileExists(atPath: url.path) else {
+                throw CloudSyncError.invalidConversationData
+            }
+        }
+    }
+
+    func verifyPendingDeletions(_ verification: Verification) throws {
+        for id in verification.absentPendingDeletionIds {
+            let url = documentsURL.appendingPathComponent("ConversationPendingDeletions/\(id.uuidString).json")
             guard !fileManager.fileExists(atPath: url.path) else {
                 throw CloudSyncError.invalidConversationData
             }

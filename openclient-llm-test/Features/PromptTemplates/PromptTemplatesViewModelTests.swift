@@ -18,6 +18,7 @@ final class PromptTemplatesViewModelTests: XCTestCase {
     var mockSaveTemplate: MockSavePromptTemplateUseCase!
     var mockDeleteTemplate: MockDeletePromptTemplateUseCase!
     var mockAppReviewManager: MockAppReviewManager!
+    var notificationCenter: NotificationCenter!
 
     // MARK: - Setup
 
@@ -28,11 +29,13 @@ final class PromptTemplatesViewModelTests: XCTestCase {
         mockSaveTemplate = MockSavePromptTemplateUseCase()
         mockDeleteTemplate = MockDeletePromptTemplateUseCase()
         mockAppReviewManager = MockAppReviewManager()
+        notificationCenter = NotificationCenter()
         sut = PromptTemplatesViewModel(
             loadTemplatesUseCase: mockLoadTemplates,
             saveTemplateUseCase: mockSaveTemplate,
             deleteTemplateUseCase: mockDeleteTemplate,
-            appReviewManager: mockAppReviewManager
+            appReviewManager: mockAppReviewManager,
+            notificationCenter: notificationCenter
         )
     }
 
@@ -42,6 +45,7 @@ final class PromptTemplatesViewModelTests: XCTestCase {
         mockSaveTemplate = nil
         mockDeleteTemplate = nil
         mockAppReviewManager = nil
+        notificationCenter = nil
 
         try await super.tearDown()
     }
@@ -100,6 +104,18 @@ final class PromptTemplatesViewModelTests: XCTestCase {
 
         // When
         sut.send(.viewAppeared)
+        await waitUntil { self.mockLoadTemplates.executeCallCount == 1 }
+
+        // Then
+        XCTAssertEqual(mockLoadTemplates.executeCallCount, 1)
+    }
+
+    func test_notification_promptTemplatesChanged_reloadsTemplates() async {
+        // Given
+        mockLoadTemplates.result = .success([])
+
+        // When
+        notificationCenter.post(name: .promptTemplatesDidChangeExternally, object: nil)
         await waitUntil { self.mockLoadTemplates.executeCallCount == 1 }
 
         // Then

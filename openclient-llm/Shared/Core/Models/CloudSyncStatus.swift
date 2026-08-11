@@ -19,12 +19,14 @@ nonisolated enum CloudSyncStatus: Equatable, Sendable {
         case promptTemplates
     }
 
-    enum UnavailableReason: Equatable, Sendable {
+    enum UnavailableReason: CaseIterable, Equatable, Sendable {
         case accountUnavailable
         case containerUnavailable
     }
 
-    enum FailureReason: Equatable, Sendable {
+    enum FailureReason: CaseIterable, Equatable, Sendable {
+        case accountChanged
+        case profileConflict
         case unsupportedSchema
         case invalidData
         case fileAccess
@@ -37,6 +39,16 @@ nonisolated enum CloudSyncStatus: Equatable, Sendable {
         let affectedCategories: Set<DataCategory>
     }
 
+    struct Issues: Equatable, Sendable {
+        let pendingCategories: Set<DataCategory>
+        let unavailableCategories: [DataCategory: UnavailableReason]
+        let failureReasons: [DataCategory: FailureReason]
+
+        var isEmpty: Bool {
+            pendingCategories.isEmpty && unavailableCategories.isEmpty && failureReasons.isEmpty
+        }
+    }
+
     // MARK: - States
 
     case disabled
@@ -47,4 +59,5 @@ nonisolated enum CloudSyncStatus: Equatable, Sendable {
     case synchronized(lastSuccessfulSyncAt: Date)
     case unavailable(UnavailableReason)
     case failed(Failure)
+    case incomplete(Issues)
 }

@@ -48,8 +48,15 @@ extension ConversationStorage {
     }
 
     func mergeConversations(context: MergeContext) throws -> [MergedConversation] {
-        let ids = Set(context.local.values.keys).union(context.snapshot.conversations.keys)
-        return try ids.compactMap { try mergedConversation(id: $0, context: context) }
+        let ids = Set(context.local.values.keys)
+            .union(context.snapshot.conversations.keys)
+            .sorted { $0.uuidString < $1.uuidString }
+        return try ids.compactMap { try mergedConversation(id: $0, context: context) }.sorted {
+            if $0.conversation.updatedAt != $1.conversation.updatedAt {
+                return $0.conversation.updatedAt > $1.conversation.updatedAt
+            }
+            return $0.conversation.id.uuidString < $1.conversation.id.uuidString
+        }
     }
 
     func mergedConversation(id: UUID, context: MergeContext) throws -> MergedConversation? {

@@ -118,19 +118,11 @@ extension CloudSyncManager {
         return newestById.values.sorted { $0.id.uuidString < $1.id.uuidString }
     }
 
-    func loadProfileState(in documentsURL: URL) throws -> CloudUserProfileState {
-        let profile = try decodeIfPresent(
-            UserProfile.self,
-            at: documentsURL.appendingPathComponent("UserProfile.json")
+    func readPurgeMarker(in documentsURL: URL) throws -> CloudPurgeMarker? {
+        try decodeIfPresent(
+            CloudPurgeMarker.self,
+            at: documentsURL.appendingPathComponent("CloudPurgeMarker.json")
         )
-        let marker = try decodeIfPresent(
-            CloudDeletionMarker.self,
-            at: documentsURL.appendingPathComponent("UserProfileDeletion.json")
-        )
-        guard let marker else { return profile.map(CloudUserProfileState.profile) ?? .missing }
-        guard marker.id == Self.profileMarkerId else { throw CloudSyncError.cloudContentChanged }
-        guard let profile, profile.modifiedAt > marker.deletedAt else { return .deleted(marker) }
-        return .profile(profile)
     }
 
     func requireCategoryFileReady(at url: URL) throws {
@@ -150,7 +142,7 @@ extension CloudSyncManager {
         guard !fileManager.fileExists(atPath: url.path) else { throw CloudSyncError.cloudContentChanged }
     }
 
-    private func makeCategorySession() throws -> CloudSyncSession {
+    func makeCategorySession() throws -> CloudSyncSession {
         guard let session = containerProvider.currentSession() else { throw CloudSyncError.containerUnavailable }
         guard containerProvider.isMetadataReady(for: session) else {
             throw CloudSyncError.requiredDownloadPending
@@ -158,7 +150,7 @@ extension CloudSyncManager {
         return session
     }
 
-    private func validateCategorySession(_ session: CloudSyncSession) throws {
+    func validateCategorySession(_ session: CloudSyncSession) throws {
         guard let current = containerProvider.currentSession() else { throw CloudSyncError.containerUnavailable }
         guard current == session else { throw CloudSyncError.containerIdentityChanged }
         guard containerProvider.isMetadataReady(for: session) else {
@@ -166,14 +158,14 @@ extension CloudSyncManager {
         }
     }
 
-    private func validateCategoryManifest(in documentsURL: URL) throws {
+    func validateCategoryManifest(in documentsURL: URL) throws {
         let url = documentsURL.appendingPathComponent("SyncManifest.json")
         try requireCategoryFileReady(at: url)
         let data = fileManager.fileExists(atPath: url.path) ? try Data(contentsOf: url) : nil
         _ = try CloudSyncManifest.decode(data)
     }
 
-    private func writeCategoryManifestIfNeeded(in documentsURL: URL) throws {
+    func writeCategoryManifestIfNeeded(in documentsURL: URL) throws {
         let url = documentsURL.appendingPathComponent("SyncManifest.json")
         guard !fileManager.fileExists(atPath: url.path) else { return }
         try writeEncoded(CloudSyncManifest.current, to: url)

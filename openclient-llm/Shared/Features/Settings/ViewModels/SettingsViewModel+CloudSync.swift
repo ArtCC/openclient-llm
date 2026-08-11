@@ -12,148 +12,168 @@ extension SettingsViewModel {
     func handleCloudSyncEvent(_ event: Event) {
         switch event {
         case .cloudSyncToggled(let enabled):
-            toggleCloudSync(enabled)
+            if enabled {
+                enableCloudSync()
+            } else {
+                disableCloudSync()
+            }
         case .cloudSyncConflictResolved(let keepLocal):
             resolveCloudSyncConflict(keepLocal: keepLocal)
         case .cloudSyncConflictCancelled:
-            cancelCloudSyncToggle()
+            dismissCloudSyncConflict()
         case .syncNowTapped:
             synchronizeAppData()
+        case .cloudSyncRetryTapped:
+            retryCloudSync()
+        case .cloudAccountReviewConfirmed:
+            approveCloudAccount()
+        case .cloudAccountReviewCancelled:
+            cancelCloudAccountReview()
         default:
             break
         }
     }
 
-    func refreshCloudAvailability() async {
-        let isAvailable = await cloudSyncManager.checkCloudAvailability()
-        guard case .loaded(var loadedState) = state else { return }
-        loadedState.isCloudAvailable = isAvailable
-        loadedState.isCloudSyncEnabled = settingsManager.getIsCloudSyncEnabled()
-        state = .loaded(loadedState)
+    func refreshCloudAvailability() {
+        guard settingsManager.getIsCloudSyncEnabled(),
+              cloudSyncRuntimeStore.status != .synchronizing else { return }
+        cloudSyncCoordinator.start()
     }
 }
 
 // MARK: - Private
 
 private extension SettingsViewModel {
-    func toggleCloudSync(_ enabled: Bool) {
-        guard case .loaded(var loadedState) = state else { return }
-
-        if enabled {
-            loadedState.isSynchronizing = true
-            state = .loaded(loadedState)
-            Task { [weak self] in
-                await self?.enableCloudSyncAfterPreflight()
-            }
-        } else {
-            disableCloudSync(loadedState: loadedState)
+    func enableCloudSync() {
+        guard cloudAccountAssociation.state() == .matched else {
+            presentCloudAccountReview()
+            return
         }
+        activateCloudSync(approvingCurrentAccount: false)
     }
 
-    func disableCloudSync(loadedState: LoadedState) {
-        settingsManager.setIsCloudSyncEnabled(false)
-        var pendingState = loadedState
-        pendingState.synchronizationResult = nil
-        pendingState.isSynchronizing = false
-        state = .loaded(pendingState)
+    func activateCloudSync(approvingCurrentAccount: Bool) {
+        guard case .loaded(var loadedState) = state else { return }
+        cloudSyncGeneration += 1
+        let generation = cloudSyncGeneration
+        cloudEnableTask?.cancel()
+        cloudEnableTask = nil
         synchronizationTask?.cancel()
         synchronizationTask = nil
-        Task { [weak self] in
-            guard let self else { return }
-            await synchronizeAppDataUseCase.cancel()
-            guard !settingsManager.getIsCloudSyncEnabled(),
-                  case .loaded(var currentState) = state else { return }
-            currentState.isCloudSyncEnabled = false
-            currentState.synchronizationResult = nil
-            currentState.isSynchronizing = false
-            state = .loaded(currentState)
+        settingsManager.setIsCloudSyncEnabled(true)
+        loadedState.isCloudSyncEnabled = true
+        loadedState.showCloudSyncConflictAlert = false
+        loadedState.showCloudAccountReviewAlert = false
+        loadedState.synchronizationResult = nil
+        state = .loaded(loadedState)
+        let profileConflictHandler = { [weak self] in
+            guard let self, isCurrentCloudOperation(generation) else { return }
+            presentProfileConflict()
+        }
+        if approvingCurrentAccount {
+            cloudSyncCoordinator.approveCurrentAccount(profileConflictHandler: profileConflictHandler)
+        } else {
+            cloudSyncCoordinator.start(profileConflictHandler: profileConflictHandler)
         }
     }
 
-    func resolveCloudSyncConflict(keepLocal: Bool) {
+    func disableCloudSync() {
         guard case .loaded(var loadedState) = state else { return }
+        cloudSyncGeneration += 1
+        settingsManager.setIsCloudSyncEnabled(false)
+        cloudEnableTask?.cancel()
+        cloudEnableTask = nil
+        synchronizationTask?.cancel()
+        synchronizationTask = nil
+        loadedState.isCloudSyncEnabled = false
         loadedState.showCloudSyncConflictAlert = false
-        loadedState.isSynchronizing = true
+        loadedState.showCloudAccountReviewAlert = false
+        loadedState.synchronizationResult = nil
         state = .loaded(loadedState)
-        Task { [weak self] in
-            guard let self else { return }
-            do {
-                try await userProfileManager.resolveCloudSyncConflict(keepLocal: keepLocal)
-                finishCloudSyncEnablement()
-            } catch {
-                updateCloudPreflightFailure(error)
-            }
-        }
-    }
-
-    func cancelCloudSyncToggle() {
-        guard case .loaded(var loadedState) = state else { return }
-        loadedState.showCloudSyncConflictAlert = false
-        state = .loaded(loadedState)
+        cloudSyncRuntimeStore.publish(.disabled)
+        cloudSyncCoordinator.stop()
     }
 
     func synchronizeAppData() {
         guard case .loaded(let loadedState) = state,
               loadedState.isCloudSyncEnabled,
-              !loadedState.isSynchronizing else { return }
-        var synchronizingState = loadedState
-        synchronizingState.isSynchronizing = true
-        state = .loaded(synchronizingState)
+              synchronizationTask == nil else { return }
+        let generation = cloudSyncGeneration
         synchronizationTask = Task { [weak self] in
             guard let self else { return }
             let result = await synchronizeAppDataUseCase.execute()
-            guard !Task.isCancelled else { return }
-            guard case .loaded(var currentState) = state, currentState.isCloudSyncEnabled else { return }
+            guard !Task.isCancelled, isCurrentCloudOperation(generation) else { return }
+            guard case .loaded(var currentState) = state else { return }
             currentState.synchronizationResult = result
-            currentState.isSynchronizing = false
             currentState.showCloudSyncConflictAlert = !result.categories(with: .conflict).isEmpty
             state = .loaded(currentState)
             synchronizationTask = nil
         }
     }
 
-    func enableCloudSyncAfterPreflight() async {
-        do {
-            let cloudState = try await userProfileManager.getCloudProfileState()
-            let localProfile = userProfileManager.getLocalProfile()
-            guard case .loaded(var loadedState) = state else { return }
-            if case .profile(let cloudProfile) = cloudState,
-               !localProfile.isEmpty,
-               !cloudProfile.isEmpty,
-               localProfile != cloudProfile {
-                loadedState.showCloudSyncConflictAlert = true
-                loadedState.isSynchronizing = false
-                state = .loaded(loadedState)
-                return
+    func resolveCloudSyncConflict(keepLocal: Bool) {
+        guard case .loaded(var loadedState) = state, loadedState.isCloudSyncEnabled else { return }
+        cloudSyncGeneration += 1
+        let generation = cloudSyncGeneration
+        loadedState.showCloudSyncConflictAlert = false
+        state = .loaded(loadedState)
+        cloudSyncRuntimeStore.publish(.synchronizing)
+        cloudEnableTask?.cancel()
+        cloudEnableTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                guard !Task.isCancelled, isCurrentCloudOperation(generation) else { return }
+                try await userProfileManager.resolveCloudSyncConflict(keepLocal: keepLocal)
+                guard !Task.isCancelled, isCurrentCloudOperation(generation) else { return }
+                cloudSyncCoordinator.start()
+            } catch {
+                guard !Task.isCancelled, isCurrentCloudOperation(generation) else { return }
+                cloudSyncRuntimeStore.publish(.failed(.init(
+                    reason: error is CloudSyncManifest.ValidationError ? .unsupportedSchema : .fileAccess,
+                    affectedCategories: [.profile]
+                )))
             }
-            if !localProfile.isEmpty, cloudState != .profile(localProfile) {
-                try await userProfileManager.resolveCloudSyncConflict(keepLocal: true)
-            } else if localProfile.isEmpty, case .profile(let cloudProfile) = cloudState, !cloudProfile.isEmpty {
-                try await userProfileManager.resolveCloudSyncConflict(keepLocal: false)
-            }
-            finishCloudSyncEnablement()
-        } catch {
-            updateCloudPreflightFailure(error)
+            if cloudSyncGeneration == generation { cloudEnableTask = nil }
         }
     }
 
-    func finishCloudSyncEnablement() {
+    func dismissCloudSyncConflict() {
         guard case .loaded(var loadedState) = state else { return }
-        settingsManager.setIsCloudSyncEnabled(true)
-        loadedState.isCloudSyncEnabled = true
-        loadedState.isSynchronizing = false
+        loadedState.showCloudSyncConflictAlert = false
         state = .loaded(loadedState)
-        synchronizeAppData()
     }
 
-    func updateCloudPreflightFailure(_ error: Error) {
+    func retryCloudSync() {
+        if case .failed(let failure) = cloudSyncRuntimeStore.status,
+           failure.reason == .accountChanged {
+            presentCloudAccountReview()
+        } else {
+            enableCloudSync()
+        }
+    }
+
+    func presentCloudAccountReview() {
         guard case .loaded(var loadedState) = state else { return }
-        loadedState.isCloudSyncEnabled = false
-        let outcome: AppSynchronizationResult.Outcome = (error as? CloudSyncError) == .requiredDownloadPending
-            ? .pendingDownload
-            : .failed
-        loadedState.synchronizationResult = AppSynchronizationResult(outcomes: [.profile: outcome])
-        loadedState.isSynchronizing = false
+        loadedState.showCloudAccountReviewAlert = true
         state = .loaded(loadedState)
+    }
+
+    func approveCloudAccount() {
+        activateCloudSync(approvingCurrentAccount: true)
+    }
+
+    func cancelCloudAccountReview() {
+        disableCloudSync()
+    }
+
+    func presentProfileConflict() {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.showCloudSyncConflictAlert = true
+        state = .loaded(loadedState)
+        cloudSyncRuntimeStore.publish(.failed(.init(reason: .profileConflict, affectedCategories: [.profile])))
+    }
+
+    func isCurrentCloudOperation(_ generation: Int) -> Bool {
+        generation == cloudSyncGeneration && settingsManager.getIsCloudSyncEnabled()
     }
 }

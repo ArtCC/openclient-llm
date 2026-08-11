@@ -16,15 +16,23 @@ actor CloudCategoryOperationGate {
     private var isOccupied = false
     private var isFenceRequested = false
     private var waiters: [CheckedContinuation<Void, Never>] = []
+    private let id = UUID()
 
     // MARK: - Public
 
     func perform<Value: Sendable>(
         _ operation: @escaping @Sendable () async throws -> Value
     ) async throws -> Value {
+        if CloudCategoryOperationContext.ownedGateIDs.contains(id) {
+            return try await operation()
+        }
         try await acquireOperation()
         do {
-            let value = try await operation()
+            let value = try await CloudCategoryOperationContext.$ownedGateIDs.withValue(
+                CloudCategoryOperationContext.ownedGateIDs.union([id])
+            ) {
+                try await operation()
+            }
             release()
             return value
         } catch {
@@ -36,9 +44,16 @@ actor CloudCategoryOperationGate {
     func fence<Value: Sendable>(
         _ operation: @escaping @Sendable () async throws -> Value
     ) async throws -> Value {
+        if CloudCategoryOperationContext.ownedGateIDs.contains(id) {
+            return try await operation()
+        }
         await acquireFence()
         do {
-            let value = try await operation()
+            let value = try await CloudCategoryOperationContext.$ownedGateIDs.withValue(
+                CloudCategoryOperationContext.ownedGateIDs.union([id])
+            ) {
+                try await operation()
+            }
             isFenceRequested = false
             release()
             return value
@@ -48,6 +63,10 @@ actor CloudCategoryOperationGate {
             throw error
         }
     }
+}
+
+private nonisolated enum CloudCategoryOperationContext {
+    @TaskLocal static var ownedGateIDs: Set<UUID> = []
 }
 
 // MARK: - Private

@@ -89,27 +89,48 @@ private extension CloudSyncManager {
         let conversationResult = try loadConversations(in: documentsURL)
         let tombstoneResult = try loadTombstones(in: documentsURL)
         let markerResult = try loadDeleteAllMarker(in: documentsURL)
-        let attachmentResult = try loadAttachments(in: documentsURL)
+        let purgeMarker = try readPurgeMarker(in: documentsURL)
+        let tombstoneDates = Dictionary(grouping: tombstoneResult.values, by: \.conversationId).mapValues { values in
+            values.map(\.deletedAt).max() ?? .distantPast
+        }
+        let effectiveMarkerDate = [markerResult.value?.deletedAt, purgeMarker?.deletedAt]
+            .compactMap { $0 }
+            .max()
+        let eligibleConversations = conversationResult.values.filter { _, conversation in
+            let barriers = [effectiveMarkerDate, tombstoneDates[conversation.id]].compactMap { $0 }
+            guard let barrier = barriers.max() else { return true }
+            return conversation.updatedAt > barrier
+        }
+        let eligibleIDs = Set(eligibleConversations.keys)
+        let attachmentResult = try loadAttachments(
+            in: documentsURL,
+            conversations: eligibleConversations
+        )
 
         return ConversationCloudSyncSnapshot(
             session: session,
             manifestData: manifestData,
-            conversations: conversationResult.values,
-            conversationData: conversationResult.data,
+            conversations: eligibleConversations,
+            conversationData: conversationResult.data.filter { eligibleIDs.contains($0.key) },
             tombstones: tombstoneResult.values,
             tombstoneData: tombstoneResult.data,
             legacyTombstoneData: tombstoneResult.legacyData,
-            deleteAllMarker: markerResult.value,
+            deleteAllMarker: effectiveMarkerDate.map(ConversationDeleteAllMarker.init(deletedAt:)),
             deleteAllMarkerData: markerResult.data,
             attachmentData: attachmentResult.data,
-            attachmentPlaceholders: attachmentResult.placeholders
+            attachmentPlaceholders: attachmentResult.placeholders,
+            attachmentConversationIds: attachmentResult.conversationIds,
+            purgeMarker: purgeMarker
         )
     }
 
     func loadConversations(in documentsURL: URL) throws -> RecordFiles<Conversation> {
         let directory = documentsURL.appendingPathComponent("Conversations", isDirectory: true)
+        try requireDownloadedFile(at: directory)
         guard fileManager.fileExists(atPath: directory.path) else { return RecordFiles() }
-        let files = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+        let files = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil).sorted {
+            $0.lastPathComponent < $1.lastPathComponent
+        }
         try requireNoPlaceholders(in: files)
         let decoder = SyncJSONCoding.makeDecoder()
         var values: [UUID: Conversation] = [:]
@@ -120,6 +141,9 @@ private extension CloudSyncManager {
             let conversation = try decoder.decode(Conversation.self, from: data)
             try conversation.validateContextMetadata()
             guard UUID(uuidString: url.deletingPathExtension().lastPathComponent) == conversation.id else {
+                throw CloudSyncError.invalidConversationData
+            }
+            guard values[conversation.id] == nil else {
                 throw CloudSyncError.invalidConversationData
             }
             values[conversation.id] = conversation
@@ -135,6 +159,7 @@ private extension CloudSyncManager {
         let decoder = SyncJSONCoding.makeDecoder()
         var tombstones = try legacyData.map { try decoder.decode([ConversationTombstone].self, from: $0) } ?? []
         let directory = documentsURL.appendingPathComponent("ConversationTombstones", isDirectory: true)
+        try requireDownloadedFile(at: directory)
         guard fileManager.fileExists(atPath: directory.path) else {
             return TombstoneFiles(values: tombstones, data: [:], legacyData: legacyData)
         }
@@ -162,69 +187,42 @@ private extension CloudSyncManager {
         return MarkerFile(value: marker, data: data)
     }
 
-    func loadAttachments(in documentsURL: URL) throws -> AttachmentFiles {
+    func loadAttachments(
+        in documentsURL: URL,
+        conversations: [UUID: Conversation]
+    ) throws -> AttachmentFiles {
         let resolver = AttachmentFileResolver(fileManager: fileManager, baseURL: documentsURL)
         let directory = try resolver.attachmentRoot()
+        try requireDownloadedFile(at: directory)
         guard fileManager.fileExists(atPath: directory.path) else { return AttachmentFiles() }
         let folders = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+        let attachmentKeys = try referencedAttachmentKeys(in: Array(conversations.values))
+        let requiredConversationIds = Set(attachmentKeys.map(\.conversationId))
+        try requestAttachmentDirectories(in: folders, requiredConversationIds: requiredConversationIds)
         var dataByKey: [CloudAttachmentKey: Data] = [:]
         var placeholders = Set<CloudAttachmentKey>()
+        var conversationIds = Set<UUID>()
         for folder in folders {
-            let folderValues = try folder.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
-            guard folderValues.isDirectory == true,
-                  folderValues.isSymbolicLink != true,
-                  let conversationId = UUID(uuidString: folder.lastPathComponent) else { continue }
-            _ = try resolver.conversationDirectory(conversationId)
-            let files = try fileManager.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
-            for url in files {
-                let values = try url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey])
-                guard values.isDirectory != true else { continue }
-                guard values.isSymbolicLink != true else { throw CloudSyncError.invalidAttachmentPath }
-                if let fileName = placeholderFileName(for: url) {
-                    let key = CloudAttachmentKey(conversationId: conversationId, fileName: fileName)
-                    placeholders.insert(key)
-                    try? fileManager.startDownloadingUbiquitousItem(at: url)
-                    continue
-                }
-                let key = CloudAttachmentKey(conversationId: conversationId, fileName: url.lastPathComponent)
-                let resolvedURL = try resolver.resolve(
-                    relativePath: ConversationAttachmentPath.relativePath(for: key)
-                )
-                if try requiresDownload(at: resolvedURL) {
-                    placeholders.insert(key)
-                } else {
-                    dataByKey[key] = try Data(contentsOf: resolvedURL)
-                }
+            if let placeholderName = placeholderFileName(for: folder),
+               let conversationId = UUID(uuidString: placeholderName) {
+                conversationIds.insert(conversationId)
+                continue
             }
+            let conversationId = try loadAttachmentFolder(
+                folder,
+                resolver: resolver,
+                dataByKey: &dataByKey,
+                placeholders: &placeholders
+            )
+            conversationIds.insert(conversationId)
         }
-        return AttachmentFiles(data: dataByKey, placeholders: placeholders)
+        return AttachmentFiles(
+            data: dataByKey,
+            placeholders: placeholders,
+            conversationIds: conversationIds
+        )
     }
 
-    func requireNoPlaceholders(in files: [URL]) throws {
-        let placeholders = files.filter { placeholderFileName(for: $0) != nil }
-        for placeholder in placeholders {
-            try? fileManager.startDownloadingUbiquitousItem(at: placeholder)
-        }
-        if !placeholders.isEmpty {
-            throw CloudSyncError.requiredDownloadPending
-        }
-    }
-
-    func requireDownloadedFile(at url: URL) throws {
-        let placeholder = url.deletingLastPathComponent().appendingPathComponent(".\(url.lastPathComponent).icloud")
-        if fileManager.fileExists(atPath: placeholder.path) {
-            try? fileManager.startDownloadingUbiquitousItem(at: placeholder)
-            throw CloudSyncError.requiredDownloadPending
-        }
-        if fileManager.fileExists(atPath: url.path), try requiresDownload(at: url) {
-            throw CloudSyncError.requiredDownloadPending
-        }
-    }
-
-    func dataIfPresent(at url: URL) throws -> Data? {
-        guard fileManager.fileExists(atPath: url.path) else { return nil }
-        return try Data(contentsOf: url)
-    }
 }
 
 // MARK: - Apply
@@ -239,11 +237,13 @@ private extension CloudSyncManager {
               current.conversationData == snapshot.conversationData,
               current.tombstoneData == snapshot.tombstoneData,
               current.legacyTombstoneData == snapshot.legacyTombstoneData,
-              current.deleteAllMarkerData == snapshot.deleteAllMarkerData else {
+              current.deleteAllMarkerData == snapshot.deleteAllMarkerData,
+              current.purgeMarker == snapshot.purgeMarker else {
             throw CloudSyncError.cloudContentChanged
         }
         guard current.attachmentData == snapshot.attachmentData,
-              current.attachmentPlaceholders == snapshot.attachmentPlaceholders else {
+              current.attachmentPlaceholders == snapshot.attachmentPlaceholders,
+              current.attachmentConversationIds == snapshot.attachmentConversationIds else {
             throw CloudSyncError.cloudContentChanged
         }
     }
@@ -255,6 +255,10 @@ private extension CloudSyncManager {
     ) throws {
         try Task.checkCancellation()
         try validateOutput(output)
+        if let purgeDate = snapshot.purgeMarker?.deletedAt,
+           output.conversations.contains(where: { $0.updatedAt <= purgeDate }) {
+            throw CloudSyncError.staleConversationRevision
+        }
         try validate(snapshot.session)
         let documentsURL = containerURL.appendingPathComponent("Documents", isDirectory: true)
         try fileManager.createDirectory(at: documentsURL, withIntermediateDirectories: true)
@@ -466,6 +470,7 @@ private extension CloudSyncManager {
     nonisolated struct AttachmentFiles: Sendable {
         var data: [CloudAttachmentKey: Data] = [:]
         var placeholders: Set<CloudAttachmentKey> = []
+        var conversationIds: Set<UUID> = []
     }
 
     func referencedAttachmentKeys(in conversations: [Conversation]) throws -> Set<CloudAttachmentKey> {
@@ -480,14 +485,4 @@ private extension CloudSyncManager {
         return keys
     }
 
-    func placeholderFileName(for url: URL) -> String? {
-        let name = url.lastPathComponent
-        guard name.hasPrefix("."), name.hasSuffix(".icloud") else { return nil }
-        return String(name.dropFirst().dropLast(".icloud".count))
-    }
-
-    func isDirectory(_ url: URL) -> Bool {
-        var isDirectory: ObjCBool = false
-        return fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
-    }
 }

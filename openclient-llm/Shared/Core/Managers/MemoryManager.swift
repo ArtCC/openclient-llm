@@ -9,8 +9,28 @@
 import Foundation
 
 nonisolated struct MemoryCloudSyncSnapshot: Sendable {
+    let session: CloudSyncSession
     let items: [MemoryItem]?
     let deletionMarkers: [CloudDeletionMarker]
+    let memoryData: Data?
+    let deletionMarkerData: Data?
+    var purgeMarker: CloudPurgeMarker?
+
+    init(
+        session: CloudSyncSession,
+        items: [MemoryItem]?,
+        deletionMarkers: [CloudDeletionMarker],
+        memoryData: Data?,
+        deletionMarkerData: Data?,
+        purgeMarker: CloudPurgeMarker? = nil
+    ) {
+        self.session = session
+        self.items = items
+        self.deletionMarkers = deletionMarkers
+        self.memoryData = memoryData
+        self.deletionMarkerData = deletionMarkerData
+        self.purgeMarker = purgeMarker
+    }
 }
 
 protocol MemoryManagerProtocol: Sendable {
@@ -19,7 +39,11 @@ protocol MemoryManagerProtocol: Sendable {
     func add(_ item: MemoryItem) async throws
     func update(_ item: MemoryItem) async throws
     func delete(id: UUID) async throws
+    func deleteSynchronized(id: UUID) async throws
     func deleteAll() async throws
+    func deleteLocalData() throws
+    func purgeLocalData(through marker: CloudPurgeMarker) throws
+    func validateLocalReset() throws
 }
 
 /// Manages the persistent memory list with optional iCloud sync.
@@ -27,7 +51,6 @@ protocol MemoryManagerProtocol: Sendable {
 /// Local and cloud records are reconciled by ID and revision when iCloud sync is enabled.
 ///
 /// Safety: FileManager operations are thread-safe for different paths. Cloud operations are async.
-/// `metadataQuery` and `queryObserver` are touched only on the main actor.
 final class MemoryManager: MemoryManagerProtocol, @unchecked Sendable {
     // MARK: - Properties
 
@@ -46,13 +69,12 @@ final class MemoryManager: MemoryManagerProtocol, @unchecked Sendable {
 
     private let settingsManager: SettingsManagerProtocol
     private let cloudSyncManager: CloudSyncManagerProtocol
+    private let mutationGate: CloudSynchronizationMutationGate
     private let categoryOperationGate: CloudCategoryOperationGate
     private let userDefaults: UserDefaults
     private let localFileURL: URL?
     private let localDeletionFileURL: URL?
     private let localRecoveryFileURL: URL?
-    private nonisolated(unsafe) var metadataQuery: NSMetadataQuery?
-    private nonisolated(unsafe) var queryObserver: NSObjectProtocol?
 
     // MARK: - Init
 
@@ -61,10 +83,12 @@ final class MemoryManager: MemoryManagerProtocol, @unchecked Sendable {
         cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
         documentsURL: URL? = nil,
         userDefaults: UserDefaults = .standard,
+        mutationGate: CloudSynchronizationMutationGate = .shared,
         categoryOperationGate: CloudCategoryOperationGate = .shared
     ) {
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
+        self.mutationGate = mutationGate
         self.categoryOperationGate = categoryOperationGate
         self.userDefaults = userDefaults
         let resolvedDocumentsURL = documentsURL
@@ -72,14 +96,6 @@ final class MemoryManager: MemoryManagerProtocol, @unchecked Sendable {
         self.localFileURL = resolvedDocumentsURL?.appendingPathComponent(Self.fileName)
         self.localDeletionFileURL = resolvedDocumentsURL?.appendingPathComponent(Self.deletionFileName)
         self.localRecoveryFileURL = resolvedDocumentsURL?.appendingPathComponent(Self.recoveryFileName)
-        startMonitoringCloudFile()
-    }
-
-    deinit {
-        metadataQuery?.stop()
-        if let queryObserver {
-            NotificationCenter.default.removeObserver(queryObserver)
-        }
     }
 
     // MARK: - Public
@@ -91,35 +107,79 @@ final class MemoryManager: MemoryManagerProtocol, @unchecked Sendable {
     }
 
     func synchronize() async throws {
-        guard settingsManager.getIsCloudSyncEnabled() else { return }
-        try await performSerializedIfNeeded { [self] in
+        let requiredCloudIntent = settingsManager.getIsCloudSyncEnabled()
+        guard requiredCloudIntent else { return }
+        try await performSerializedIfNeeded(requiredCloudIntent: requiredCloudIntent) { [self] in
             try migrateFromUserDefaultsIfNeeded()
-            try await reconcile(localItems: loadFromLocal())
+            try await reconcile(localItems: loadFromLocal(), requiredCloudIntent: requiredCloudIntent)
         }
     }
 
     func add(_ item: MemoryItem) async throws {
-        try await performSerializedIfNeeded { [self] in
-            try await addItem(item)
+        let requiredCloudIntent = settingsManager.getIsCloudSyncEnabled()
+        try await performSerializedIfNeeded(requiredCloudIntent: requiredCloudIntent) { [self] in
+            try await addItem(item, requiredCloudIntent: requiredCloudIntent)
         }
     }
 
     func update(_ item: MemoryItem) async throws {
-        try await performSerializedIfNeeded { [self] in
-            try await updateItem(item)
+        let requiredCloudIntent = settingsManager.getIsCloudSyncEnabled()
+        try await performSerializedIfNeeded(requiredCloudIntent: requiredCloudIntent) { [self] in
+            try await updateItem(item, requiredCloudIntent: requiredCloudIntent)
         }
     }
 
     func delete(id: UUID) async throws {
-        try await performSerializedIfNeeded { [self] in
-            try await deleteItem(id: id)
+        let requiredCloudIntent = settingsManager.getIsCloudSyncEnabled()
+        try await performSerializedIfNeeded(requiredCloudIntent: requiredCloudIntent) { [self] in
+            try await deleteItem(id: id, requiredCloudIntent: requiredCloudIntent)
+        }
+    }
+
+    func deleteSynchronized(id: UUID) async throws {
+        guard settingsManager.getIsCloudSyncEnabled() else {
+            throw CloudDataManagementError.cloudSyncDisabled
+        }
+        try await performSerializedIfNeeded(requiredCloudIntent: true) { [self] in
+            try await deleteItem(id: id, requiredCloudIntent: true)
         }
     }
 
     func deleteAll() async throws {
-        try await performSerializedIfNeeded { [self] in
-            try await deleteAllItems()
+        let requiredCloudIntent = settingsManager.getIsCloudSyncEnabled()
+        try await performSerializedIfNeeded(requiredCloudIntent: requiredCloudIntent) { [self] in
+            try await deleteAllItems(requiredCloudIntent: requiredCloudIntent)
         }
+    }
+
+    func deleteLocalData() throws {
+        try migrateFromUserDefaultsIfNeeded()
+        try saveToLocal([])
+        try saveDeletionMarkers([])
+        if let localRecoveryFileURL, FileManager.default.fileExists(atPath: localRecoveryFileURL.path) {
+            try FileManager.default.removeItem(at: localRecoveryFileURL)
+        }
+    }
+
+    func purgeLocalData(through marker: CloudPurgeMarker) throws {
+        try migrateFromUserDefaultsIfNeeded()
+        try saveToLocal(try loadFromLocal().filter { $0.updatedAt > marker.deletedAt })
+        try saveDeletionMarkers(try loadDeletionMarkers().filter { $0.deletedAt > marker.deletedAt })
+        if let localRecoveryFileURL,
+           let recoveryItems = try decodeIfPresent([MemoryItem].self, at: localRecoveryFileURL) {
+            let retained = recoveryItems.filter { $0.updatedAt > marker.deletedAt }
+            if retained.isEmpty {
+                try FileManager.default.removeItem(at: localRecoveryFileURL)
+            } else {
+                try writeAndValidate(retained.sorted(by: recoverySort), to: localRecoveryFileURL)
+            }
+        }
+    }
+
+    func validateLocalReset() throws {
+        _ = try loadFromLocal()
+        _ = try loadDeletionMarkers()
+        _ = try decodeIfPresent([MemoryItem].self, at: localRecoveryFileURL)
     }
 }
 
@@ -131,9 +191,14 @@ private extension MemoryManager {
         let losingItems: [MemoryItem]
     }
 
-    func addItem(_ item: MemoryItem) async throws {
+    func addItem(_ item: MemoryItem, requiredCloudIntent: Bool) async throws {
         try migrateFromUserDefaultsIfNeeded()
         var newItem = item
+        if requiredCloudIntent,
+           let purgeMarker = try await cloudSyncManager.loadCloudPurgeMarker(),
+           newItem.updatedAt <= purgeMarker.deletedAt {
+            newItem.updatedAt = nextRevision(after: purgeMarker.deletedAt)
+        }
         let markers = try loadDeletionMarkers()
         if let marker = markers.first(where: { $0.id == item.id }), newItem.updatedAt <= marker.deletedAt {
             newItem.updatedAt = nextRevision(after: marker.deletedAt)
@@ -141,10 +206,10 @@ private extension MemoryManager {
         var items = applying(markers, to: try loadFromLocal())
         items.removeAll { $0.id == newItem.id }
         items.append(newItem)
-        try await persist(items)
+        try await persist(items, requiredCloudIntent: requiredCloudIntent)
     }
 
-    func updateItem(_ item: MemoryItem) async throws {
+    func updateItem(_ item: MemoryItem, requiredCloudIntent: Bool) async throws {
         try migrateFromUserDefaultsIfNeeded()
         let markers = try loadDeletionMarkers()
         var items = applying(markers, to: try loadFromLocal())
@@ -152,37 +217,47 @@ private extension MemoryManager {
         var revisedItem = item
         revisedItem.updatedAt = nextRevision(after: items[index].updatedAt)
         items[index] = revisedItem
-        try await persist(items)
+        try await persist(items, requiredCloudIntent: requiredCloudIntent)
     }
 
-    func deleteItem(id: UUID) async throws {
+    func deleteItem(id: UUID, requiredCloudIntent: Bool) async throws {
         try migrateFromUserDefaultsIfNeeded()
         let items = try loadFromLocal()
         var markers = try loadDeletionMarkers()
         var relevantItems = items.filter { $0.id == id }
-        if settingsManager.getIsCloudSyncEnabled() {
+        if requiredCloudIntent {
             let snapshot = try await cloudSyncManager.loadMemorySyncSnapshot()
+            try checkCloudIntent(requiredCloudIntent)
             markers = mergeDeletionMarkers(markers, snapshot.deletionMarkers)
             relevantItems += (snapshot.items ?? []).filter { $0.id == id }
         }
+        if relevantItems.isEmpty, let existing = markers.first(where: { $0.id == id }) {
+            if requiredCloudIntent {
+                try await cloudSyncManager.deleteMemoryItemFromCloud(id, deletedAt: existing.deletedAt)
+            }
+            return
+        }
         let newestRevision = relevantItems.map(\.updatedAt).max() ?? Date()
         let deletionFloor = max(newestRevision, markers.first { $0.id == id }?.deletedAt ?? .distantPast)
-        let marker = CloudDeletionMarker(id: id, deletedAt: nextRevision(after: deletionFloor))
+        let proposedMarker = CloudDeletionMarker(id: id, deletedAt: nextRevision(after: deletionFloor))
+        let markerData = try makeEncoder().encode(proposedMarker)
+        let marker = try makeDecoder().decode(CloudDeletionMarker.self, from: markerData)
         markers = mergeDeletionMarkers(markers, [marker])
         try saveDeletionMarkers(markers)
         try saveToLocal(items.filter { $0.id != id })
-        if settingsManager.getIsCloudSyncEnabled() {
+        if requiredCloudIntent {
             try await cloudSyncManager.deleteMemoryItemFromCloud(id, deletedAt: marker.deletedAt)
         }
     }
 
-    func deleteAllItems() async throws {
+    func deleteAllItems(requiredCloudIntent: Bool) async throws {
         try migrateFromUserDefaultsIfNeeded()
         let items = try loadFromLocal()
         var allItems = items
         var markers = try loadDeletionMarkers()
-        if settingsManager.getIsCloudSyncEnabled() {
+        if requiredCloudIntent {
             let snapshot = try await cloudSyncManager.loadMemorySyncSnapshot()
+            try checkCloudIntent(requiredCloudIntent)
             allItems += snapshot.items ?? []
             markers = mergeDeletionMarkers(markers, snapshot.deletionMarkers)
         }
@@ -195,19 +270,24 @@ private extension MemoryManager {
         markers = mergeDeletionMarkers(markers, newMarkers)
         try saveDeletionMarkers(markers)
         try saveToLocal([])
-        guard settingsManager.getIsCloudSyncEnabled() else { return }
+        guard requiredCloudIntent else { return }
         try await retryCloudDeletions()
     }
 
     func performSerializedIfNeeded(
+        requiredCloudIntent: Bool,
         _ operation: @escaping @MainActor @Sendable () async throws -> Void
     ) async throws {
-        if settingsManager.getIsCloudSyncEnabled() {
-            try await categoryOperationGate.perform {
-                try await operation()
+        if requiredCloudIntent {
+            try await mutationGate.perform {
+                try await self.checkCloudIntent(requiredCloudIntent)
+                try await self.categoryOperationGate.perform {
+                    try await self.checkCloudIntent(requiredCloudIntent)
+                    try await operation()
+                }
             }
         } else {
-            try await operation()
+            try await categoryOperationGate.perform(operation)
         }
     }
 
@@ -227,17 +307,25 @@ private extension MemoryManager {
         try writeAndValidate(items.sorted(by: itemSort), to: localFileURL)
     }
 
-    func persist(_ items: [MemoryItem]) async throws {
-        if settingsManager.getIsCloudSyncEnabled() {
-            try await reconcile(localItems: items)
+    func persist(_ items: [MemoryItem], requiredCloudIntent: Bool) async throws {
+        if requiredCloudIntent {
+            try await reconcile(localItems: items, requiredCloudIntent: requiredCloudIntent)
         } else {
             try saveToLocal(items)
         }
     }
 
-    func reconcile(localItems: [MemoryItem]) async throws {
+    func reconcile(localItems: [MemoryItem], requiredCloudIntent: Bool) async throws {
         let snapshot = try await cloudSyncManager.loadMemorySyncSnapshot()
-        let markers = mergeDeletionMarkers(try loadDeletionMarkers(), snapshot.deletionMarkers)
+        try checkCloudIntent(requiredCloudIntent)
+        var markers = mergeDeletionMarkers(try loadDeletionMarkers(), snapshot.deletionMarkers)
+        if let purgeMarker = snapshot.purgeMarker {
+            let staleItems = (localItems + (snapshot.items ?? [])).filter { $0.updatedAt <= purgeMarker.deletedAt }
+            markers = mergeDeletionMarkers(
+                markers,
+                staleItems.map { CloudDeletionMarker(id: $0.id, deletedAt: purgeMarker.deletedAt) }
+            )
+        }
         let merge = try mergeItems(
             local: localItems,
             cloud: snapshot.items ?? [],
@@ -246,10 +334,11 @@ private extension MemoryManager {
         try preserveForRecovery(merge.losingItems)
         try saveDeletionMarkers(markers)
         try saveToLocal(merge.items)
-        for marker in markers {
-            try await cloudSyncManager.deleteMemoryItemFromCloud(marker.id, deletedAt: marker.deletedAt)
-        }
-        try await cloudSyncManager.saveMemoryToCloud(merge.items)
+        try await cloudSyncManager.applyMemorySyncOutput(
+            items: merge.items,
+            deletionMarkers: markers,
+            basedOn: snapshot
+        )
     }
 
     func loadDeletionMarkers() throws -> [CloudDeletionMarker] {
@@ -265,6 +354,11 @@ private extension MemoryManager {
         for marker in try loadDeletionMarkers() {
             try await cloudSyncManager.deleteMemoryItemFromCloud(marker.id, deletedAt: marker.deletedAt)
         }
+    }
+
+    func checkCloudIntent(_ requiredCloudIntent: Bool) throws {
+        try Task.checkCancellation()
+        guard !requiredCloudIntent || settingsManager.getIsCloudSyncEnabled() else { throw CancellationError() }
     }
 
     /// One-time migration from the old `memory_items` UserDefaults blob to the
@@ -303,9 +397,12 @@ private extension MemoryManager {
         deletionMarkers: [CloudDeletionMarker]
     ) throws -> MergeResult {
         var winners: [UUID: MemoryItem] = [:]
-        var losingItems: [MemoryItem] = []
+        let eligibleLocalItems = applying(deletionMarkers, to: local)
+        var losingItems = local.filter { item in
+            !eligibleLocalItems.contains(item)
+        }
 
-        for candidate in applying(deletionMarkers, to: local + cloud) {
+        for candidate in eligibleLocalItems + applying(deletionMarkers, to: cloud) {
             guard let current = winners[candidate.id] else {
                 winners[candidate.id] = candidate
                 continue
@@ -383,35 +480,4 @@ private extension MemoryManager {
         SyncJSONCoding.makeDecoder()
     }
 
-    func startMonitoringCloudFile() {
-        guard settingsManager.getIsCloudSyncEnabled() else { return }
-        Task { [weak self] in
-            guard let self, await cloudSyncManager.checkCloudAvailability() else { return }
-            beginMonitoringCloudFile()
-        }
-    }
-
-    func beginMonitoringCloudFile() {
-        let query = NSMetadataQuery()
-        query.predicate = NSPredicate(format: "%K == %@", NSMetadataItemFSNameKey, "Memory.json")
-        query.searchScopes = [NSMetadataQueryUbiquitousDocumentsScope]
-
-        let settingsManager = self.settingsManager
-        queryObserver = NotificationCenter.default.addObserver(
-            forName: .NSMetadataQueryDidUpdate,
-            object: query,
-            queue: .main
-        ) { _ in
-            MainActor.assumeIsolated {
-                guard settingsManager.getIsCloudSyncEnabled() else { return }
-                NotificationCenter.default.post(
-                    name: MemoryManager.memoryDidChangeExternallyNotification,
-                    object: nil
-                )
-            }
-        }
-
-        metadataQuery = query
-        query.start()
-    }
 }

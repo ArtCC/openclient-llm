@@ -93,6 +93,7 @@ extension ConversationStorage {
         }
         try removeLocalFileIfPresent(conversationFileURL(for: conversationId))
         try removePendingMutation(conversationId: conversationId)
+        try removePendingDeletion(conversationId: conversationId)
         try attachmentRepository.deleteAll(forConversationId: conversationId)
     }
 
@@ -102,21 +103,8 @@ extension ConversationStorage {
     ) throws {
         try Task.checkCancellation()
         try ensureDirectoryExists()
-        let tombstone = try deletionTombstone(for: conversationId, snapshot: snapshot)
-        let plan = try makeSynchronizationPlan(
-            snapshot: snapshot,
-            conversationId: nil,
-            additionalTombstones: [tombstone],
-            mutation: nil
-        )
-        try Task.checkCancellation()
-        try commitSynchronization(
-            output: plan.output,
-            snapshot: snapshot,
-            resolvedPendingMutationIds: plan.resolvedPendingMutationIds,
-            localAttachmentKeys: plan.localAttachmentKeys,
-            localConflictAttachmentKeys: plan.localConflictAttachmentKeys
-        )
+        try savePendingDeletion(conversationId: conversationId)
+        try synchronize(with: snapshot)
         try removeRecoveryData(conversationId: conversationId)
     }
 
@@ -131,13 +119,7 @@ extension ConversationStorage {
             mutation: nil
         )
         try Task.checkCancellation()
-        try commitSynchronization(
-            output: plan.output,
-            snapshot: snapshot,
-            resolvedPendingMutationIds: plan.resolvedPendingMutationIds,
-            localAttachmentKeys: plan.localAttachmentKeys,
-            localConflictAttachmentKeys: plan.localConflictAttachmentKeys
-        )
+        try commitSynchronization(plan: plan, snapshot: snapshot)
         if fileManager.fileExists(atPath: recoveryDirectoryURL.path) {
             try fileManager.removeItem(at: recoveryDirectoryURL)
         }
@@ -170,11 +152,12 @@ extension ConversationStorage {
             try removeLocalFileIfPresent(deleteAllMarkerURL)
         }
         try removeAllPendingMutations()
+        try removeAllPendingDeletions()
         try removeLocalFileIfPresent(directoryURL)
         try attachmentRepository.deleteAll()
     }
 
-    private func deletionTombstone(
+    func deletionTombstone(
         for conversationId: UUID,
         snapshot: ConversationCloudSyncSnapshot
     ) throws -> ConversationTombstone {

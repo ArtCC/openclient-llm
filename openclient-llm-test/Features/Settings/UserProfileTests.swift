@@ -36,6 +36,41 @@ final class UserProfileTests: XCTestCase {
         XCTAssertEqual(profile.modifiedAt, .distantPast)
     }
 
+    func test_decode_shippedISO8601Profile_preservesCompatibility() throws {
+        // Given
+        let data = Data(
+            #"""
+            {
+              "name": "Alice",
+              "profileDescription": "Developer",
+              "extraInfo": "Swift",
+              "modifiedAt": "2026-08-11T12:34:56Z"
+            }
+            """#.utf8
+        )
+
+        // When
+        let profile = try JSONDecoder().decode(UserProfile.self, from: data)
+
+        // Then
+        XCTAssertEqual(profile.modifiedAt, Date(timeIntervalSince1970: 1_786_451_696))
+    }
+
+    func test_init_submillisecondRevision_matchesPersistedRoundTrip() throws {
+        // Given
+        let profile = UserProfile(
+            name: "Alice",
+            modifiedAt: Date(timeIntervalSince1970: 1_786_460_550.288_004)
+        )
+
+        // When
+        let data = try SyncJSONCoding.makeEncoder().encode(profile)
+        let decoded = try SyncJSONCoding.makeDecoder().decode(UserProfile.self, from: data)
+
+        // Then
+        XCTAssertEqual(decoded, profile)
+    }
+
     // MARK: - Tests — systemPromptContext
 
     func test_systemPromptContext_emptyProfileReturnsEmptyString() {

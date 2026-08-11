@@ -77,6 +77,28 @@ final class ConversationRepositorySyncTests: XCTestCase {
         XCTAssertEqual(localIds, [conversation.id])
     }
 
+    func test_synchronize_equalModificationDates_appliesCanonicalUuidTieBreaker() async throws {
+        // Given
+        let firstId = try XCTUnwrap(UUID(uuidString: "00000000-0000-0000-0000-000000000001"))
+        let secondId = try XCTUnwrap(UUID(uuidString: "00000000-0000-0000-0000-000000000002"))
+        let newestId = try XCTUnwrap(UUID(uuidString: "00000000-0000-0000-0000-000000000003"))
+        let updatedAt = Date(timeIntervalSince1970: 1_700_000_000)
+        cloudSyncManager.cloudConversations = [
+            Conversation(id: secondId, modelId: "model", updatedAt: updatedAt),
+            Conversation(id: firstId, modelId: "model", updatedAt: updatedAt),
+            Conversation(id: newestId, modelId: "model", updatedAt: updatedAt.addingTimeInterval(1))
+        ]
+
+        // When
+        let result = await sut.synchronize()
+
+        // Then
+        let localIds = try await sut.loadLocal().map(\.id)
+        XCTAssertEqual(result, .synchronized)
+        XCTAssertEqual(cloudSyncManager.cloudConversations.map(\.id), [newestId, firstId, secondId])
+        XCTAssertEqual(localIds, [newestId, firstId, secondId])
+    }
+
     func test_synchronize_withoutChanges_doesNotRewriteLocalConversation() async throws {
         // Given
         let conversation = Conversation(

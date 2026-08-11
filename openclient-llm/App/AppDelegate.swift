@@ -14,7 +14,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     // MARK: - Properties
 
     private var transactionObserverTask: Task<Void, Never>?
-    private let conversationCloudObserver = ConversationCloudObserver()
+
+    private let conversationCloudObserver = ConversationCloudObserver.shared
 
     // MARK: - UIApplication
 
@@ -50,6 +51,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                 }
             }
         }
+
         conversationCloudObserver.start()
 
         return true

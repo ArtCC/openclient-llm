@@ -23,6 +23,7 @@ final class MockConversationRepository: ConversationRepositoryProtocol, @uncheck
     var synchronizeResult: ConversationSyncResult = .synchronized
     var cancelSynchronizationCallCount = 0
     var cancelAndDeleteAllCallCount = 0
+    var purgeLocalDataCallCount = 0
 
     // MARK: - Public
 
@@ -93,6 +94,10 @@ final class MockConversationRepository: ConversationRepositoryProtocol, @uncheck
         conversations.removeAll { $0.id == conversationId }
     }
 
+    func deleteSynchronized(_ conversationId: UUID) async throws {
+        try await delete(conversationId)
+    }
+
     func deleteAll() async throws {
         if let deleteAllError { throw deleteAllError }
         conversations.removeAll()
@@ -109,5 +114,16 @@ final class MockConversationRepository: ConversationRepositoryProtocol, @uncheck
     func cancelSynchronizationAndDeleteAll() async throws {
         cancelAndDeleteAllCallCount += 1
         try await deleteAll()
+    }
+
+    func purgeLocalData(through marker: CloudPurgeMarker) async throws {
+        if let deleteAllError { throw deleteAllError }
+        purgeLocalDataCallCount += 1
+        conversations.removeAll { $0.updatedAt <= marker.deletedAt }
+    }
+
+    func validateLocalReset() async throws {
+        if let deleteAllError { throw deleteAllError }
+        if let loadError { throw loadError }
     }
 }

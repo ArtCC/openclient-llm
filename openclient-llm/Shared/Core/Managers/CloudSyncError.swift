@@ -16,6 +16,7 @@ nonisolated enum CloudSyncError: LocalizedError, Equatable {
     case missingAttachment
     case invalidAttachmentPath
     case invalidConversationData
+    case invalidProfileData
     case staleConversationRevision
     case staleProfileRevision
     case conflictingProfileRevision
@@ -37,6 +38,8 @@ nonisolated enum CloudSyncError: LocalizedError, Equatable {
             String(localized: "A synchronized conversation attachment has an invalid path.")
         case .invalidConversationData:
             String(localized: "A synchronized conversation contains invalid data.")
+        case .invalidProfileData:
+            String(localized: "The local profile contains invalid data.")
         case .staleConversationRevision:
             String(localized: "The conversation changed or was deleted before this save completed.")
         case .staleProfileRevision:

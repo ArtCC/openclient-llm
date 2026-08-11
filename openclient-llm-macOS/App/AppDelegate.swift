@@ -18,7 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var transactionObserverTask: Task<Void, Never>?
 
     private let menuBarManager = MenuBarManager()
-    private let conversationCloudObserver = ConversationCloudObserver()
+    private let conversationCloudObserver = ConversationCloudObserver.shared
 
     // MARK: - NSApplicationDelegate
 
@@ -32,6 +32,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+
         conversationCloudObserver.start()
     }
 

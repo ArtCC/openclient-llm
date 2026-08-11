@@ -14,7 +14,8 @@ extension SettingsViewModel {
     func send(_ event: Event) {
         switch event {
         case .cloudSyncToggled, .cloudSyncConflictResolved, .cloudSyncConflictCancelled,
-             .syncNowTapped:
+             .syncNowTapped, .cloudSyncRetryTapped, .cloudAccountReviewConfirmed,
+             .cloudAccountReviewCancelled:
             handleCloudSyncEvent(event)
         case .showTokenUsageToggled, .privacyScreenToggled:
             handlePreferenceToggleEvent(event)
@@ -41,9 +42,7 @@ extension SettingsViewModel {
         case .saveTapped:
             saveSettings()
         case .cloudAvailabilityRefresh:
-            Task { [weak self] in
-                await self?.refreshCloudAvailability()
-            }
+            refreshCloudAvailability()
         case .resetConfirmed:
             resetApp()
         case .requestNotificationPermissionTapped, .notificationStatusRefresh:

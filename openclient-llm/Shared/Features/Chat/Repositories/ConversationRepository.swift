@@ -19,11 +19,14 @@ protocol ConversationRepositoryProtocol: Sendable {
     func rename(_ conversationId: UUID, title: String) async throws -> Conversation?
     func updateTags(_ conversationId: UUID, tags: [ConversationTag]) async throws -> Conversation?
     func delete(_ conversationId: UUID) async throws
+    func deleteSynchronized(_ conversationId: UUID) async throws
     func deleteAll() async throws
     @discardableResult
     func synchronize() async -> ConversationSyncResult
     func cancelSynchronization() async
     func cancelSynchronizationAndDeleteAll() async throws
+    func purgeLocalData(through marker: CloudPurgeMarker) async throws
+    func validateLocalReset() async throws
 }
 
 extension ConversationRepositoryProtocol {
@@ -42,6 +45,7 @@ struct ConversationRepository: ConversationRepositoryProtocol {
     private let settingsManager: SettingsManagerProtocol
     private let storage: ConversationStorage
     private let syncCoordinator: ConversationSyncCoordinator
+    private let mutationGate: CloudSynchronizationMutationGate
 
     // MARK: - Init
 
@@ -51,9 +55,11 @@ struct ConversationRepository: ConversationRepositoryProtocol {
         attachmentRepository: AttachmentRepositoryProtocol? = nil,
         baseDirectory: URL? = nil,
         storage: ConversationStorage? = nil,
-        syncCoordinator: ConversationSyncCoordinator? = nil
+        syncCoordinator: ConversationSyncCoordinator? = nil,
+        mutationGate: CloudSynchronizationMutationGate = .shared
     ) {
         self.settingsManager = settingsManager
+        self.mutationGate = mutationGate
         if let storage {
             self.storage = storage
             self.syncCoordinator = syncCoordinator ?? ConversationSyncCoordinator(storage: storage)
@@ -75,10 +81,14 @@ struct ConversationRepository: ConversationRepositoryProtocol {
     // MARK: - Public
 
     func loadAll() async throws -> [Conversation] {
-        if settingsManager.getIsCloudSyncEnabled() {
-            _ = await syncCoordinator.synchronize()
+        let requiredCloudIntent = settingsManager.getIsCloudSyncEnabled()
+        guard requiredCloudIntent else { return try await loadLocal() }
+        return try await mutationGate.perform {
+            try await self.checkCloudIntent(requiredCloudIntent)
+            _ = await self.syncCoordinator.synchronize()
+            try await self.checkCloudIntent(requiredCloudIntent)
+            return try await self.loadLocal()
         }
-        return try await loadLocal()
     }
 
     func loadLocal() async throws -> [Conversation] {
@@ -89,11 +99,26 @@ struct ConversationRepository: ConversationRepositoryProtocol {
 
     @discardableResult
     func save(_ conversation: Conversation, expectedBase: Conversation?) async throws -> Conversation {
+        let requiredCloudIntent = settingsManager.getIsCloudSyncEnabled()
+        guard requiredCloudIntent else {
+            return try await saveSerialized(conversation, expectedBase: expectedBase, synchronize: false)
+        }
+        return try await mutationGate.perform {
+            try await self.checkCloudIntent(requiredCloudIntent)
+            return try await self.saveSerialized(conversation, expectedBase: expectedBase, synchronize: true)
+        }
+    }
+
+    private func saveSerialized(
+        _ conversation: Conversation,
+        expectedBase: Conversation?,
+        synchronize: Bool
+    ) async throws -> Conversation {
         let admissionToken = await syncCoordinator.admissionToken()
         let saved = try await syncCoordinator.save(
             conversation,
             expectedBase: expectedBase,
-            synchronize: settingsManager.getIsCloudSyncEnabled(),
+            synchronize: synchronize,
             admissionToken: admissionToken
         )
         updateWidgetSnapshot(conversations: try await storage.loadLocal())
@@ -101,9 +126,25 @@ struct ConversationRepository: ConversationRepositoryProtocol {
     }
 
     func importBatch(_ conversations: [Conversation]) async throws -> [Conversation] {
+        let requiredCloudIntent = settingsManager.getIsCloudSyncEnabled()
+        guard requiredCloudIntent else { return try await importBatchSerialized(conversations, synchronize: false) }
+        return try await mutationGate.perform {
+            try await self.checkCloudIntent(requiredCloudIntent)
+            return try await self.importBatchSerialized(conversations, synchronize: true)
+        }
+    }
+
+    private func importBatchSerialized(
+        _ conversations: [Conversation],
+        synchronize: Bool
+    ) async throws -> [Conversation] {
+        if synchronize {
+            try requireSuccessfulSynchronization(await syncCoordinator.synchronize())
+            try checkCloudIntent(true)
+        }
         let saved = try await storage.importBatch(conversations)
-        if settingsManager.getIsCloudSyncEnabled() {
-            _ = await syncCoordinator.synchronize()
+        if synchronize {
+            try requireSuccessfulSynchronization(await syncCoordinator.synchronize())
         }
         if let localConversations = try? await storage.loadLocal() {
             updateWidgetSnapshot(conversations: localConversations)
@@ -112,11 +153,21 @@ struct ConversationRepository: ConversationRepositoryProtocol {
     }
 
     func setPinned(_ isPinned: Bool, conversationId: UUID) async throws -> Conversation? {
+        try await performMutation { synchronize in
+            try await setPinnedSerialized(isPinned, conversationId: conversationId, synchronize: synchronize)
+        }
+    }
+
+    private func setPinnedSerialized(
+        _ isPinned: Bool,
+        conversationId: UUID,
+        synchronize: Bool
+    ) async throws -> Conversation? {
         let admissionToken = await syncCoordinator.admissionToken()
         let conversation = try await syncCoordinator.setPinned(
             isPinned,
             conversationId: conversationId,
-            synchronize: settingsManager.getIsCloudSyncEnabled(),
+            synchronize: synchronize,
             admissionToken: admissionToken
         )
         try await updateAfterMutation(conversation != nil)
@@ -124,11 +175,21 @@ struct ConversationRepository: ConversationRepositoryProtocol {
     }
 
     func rename(_ conversationId: UUID, title: String) async throws -> Conversation? {
+        try await performMutation { synchronize in
+            try await renameSerialized(conversationId, title: title, synchronize: synchronize)
+        }
+    }
+
+    private func renameSerialized(
+        _ conversationId: UUID,
+        title: String,
+        synchronize: Bool
+    ) async throws -> Conversation? {
         let admissionToken = await syncCoordinator.admissionToken()
         let conversation = try await syncCoordinator.rename(
             conversationId,
             title: title,
-            synchronize: settingsManager.getIsCloudSyncEnabled(),
+            synchronize: synchronize,
             admissionToken: admissionToken
         )
         try await updateAfterMutation(conversation != nil)
@@ -136,11 +197,21 @@ struct ConversationRepository: ConversationRepositoryProtocol {
     }
 
     func updateTags(_ conversationId: UUID, tags: [ConversationTag]) async throws -> Conversation? {
+        try await performMutation { synchronize in
+            try await updateTagsSerialized(conversationId, tags: tags, synchronize: synchronize)
+        }
+    }
+
+    private func updateTagsSerialized(
+        _ conversationId: UUID,
+        tags: [ConversationTag],
+        synchronize: Bool
+    ) async throws -> Conversation? {
         let admissionToken = await syncCoordinator.admissionToken()
         let conversation = try await syncCoordinator.updateTags(
             conversationId,
             tags: tags,
-            synchronize: settingsManager.getIsCloudSyncEnabled(),
+            synchronize: synchronize,
             admissionToken: admissionToken
         )
         try await updateAfterMutation(conversation != nil)
@@ -148,20 +219,41 @@ struct ConversationRepository: ConversationRepositoryProtocol {
     }
 
     func delete(_ conversationId: UUID) async throws {
+        try await performMutation { synchronize in
+            try await deleteSerialized(conversationId, synchronize: synchronize)
+        }
+    }
+
+    func deleteSynchronized(_ conversationId: UUID) async throws {
+        guard settingsManager.getIsCloudSyncEnabled() else {
+            throw CloudDataManagementError.cloudSyncDisabled
+        }
+        try await mutationGate.perform {
+            try await self.checkCloudIntent(true)
+            try await self.deleteSerialized(conversationId, synchronize: true)
+        }
+    }
+
+    private func deleteSerialized(_ conversationId: UUID, synchronize: Bool) async throws {
         let admissionToken = await syncCoordinator.admissionToken()
         try await syncCoordinator.delete(
             conversationId,
-            synchronize: settingsManager.getIsCloudSyncEnabled(),
+            synchronize: synchronize,
             admissionToken: admissionToken
         )
         updateWidgetSnapshot(conversations: try await storage.loadLocal())
     }
 
     func deleteAll() async throws {
-        let shouldSynchronize = settingsManager.getIsCloudSyncEnabled()
+        try await performMutation { synchronize in
+            try await deleteAllSerialized(synchronize: synchronize)
+        }
+    }
+
+    private func deleteAllSerialized(synchronize: Bool) async throws {
         let admissionToken = await syncCoordinator.admissionToken()
         try await syncCoordinator.deleteAll(
-            synchronize: shouldSynchronize,
+            synchronize: synchronize,
             admissionToken: admissionToken
         )
         clearWidgetSnapshot()
@@ -169,12 +261,21 @@ struct ConversationRepository: ConversationRepositoryProtocol {
 
     @discardableResult
     func synchronize() async -> ConversationSyncResult {
-        guard settingsManager.getIsCloudSyncEnabled() else { return .unavailable }
-        let result = await syncCoordinator.synchronize()
-        if let conversations = try? await storage.loadLocal() {
-            updateWidgetSnapshot(conversations: conversations)
+        let requiredCloudIntent = settingsManager.getIsCloudSyncEnabled()
+        guard requiredCloudIntent else { return .unavailable }
+        do {
+            return try await mutationGate.perform {
+                try await self.checkCloudIntent(requiredCloudIntent)
+                let result = await self.syncCoordinator.synchronize()
+                try await self.checkCloudIntent(requiredCloudIntent)
+                if let conversations = try? await self.storage.loadLocal() {
+                    await self.updateWidgetSnapshot(conversations: conversations)
+                }
+                return result
+            }
+        } catch {
+            return .unavailable
         }
-        return result
     }
 
     func cancelSynchronization() async {
@@ -185,11 +286,50 @@ struct ConversationRepository: ConversationRepositoryProtocol {
         try await syncCoordinator.cancelAndDeleteAll()
         clearWidgetSnapshot()
     }
+
+    func purgeLocalData(through marker: CloudPurgeMarker) async throws {
+        await syncCoordinator.cancel()
+        try await storage.purgeLocalData(through: marker)
+        updateWidgetSnapshot(conversations: try await storage.loadLocal())
+    }
+
+    func validateLocalReset() async throws {
+        try await storage.validateLocalReset()
+    }
 }
 
 // MARK: - Private
 
 private extension ConversationRepository {
+    func checkCloudIntent(_ requiredCloudIntent: Bool) throws {
+        try Task.checkCancellation()
+        guard !requiredCloudIntent || settingsManager.getIsCloudSyncEnabled() else { throw CancellationError() }
+    }
+
+    func performMutation<Value: Sendable>(
+        _ operation: @escaping @Sendable (Bool) async throws -> Value
+    ) async throws -> Value {
+        let requiredCloudIntent = settingsManager.getIsCloudSyncEnabled()
+        guard requiredCloudIntent else { return try await operation(false) }
+        return try await mutationGate.perform {
+            try await self.checkCloudIntent(requiredCloudIntent)
+            return try await operation(true)
+        }
+    }
+
+    func requireSuccessfulSynchronization(_ result: ConversationSyncResult) throws {
+        switch result {
+        case .synchronized:
+            return
+        case .pendingDownload:
+            throw ConversationSyncOperationError.pendingDownload
+        case .unavailable:
+            throw ConversationSyncOperationError.unavailable
+        case .failed:
+            throw CloudSyncError.cloudContentChanged
+        }
+    }
+
     func clearWidgetSnapshot() {
         guard AppGroupStore.clearConversations() else { return }
         WidgetCenter.shared.reloadTimelines(ofKind: AppGroupStore.conversationsWidgetKind)
@@ -204,7 +344,10 @@ private extension ConversationRepository {
     }
 
     func updateWidgetSnapshot(conversations: [Conversation]) {
-        let sorted = conversations.sorted { $0.updatedAt > $1.updatedAt }
+        let sorted = conversations.sorted {
+            if $0.updatedAt != $1.updatedAt { return $0.updatedAt > $1.updatedAt }
+            return $0.id.uuidString < $1.id.uuidString
+        }
         let recentConversations = makeWidgetConversations(from: Array(sorted.prefix(6)))
         let pinnedConversations = makeWidgetConversations(from: sorted.filter(\.isPinned))
         let tags = Array(Set(conversations.flatMap(\.tags).map(\.name))).sorted()

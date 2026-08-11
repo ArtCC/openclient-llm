@@ -86,20 +86,18 @@ extension ConversationStorage {
     }
 
     func commitSynchronization(
-        output: ConversationCloudSyncOutput,
-        snapshot: ConversationCloudSyncSnapshot,
-        resolvedPendingMutationIds: Set<UUID>,
-        localAttachmentKeys: Set<CloudAttachmentKey>,
-        localConflictAttachmentKeys: Set<CloudAttachmentKey>
+        plan: SynchronizationPlan,
+        snapshot: ConversationCloudSyncSnapshot
     ) throws {
+        let output = plan.output
         try cloudSyncManager.validateConversationSyncOutput(output, basedOn: snapshot)
         let knownAttachmentKeys = Set(snapshot.attachmentData.keys)
             .union(snapshot.attachmentPlaceholders)
-            .union(localAttachmentKeys)
+            .union(plan.localAttachmentKeys)
         let isLocalCurrent = try isLocalOutputCurrent(
             output,
             knownAttachmentKeys: knownAttachmentKeys
-        ) && resolvedPendingMutationIds.isEmpty
+        ) && plan.resolvedPendingMutationIds.isEmpty && plan.resolvedPendingDeletionIds.isEmpty
         if isLocalCurrent {
             guard !isCloudOutputCurrent(output, snapshot: snapshot) else { return }
             try Task.checkCancellation()
@@ -107,21 +105,18 @@ extension ConversationStorage {
             return
         }
         try commitSynchronizationTransaction(
-            output: output,
+            plan: plan,
             snapshot: snapshot,
-            resolvedPendingMutationIds: resolvedPendingMutationIds,
-            knownAttachmentKeys: knownAttachmentKeys,
-            localConflictAttachmentKeys: localConflictAttachmentKeys
+            knownAttachmentKeys: knownAttachmentKeys
         )
     }
 
     func commitSynchronizationTransaction(
-        output: ConversationCloudSyncOutput,
+        plan: SynchronizationPlan,
         snapshot: ConversationCloudSyncSnapshot,
-        resolvedPendingMutationIds: Set<UUID>,
-        knownAttachmentKeys: Set<CloudAttachmentKey>,
-        localConflictAttachmentKeys: Set<CloudAttachmentKey>
+        knownAttachmentKeys: Set<CloudAttachmentKey>
     ) throws {
+        let output = plan.output
         let transaction = try ConversationLocalTransaction(
             fileManager: fileManager,
             documentsURL: documentsURL,
@@ -133,20 +128,24 @@ extension ConversationStorage {
             try cleanupLocalAttachments(
                 removing: knownAttachmentKeys,
                 keeping: Set(output.attachments.keys),
-                preserving: localConflictAttachmentKeys
+                preserving: plan.localConflictAttachmentKeys
             )
             if let marker = output.deleteAllMarker {
                 try saveDeleteAllMarker(marker)
             }
-            for id in resolvedPendingMutationIds {
+            for id in plan.resolvedPendingMutationIds {
                 try removePendingMutation(conversationId: id)
+            }
+            for id in plan.resolvedPendingDeletionIds {
+                try removePendingDeletion(conversationId: id)
             }
             try Task.checkCancellation()
             try cloudSyncManager.applyConversationSyncOutput(output, basedOn: snapshot)
             try transaction.commit(verifying: .init(
                 conversations: Dictionary(uniqueKeysWithValues: output.conversations.map { ($0.id, $0) }),
                 attachments: output.attachments,
-                absentPendingMutationIds: resolvedPendingMutationIds,
+                absentPendingMutationIds: plan.resolvedPendingMutationIds,
+                absentPendingDeletionIds: plan.resolvedPendingDeletionIds,
                 absentAttachmentKeys: knownAttachmentKeys.subtracting(output.attachments.keys),
                 exactConversationSet: true,
                 emptyPendingMutations: true

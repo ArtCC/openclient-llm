@@ -19,6 +19,10 @@ protocol SettingsManagerProtocol: Sendable {
     func setSelectedModelId(_ value: String?)
     func getIsCloudSyncEnabled() -> Bool
     func setIsCloudSyncEnabled(_ value: Bool)
+    func getLastSuccessfulCloudSyncDate() -> Date?
+    func setLastSuccessfulCloudSyncDate(_ value: Date)
+    func getAcceptedCloudAccountFingerprint() -> String?
+    func setAcceptedCloudAccountFingerprint(_ value: String)
     func getShowTokenUsage() -> Bool
     func setShowTokenUsage(_ value: Bool)
     func getIsWebSearchEnabled() -> Bool
@@ -55,6 +59,8 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         static let isOnboardingCompleted = "isOnboardingCompleted"
         static let selectedModelId = "selectedModelId"
         static let isCloudSyncEnabled = "isCloudSyncEnabled"
+        static let lastSuccessfulCloudSyncDate = "lastSuccessfulCloudSyncDate"
+        static let acceptedCloudAccountFingerprint = "acceptedCloudAccountFingerprint"
         static let showTokenUsage = "showTokenUsage"
         static let isWebSearchEnabled = "isWebSearchEnabled"
         static let selectedTTSModelId = "selectedTTSModelId"
@@ -134,6 +140,26 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         guard defaults.bool(forKey: Keys.isCloudSyncEnabled) != value else { return }
         defaults.set(value, forKey: Keys.isCloudSyncEnabled)
         NotificationCenter.default.post(name: .cloudSyncIntentDidChange, object: nil)
+    }
+
+    func getLastSuccessfulCloudSyncDate() -> Date? {
+        defaults.object(forKey: Keys.lastSuccessfulCloudSyncDate) as? Date
+    }
+
+    func setLastSuccessfulCloudSyncDate(_ value: Date) {
+        defaults.set(value, forKey: Keys.lastSuccessfulCloudSyncDate)
+    }
+
+    func getAcceptedCloudAccountFingerprint() -> String? {
+        defaults.string(forKey: Keys.acceptedCloudAccountFingerprint)
+    }
+
+    func setAcceptedCloudAccountFingerprint(_ value: String) {
+        let isLowercaseSHA256 = value.utf8.count == 64 && value.utf8.allSatisfy {
+            (48...57).contains($0) || (97...102).contains($0)
+        }
+        guard isLowercaseSHA256 else { return }
+        defaults.set(value, forKey: Keys.acceptedCloudAccountFingerprint)
     }
 
     func getShowTokenUsage() -> Bool {
@@ -244,6 +270,8 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         defaults.removeObject(forKey: Keys.isOnboardingCompleted)
         defaults.removeObject(forKey: Keys.selectedModelId)
         defaults.removeObject(forKey: Keys.isCloudSyncEnabled)
+        defaults.removeObject(forKey: Keys.lastSuccessfulCloudSyncDate)
+        defaults.removeObject(forKey: Keys.acceptedCloudAccountFingerprint)
         defaults.removeObject(forKey: Keys.showTokenUsage)
         defaults.removeObject(forKey: Keys.isWebSearchEnabled)
         defaults.removeObject(forKey: Keys.selectedTTSModelId)

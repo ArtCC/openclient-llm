@@ -18,6 +18,7 @@ final class ResetAppDataUseCaseTests: XCTestCase {
     private var mockConversationRepository: MockConversationRepository!
     private var mockUserProfileManager: MockUserProfileManager!
     private var mockMemoryManager: MockMemoryManager!
+    private var mockPromptTemplateRepository: MockPromptTemplateRepository!
     private var categoryOperationGate: CloudCategoryOperationGate!
 
     // MARK: - Setup
@@ -29,13 +30,16 @@ final class ResetAppDataUseCaseTests: XCTestCase {
         mockConversationRepository = MockConversationRepository()
         mockUserProfileManager = MockUserProfileManager()
         mockMemoryManager = MockMemoryManager()
+        mockPromptTemplateRepository = MockPromptTemplateRepository()
         categoryOperationGate = CloudCategoryOperationGate()
         sut = ResetAppDataUseCase(
             settingsManager: mockSettingsManager,
             conversationRepository: mockConversationRepository,
             userProfileManager: mockUserProfileManager,
             memoryManager: mockMemoryManager,
-            categoryOperationGate: categoryOperationGate
+            promptTemplateRepository: mockPromptTemplateRepository,
+            categoryOperationGate: categoryOperationGate,
+            mutationGate: CloudSynchronizationMutationGate()
         )
     }
 
@@ -45,6 +49,7 @@ final class ResetAppDataUseCaseTests: XCTestCase {
         mockConversationRepository = nil
         mockUserProfileManager = nil
         mockMemoryManager = nil
+        mockPromptTemplateRepository = nil
         categoryOperationGate = nil
 
         try await super.tearDown()
@@ -88,6 +93,19 @@ final class ResetAppDataUseCaseTests: XCTestCase {
         XCTAssertTrue(mockUserProfileManager.localProfile.isEmpty)
     }
 
+    func test_execute_deletesOnlyCustomPromptTemplates() async throws {
+        // Given
+        let builtIn = PromptTemplate(title: "Built in", content: "Content", isBuiltIn: true)
+        let custom = PromptTemplate(title: "Custom", content: "Content")
+        mockPromptTemplateRepository.templates = [builtIn, custom]
+
+        // When
+        try await sut.execute()
+
+        // Then
+        XCTAssertEqual(mockPromptTemplateRepository.templates, [builtIn])
+    }
+
     func test_execute_conversationDeletionFails_throwsWithoutDeletingOtherConversationData() async {
         // Given
         let expectedError = NSError(domain: "ResetAppDataUseCaseTests", code: 1)
@@ -111,6 +129,9 @@ final class ResetAppDataUseCaseTests: XCTestCase {
         // Given
         let expectedError = NSError(domain: "ResetAppDataUseCaseTests", code: 2)
         mockMemoryManager.deleteAllError = expectedError
+        let conversation = Conversation(modelId: "model")
+        mockConversationRepository.conversations = [conversation]
+        mockUserProfileManager.localProfile = UserProfile(name: "Keep")
 
         // When
         do {
@@ -119,7 +140,27 @@ final class ResetAppDataUseCaseTests: XCTestCase {
         } catch {
             // Then
             XCTAssertEqual(error as NSError, expectedError)
+            XCTAssertEqual(mockConversationRepository.conversations, [conversation])
+            XCTAssertEqual(mockUserProfileManager.localProfile.name, "Keep")
+            XCTAssertFalse(mockSettingsManager.deleteAllCalled)
         }
+    }
+
+    func test_fence_nestedCategoryOperation_executesWithoutDeadlock() async throws {
+        // Given
+        mockSettingsManager.deleteAllCalled = false
+        let operationGate = try XCTUnwrap(categoryOperationGate)
+        let settingsManager = try XCTUnwrap(mockSettingsManager)
+
+        // When
+        try await operationGate.fence {
+            try await operationGate.perform {
+                settingsManager.deleteAllCalled = true
+            }
+        }
+
+        // Then
+        XCTAssertTrue(mockSettingsManager.deleteAllCalled)
     }
 
     func test_execute_profileCloudOperationInFlight_waitsBeforeResettingData() async throws {
