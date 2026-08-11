@@ -27,6 +27,13 @@ extension CloudSyncRuntimeCoordinating {
 
 @MainActor
 final class ConversationCloudObserver: CloudSyncRuntimeCoordinating {
+    struct StartContext {
+        let approvingCurrentAccount: Bool
+        let approvalFingerprint: String?
+        let generation: Int
+        let runtimeGeneration: Int
+    }
+
     // MARK: - Properties
 
     static let synchronizedPathComponents = [
@@ -72,6 +79,7 @@ final class ConversationCloudObserver: CloudSyncRuntimeCoordinating {
     var startGeneration = 0
     var runtimeGeneration = 0
     var profileConflictHandler: (() -> Void)?
+    var startContext: StartContext?
 
     // MARK: - Init
 
@@ -132,57 +140,21 @@ final class ConversationCloudObserver: CloudSyncRuntimeCoordinating {
         let approvalFingerprint = approvingCurrentAccount ? accountAssociation.currentAccountFingerprint() : nil
         let runtimeGeneration = runtimeStore.begin(.checkingAvailability)
         self.runtimeGeneration = runtimeGeneration
+        startContext = StartContext(
+            approvingCurrentAccount: approvingCurrentAccount,
+            approvalFingerprint: approvalFingerprint,
+            generation: generation,
+            runtimeGeneration: runtimeGeneration
+        )
         let pendingCancellation = cancellationTask
-        let enableCloudSyncUseCase = enableCloudSyncUseCase
         startTask = Task { [weak self] in
             await pendingCancellation?.value
             guard !Task.isCancelled else { return }
-            do {
-                let preflight = try await enableCloudSyncUseCase.execute()
-                guard !Task.isCancelled, let self else { return }
-                await completeEnabledStart(
-                    preflight: preflight,
-                    approvingCurrentAccount: approvingCurrentAccount,
-                    approvalFingerprint: approvalFingerprint,
-                    generation: generation,
-                    runtimeGeneration: runtimeGeneration
-                )
-            } catch {
-                guard let self else { return }
-                completePreflightFailure(
-                    error,
-                    generation: generation,
-                    runtimeGeneration: runtimeGeneration
-                )
-            }
+            guard let self else { return }
+            let session = await resolveCurrentSession().value
+            guard !Task.isCancelled else { return }
+            completeStart(session: session, generation: generation, runtimeGeneration: runtimeGeneration)
         }
-    }
-
-    private func completeEnabledStart(
-        preflight: CloudSyncEnablementPreflight,
-        approvingCurrentAccount: Bool,
-        approvalFingerprint: String?,
-        generation: Int,
-        runtimeGeneration: Int
-    ) async {
-        guard generation == startGeneration,
-              settingsManager.getIsCloudSyncEnabled() else { return }
-        guard !approvingCurrentAccount || approveAccount(
-            fingerprint: approvalFingerprint,
-            generation: generation,
-            runtimeGeneration: runtimeGeneration
-        ) else { return }
-        guard preflight == .ready else {
-            completeProfileConflict(generation: generation, runtimeGeneration: runtimeGeneration)
-            return
-        }
-        guard runtimeStore.completePreflight(generation: runtimeGeneration) else { return }
-        let session = await resolveCurrentSession().value
-        guard !Task.isCancelled,
-              generation == startGeneration,
-              settingsManager.getIsCloudSyncEnabled(),
-              runtimeStore.isCurrent(generation: runtimeGeneration) else { return }
-        completeStart(session: session, generation: generation, runtimeGeneration: runtimeGeneration)
     }
 
     func stop() {

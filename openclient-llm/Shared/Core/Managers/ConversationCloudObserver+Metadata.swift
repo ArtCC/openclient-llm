@@ -38,7 +38,7 @@ extension ConversationCloudObserver {
             runtimeStore.publish(.unavailable(reason), generation: runtimeGeneration)
             return
         }
-        guard accountAssociation.state() == .matched else {
+        guard startContext?.approvingCurrentAccount == true || accountAssociation.state() == .matched else {
             runtimeStore.publish(.failed(.init(
                 reason: .accountChanged,
                 affectedCategories: Set(CloudSyncStatus.DataCategory.allCases)
@@ -68,6 +68,7 @@ extension ConversationCloudObserver {
         metadataQuery?.stop()
         metadataQuery = nil
         metadataSession = nil
+        startContext = nil
         hasEstablishedBaseline = false
         contentFingerprints = [:]
         for observer in queryObservers { notificationCenter.removeObserver(observer) }
@@ -145,11 +146,62 @@ extension ConversationCloudObserver {
             }
             self.hasEstablishedBaseline = true
             self.metadataReadiness.setReady(for: session)
-            guard self.runtimeStore.publish(.idle(
-                lastSuccessfulSyncAt: self.settingsManager.getLastSuccessfulCloudSyncDate()
-            ), generation: self.runtimeGeneration) else { return }
-            self.startSynchronization()
+            self.startPreflightAfterMetadataBaseline(for: session)
         }
+    }
+
+    func startPreflightAfterMetadataBaseline(for session: CloudSyncSession) {
+        guard let context = startContext,
+              context.generation == startGeneration,
+              metadataSession == session,
+              hasEstablishedBaseline,
+              metadataReadiness.isReady(for: session),
+              settingsManager.getIsCloudSyncEnabled() else { return }
+        let enableCloudSyncUseCase = enableCloudSyncUseCase
+        startTask?.cancel()
+        startTask = Task { [weak self] in
+            do {
+                let preflight = try await enableCloudSyncUseCase.execute()
+                guard !Task.isCancelled, let self else { return }
+                completePreflight(preflight, context: context, session: session)
+            } catch {
+                guard let self else { return }
+                completePreflightFailure(
+                    error,
+                    generation: context.generation,
+                    runtimeGeneration: context.runtimeGeneration
+                )
+            }
+        }
+    }
+
+    func completePreflight(
+        _ preflight: CloudSyncEnablementPreflight,
+        context: StartContext,
+        session: CloudSyncSession
+    ) {
+        guard context.generation == startGeneration,
+              metadataSession == session,
+              settingsManager.getIsCloudSyncEnabled() else { return }
+        guard !context.approvingCurrentAccount || approveAccount(
+            fingerprint: context.approvalFingerprint,
+            generation: context.generation,
+            runtimeGeneration: context.runtimeGeneration
+        ) else { return }
+        guard preflight == .ready else {
+            completeProfileConflict(
+                generation: context.generation,
+                runtimeGeneration: context.runtimeGeneration
+            )
+            return
+        }
+        guard runtimeStore.completePreflight(generation: context.runtimeGeneration) else { return }
+        startTask = nil
+        startContext = nil
+        guard runtimeStore.publish(.idle(
+            lastSuccessfulSyncAt: settingsManager.getLastSuccessfulCloudSyncDate()
+        ), generation: context.runtimeGeneration) else { return }
+        startSynchronization()
     }
 
     func makeGatheringObserver(

@@ -63,6 +63,10 @@ extension ConversationCloudObserver {
         case .containerUnavailable:
             runtimeStore.publish(.unavailable(.containerUnavailable), generation: runtimeGeneration)
         case .issues(let issues):
+            if !issues.pendingCategories.isEmpty, let metadataSession {
+                hasEstablishedBaseline = false
+                metadataReadiness.reset(for: metadataSession)
+            }
             runtimeStore.publish(.incomplete(issues), generation: runtimeGeneration)
         case nil:
             runtimeStore.publish(.failed(.init(
@@ -104,6 +108,10 @@ extension ConversationCloudObserver {
 
     func publishMetadataPending() {
         guard runtimeStore.status != .synchronizing else { return }
-        runtimeStore.publish(.waitingForDownloads)
+        if let startContext {
+            runtimeStore.publish(.waitingForDownloads, generation: startContext.runtimeGeneration)
+        } else {
+            runtimeStore.publish(.waitingForDownloads)
+        }
     }
 }
