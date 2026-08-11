@@ -102,11 +102,10 @@ final class ConversationListViewModel {
     private let exportBackupUseCase: ExportBackupUseCaseProtocol
     private let importConversationsUseCase: ImportConversationsUseCaseProtocol
     private let settingsManager: SettingsManagerProtocol
-    private let conversationCloudObserver: ConversationCloudObserving
-    private var errorDismissTask: Task<Void, Never>?
+    private let cloudRetryDelays: [Duration]
+    var errorDismissTask: Task<Void, Never>?
     var hasStartedInitialLoad = false
 
-    var cloudChangeTask: Task<Void, Never>?
     var cloudRetryTask: Task<Void, Never>?
     var onConversationSelected: ((Conversation?) -> Void)?
     var onPrivateChatSelected: (() -> Void)?
@@ -125,7 +124,7 @@ final class ConversationListViewModel {
         exportBackupUseCase: ExportBackupUseCaseProtocol = ExportBackupUseCase(),
         importConversationsUseCase: ImportConversationsUseCaseProtocol = ImportConversationsUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
-        conversationCloudObserver: ConversationCloudObserving? = nil
+        cloudRetryDelays: [Duration] = [.seconds(1), .seconds(2), .seconds(4), .seconds(8)]
     ) {
         self.state = state
         self.loadConversationsUseCase = loadConversationsUseCase
@@ -138,11 +137,9 @@ final class ConversationListViewModel {
         self.exportBackupUseCase = exportBackupUseCase
         self.importConversationsUseCase = importConversationsUseCase
         self.settingsManager = settingsManager
-        self.conversationCloudObserver = conversationCloudObserver
-            ?? ConversationCloudObserver(settingsManager: settingsManager)
+        self.cloudRetryDelays = cloudRetryDelays
         observeAppDataReset()
         observeConversationUpdated()
-        observeCloudConversationChanges()
     }
 
     // MARK: - Input functions
@@ -167,31 +164,29 @@ final class ConversationListViewModel {
     }
 
     func refresh() {
-        synchronizeAndReloadConversations()
+        Task { await synchronizeAndReloadConversations() }
     }
 
     func refreshAsync() async {
-        synchronizeAndReloadConversations()
-        await Task.yield()
+        await synchronizeAndReloadConversations()
     }
 
     func loadData() {
         guard !hasStartedInitialLoad else { return }
         hasStartedInitialLoad = true
         state = .loading
-        conversationCloudObserver.start()
 
         Task {
             do {
-                let conversations = try loadConversationsUseCase.executeLocally()
+                let conversations = try await loadConversationsUseCase.executeLocally()
                 state = .loaded(LoadedState(
                     conversations: conversations,
                     filteredConversations: conversations
                 ))
 
-                // Let SwiftUI render local data before doing synchronous iCloud work.
+                // Let SwiftUI render local data before starting iCloud work.
                 await Task.yield()
-                synchronizeAndReloadConversations()
+                await synchronizeAndReloadConversations()
             } catch {
                 state = .loaded(LoadedState(errorMessage: error.localizedDescription))
                 scheduleErrorDismiss()
@@ -211,12 +206,11 @@ final class ConversationListViewModel {
         }
     }
 
-    func reloadConversations() {
+    func reloadConversations() async {
         guard case .loaded(var loadedState) = state else { return }
-        conversationCloudObserver.start()
 
         do {
-            loadedState.conversations = try loadConversationsUseCase.executeLocally()
+            loadedState.conversations = try await loadConversationsUseCase.executeLocally()
             loadedState.errorMessage = nil
             applySearchFilter(&loadedState)
             state = .loaded(loadedState)
@@ -227,11 +221,11 @@ final class ConversationListViewModel {
         }
     }
 
-    func synchronizeAndReloadConversations(scheduleRetry: Bool = true) {
-        let result = syncConversationsUseCase.execute()
-        reloadConversations()
+    func synchronizeAndReloadConversations(retryAttempt: Int = 0) async {
+        let result = await syncConversationsUseCase.execute()
+        await reloadConversations()
 
-        guard result == .pendingDownload, scheduleRetry else {
+        guard result == .pendingDownload, retryAttempt < cloudRetryDelays.count else {
             if result != .pendingDownload {
                 cloudRetryTask?.cancel()
                 cloudRetryTask = nil
@@ -240,9 +234,11 @@ final class ConversationListViewModel {
         }
         cloudRetryTask?.cancel()
         cloudRetryTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(1))
-            guard !Task.isCancelled else { return }
-            self?.synchronizeAndReloadConversations(scheduleRetry: false)
+            guard let self else { return }
+            try? await Task.sleep(for: self.cloudRetryDelays[retryAttempt])
+            guard !Task.isCancelled,
+                  self.settingsManager.getIsCloudSyncEnabled() else { return }
+            await self.synchronizeAndReloadConversations(retryAttempt: retryAttempt + 1)
         }
     }
 }
@@ -255,13 +251,13 @@ private extension ConversationListViewModel {
         case .tapped(let conversation):
             selectConversation(conversation)
         case .deleted(let id):
-            deleteConversation(id)
+            Task { await deleteConversation(id) }
         case .pinToggled(let id):
-            togglePin(id)
+            Task { await togglePin(id) }
         case .tagsUpdated(let id, let tags):
-            updateTags(id, tags: tags)
+            Task { await updateTags(id, tags: tags) }
         case .titleEdited(let id, let title):
-            renameConversation(id, newTitle: title)
+            Task { await renameConversation(id, newTitle: title) }
         }
     }
 
@@ -277,11 +273,11 @@ private extension ConversationListViewModel {
     func handleBackupEvent(_ event: BackupEvent) {
         switch event {
         case .exportTapped:
-            exportBackup()
+            Task { await exportBackup() }
         case .dataConsumed:
             clearBackupData()
         case .imported(let data):
-            importBackup(data)
+            Task { await importBackup(data) }
         case .resultConsumed:
             clearImportResult()
         case .errorConsumed:
@@ -313,11 +309,10 @@ private extension ConversationListViewModel {
         onConversationSelected?(conversation)
     }
 
-    func deleteConversation(_ id: UUID) {
-        guard case .loaded(var loadedState) = state else { return }
-
+    func deleteConversation(_ id: UUID) async {
         do {
-            try deleteConversationUseCase.execute(id)
+            try await deleteConversationUseCase.execute(id)
+            guard case .loaded(var loadedState) = state else { return }
             loadedState.conversations.removeAll { $0.id == id }
             if loadedState.selectedConversation?.id == id {
                 loadedState.selectedConversation = nil
@@ -326,6 +321,7 @@ private extension ConversationListViewModel {
             applySearchFilter(&loadedState)
             state = .loaded(loadedState)
         } catch {
+            guard case .loaded(var loadedState) = state else { return }
             loadedState.errorMessage = error.localizedDescription
             state = .loaded(loadedState)
             scheduleErrorDismiss()
@@ -339,57 +335,35 @@ private extension ConversationListViewModel {
         state = .loaded(loadedState)
     }
 
-    func applySearchFilter(_ loadedState: inout LoadedState) {
-        var base = loadedState.conversations
-
-        if let tag = loadedState.activeTagFilter,
-           loadedState.conversations.contains(where: { $0.tags.contains(where: { $0.name == tag }) }) {
-            base = base.filter { $0.tags.contains(where: { $0.name == tag }) }
-        } else {
-            loadedState.activeTagFilter = nil
-        }
-
-        let query = loadedState.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        guard !query.isEmpty else {
-            loadedState.filteredConversations = base
-            return
-        }
-
-        loadedState.filteredConversations = base.filter { conversation in
-            if conversation.title.lowercased().contains(query) {
-                return true
-            }
-            return conversation.messages.contains { message in
-                message.content.lowercased().contains(query)
-            }
-        }
-    }
-
-    func togglePin(_ id: UUID) {
-        guard case .loaded(var loadedState) = state else { return }
-        guard let index = loadedState.conversations.firstIndex(where: { $0.id == id }) else { return }
-        let newValue = !loadedState.conversations[index].isPinned
+    func togglePin(_ id: UUID) async {
+        guard case .loaded(let initialState) = state,
+              let conversation = initialState.conversations.first(where: { $0.id == id }) else { return }
+        let newValue = !conversation.isPinned
         do {
-            try pinConversationUseCase.execute(id, isPinned: newValue)
+            try await pinConversationUseCase.execute(id, isPinned: newValue)
+            guard case .loaded(var loadedState) = state,
+                  let index = loadedState.conversations.firstIndex(where: { $0.id == id }) else { return }
             loadedState.conversations[index].isPinned = newValue
             applySearchFilter(&loadedState)
             state = .loaded(loadedState)
         } catch {
+            guard case .loaded(var loadedState) = state else { return }
             loadedState.errorMessage = error.localizedDescription
             state = .loaded(loadedState)
             scheduleErrorDismiss()
         }
     }
 
-    func updateTags(_ id: UUID, tags: [ConversationTag]) {
-        guard case .loaded(var loadedState) = state else { return }
-        guard let index = loadedState.conversations.firstIndex(where: { $0.id == id }) else { return }
+    func updateTags(_ id: UUID, tags: [ConversationTag]) async {
         do {
-            let savedTags = try updateConversationTagsUseCase.execute(id, tags: tags)
+            let savedTags = try await updateConversationTagsUseCase.execute(id, tags: tags)
+            guard case .loaded(var loadedState) = state,
+                  let index = loadedState.conversations.firstIndex(where: { $0.id == id }) else { return }
             loadedState.conversations[index].tags = savedTags
             applySearchFilter(&loadedState)
             state = .loaded(loadedState)
         } catch {
+            guard case .loaded(var loadedState) = state else { return }
             loadedState.errorMessage = error.localizedDescription
             state = .loaded(loadedState)
             scheduleErrorDismiss()
@@ -403,31 +377,36 @@ private extension ConversationListViewModel {
         state = .loaded(loadedState)
     }
 
-    func renameConversation(_ id: UUID, newTitle: String) {
-        guard case .loaded(var loadedState) = state else { return }
+    func renameConversation(_ id: UUID, newTitle: String) async {
         let trimmed = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        guard let index = loadedState.conversations.firstIndex(where: { $0.id == id }) else { return }
+        guard !trimmed.isEmpty,
+              case .loaded(let initialState) = state,
+              initialState.conversations.contains(where: { $0.id == id }) else { return }
         do {
-            try renameConversationUseCase.execute(id, newTitle: trimmed)
+            try await renameConversationUseCase.execute(id, newTitle: trimmed)
+            guard case .loaded(var loadedState) = state,
+                  let index = loadedState.conversations.firstIndex(where: { $0.id == id }) else { return }
             loadedState.conversations[index].title = trimmed
             loadedState.conversations[index].updatedAt = Date()
             applySearchFilter(&loadedState)
             state = .loaded(loadedState)
         } catch {
+            guard case .loaded(var loadedState) = state else { return }
             loadedState.errorMessage = error.localizedDescription
             state = .loaded(loadedState)
             scheduleErrorDismiss()
         }
     }
 
-    func exportBackup() {
-        guard case .loaded(var loadedState) = state else { return }
+    func exportBackup() async {
         do {
-            loadedState.backupData = try exportBackupUseCase.execute()
+            let data = try await exportBackupUseCase.execute()
+            guard case .loaded(var loadedState) = state else { return }
+            loadedState.backupData = data
             loadedState.errorMessage = nil
             state = .loaded(loadedState)
         } catch {
+            guard case .loaded(var loadedState) = state else { return }
             showError(error, in: &loadedState)
         }
     }
@@ -438,17 +417,19 @@ private extension ConversationListViewModel {
         state = .loaded(loadedState)
     }
 
-    func importBackup(_ data: Data) {
-        guard case .loaded(var loadedState) = state else { return }
+    func importBackup(_ data: Data) async {
         do {
-            let result = try importConversationsUseCase.execute(data)
-            loadedState.conversations = try loadConversationsUseCase.executeLocally()
+            let result = try await importConversationsUseCase.execute(data)
+            let conversations = try await loadConversationsUseCase.executeLocally()
+            guard case .loaded(var loadedState) = state else { return }
+            loadedState.conversations = conversations
             loadedState.importResult = result
             loadedState.errorMessage = nil
             applySearchFilter(&loadedState)
             state = .loaded(loadedState)
             NotificationCenter.default.post(name: .conversationDidUpdate, object: nil)
         } catch {
+            guard case .loaded(var loadedState) = state else { return }
             showError(error, in: &loadedState)
         }
     }
@@ -494,4 +475,5 @@ private extension ConversationListViewModel {
             state = .loaded(currentState)
         }
     }
+
 }

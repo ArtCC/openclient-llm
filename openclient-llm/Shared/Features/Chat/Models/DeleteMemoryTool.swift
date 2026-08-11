@@ -63,7 +63,7 @@ struct DeleteMemoryTool: ChatToolProtocol {
             return ToolExecutionResult(text: "No memory item found matching: \(query)")
         }
 
-        memoryManager.delete(id: item.id)
+        try await memoryManager.delete(id: item.id)
 
         NotificationCenter.default.post(
             name: MemoryManager.memoryDidChangeExternallyNotification,

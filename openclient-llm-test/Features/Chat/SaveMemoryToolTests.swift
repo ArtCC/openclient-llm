@@ -105,4 +105,19 @@ final class SaveMemoryToolTests: XCTestCase {
         // Then
         XCTAssertEqual(mockMemoryManager.addedItem?.content, "trimmed content")
     }
+
+    func test_execute_persistenceFails_throwsFailure() async {
+        // Given
+        let expectedError = NSError(domain: "SaveMemoryToolTests", code: 1)
+        mockMemoryManager.mutationError = expectedError
+
+        // When
+        do {
+            _ = try await sut.execute(arguments: #"{"content": "Remember this"}"#)
+            XCTFail("Expected persistence failure")
+        } catch {
+            // Then
+            XCTAssertEqual(error as NSError, expectedError)
+        }
+    }
 }

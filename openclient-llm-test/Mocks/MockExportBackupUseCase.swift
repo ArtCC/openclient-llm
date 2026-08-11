@@ -18,7 +18,7 @@ final class MockExportBackupUseCase: ExportBackupUseCaseProtocol, @unchecked Sen
 
     // MARK: - Execute
 
-    func execute() throws -> Data {
+    func execute() async throws -> Data {
         executeCallCount += 1
         return try result.get()
     }

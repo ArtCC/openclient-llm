@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Platform-iOS%2026+%20|%20iPadOS%2026+%20|%20macOS%2026+-blue?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift" alt="Swift" />
   <img src="https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift" alt="SwiftUI" />
-  <img src="https://img.shields.io/badge/Version-1.6.10-brightgreen?style=flat-square" alt="Version 1.6.10" />
+  <img src="https://img.shields.io/badge/Version-1.6.15-brightgreen?style=flat-square" alt="Version 1.6.15" />
   <img src="https://img.shields.io/badge/Xcode-26+-blue?style=flat-square&logo=xcode" alt="Xcode" />
 </p>
 

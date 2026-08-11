@@ -29,24 +29,9 @@ extension ConversationListViewModel {
                 .notifications(named: .conversationDidUpdate)
             for await _ in notifications {
                 guard let self else { return }
-                await MainActor.run { self.reloadConversations() }
+                await self.reloadConversations()
             }
         }
     }
 
-    func observeCloudConversationChanges() {
-        Task { [weak self] in
-            let notifications = NotificationCenter.default
-                .notifications(named: .conversationCloudDidChange)
-            for await _ in notifications {
-                guard let self else { return }
-                self.cloudChangeTask?.cancel()
-                self.cloudChangeTask = Task { [weak self] in
-                    try? await Task.sleep(for: .milliseconds(500))
-                    guard !Task.isCancelled else { return }
-                    self?.synchronizeAndReloadConversations()
-                }
-            }
-        }
-    }
 }

@@ -18,7 +18,7 @@ final class MockDeleteConversationUseCase: DeleteConversationUseCaseProtocol, @u
 
     // MARK: - Execute
 
-    func execute(_ conversationId: UUID) throws {
+    func execute(_ conversationId: UUID) async throws {
         if let error { throw error }
         deletedIds.append(conversationId)
     }

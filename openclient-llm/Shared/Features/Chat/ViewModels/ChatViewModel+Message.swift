@@ -66,6 +66,7 @@ extension ChatViewModel {
     func prepareMessageState(text: String, model: LLMModel, loadedState: inout LoadedState) -> UUID {
         if loadedState.conversation == nil, !isPrivateChat {
             loadedState.conversation = Conversation(
+                id: loadedState.pendingSessionId,
                 modelId: model.id,
                 systemPrompt: loadedState.systemPrompt,
                 contextWindowTokens: loadedState.contextWindowTokens

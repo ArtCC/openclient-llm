@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct TokenUsage: Equatable, Sendable, Codable {
+nonisolated struct TokenUsage: Equatable, Sendable, Codable {
     // MARK: - Properties
 
     let promptTokens: Int

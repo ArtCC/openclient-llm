@@ -68,7 +68,21 @@ struct MemoryView: View {
 
 private extension MemoryView {
     func loadedView(_ loadedState: MemoryViewModel.LoadedState) -> some View {
-        Group {
+        VStack(spacing: 0) {
+            if let errorMessage = loadedState.errorMessage {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Label(errorMessage, systemImage: "exclamationmark.triangle")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                    Spacer()
+                    Button(String(localized: "Retry")) {
+                        viewModel.send(.retrySynchronization)
+                    }
+                    .disabled(loadedState.isSynchronizing)
+                }
+                .padding()
+            }
+
             if loadedState.items.isEmpty {
                 emptyState
             } else {

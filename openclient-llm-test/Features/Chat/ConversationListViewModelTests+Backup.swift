@@ -23,6 +23,10 @@ extension ConversationListViewModelTests {
 
         // When
         sut.send(.exportBackupTapped)
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.backupData == backupData
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -50,6 +54,10 @@ extension ConversationListViewModelTests {
         // When
         let backupData = Data("backup".utf8)
         sut.send(.importBackupData(backupData))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.importResult == result
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -70,6 +78,10 @@ extension ConversationListViewModelTests {
 
         // When
         sut.send(.importBackupData(Data("invalid".utf8)))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.errorMessage != nil
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -93,6 +105,10 @@ extension ConversationListViewModelTests {
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
         sut.send(.importBackupData(Data()))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.importResult != nil
+        }
 
         // When
         sut.send(.importResultConsumed)

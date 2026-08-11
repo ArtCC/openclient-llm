@@ -17,6 +17,8 @@ final class ResetAppDataUseCaseTests: XCTestCase {
     private var mockSettingsManager: MockSettingsManager!
     private var mockConversationRepository: MockConversationRepository!
     private var mockUserProfileManager: MockUserProfileManager!
+    private var mockMemoryManager: MockMemoryManager!
+    private var categoryOperationGate: CloudCategoryOperationGate!
 
     // MARK: - Setup
 
@@ -26,10 +28,14 @@ final class ResetAppDataUseCaseTests: XCTestCase {
         mockSettingsManager = MockSettingsManager()
         mockConversationRepository = MockConversationRepository()
         mockUserProfileManager = MockUserProfileManager()
+        mockMemoryManager = MockMemoryManager()
+        categoryOperationGate = CloudCategoryOperationGate()
         sut = ResetAppDataUseCase(
             settingsManager: mockSettingsManager,
             conversationRepository: mockConversationRepository,
-            userProfileManager: mockUserProfileManager
+            userProfileManager: mockUserProfileManager,
+            memoryManager: mockMemoryManager,
+            categoryOperationGate: categoryOperationGate
         )
     }
 
@@ -38,44 +44,105 @@ final class ResetAppDataUseCaseTests: XCTestCase {
         mockSettingsManager = nil
         mockConversationRepository = nil
         mockUserProfileManager = nil
+        mockMemoryManager = nil
+        categoryOperationGate = nil
 
         try await super.tearDown()
     }
 
     // MARK: - Tests
 
-    func test_execute_callsDeleteAll() {
+    func test_execute_callsDeleteAll() async throws {
         // Given
         mockSettingsManager.serverBaseURL = "https://example.com"
         mockSettingsManager.apiKey = "sk-test"
 
         // When
-        sut.execute()
+        try await sut.execute()
 
         // Then
         XCTAssertTrue(mockSettingsManager.deleteAllCalled)
     }
 
-    func test_execute_deletesAllConversations() {
+    func test_execute_deletesAllConversations() async throws {
         // Given
         let conversation = Conversation(modelId: "gpt-4")
         mockConversationRepository.conversations = [conversation]
 
         // When
-        sut.execute()
+        try await sut.execute()
 
         // Then
         XCTAssertTrue(mockConversationRepository.conversations.isEmpty)
+        XCTAssertEqual(mockConversationRepository.cancelAndDeleteAllCallCount, 1)
     }
 
-    func test_execute_deletesLocalProfile() {
+    func test_execute_deletesLocalProfile() async throws {
         // Given
         mockUserProfileManager.localProfile = UserProfile(name: "Test", profileDescription: "", extraInfo: "")
 
         // When
-        sut.execute()
+        try await sut.execute()
 
         // Then
         XCTAssertTrue(mockUserProfileManager.localProfile.isEmpty)
+    }
+
+    func test_execute_conversationDeletionFails_throwsWithoutDeletingOtherConversationData() async {
+        // Given
+        let expectedError = NSError(domain: "ResetAppDataUseCaseTests", code: 1)
+        mockConversationRepository.deleteAllError = expectedError
+        mockUserProfileManager.localProfile = UserProfile(name: "Test", profileDescription: "", extraInfo: "")
+        mockMemoryManager.items = [MemoryItem(content: "Keep")]
+
+        // When
+        do {
+            try await sut.execute()
+            XCTFail("Expected conversation deletion failure")
+        } catch {
+            // Then
+            XCTAssertEqual(error as NSError, expectedError)
+            XCTAssertFalse(mockUserProfileManager.localProfile.isEmpty)
+            XCTAssertEqual(mockMemoryManager.items.map(\.content), ["Keep"])
+        }
+    }
+
+    func test_execute_memoryDeletionFails_throwsInsteadOfReportingSuccess() async {
+        // Given
+        let expectedError = NSError(domain: "ResetAppDataUseCaseTests", code: 2)
+        mockMemoryManager.deleteAllError = expectedError
+
+        // When
+        do {
+            try await sut.execute()
+            XCTFail("Expected memory deletion failure")
+        } catch {
+            // Then
+            XCTAssertEqual(error as NSError, expectedError)
+        }
+    }
+
+    func test_execute_profileCloudOperationInFlight_waitsBeforeResettingData() async throws {
+        // Given
+        let operationStarted = TestAsyncGate()
+        let releaseOperation = TestAsyncGate()
+        let inFlightOperation = Task {
+            try await categoryOperationGate.perform {
+                await operationStarted.open()
+                await releaseOperation.wait()
+            }
+        }
+        await operationStarted.wait()
+
+        // When
+        let reset = Task { try await sut.execute() }
+        await Task.yield()
+
+        // Then
+        XCTAssertFalse(mockSettingsManager.deleteAllCalled)
+        await releaseOperation.open()
+        try await inFlightOperation.value
+        try await reset.value
+        XCTAssertTrue(mockSettingsManager.deleteAllCalled)
     }
 }

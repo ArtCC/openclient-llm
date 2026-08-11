@@ -19,6 +19,7 @@ final class MemoryViewModel {
         case editItem(id: UUID, content: String)
         case toggleItem(id: UUID)
         case deleteItem(id: UUID)
+        case retrySynchronization
     }
 
     enum State: Equatable {
@@ -28,6 +29,8 @@ final class MemoryViewModel {
 
     struct LoadedState: Equatable {
         var items: [MemoryItem] = []
+        var errorMessage: String?
+        var isSynchronizing: Bool = false
     }
 
     private(set) var state: State
@@ -54,31 +57,32 @@ final class MemoryViewModel {
         switch event {
         case .viewAppeared:
             loadItems()
+            synchronizeItems()
             startObservingCloudChanges()
         case .addItem(let content):
             let trimmed = content.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty else { return }
             let item = MemoryItem(content: trimmed, source: .user)
-            memoryManager.add(item)
-            appReviewManager.requestReview()
-            loadItems()
+            performMutation { [memoryManager, appReviewManager] in
+                try await memoryManager.add(item)
+                appReviewManager.requestReview()
+            }
         case .editItem(let id, let content):
             let trimmed = content.trimmingCharacters(in: .whitespaces)
             guard !trimmed.isEmpty,
                   case .loaded(let loadedState) = state,
                   var existing = loadedState.items.first(where: { $0.id == id }) else { return }
             existing.content = trimmed
-            memoryManager.update(existing)
-            loadItems()
+            performMutation { [memoryManager] in try await memoryManager.update(existing) }
         case .toggleItem(let id):
             guard case .loaded(let loadedState) = state,
                   var existing = loadedState.items.first(where: { $0.id == id }) else { return }
             existing.isEnabled.toggle()
-            memoryManager.update(existing)
-            loadItems()
+            performMutation { [memoryManager] in try await memoryManager.update(existing) }
         case .deleteItem(let id):
-            memoryManager.delete(id: id)
-            loadItems()
+            performMutation { [memoryManager] in try await memoryManager.delete(id: id) }
+        case .retrySynchronization:
+            synchronizeItems()
         }
     }
 }
@@ -89,6 +93,40 @@ private extension MemoryViewModel {
     func loadItems() {
         let items = memoryManager.getItems().sorted { $0.createdAt > $1.createdAt }
         state = .loaded(LoadedState(items: items))
+    }
+
+    func synchronizeItems() {
+        guard case .loaded(var loadedState) = state, !loadedState.isSynchronizing else { return }
+        loadedState.isSynchronizing = true
+        state = .loaded(loadedState)
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await memoryManager.synchronize()
+                loadItems()
+            } catch {
+                updateFailure(String(localized: "Memory could not be synchronized. Your local items are retained."))
+            }
+        }
+    }
+
+    func performMutation(_ mutation: @escaping @MainActor () async throws -> Void) {
+        Task { [weak self] in
+            do {
+                try await mutation()
+                self?.loadItems()
+            } catch {
+                self?.updateFailure(String(localized: "The memory change could not be saved. Please try again."))
+            }
+        }
+    }
+
+    func updateFailure(_ message: String) {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.items = memoryManager.getItems().sorted { $0.createdAt > $1.createdAt }
+        loadedState.errorMessage = message
+        loadedState.isSynchronizing = false
+        state = .loaded(loadedState)
     }
 
     func startObservingCloudChanges() {

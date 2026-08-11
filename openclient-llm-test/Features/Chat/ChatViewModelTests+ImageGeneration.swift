@@ -37,7 +37,8 @@ extension ChatViewModelTests {
         XCTAssertEqual(mockGenerateImage.prompts, ["A cat on the Moon"])
         XCTAssertEqual(mockGenerateImage.models, ["gpt-image-2"])
         XCTAssertEqual(loadedState.messages.last?.attachments.first?.type, .image)
-        XCTAssertEqual(mockAttachmentRepository.savedAttachments.first?.data, imageData)
+        XCTAssertEqual(loadedState.messages.last?.attachments.first?.transientData, imageData)
+        XCTAssertTrue(mockAttachmentRepository.savedAttachments.isEmpty)
         XCTAssertFalse(loadedState.isStreaming)
     }
 }

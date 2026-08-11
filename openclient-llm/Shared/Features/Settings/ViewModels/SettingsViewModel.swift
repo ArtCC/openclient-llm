@@ -22,7 +22,8 @@ final class SettingsViewModel {
         case cloudSyncToggled(Bool)
         case cloudSyncConflictResolved(keepLocal: Bool)
         case cloudSyncConflictCancelled
-        case syncConversationsTapped
+        case syncNowTapped
+        case cloudAvailabilityRefresh
         case showTokenUsageToggled(Bool)
         case webSearchToolNameChanged(String)
         case webSearchMaxResultsChanged(Int)
@@ -57,7 +58,9 @@ final class SettingsViewModel {
         var showLiteLLMHint: Bool = false
         var notificationPermissionStatus: NotificationPermissionStatus = .notDetermined
         var isPrivacyScreenEnabled: Bool = true
-        var conversationSyncResult: ConversationSyncResult?
+        var synchronizationResult: AppSynchronizationResult?
+        var isSynchronizing: Bool = false
+        var resetErrorMessage: String?
         var availableMCPTools: [MCPToolInfo] = []
         var availableMCPServers: [MCPServerInfo] = []
         var enabledMCPToolIds: Set<String> = []
@@ -72,20 +75,21 @@ final class SettingsViewModel {
         case failure(String)
     }
 
-    private(set) var state: State
+    var state: State
 
     private let saveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol
     private let testServerConnectionUseCase: TestServerConnectionUseCaseProtocol
     private let checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol
     private let fetchSearchToolsUseCase: FetchSearchToolsUseCaseProtocol
     private let fetchMCPToolsUseCase: FetchMCPToolsUseCaseProtocol
-    private let settingsManager: SettingsManagerProtocol
-    private let cloudSyncManager: CloudSyncManagerProtocol
-    private let syncConversationsUseCase: SyncConversationsUseCaseProtocol
-    private let userProfileManager: UserProfileManagerProtocol
+    let settingsManager: SettingsManagerProtocol
+    let cloudSyncManager: CloudSyncManagerProtocol
+    let synchronizeAppDataUseCase: SynchronizeAppDataUseCaseProtocol
+    let userProfileManager: UserProfileManagerProtocol
     private let resetAppUseCase: ResetAppDataUseCaseProtocol
     private let checkNotificationPermissionUseCase: NotificationStatusCheckProtocol
-    private let notificationPermissionUseCase: NotificationPermissionUseCaseProtocol
+    let notificationPermissionUseCase: NotificationPermissionUseCaseProtocol
+    var synchronizationTask: Task<Void, Never>?
 
     // MARK: - Init
 
@@ -98,7 +102,7 @@ final class SettingsViewModel {
         fetchMCPToolsUseCase: FetchMCPToolsUseCaseProtocol = FetchMCPToolsUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
-        syncConversationsUseCase: SyncConversationsUseCaseProtocol = SyncConversationsUseCase(),
+        synchronizeAppDataUseCase: SynchronizeAppDataUseCaseProtocol = SynchronizeAppDataUseCase(),
         userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
         resetAppUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase(),
         checkNotificationPermissionUseCase: NotificationStatusCheckProtocol = CheckNotificationPermissionUseCase(),
@@ -112,45 +116,17 @@ final class SettingsViewModel {
         self.fetchMCPToolsUseCase = fetchMCPToolsUseCase
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
-        self.syncConversationsUseCase = syncConversationsUseCase
+        self.synchronizeAppDataUseCase = synchronizeAppDataUseCase
         self.userProfileManager = userProfileManager
         self.resetAppUseCase = resetAppUseCase
         self.checkNotificationPermissionUseCase = checkNotificationPermissionUseCase
         self.notificationPermissionUseCase = notificationPermissionUseCase
     }
-
-    // MARK: - Input functions
-
-    func send(_ event: Event) {
-        switch event {
-        case .viewAppeared:
-            loadSettings()
-        case .serverURLChanged(let url):
-            updateServerURL(url)
-        case .apiKeyChanged(let key):
-            updateAPIKey(key)
-        case .testConnectionTapped:
-            testConnection()
-        case .saveTapped:
-            saveSettings()
-        case .cloudSyncToggled, .cloudSyncConflictResolved, .cloudSyncConflictCancelled, .syncConversationsTapped:
-            handleCloudSyncEvent(event)
-        case .showTokenUsageToggled, .privacyScreenToggled:
-            handlePreferenceToggleEvent(event)
-        case .webSearchToolNameChanged, .webSearchMaxResultsChanged, .fetchSearchToolsTapped,
-             .fetchMCPToolsTapped, .mcpToolToggled:
-            handleServerDiscoveryEvent(event)
-        case .resetConfirmed:
-            resetApp()
-        case .requestNotificationPermissionTapped, .notificationStatusRefresh:
-            handleNotificationEvent(event)
-        }
-    }
 }
 
-// MARK: - Private
+// MARK: - Internal
 
-private extension SettingsViewModel {
+extension SettingsViewModel {
     func loadSettings() {
 #if DEBUG
         let savedServerURL = settingsManager.getServerBaseURL()
@@ -162,7 +138,7 @@ private extension SettingsViewModel {
             serverURL: getServerBaseURL,
             apiKey: settingsManager.getAPIKey(),
             isCloudSyncEnabled: settingsManager.getIsCloudSyncEnabled(),
-            isCloudAvailable: cloudSyncManager.isCloudAvailable(),
+            isCloudAvailable: false,
             showTokenUsage: settingsManager.getShowTokenUsage(),
             webSearchToolName: settingsManager.getWebSearchToolName(),
             webSearchMaxResults: settingsManager.getWebSearchMaxResults(),
@@ -171,6 +147,9 @@ private extension SettingsViewModel {
             enabledMCPToolIds: Set(settingsManager.getEnabledMCPToolIds())
         )
         state = .loaded(loadedState)
+        Task { [weak self] in
+            await self?.refreshCloudAvailability()
+        }
         let serverURL = loadedState.serverURL
         if !serverURL.isEmpty {
             Task {
@@ -243,53 +222,6 @@ private extension SettingsViewModel {
         state = .loaded(currentState)
     }
 
-    func toggleCloudSync(_ enabled: Bool) {
-        guard case .loaded(var loadedState) = state else { return }
-
-        if enabled {
-            let localProfile = userProfileManager.getLocalProfile()
-            let cloudProfile = userProfileManager.getCloudProfile()
-
-            // Both local and cloud have non-empty profiles → ask user which to keep.
-            if !localProfile.isEmpty, let cloud = cloudProfile, !cloud.isEmpty, localProfile != cloud {
-                loadedState.showCloudSyncConflictAlert = true
-                state = .loaded(loadedState)
-                return
-            }
-
-            // Only local has data → push to cloud.
-            settingsManager.setIsCloudSyncEnabled(true)
-            loadedState.isCloudSyncEnabled = true
-            loadedState.conversationSyncResult = syncConversationsUseCase.execute()
-            state = .loaded(loadedState)
-
-            if !localProfile.isEmpty && (cloudProfile?.isEmpty ?? true) {
-                userProfileManager.resolveCloudSyncConflict(keepLocal: true)
-            }
-        } else {
-            settingsManager.setIsCloudSyncEnabled(false)
-            loadedState.isCloudSyncEnabled = false
-            loadedState.conversationSyncResult = nil
-            state = .loaded(loadedState)
-        }
-    }
-
-    func resolveCloudSyncConflict(keepLocal: Bool) {
-        guard case .loaded(var loadedState) = state else { return }
-        settingsManager.setIsCloudSyncEnabled(true)
-        userProfileManager.resolveCloudSyncConflict(keepLocal: keepLocal)
-        loadedState.isCloudSyncEnabled = true
-        loadedState.conversationSyncResult = syncConversationsUseCase.execute()
-        loadedState.showCloudSyncConflictAlert = false
-        state = .loaded(loadedState)
-    }
-
-    func cancelCloudSyncToggle() {
-        guard case .loaded(var loadedState) = state else { return }
-        loadedState.showCloudSyncConflictAlert = false
-        state = .loaded(loadedState)
-    }
-
     func toggleShowTokenUsage(_ show: Bool) {
         guard case .loaded(var loadedState) = state else { return }
         settingsManager.setShowTokenUsage(show)
@@ -332,27 +264,6 @@ private extension SettingsViewModel {
         guard case .loaded(var loadedState) = state else { return }
         settingsManager.setWebSearchMaxResults(count)
         loadedState.webSearchMaxResults = count
-        state = .loaded(loadedState)
-    }
-
-    func handleCloudSyncEvent(_ event: Event) {
-        switch event {
-        case .cloudSyncToggled(let enabled):
-            toggleCloudSync(enabled)
-        case .cloudSyncConflictResolved(let keepLocal):
-            resolveCloudSyncConflict(keepLocal: keepLocal)
-        case .cloudSyncConflictCancelled:
-            cancelCloudSyncToggle()
-        case .syncConversationsTapped:
-            synchronizeConversations()
-        default:
-            break
-        }
-    }
-
-    func synchronizeConversations() {
-        guard case .loaded(var loadedState) = state, loadedState.isCloudSyncEnabled else { return }
-        loadedState.conversationSyncResult = syncConversationsUseCase.execute()
         state = .loaded(loadedState)
     }
 
@@ -401,9 +312,23 @@ private extension SettingsViewModel {
     }
 
     func resetApp() {
-        resetAppUseCase.execute()
-        loadSettings()
-        NotificationCenter.default.post(name: .appDataDidReset, object: nil)
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.resetErrorMessage = nil
+        state = .loaded(loadedState)
+        Task {
+            do {
+                try await resetAppUseCase.execute()
+                loadSettings()
+                NotificationCenter.default.post(name: .appDataDidReset, object: nil)
+            } catch {
+                LogManager.error("App data reset failed")
+                guard case .loaded(var currentState) = state else { return }
+                currentState.resetErrorMessage = String(
+                    localized: "App data could not be completely reset. Your remaining data was not discarded."
+                )
+                state = .loaded(currentState)
+            }
+        }
     }
 
     func refreshNotificationStatus() {
@@ -415,39 +340,6 @@ private extension SettingsViewModel {
         }
     }
 
-    func requestNotificationPermission() {
-        Task {
-            await notificationPermissionUseCase.execute()
-            refreshNotificationStatus()
-        }
-    }
-
-    func handleNotificationEvent(_ event: Event) {
-        switch event {
-        case .requestNotificationPermissionTapped:
-            requestNotificationPermission()
-        case .notificationStatusRefresh:
-            refreshNotificationStatus()
-        default:
-            break
-        }
-    }
-
-    func handleServerDiscoveryEvent(_ event: Event) {
-        handleWebSearchEvent(event)
-        handleMCPEvent(event)
-    }
-
-    func handleMCPEvent(_ event: Event) {
-        switch event {
-        case .fetchMCPToolsTapped:
-            fetchMCPTools()
-        case .mcpToolToggled(let toolId, let enabled):
-            toggleMCPTool(toolId: toolId, enabled: enabled)
-        default:
-            break
-        }
-    }
     func fetchMCPTools() {
         guard case .loaded(let loadedState) = state, !loadedState.isLoadingMCPTools else { return }
         var update = loadedState
@@ -490,10 +382,5 @@ private extension SettingsViewModel {
         }
         settingsManager.setEnabledMCPToolIds(Array(loadedState.enabledMCPToolIds))
         state = .loaded(loadedState)
-    }
-    func enabledMCPToolIds(savedIds: [String], tools: [MCPToolInfo]) -> Set<String> {
-        let currentIds = Set(tools.map(\.id))
-        let legacyIds = Dictionary(uniqueKeysWithValues: tools.map { ($0.prefixedName, $0.id) })
-        return Set(savedIds.compactMap { currentIds.contains($0) ? $0 : legacyIds[$0] })
     }
 }

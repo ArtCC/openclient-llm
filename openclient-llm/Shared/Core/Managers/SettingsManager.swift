@@ -131,7 +131,9 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     }
 
     func setIsCloudSyncEnabled(_ value: Bool) {
+        guard defaults.bool(forKey: Keys.isCloudSyncEnabled) != value else { return }
         defaults.set(value, forKey: Keys.isCloudSyncEnabled)
+        NotificationCenter.default.post(name: .cloudSyncIntentDidChange, object: nil)
     }
 
     func getShowTokenUsage() -> Bool {
@@ -238,6 +240,7 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     }
 
     func deleteAll() {
+        let wasCloudSyncEnabled = getIsCloudSyncEnabled()
         defaults.removeObject(forKey: Keys.isOnboardingCompleted)
         defaults.removeObject(forKey: Keys.selectedModelId)
         defaults.removeObject(forKey: Keys.isCloudSyncEnabled)
@@ -255,6 +258,9 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         defaults.removeObject(forKey: LegacyKeys.serverBaseURL)
         defaults.removeObject(forKey: LegacyKeys.apiKey)
         keychainManager.deleteAll()
+        if wasCloudSyncEnabled {
+            NotificationCenter.default.post(name: .cloudSyncIntentDidChange, object: nil)
+        }
     }
 }
 

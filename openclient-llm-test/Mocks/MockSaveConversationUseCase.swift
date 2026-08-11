@@ -14,18 +14,39 @@ final class MockSaveConversationUseCase: SaveConversationUseCaseProtocol, @unche
     // MARK: - Properties
 
     var savedConversations: [Conversation] = []
+    var expectedBases: [Conversation?] = []
     var error: Error?
     var failureAtCall: Int?
+    var result: Conversation?
+    var executeHandler: ((Conversation, Conversation?) throws -> Conversation)?
+    var asyncExecuteHandler: ((Conversation, Conversation?, Int) async throws -> Conversation)?
     var executeCallCount = 0
+    var importBatches: [[Conversation]] = []
 
     // MARK: - Execute
 
-    func execute(_ conversation: Conversation) throws {
+    @discardableResult
+    func execute(_ conversation: Conversation, expectedBase: Conversation?) async throws -> Conversation {
         executeCallCount += 1
         if let error { throw error }
         if failureAtCall == executeCallCount {
             throw NSError(domain: "MockSaveConversationUseCase", code: 1)
         }
         savedConversations.append(conversation)
+        expectedBases.append(expectedBase)
+        if let asyncExecuteHandler {
+            return try await asyncExecuteHandler(conversation, expectedBase, executeCallCount)
+        }
+        if let executeHandler {
+            return try executeHandler(conversation, expectedBase)
+        }
+        return result ?? conversation
+    }
+
+    func executeImportBatch(_ conversations: [Conversation]) async throws -> [Conversation] {
+        if let error { throw error }
+        importBatches.append(conversations)
+        savedConversations.append(contentsOf: conversations)
+        return conversations
     }
 }

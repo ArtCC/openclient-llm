@@ -18,7 +18,11 @@ final class MockUserProfileManager: UserProfileManagerProtocol, @unchecked Senda
     var savedProfile: UserProfile?
     var localProfile: UserProfile = UserProfile()
     var cloudProfile: UserProfile?
+    var cloudProfileDeletionMarker: CloudDeletionMarker?
     var resolvedKeepLocal: Bool?
+    var cloudError: Error?
+    var getCloudProfileCallCount = 0
+    var deleteLocalProfileError: Error?
 
     // MARK: - Public
 
@@ -26,7 +30,8 @@ final class MockUserProfileManager: UserProfileManagerProtocol, @unchecked Senda
         profile
     }
 
-    func saveProfile(_ profile: UserProfile) {
+    func saveProfile(_ profile: UserProfile) async throws {
+        if let cloudError { throw cloudError }
         savedProfile = profile
         self.profile = profile
     }
@@ -35,15 +40,26 @@ final class MockUserProfileManager: UserProfileManagerProtocol, @unchecked Senda
         localProfile
     }
 
-    func getCloudProfile() -> UserProfile? {
-        cloudProfile
+    func getCloudProfile() async throws -> UserProfile? {
+        getCloudProfileCallCount += 1
+        if let cloudError { throw cloudError }
+        return cloudProfile
     }
 
-    func resolveCloudSyncConflict(keepLocal: Bool) {
+    func getCloudProfileState() async throws -> CloudUserProfileState {
+        getCloudProfileCallCount += 1
+        if let cloudError { throw cloudError }
+        if let cloudProfileDeletionMarker { return .deleted(cloudProfileDeletionMarker) }
+        return cloudProfile.map(CloudUserProfileState.profile) ?? .missing
+    }
+
+    func resolveCloudSyncConflict(keepLocal: Bool) async throws {
+        if let cloudError { throw cloudError }
         resolvedKeepLocal = keepLocal
     }
 
-    func deleteLocalProfile() {
+    func deleteLocalProfile() throws {
+        if let deleteLocalProfileError { throw deleteLocalProfileError }
         profile = UserProfile()
         localProfile = UserProfile()
     }

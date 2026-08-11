@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     // MARK: - Properties
 
     private var transactionObserverTask: Task<Void, Never>?
+    private let conversationCloudObserver = ConversationCloudObserver()
 
     // MARK: - UIApplication
 
@@ -49,8 +50,13 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
                 }
             }
         }
+        conversationCloudObserver.start()
 
         return true
+    }
+
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        conversationCloudObserver.start()
     }
 
     // MARK: - Scene Configuration

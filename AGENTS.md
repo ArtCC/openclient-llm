@@ -23,6 +23,7 @@ Each specification must use the `.instructions.md` suffix and start with YAML fr
 | `concurrency.instructions.md` | Working with async code, isolation, or `Sendable`. |
 | `conversation-backup-format.instructions.md` | Exporting, importing, restoring, validating, or versioning conversation backups. |
 | `design-ui.instructions.md` | Designing general SwiftUI UI, accessibility, haptics, or animation. |
+| `icloud-sync.instructions.md` | Implementing or changing iCloud synchronization, storage, conflict resolution, or cloud data management. |
 | `litellm-api.instructions.md` | Changing LiteLLM/OpenAI-compatible API integration. |
 | `readme.instructions.md` | Updating `README.md`. |
 | `roadmap.instructions.md` | Planning or prioritizing future work. |

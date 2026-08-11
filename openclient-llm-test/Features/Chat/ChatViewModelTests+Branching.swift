@@ -43,6 +43,10 @@ extension ChatViewModelTests {
 
         // When
         sut.send(.forkFromMessage(msgId))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.branchedConversation?.id == expectedFork.id
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -84,6 +88,10 @@ extension ChatViewModelTests {
 
         // When
         sut.send(.forkFromMessage(userMessage.id))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.branchedConversation != nil
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state,
@@ -91,7 +99,8 @@ extension ChatViewModelTests {
             XCTFail("Expected a branched conversation")
             return
         }
-        XCTAssertEqual(fork.messages, [userMessage])
+        XCTAssertEqual(fork.messages.map(\.content), [userMessage.content])
+        XCTAssertNotEqual(fork.messages.first?.id, userMessage.id)
         XCTAssertEqual(mockSaveConversation.savedConversations.last, fork)
     }
 
@@ -134,6 +143,10 @@ extension ChatViewModelTests {
 
         // When
         sut.send(.forkFromMessage(msgId))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.errorMessage != nil
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -166,6 +179,10 @@ extension ChatViewModelTests {
         let fork = Conversation(modelId: "gpt-4", parentConversationId: loaded.conversation?.id)
         mockBranchConversation.branchResult = .success(fork)
         sut.send(.forkFromMessage(msgId))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.branchedConversation != nil
+        }
 
         guard case .loaded(let withFork) = sut.state else {
             XCTFail("Expected loaded state")

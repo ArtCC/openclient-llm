@@ -23,6 +23,10 @@ extension ConversationListViewModelTests {
 
         // When
         sut.send(.pinToggled(conversation.id))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.conversations.first?.isPinned == true
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -44,6 +48,10 @@ extension ConversationListViewModelTests {
 
         // When
         sut.send(.pinToggled(conversation.id))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.conversations.first?.isPinned == false
+        }
 
         // Then
         XCTAssertEqual(mockPinConversation.executedIsPinned, false)

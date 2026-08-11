@@ -9,7 +9,7 @@
 import Foundation
 
 protocol RenameConversationUseCaseProtocol: Sendable {
-    func execute(_ conversationId: UUID, newTitle: String) throws
+    func execute(_ conversationId: UUID, newTitle: String) async throws
 }
 
 struct RenameConversationUseCase: RenameConversationUseCaseProtocol {
@@ -25,11 +25,7 @@ struct RenameConversationUseCase: RenameConversationUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute(_ conversationId: UUID, newTitle: String) throws {
-        var conversations = try repository.loadAll()
-        guard let index = conversations.firstIndex(where: { $0.id == conversationId }) else { return }
-        conversations[index].title = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
-        conversations[index].updatedAt = Date()
-        try repository.save(conversations[index])
+    func execute(_ conversationId: UUID, newTitle: String) async throws {
+        _ = try await repository.rename(conversationId, title: newTitle)
     }
 }

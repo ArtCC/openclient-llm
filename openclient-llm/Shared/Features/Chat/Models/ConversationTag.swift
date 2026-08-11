@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct ConversationTag: Equatable, Hashable, Sendable, Codable {
+nonisolated struct ConversationTag: Equatable, Hashable, Sendable, Codable {
     let name: String
     let color: TagColor
 }

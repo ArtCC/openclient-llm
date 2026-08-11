@@ -6,6 +6,7 @@
 //  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
 //
 
+import CryptoKit
 import Foundation
 
 // Stable UUIDs for built-in templates — never change; used to identify them across launches
@@ -20,9 +21,9 @@ private enum BuiltInTemplateID {
 }
 
 protocol PromptTemplateRepositoryProtocol: Sendable {
-    func loadAll() throws -> [PromptTemplate]
-    func save(_ template: PromptTemplate) throws
-    func delete(_ templateId: UUID) throws
+    func loadAll() async throws -> [PromptTemplate]
+    func save(_ template: PromptTemplate) async throws
+    func delete(_ templateId: UUID) async throws
 }
 
 struct PromptTemplateRepository: PromptTemplateRepositoryProtocol {
@@ -38,66 +39,89 @@ struct PromptTemplateRepository: PromptTemplateRepositoryProtocol {
     init(
         fileManager: FileManager = .default,
         settingsManager: SettingsManagerProtocol = SettingsManager(),
-        cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager()
+        cloudSyncManager: CloudSyncManagerProtocol = CloudSyncManager(),
+        directoryURL: URL? = nil
     ) {
         self.fileManager = fileManager
         let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        self.directoryURL = documentsURL.appendingPathComponent("PromptTemplates", isDirectory: true)
+        self.directoryURL = directoryURL
+            ?? documentsURL.appendingPathComponent("PromptTemplates", isDirectory: true)
         self.settingsManager = settingsManager
         self.cloudSyncManager = cloudSyncManager
     }
 
     // MARK: - Public
 
-    func loadAll() throws -> [PromptTemplate] {
+    func loadAll() async throws -> [PromptTemplate] {
         LogManager.debug("loadAll prompt templates")
         try ensureDirectoryExists()
 
-        var localCustom = try loadCustomTemplates()
+        var deletionMarkers = try loadDeletionMarkers()
+        let localTemplates = try loadCustomTemplates()
+        var mergedTemplates = localTemplates.filter { shouldKeep($0.template, markers: deletionMarkers) }
 
         if settingsManager.getIsCloudSyncEnabled() {
-            let cloudTemplates = (try? cloudSyncManager.loadTemplatesFromCloud()) ?? []
-            let cloudIds = cloudSyncManager.allCloudTemplateIds()
-
-            localCustom = mergeTemplates(local: localCustom, cloud: cloudTemplates, cloudIds: cloudIds)
-
-            if cloudIds != nil {
-                let mergedIds = Set(localCustom.map(\.id))
-                cleanupLocalFiles(keeping: mergedIds)
+            try await retryCloudDeletions(deletionMarkers)
+            let snapshot = try await cloudSyncManager.loadTemplatesFromCloud()
+            deletionMarkers = mergeDeletionMarkers(local: deletionMarkers, cloud: snapshot.deletionMarkers)
+            try saveDeletionMarkers(deletionMarkers)
+            mergedTemplates = try mergeTemplates(
+                local: localTemplates,
+                cloud: storedCloudTemplates(snapshot),
+                markers: deletionMarkers
+            )
+            try persistLocalOutput(mergedTemplates)
+            try await cloudSyncManager.syncTemplatesToCloud(mergedTemplates.map(\.template))
+            for storedTemplate in mergedTemplates where shouldSupersedeMarker(
+                storedTemplate.template,
+                markers: deletionMarkers
+            ) {
+                try removeDeletionMarker(for: storedTemplate.template.id)
             }
-
-            for template in localCustom {
-                try saveLocal(template)
-            }
+        } else {
+            try persistLocalOutput(mergedTemplates)
         }
 
-        let all = builtIns() + localCustom.sorted { $0.createdAt < $1.createdAt }
+        let customTemplates = mergedTemplates.map(\.template).sorted { $0.createdAt < $1.createdAt }
+        let all = builtIns() + customTemplates
         LogManager.success("loadAll returned \(all.count) prompt templates")
         return all
     }
 
-    func save(_ template: PromptTemplate) throws {
+    func save(_ template: PromptTemplate) async throws {
         LogManager.debug("save prompt template id=\(template.id) title='\(template.title)'")
         guard !template.isBuiltIn else { return }
         try ensureDirectoryExists()
-        try saveLocal(template)
+        let revisedTemplate = templateWithCurrentRevision(template)
+        try saveLocal(revisedTemplate)
 
         if settingsManager.getIsCloudSyncEnabled() {
-            try? cloudSyncManager.syncTemplatesToCloud([template])
+            try await retryCloudDeletions(try loadDeletionMarkers())
+            try await cloudSyncManager.syncTemplatesToCloud([revisedTemplate])
         }
+        try removeDeletionMarker(for: revisedTemplate.id)
 
-        LogManager.success("saved prompt template id=\(template.id)")
+        LogManager.success("saved prompt template id=\(revisedTemplate.id)")
     }
 
-    func delete(_ templateId: UUID) throws {
+    func delete(_ templateId: UUID) async throws {
         LogManager.debug("delete prompt template id=\(templateId)")
         let fileURL = directoryURL.appendingPathComponent("\(templateId.uuidString).json")
-        guard fileManager.fileExists(atPath: fileURL.path) else { return }
-        try fileManager.removeItem(at: fileURL)
+        let localRevision = try? decoder().decode(
+            PromptTemplate.self,
+            from: Data(contentsOf: fileURL)
+        ).updatedAt
+        let markerRevision = try loadDeletionMarkers()[templateId]?.deletedAt
+        let deletionFloor = max(localRevision ?? .distantPast, markerRevision ?? .distantPast)
+        let deletedAt = nextRevision(after: deletionFloor)
+        try saveDeletionMarker(CloudDeletionMarker(id: templateId, deletedAt: deletedAt))
+        if fileManager.fileExists(atPath: fileURL.path) {
+            try fileManager.removeItem(at: fileURL)
+        }
         LogManager.success("deleted prompt template id=\(templateId)")
 
         if settingsManager.getIsCloudSyncEnabled() {
-            try? cloudSyncManager.deleteTemplateFromCloud(templateId)
+            try await cloudSyncManager.deleteTemplateFromCloud(templateId, deletedAt: deletedAt)
         }
     }
 }
@@ -105,12 +129,25 @@ struct PromptTemplateRepository: PromptTemplateRepositoryProtocol {
 // MARK: - Private
 
 private extension PromptTemplateRepository {
+    struct StoredTemplate {
+        let template: PromptTemplate
+        let data: Data
+    }
+
+    var deletionDirectoryURL: URL {
+        directoryURL.appendingPathComponent(".DeletionMetadata", isDirectory: true)
+    }
+
+    var recoveryDirectoryURL: URL {
+        directoryURL.deletingLastPathComponent().appendingPathComponent("PromptTemplateRecovery", isDirectory: true)
+    }
+
     func ensureDirectoryExists() throws {
         guard !fileManager.fileExists(atPath: directoryURL.path) else { return }
         try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
     }
 
-    func loadCustomTemplates() throws -> [PromptTemplate] {
+    func loadCustomTemplates() throws -> [StoredTemplate] {
         let contents = try fileManager.contentsOfDirectory(
             at: directoryURL,
             includingPropertiesForKeys: nil,
@@ -122,7 +159,10 @@ private extension PromptTemplateRepository {
             .filter { $0.pathExtension == "json" }
             .compactMap { url in
                 guard let data = try? Data(contentsOf: url) else { return nil }
-                return try? decoder.decode(PromptTemplate.self, from: data)
+                guard let template = try? decoder.decode(PromptTemplate.self, from: data),
+                      UUID(uuidString: url.deletingPathExtension().lastPathComponent) == template.id,
+                      !template.isBuiltIn else { return nil }
+                return StoredTemplate(template: template, data: data)
             }
     }
 
@@ -135,42 +175,155 @@ private extension PromptTemplateRepository {
         try data.write(to: fileURL, options: .atomic)
     }
 
-    func mergeTemplates(
-        local: [PromptTemplate],
-        cloud: [PromptTemplate],
-        cloudIds: Set<UUID>?
-    ) -> [PromptTemplate] {
-        var merged: [UUID: PromptTemplate] = [:]
-
-        for template in local {
-            if let cloudIds {
-                guard cloudIds.contains(template.id) else { continue }
-            }
-            merged[template.id] = template
-        }
-
-        for cloudTemplate in cloud {
-            // Cloud wins on conflict (most recently created custom template takes precedence)
-            merged[cloudTemplate.id] = cloudTemplate
-        }
-
-        return Array(merged.values)
+    func loadDeletionMarkers() throws -> [UUID: CloudDeletionMarker] {
+        guard fileManager.fileExists(atPath: deletionDirectoryURL.path) else { return [:] }
+        let urls = try fileManager.contentsOfDirectory(at: deletionDirectoryURL, includingPropertiesForKeys: nil)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try Dictionary(uniqueKeysWithValues: urls.compactMap { url in
+            guard url.pathExtension == "json" else { return nil }
+            let marker = try decoder.decode(CloudDeletionMarker.self, from: Data(contentsOf: url))
+            return (marker.id, marker)
+        })
     }
 
-    func cleanupLocalFiles(keeping ids: Set<UUID>) {
-        guard let fileURLs = try? fileManager.contentsOfDirectory(
+    func saveDeletionMarker(_ marker: CloudDeletionMarker) throws {
+        try fileManager.createDirectory(at: deletionDirectoryURL, withIntermediateDirectories: true)
+        let url = deletionDirectoryURL.appendingPathComponent("\(marker.id.uuidString).json")
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        if let existing = try? decoder().decode(CloudDeletionMarker.self, from: Data(contentsOf: url)),
+           existing.deletedAt >= marker.deletedAt {
+            return
+        }
+        try encoder.encode(marker).write(to: url, options: .atomic)
+    }
+
+    func saveDeletionMarkers(_ markers: [UUID: CloudDeletionMarker]) throws {
+        for marker in markers.values {
+            try saveDeletionMarker(marker)
+        }
+    }
+
+    func removeDeletionMarker(for id: UUID) throws {
+        let url = deletionDirectoryURL.appendingPathComponent("\(id.uuidString).json")
+        guard fileManager.fileExists(atPath: url.path) else { return }
+        try fileManager.removeItem(at: url)
+    }
+
+    func retryCloudDeletions(_ markers: [UUID: CloudDeletionMarker]) async throws {
+        for marker in markers.values {
+            try await cloudSyncManager.deleteTemplateFromCloud(marker.id, deletedAt: marker.deletedAt)
+        }
+    }
+
+    func mergeTemplates(
+        local: [StoredTemplate],
+        cloud: [StoredTemplate],
+        markers: [UUID: CloudDeletionMarker]
+    ) throws -> [StoredTemplate] {
+        let localById = Dictionary(uniqueKeysWithValues: local.map { ($0.template.id, $0) })
+        let cloudById = Dictionary(uniqueKeysWithValues: cloud.map { ($0.template.id, $0) })
+        let ids = Set(localById.keys).union(cloudById.keys)
+        return try ids.compactMap { id in
+            let localCandidate = localById[id].flatMap {
+                shouldKeep($0.template, markers: markers) ? $0 : nil
+            }
+            let cloudCandidate = cloudById[id].flatMap {
+                shouldKeep($0.template, markers: markers) ? $0 : nil
+            }
+            guard let localCandidate, let cloudCandidate else {
+                return localCandidate ?? cloudCandidate
+            }
+            guard localCandidate.data != cloudCandidate.data else { return localCandidate }
+            let winner = preferredTemplate(local: localCandidate, cloud: cloudCandidate)
+            try preserveForRecovery(winner.data == localCandidate.data ? cloudCandidate : localCandidate)
+            return winner
+        }
+    }
+
+    func preferredTemplate(local: StoredTemplate, cloud: StoredTemplate) -> StoredTemplate {
+        if local.template.updatedAt == cloud.template.updatedAt {
+            return cloud.data.lexicographicallyPrecedes(local.data) ? local : cloud
+        }
+        return local.template.updatedAt > cloud.template.updatedAt ? local : cloud
+    }
+
+    func storedCloudTemplates(_ snapshot: PromptTemplateCloudSnapshot) -> [StoredTemplate] {
+        snapshot.templates.compactMap { template in
+            guard !template.isBuiltIn, let data = snapshot.templateData[template.id] else { return nil }
+            return StoredTemplate(template: template, data: data)
+        }
+    }
+
+    func mergeDeletionMarkers(
+        local: [UUID: CloudDeletionMarker],
+        cloud: [UUID: CloudDeletionMarker]
+    ) -> [UUID: CloudDeletionMarker] {
+        cloud.reduce(into: local) { result, entry in
+            if result[entry.key]?.deletedAt ?? .distantPast < entry.value.deletedAt {
+                result[entry.key] = entry.value
+            }
+        }
+    }
+
+    func shouldKeep(_ template: PromptTemplate, markers: [UUID: CloudDeletionMarker]) -> Bool {
+        guard let marker = markers[template.id] else { return true }
+        return template.updatedAt > marker.deletedAt
+    }
+
+    func shouldSupersedeMarker(_ template: PromptTemplate, markers: [UUID: CloudDeletionMarker]) -> Bool {
+        guard let marker = markers[template.id] else { return false }
+        return template.updatedAt > marker.deletedAt
+    }
+
+    func persistLocalOutput(_ templates: [StoredTemplate]) throws {
+        let ids = Set(templates.map(\.template.id))
+        for storedTemplate in templates {
+            try saveLocal(storedTemplate.template)
+        }
+        let urls = try fileManager.contentsOfDirectory(
             at: directoryURL,
             includingPropertiesForKeys: nil,
             options: .skipsHiddenFiles
-        ) else { return }
-
-        for url in fileURLs where url.pathExtension == "json" {
-            if let uuid = UUID(uuidString: url.deletingPathExtension().lastPathComponent),
-               !ids.contains(uuid) {
-                try? fileManager.removeItem(at: url)
-                LogManager.debug("Cleaned up local template file: \(uuid)")
-            }
+        )
+        for url in urls where url.pathExtension == "json" {
+            guard let id = UUID(uuidString: url.deletingPathExtension().lastPathComponent),
+                  !ids.contains(id) else { continue }
+            try fileManager.removeItem(at: url)
         }
+    }
+
+    func preserveForRecovery(_ storedTemplate: StoredTemplate) throws {
+        try fileManager.createDirectory(at: recoveryDirectoryURL, withIntermediateDirectories: true)
+        let digest = SHA256.hash(data: storedTemplate.data).prefix(8).map { String(format: "%02x", $0) }.joined()
+        let url = recoveryDirectoryURL.appendingPathComponent("\(storedTemplate.template.id.uuidString)-\(digest).json")
+        if let existing = try? Data(contentsOf: url), existing == storedTemplate.data { return }
+        try storedTemplate.data.write(to: url, options: .atomic)
+        guard try Data(contentsOf: url) == storedTemplate.data else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+    }
+
+    func templateWithCurrentRevision(_ template: PromptTemplate) -> PromptTemplate {
+        PromptTemplate(
+            id: template.id,
+            title: template.title,
+            content: template.content,
+            isBuiltIn: template.isBuiltIn,
+            createdAt: template.createdAt,
+            updatedAt: max(template.updatedAt, Date())
+        )
+    }
+
+    func nextRevision(after revision: Date) -> Date {
+        max(Date(), revision.addingTimeInterval(1))
+    }
+
+    func decoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
     }
 
     func builtIns() -> [PromptTemplate] {

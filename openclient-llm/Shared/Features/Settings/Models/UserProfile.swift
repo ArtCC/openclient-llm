@@ -8,19 +8,34 @@
 
 import Foundation
 
-struct UserProfile: Equatable, Sendable, Codable {
+nonisolated struct UserProfile: Equatable, Sendable, Codable {
     // MARK: - Properties
 
     var name: String
     var profileDescription: String
     var extraInfo: String
+    var modifiedAt: Date
 
     // MARK: - Init
 
-    init(name: String = "", profileDescription: String = "", extraInfo: String = "") {
+    init(
+        name: String = "",
+        profileDescription: String = "",
+        extraInfo: String = "",
+        modifiedAt: Date = Date()
+    ) {
         self.name = name
         self.profileDescription = profileDescription
         self.extraInfo = extraInfo
+        self.modifiedAt = modifiedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decode(String.self, forKey: .name)
+        profileDescription = try container.decode(String.self, forKey: .profileDescription)
+        extraInfo = try container.decode(String.self, forKey: .extraInfo)
+        modifiedAt = try container.decodeIfPresent(Date.self, forKey: .modifiedAt) ?? .distantPast
     }
 
     // MARK: - Computed

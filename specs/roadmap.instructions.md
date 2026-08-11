@@ -10,4 +10,14 @@ Build incrementally from less to more. Each phase should result in a functional 
 
 ## Current Status
 
-No future development phase is currently planned. Add new roadmap work only after its scope and priority are agreed.
+The active planned work is stabilization of file-based iCloud Documents synchronization. The agreed order is:
+
+- [x] Synchronization contract, runtime-state contract, and compatible schema versioning.
+- [x] Testable serialized storage infrastructure and critical correctness fixes.
+- [ ] Consistent reconciliation for conversations, attachments, profile, memory, and prompt templates.
+- [ ] Accurate Settings state and user communication.
+- [ ] Cloud inventory plus durable individual and global deletion.
+- [ ] Automated two-device coverage and real iCloud certification.
+
+The implementation remains based on Codable, FileManager, and iCloud Documents. See `icloud-sync.instructions.md` for the
+authoritative behavior and data-safety requirements.

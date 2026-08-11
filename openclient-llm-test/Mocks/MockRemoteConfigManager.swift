@@ -23,7 +23,7 @@ extension RemoteConfig {
         isMaintenanceEnabled: Bool = false,
         isUpdateEnabled: Bool = true,
         isForceUpdate: Bool = false,
-        latestVersion: String = "1.6.10",
+        latestVersion: String = "1.6.15",
         banner: Banner? = nil
     ) -> RemoteConfig {
         let update = PlatformUpdate(

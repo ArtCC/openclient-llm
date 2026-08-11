@@ -25,6 +25,17 @@ final class UserProfileTests: XCTestCase {
         XCTAssertFalse(UserProfile(profileDescription: "Developer").isEmpty)
     }
 
+    func test_decode_legacyProfileWithoutModificationDate_usesDistantPastRevision() throws {
+        // Given
+        let data = Data(#"{"name":"Alice","profileDescription":"Developer","extraInfo":"Swift"}"#.utf8)
+
+        // When
+        let profile = try JSONDecoder().decode(UserProfile.self, from: data)
+
+        // Then
+        XCTAssertEqual(profile.modifiedAt, .distantPast)
+    }
+
     // MARK: - Tests — systemPromptContext
 
     func test_systemPromptContext_emptyProfileReturnsEmptyString() {

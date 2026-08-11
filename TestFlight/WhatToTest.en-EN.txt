@@ -1,0 +1,27 @@
+Hi there! We've got some great new features for you in this update.
+
+***1.6.15:
+
+• You can now generate images directly in chat with supported models.
+• We’ve added update notifications so you can easily keep the app up to date.
+• The app can now display important announcements and news directly on the Home screen.
+• We’ve improved how maintenance periods are handled, providing a clearer experience when the service is temporarily unavailable.
+• RAW images selected from Photos are now processed correctly before being sent.
+• Major improvements to iCloud conversation syncing, especially when switching between devices or returning to the app.
+• Fixed several issues with conversations changed or deleted on other devices.
+• General stability, reliability, and performance improvements.
+• Minor bug fixes and improvements for a smoother experience.
+
+***Recent Updates:
+
+• New widgets.
+• Assistant messages now render the full markdown toolkit: blockquotes, lists with nesting, task lists, horizontal rulers, code blocks with language labels, tables, and inline images all display natively in the chat.
+• Steer conversations mid-stream: send a follow-up message while the model is still generating; the current stream is cancelled, the partial response is preserved, and your new message continues the conversation with full context.
+• Connect MCP servers (Model Context Protocol) to give the model access to external tools like GitHub, databases, and more, all configured from your LiteLLM server.
+• Browse your MCP servers in a dedicated sheet from the chat input bar or from Settings, then drill into each server to enable or disable individual tools with a master toggle.
+• A new collapsible actions bar keeps the chat composer clean: attachment, web search, and MCP buttons are tucked behind a single + / × toggle, auto-collapsing after use or when sending a message.
+• Contextual tips introduce MCP servers when the feature becomes available, following the same unobtrusive pattern as other feature tips.
+
+Thanks for your continued support and for helping us build the best possible LLM client together.
+
+Remember: you can suggest and vote on new features from the Feedback section in Settings.

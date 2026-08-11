@@ -71,13 +71,19 @@ final class PromptTemplatesViewModel {
 
 private extension PromptTemplatesViewModel {
     func loadTemplates() {
-        do {
-            let all = try loadTemplatesUseCase.execute()
-            let builtIns = all.filter(\.isBuiltIn).sorted { $0.title < $1.title }
-            let custom = all.filter { !$0.isBuiltIn }.sorted { $0.title < $1.title }
-            state = .loaded(.init(builtInTemplates: builtIns, customTemplates: custom))
-        } catch {
-            state = .loaded(.init(builtInTemplates: [], customTemplates: [], errorMessage: error.localizedDescription))
+        Task {
+            do {
+                let all = try await loadTemplatesUseCase.execute()
+                let builtIns = all.filter(\.isBuiltIn).sorted { $0.title < $1.title }
+                let custom = all.filter { !$0.isBuiltIn }.sorted { $0.title < $1.title }
+                state = .loaded(.init(builtInTemplates: builtIns, customTemplates: custom))
+            } catch {
+                state = .loaded(.init(
+                    builtInTemplates: [],
+                    customTemplates: [],
+                    errorMessage: error.localizedDescription
+                ))
+            }
         }
     }
 
@@ -89,34 +95,39 @@ private extension PromptTemplatesViewModel {
                 title: title,
                 content: content,
                 isBuiltIn: false,
-                createdAt: editing.createdAt
+                createdAt: editing.createdAt,
+                updatedAt: Date()
             )
         } else {
             template = PromptTemplate(title: title, content: content)
         }
-        do {
-            try saveTemplateUseCase.execute(template)
-            if editingTemplate == nil {
-                appReviewManager.requestReview()
-            }
-            loadTemplates()
-        } catch {
-            if case .loaded(var loadedState) = state {
-                loadedState.errorMessage = error.localizedDescription
-                state = .loaded(loadedState)
+        Task {
+            do {
+                try await saveTemplateUseCase.execute(template)
+                if editingTemplate == nil {
+                    appReviewManager.requestReview()
+                }
+                loadTemplates()
+            } catch {
+                if case .loaded(var loadedState) = state {
+                    loadedState.errorMessage = error.localizedDescription
+                    state = .loaded(loadedState)
+                }
             }
         }
     }
 
     func deleteTemplate(_ template: PromptTemplate) {
         guard !template.isBuiltIn else { return }
-        do {
-            try deleteTemplateUseCase.execute(template.id)
-            loadTemplates()
-        } catch {
-            if case .loaded(var loadedState) = state {
-                loadedState.errorMessage = error.localizedDescription
-                state = .loaded(loadedState)
+        Task {
+            do {
+                try await deleteTemplateUseCase.execute(template.id)
+                loadTemplates()
+            } catch {
+                if case .loaded(var loadedState) = state {
+                    loadedState.errorMessage = error.localizedDescription
+                    state = .loaded(loadedState)
+                }
             }
         }
     }

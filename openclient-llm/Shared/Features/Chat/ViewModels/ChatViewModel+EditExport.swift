@@ -138,23 +138,27 @@ extension ChatViewModel {
     }
 
     func forkConversation(fromMessage messageId: UUID) {
-        guard case .loaded(var loadedState) = state,
+        guard case .loaded(let loadedState) = state,
               let conversation = loadedState.conversation else { return }
 
-        do {
-            let fork = try branchConversationUseCase.execute(
-                conversation: conversation,
-                fromMessageId: messageId
-            )
-            loadedState.branchedConversation = fork
-            state = .loaded(loadedState)
-            onForkCreated?(fork)
-            LogManager.success("forkConversation fromMessage=\(messageId) newId=\(fork.id)")
-        } catch {
-            loadedState.errorMessage = error.localizedDescription
-            state = .loaded(loadedState)
-            LogManager.error("forkConversation failed: \(error)")
-            scheduleErrorDismiss()
+        Task {
+            do {
+                let fork = try await branchConversationUseCase.execute(
+                    conversation: conversation,
+                    fromMessageId: messageId
+                )
+                guard case .loaded(var currentState) = state else { return }
+                currentState.branchedConversation = fork
+                state = .loaded(currentState)
+                onForkCreated?(fork)
+                LogManager.success("forkConversation fromMessage=\(messageId) newId=\(fork.id)")
+            } catch {
+                guard case .loaded(var currentState) = state else { return }
+                currentState.errorMessage = error.localizedDescription
+                state = .loaded(currentState)
+                LogManager.error("forkConversation failed: \(error)")
+                scheduleErrorDismiss()
+            }
         }
     }
 
@@ -191,7 +195,7 @@ extension ChatViewModel {
 
         loadedState.messages[index].isFavourite.toggle()
         state = .loaded(loadedState)
-        persistConversation()
+        scheduleConversationPersistence()
         LogManager.debug("toggleFavourite id=\(id) isFavourite=\(loadedState.messages[index].isFavourite)")
     }
 

@@ -9,7 +9,7 @@
 import Foundation
 
 protocol ResetAppDataUseCaseProtocol: Sendable {
-    func execute()
+    func execute() async throws
 }
 
 struct ResetAppDataUseCase: ResetAppDataUseCaseProtocol {
@@ -19,6 +19,7 @@ struct ResetAppDataUseCase: ResetAppDataUseCaseProtocol {
     private let conversationRepository: ConversationRepositoryProtocol
     private let userProfileManager: UserProfileManagerProtocol
     private let memoryManager: MemoryManagerProtocol
+    private let categoryOperationGate: CloudCategoryOperationGate
 
     // MARK: - Init
 
@@ -26,21 +27,25 @@ struct ResetAppDataUseCase: ResetAppDataUseCaseProtocol {
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         conversationRepository: ConversationRepositoryProtocol = ConversationRepository(),
         userProfileManager: UserProfileManagerProtocol = UserProfileManager(),
-        memoryManager: MemoryManagerProtocol = MemoryManager()
+        memoryManager: MemoryManagerProtocol = MemoryManager(),
+        categoryOperationGate: CloudCategoryOperationGate = .shared
     ) {
         self.settingsManager = settingsManager
         self.conversationRepository = conversationRepository
         self.userProfileManager = userProfileManager
         self.memoryManager = memoryManager
+        self.categoryOperationGate = categoryOperationGate
     }
 
     // MARK: - Execute
 
-    func execute() {
-        // Disable cloud sync first so subsequent deletes do NOT touch iCloud.
-        settingsManager.deleteAll()
-        try? conversationRepository.deleteAll()
-        userProfileManager.deleteLocalProfile()
-        memoryManager.deleteAll()
+    func execute() async throws {
+        try await categoryOperationGate.fence {
+            // Disable cloud sync while profile cloud operations remain fenced.
+            await settingsManager.deleteAll()
+            try await conversationRepository.cancelSynchronizationAndDeleteAll()
+            try await userProfileManager.deleteLocalProfile()
+            try await memoryManager.deleteAll()
+        }
     }
 }

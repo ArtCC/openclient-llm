@@ -14,9 +14,7 @@ final class ImportConversationsUseCaseTests: XCTestCase {
     // MARK: - Properties
 
     var mockSaveConversation: MockSaveConversationUseCase!
-    var mockDeleteConversation: MockDeleteConversationUseCase!
     var mockLoadConversations: MockLoadConversationsUseCase!
-    var mockAttachmentRepository: MockAttachmentRepository!
     var sut: ImportConversationsUseCase!
 
     // MARK: - Setup
@@ -24,33 +22,28 @@ final class ImportConversationsUseCaseTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         mockSaveConversation = MockSaveConversationUseCase()
-        mockDeleteConversation = MockDeleteConversationUseCase()
         mockLoadConversations = MockLoadConversationsUseCase()
-        mockAttachmentRepository = MockAttachmentRepository()
         sut = ImportConversationsUseCase(
             saveConversationUseCase: mockSaveConversation,
-            deleteConversationUseCase: mockDeleteConversation,
-            loadConversationsUseCase: mockLoadConversations,
-            attachmentRepository: mockAttachmentRepository
+            loadConversationsUseCase: mockLoadConversations
         )
     }
 
     override func tearDown() async throws {
         sut = nil
-        mockAttachmentRepository = nil
         mockLoadConversations = nil
-        mockDeleteConversation = nil
         mockSaveConversation = nil
         try await super.tearDown()
     }
 
     // MARK: - Tests
 
-    func test_execute_validDocument_restoresConversationWithNewIdentifiers() throws {
+    func test_execute_validDocument_restoresConversationWithNewIdentifiers() async throws {
         // Given
         let attachment = makeAttachment()
         let message = ChatMessage(role: .user, content: "Hello", attachments: [attachment])
-        let conversation = Conversation(modelId: "gpt-4", messages: [message])
+        let oldDate = Date(timeIntervalSince1970: 1_000_000)
+        let conversation = Conversation(modelId: "gpt-4", messages: [message], updatedAt: oldDate)
         let document = ConversationExportDocument(conversations: [
             .init(
                 conversation: conversation,
@@ -59,7 +52,7 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         ])
 
         // When
-        let result = try sut.execute(try encoded(document))
+        let result = try await sut.execute(try encoded(document))
 
         // Then
         let imported = try XCTUnwrap(mockSaveConversation.savedConversations.first)
@@ -67,11 +60,12 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         XCTAssertEqual(result.restoredAttachmentCount, 1)
         XCTAssertNotEqual(imported.id, conversation.id)
         XCTAssertNotEqual(imported.messages[0].id, message.id)
-        XCTAssertEqual(mockAttachmentRepository.savedAttachments.first?.data, Data("hello".utf8))
-        XCTAssertFalse(imported.messages[0].attachments[0].fileRelativePath.isEmpty)
+        XCTAssertEqual(imported.messages[0].attachments[0].transientData, Data("hello".utf8))
+        XCTAssertTrue(imported.messages[0].attachments[0].fileRelativePath.isEmpty)
+        XCTAssertGreaterThan(imported.updatedAt, oldDate)
     }
 
-    func test_execute_invalidAttachmentData_importsConversationWithoutAttachment() throws {
+    func test_execute_invalidAttachmentData_importsConversationWithoutAttachment() async throws {
         // Given
         let attachment = makeAttachment()
         let message = ChatMessage(role: .user, content: "Hello", attachments: [attachment])
@@ -84,16 +78,15 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         ])
 
         // When
-        let result = try sut.execute(try encoded(document))
+        let result = try await sut.execute(try encoded(document))
 
         // Then
         XCTAssertEqual(result.importedConversationCount, 1)
         XCTAssertEqual(result.skippedAttachmentCount, 1)
-        XCTAssertTrue(mockAttachmentRepository.savedAttachments.isEmpty)
         XCTAssertTrue(mockSaveConversation.savedConversations[0].messages[0].attachments.isEmpty)
     }
 
-    func test_execute_invalidAttachmentReference_throwsWithoutPersisting() throws {
+    func test_execute_invalidAttachmentReference_throwsWithoutPersisting() async throws {
         // Given
         let conversation = Conversation(modelId: "gpt-4")
         let document = ConversationExportDocument(conversations: [
@@ -104,12 +97,11 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         ])
 
         // When / Then
-        XCTAssertThrowsError(try sut.execute(try encoded(document)))
+        await assertImportThrows(try encoded(document))
         XCTAssertTrue(mockSaveConversation.savedConversations.isEmpty)
-        XCTAssertTrue(mockAttachmentRepository.savedAttachments.isEmpty)
     }
 
-    func test_execute_saveConversationFails_deletesRestoredAttachments() throws {
+    func test_execute_saveConversationFails_leavesNoPersistedConversation() async throws {
         // Given
         let attachment = makeAttachment()
         let message = ChatMessage(role: .user, content: "Hello", attachments: [attachment])
@@ -122,11 +114,11 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         mockSaveConversation.error = NSError(domain: "test", code: 1)
 
         // When / Then
-        XCTAssertThrowsError(try sut.execute(try encoded(document)))
-        XCTAssertEqual(mockAttachmentRepository.deletedAttachments.count, 1)
+        await assertImportThrows(try encoded(document))
+        XCTAssertTrue(mockSaveConversation.savedConversations.isEmpty)
     }
 
-    func test_execute_branchedConversations_remapsBranchReferences() throws {
+    func test_execute_branchedConversations_remapsBranchReferences() async throws {
         // Given
         let rootMessage = ChatMessage(role: .user, content: "Root")
         let root = Conversation(modelId: "gpt-4", messages: [rootMessage])
@@ -141,7 +133,7 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         ])
 
         // When
-        _ = try sut.execute(try encoded(document))
+        _ = try await sut.execute(try encoded(document))
 
         // Then
         let importedRoot = mockSaveConversation.savedConversations[0]
@@ -150,20 +142,121 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         XCTAssertEqual(importedBranch.branchedFromMessageId, importedRoot.messages[0].id)
     }
 
-    func test_execute_laterSaveFails_rollsBackPreviouslySavedConversations() throws {
+    func test_execute_nonEmptyBranchBackup_restoresUniqueMessagesSummaryAndAttachment() async throws {
         // Given
+        let rootMessage = ChatMessage(role: .user, content: "Root")
+        let root = Conversation(modelId: "gpt-4", messages: [rootMessage])
+        let attachment = makeAttachment()
+        let branchMessage = ChatMessage(role: .user, content: "Root", attachments: [attachment])
+        let branch = Conversation(
+            modelId: "gpt-4",
+            contextSummary: "Root summary",
+            contextSummaryCursorMessageId: branchMessage.id,
+            messages: [branchMessage],
+            parentConversationId: root.id,
+            branchedFromMessageId: rootMessage.id
+        )
         let document = ConversationExportDocument(conversations: [
-            .init(conversation: Conversation(modelId: "gpt-4"), attachments: []),
-            .init(conversation: Conversation(modelId: "llama3"), attachments: [])
+            .init(conversation: root, attachments: []),
+            .init(
+                conversation: branch,
+                attachments: [
+                    .init(messageId: branchMessage.id, attachmentId: attachment.id, data: "branch".base64Encoded)
+                ]
+            )
         ])
-        mockSaveConversation.failureAtCall = 2
 
-        // When / Then
-        XCTAssertThrowsError(try sut.execute(try encoded(document)))
-        XCTAssertEqual(mockDeleteConversation.deletedIds.count, 1)
+        // When
+        _ = try await sut.execute(try encoded(document))
+
+        // Then
+        let importedRoot = mockSaveConversation.savedConversations[0]
+        let importedBranch = mockSaveConversation.savedConversations[1]
+        XCTAssertFalse(importedBranch.messages.isEmpty)
+        XCTAssertNotEqual(importedBranch.messages[0].id, importedRoot.messages[0].id)
+        XCTAssertEqual(importedBranch.contextSummaryCursorMessageId, importedBranch.messages[0].id)
+        XCTAssertEqual(importedBranch.branchedFromMessageId, importedRoot.messages[0].id)
+        XCTAssertEqual(importedBranch.messages[0].attachments[0].transientData, Data("branch".utf8))
     }
 
-    func test_execute_summaryWithoutCursor_throwsWithoutPersisting() throws {
+    func test_execute_withAttachment_materializesBytesThroughAtomicConversationPersistence() async throws {
+        // Given
+        let documentsURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: documentsURL) }
+        let attachmentRepository = MockAttachmentRepository()
+        let repository = ConversationRepository(
+            settingsManager: MockSettingsManager(),
+            cloudSyncManager: MockCloudSyncManager(),
+            attachmentRepository: attachmentRepository,
+            baseDirectory: documentsURL
+        )
+        sut = ImportConversationsUseCase(
+            saveConversationUseCase: SaveConversationUseCase(repository: repository),
+            loadConversationsUseCase: mockLoadConversations
+        )
+        let attachment = makeAttachment()
+        let message = ChatMessage(role: .user, content: "Document", attachments: [attachment])
+        let document = ConversationExportDocument(conversations: [
+            .init(
+                conversation: Conversation(modelId: "gpt-4", messages: [message]),
+                attachments: [.init(messageId: message.id, attachmentId: attachment.id, data: "bytes".base64Encoded)]
+            )
+        ])
+
+        // When
+        _ = try await sut.execute(try encoded(document))
+
+        // Then
+        let localConversations = try await repository.loadLocal()
+        let imported = try XCTUnwrap(localConversations.first)
+        let restoredAttachment = try XCTUnwrap(imported.messages.first?.attachments.first)
+        XCTAssertTrue(attachmentRepository.savedAttachments.isEmpty)
+        XCTAssertEqual(
+            try Data(contentsOf: documentsURL.appendingPathComponent(restoredAttachment.fileRelativePath)),
+            Data("bytes".utf8)
+        )
+    }
+
+    func test_execute_cloudEnabled_publishesOnlyAfterCompleteLocalBatch() async throws {
+        // Given
+        let documentsURL = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: documentsURL) }
+        let settings = MockSettingsManager()
+        settings.isCloudSyncEnabled = true
+        let cloud = MockCloudSyncManager()
+        let probe = ImportBatchProbe()
+        cloud.loadConversationsSendableHandler = {
+            let directory = documentsURL.appendingPathComponent("Conversations", isDirectory: true)
+            let count = (try? FileManager.default.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: nil
+            ).filter { $0.pathExtension == "json" }.count) ?? 0
+            probe.record(count)
+        }
+        let repository = ConversationRepository(
+            settingsManager: settings,
+            cloudSyncManager: cloud,
+            attachmentRepository: MockAttachmentRepository(),
+            baseDirectory: documentsURL
+        )
+        sut = ImportConversationsUseCase(
+            saveConversationUseCase: SaveConversationUseCase(repository: repository),
+            loadConversationsUseCase: mockLoadConversations
+        )
+        let document = ConversationExportDocument(conversations: [
+            .init(conversation: Conversation(modelId: "first"), attachments: []),
+            .init(conversation: Conversation(modelId: "second"), attachments: [])
+        ])
+
+        // When
+        _ = try await sut.execute(try encoded(document))
+
+        // Then
+        XCTAssertEqual(probe.value, 2)
+        XCTAssertEqual(cloud.cloudConversations.count, 2)
+    }
+
+    func test_execute_summaryWithoutCursor_throwsWithoutPersisting() async throws {
         // Given
         let conversation = Conversation(modelId: "gpt-4", contextSummary: "Summary")
         let document = ConversationExportDocument(conversations: [
@@ -171,11 +264,11 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         ])
 
         // When / Then
-        XCTAssertThrowsError(try sut.execute(try encoded(document)))
+        await assertImportThrows(try encoded(document))
         XCTAssertTrue(mockSaveConversation.savedConversations.isEmpty)
     }
 
-    func test_execute_cursorOutsideConversation_throwsWithoutPersisting() throws {
+    func test_execute_cursorOutsideConversation_throwsWithoutPersisting() async throws {
         // Given
         let conversation = Conversation(
             modelId: "gpt-4",
@@ -188,11 +281,11 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         ])
 
         // When / Then
-        XCTAssertThrowsError(try sut.execute(try encoded(document)))
+        await assertImportThrows(try encoded(document))
         XCTAssertTrue(mockSaveConversation.savedConversations.isEmpty)
     }
 
-    func test_execute_nonPositiveContextWindow_throwsWithoutPersisting() throws {
+    func test_execute_nonPositiveContextWindow_throwsWithoutPersisting() async throws {
         // Given
         let conversation = Conversation(modelId: "gpt-4", contextWindowTokens: 0)
         let document = ConversationExportDocument(conversations: [
@@ -200,11 +293,11 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         ])
 
         // When / Then
-        XCTAssertThrowsError(try sut.execute(try encoded(document)))
+        await assertImportThrows(try encoded(document))
         XCTAssertTrue(mockSaveConversation.savedConversations.isEmpty)
     }
 
-    func test_execute_validSummaryAndCursor_remapsCursor() throws {
+    func test_execute_validSummaryAndCursor_remapsCursor() async throws {
         // Given
         let message = ChatMessage(role: .user, content: "Hello")
         let conversation = Conversation(
@@ -218,14 +311,14 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         ])
 
         // When
-        _ = try sut.execute(try encoded(document))
+        _ = try await sut.execute(try encoded(document))
 
         // Then
         let imported = try XCTUnwrap(mockSaveConversation.savedConversations.first)
         XCTAssertEqual(imported.contextSummaryCursorMessageId, imported.messages.first?.id)
     }
 
-    func test_execute_cursorInsideToolRound_throwsWithoutPersisting() throws {
+    func test_execute_cursorInsideToolRound_throwsWithoutPersisting() async throws {
         // Given
         let call = ToolCall(
             id: "call_1",
@@ -245,11 +338,11 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         ])
 
         // When / Then
-        XCTAssertThrowsError(try sut.execute(try encoded(document)))
+        await assertImportThrows(try encoded(document))
         XCTAssertTrue(mockSaveConversation.savedConversations.isEmpty)
     }
 
-    func test_execute_tagAlreadyExistsLocally_reusesLocalColor() throws {
+    func test_execute_tagAlreadyExistsLocally_reusesLocalColor() async throws {
         // Given
         mockLoadConversations.result = .success([
             Conversation(
@@ -266,7 +359,7 @@ final class ImportConversationsUseCaseTests: XCTestCase {
         ])
 
         // When
-        _ = try sut.execute(try encoded(document))
+        _ = try await sut.execute(try encoded(document))
 
         // Then
         XCTAssertEqual(
@@ -276,9 +369,32 @@ final class ImportConversationsUseCaseTests: XCTestCase {
     }
 }
 
+// Safety: All mutable state is protected by `NSLock`.
+private final class ImportBatchProbe: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+
+    var value: Int {
+        lock.withLock { count }
+    }
+
+    func record(_ value: Int) {
+        lock.withLock { count = value }
+    }
+}
+
 // MARK: - Private
 
 private extension ImportConversationsUseCaseTests {
+    func assertImportThrows(_ data: Data) async {
+        do {
+            _ = try await sut.execute(data)
+            XCTFail("Expected import to throw")
+        } catch {
+            return
+        }
+    }
+
     func makeAttachment() -> ChatMessage.Attachment {
         ChatMessage.Attachment(
             type: .pdf,

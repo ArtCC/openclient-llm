@@ -74,14 +74,33 @@ final class MemoryViewModelTests: XCTestCase {
         XCTAssertEqual(loadedState.items.first?.content, "User likes Swift")
     }
 
+    func test_send_viewAppeared_synchronizationFails_retainsVisibleError() async {
+        // Given
+        mockMemoryManager.synchronizeError = CloudSyncError.requiredDownloadPending
+
+        // When
+        sut.send(.viewAppeared)
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.errorMessage != nil
+        }
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            return XCTFail("Expected loaded state")
+        }
+        XCTAssertNotNil(loadedState.errorMessage)
+    }
+
     // MARK: - Tests — addItem
 
-    func test_send_addItem_savesItemWithUserSource() {
+    func test_send_addItem_savesItemWithUserSource() async {
         // Given
         sut.send(.viewAppeared)
 
         // When
         sut.send(.addItem(content: "Prefers dark mode"))
+        await waitUntil { self.mockMemoryManager.addedItem != nil }
 
         // Then
         XCTAssertEqual(mockMemoryManager.addedItem?.content, "Prefers dark mode")
@@ -102,23 +121,28 @@ final class MemoryViewModelTests: XCTestCase {
         XCTAssertEqual(mockAppReviewManager.requestReviewCallCount, 0)
     }
 
-    func test_send_addItem_trimsWhitespace() {
+    func test_send_addItem_trimsWhitespace() async {
         // Given
         sut.send(.viewAppeared)
 
         // When
         sut.send(.addItem(content: "  Swift developer  "))
+        await waitUntil { self.mockMemoryManager.addedItem != nil }
 
         // Then
         XCTAssertEqual(mockMemoryManager.addedItem?.content, "Swift developer")
     }
 
-    func test_send_addItem_updatesLoadedState() {
+    func test_send_addItem_updatesLoadedState() async {
         // Given
         sut.send(.viewAppeared)
 
         // When
         sut.send(.addItem(content: "New item"))
+        await waitUntil {
+            guard case .loaded(let state) = self.sut.state else { return false }
+            return state.items.count == 1
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -128,9 +152,28 @@ final class MemoryViewModelTests: XCTestCase {
         XCTAssertEqual(loadedState.items.count, 1)
     }
 
+    func test_send_addItem_persistenceFails_retainsVisibleError() async {
+        // Given
+        mockMemoryManager.mutationError = NSError(domain: "MemoryViewModelTests", code: 1)
+        sut.send(.viewAppeared)
+
+        // When
+        sut.send(.addItem(content: "New item"))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.errorMessage != nil
+        }
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            return XCTFail("Expected loaded state")
+        }
+        XCTAssertNotNil(loadedState.errorMessage)
+    }
+
     // MARK: - Tests — editItem
 
-    func test_send_editItem_updatesExistingItem() {
+    func test_send_editItem_updatesExistingItem() async {
         // Given
         let item = MemoryItem(content: "Original", source: .user)
         mockMemoryManager.items = [item]
@@ -138,6 +181,7 @@ final class MemoryViewModelTests: XCTestCase {
 
         // When
         sut.send(.editItem(id: item.id, content: "Updated"))
+        await waitUntil { self.mockMemoryManager.updatedItem != nil }
 
         // Then
         XCTAssertEqual(mockMemoryManager.updatedItem?.content, "Updated")
@@ -159,7 +203,7 @@ final class MemoryViewModelTests: XCTestCase {
 
     // MARK: - Tests — toggleItem
 
-    func test_send_toggleItem_flipsIsEnabled() {
+    func test_send_toggleItem_flipsIsEnabled() async {
         // Given
         let item = MemoryItem(content: "Test", isEnabled: true, source: .user)
         mockMemoryManager.items = [item]
@@ -167,6 +211,7 @@ final class MemoryViewModelTests: XCTestCase {
 
         // When
         sut.send(.toggleItem(id: item.id))
+        await waitUntil { self.mockMemoryManager.updatedItem != nil }
 
         // Then
         XCTAssertEqual(mockMemoryManager.updatedItem?.id, item.id)
@@ -175,7 +220,7 @@ final class MemoryViewModelTests: XCTestCase {
 
     // MARK: - Tests — deleteItem
 
-    func test_send_deleteItem_removesItem() {
+    func test_send_deleteItem_removesItem() async {
         // Given
         let item = MemoryItem(content: "To delete", source: .user)
         mockMemoryManager.items = [item]
@@ -183,12 +228,13 @@ final class MemoryViewModelTests: XCTestCase {
 
         // When
         sut.send(.deleteItem(id: item.id))
+        await waitUntil { self.mockMemoryManager.deletedId != nil }
 
         // Then
         XCTAssertEqual(mockMemoryManager.deletedId, item.id)
     }
 
-    func test_send_deleteItem_updatesLoadedState() {
+    func test_send_deleteItem_updatesLoadedState() async {
         // Given
         let item = MemoryItem(content: "To delete", source: .user)
         mockMemoryManager.items = [item]
@@ -196,6 +242,10 @@ final class MemoryViewModelTests: XCTestCase {
 
         // When
         sut.send(.deleteItem(id: item.id))
+        await waitUntil {
+            guard case .loaded(let state) = self.sut.state else { return false }
+            return state.items.isEmpty
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -203,5 +253,13 @@ final class MemoryViewModelTests: XCTestCase {
             return
         }
         XCTAssertTrue(loadedState.items.isEmpty)
+    }
+
+    private func waitUntil(_ condition: @MainActor () -> Bool) async {
+        for _ in 0..<100 {
+            if condition() { return }
+            await Task.yield()
+        }
+        XCTFail("Condition was not satisfied")
     }
 }

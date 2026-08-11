@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum ConversationSyncResult: Equatable, Sendable {
+nonisolated enum ConversationSyncResult: Equatable, Sendable {
     case synchronized
     case pendingDownload
     case unavailable

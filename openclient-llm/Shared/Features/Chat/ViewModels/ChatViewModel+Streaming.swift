@@ -58,7 +58,7 @@ extension ChatViewModel {
             currentState.errorMessage = error.localizedDescription
             state = .loaded(currentState)
             scheduleErrorDismiss()
-            persistConversation()
+            await persistConversation()
             streamingBackgroundUseCase.end()
             completeActiveStream(assistantMessageId)
         }
@@ -96,7 +96,7 @@ private extension ChatViewModel {
         refreshContextUsage(in: &currentState)
         state = .loaded(currentState)
         LogManager.success("performStreaming completed model=\(model)")
-        let didPersist = persistConversation()
+        let didPersist = await persistConversation()
         streamingBackgroundUseCase.end()
         completeActiveStream(assistantMessageId)
         if didPersist { scheduleCompactionIfNeeded() }

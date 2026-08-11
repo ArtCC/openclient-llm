@@ -49,7 +49,7 @@ extension ChatViewModel {
         loadedState.conversation?.contextWindowTokens = normalizedTokens
         refreshContextUsage(in: &loadedState)
         state = .loaded(loadedState)
-        persistConversation()
+        scheduleConversationPersistence()
     }
 
     func isActiveStream(_ assistantMessageId: UUID) -> Bool {
@@ -67,7 +67,7 @@ extension ChatViewModel {
         compactionTask = nil
     }
 
-    func cancelActiveStreaming() {
+    func cancelActiveStreaming(shouldPersist: Bool = true) {
         streamTask?.cancel()
         streamTask = nil
         activeAssistantMessageId = nil
@@ -79,7 +79,9 @@ extension ChatViewModel {
         loadedState.activeToolCallIds = []
         refreshContextUsage(in: &loadedState)
         state = .loaded(loadedState)
-        persistConversation()
+        if shouldPersist {
+            scheduleConversationPersistence()
+        }
     }
 
     func stopStreaming() {
@@ -100,7 +102,7 @@ extension ChatViewModel {
             currentState.activeToolCallIds = []
             self.refreshContextUsage(in: &currentState)
             self.state = .loaded(currentState)
-            self.persistConversation()
+            self.scheduleConversationPersistence()
             Task { await self.notifyStreamingCompletedUseCase.executeExpired() }
         }
     }
@@ -212,10 +214,23 @@ extension ChatViewModel {
     }
 
     @discardableResult
-    func persistConversation() -> Bool {
-        guard !isPrivateChat else { return false }
+    func persistConversation() async -> Bool {
+        guard let snapshot = conversationForPersistence() else { return false }
+        return await enqueuePersistence(of: snapshot).value.didPersist
+    }
+
+    func scheduleConversationPersistence() {
+        guard let snapshot = conversationForPersistence() else { return }
+        enqueuePersistence(of: snapshot)
+    }
+
+    private func conversationForPersistence() -> (conversation: Conversation, expectedBase: Conversation?)? {
+        guard !isPrivateChat else { return nil }
         guard case .loaded(var loadedState) = state,
-              var conversation = loadedState.conversation else { return false }
+              var conversation = loadedState.conversation else { return nil }
+        let expectedBase = queuedPersistenceConversation?.id == conversation.id
+            ? queuedPersistenceConversation
+            : persistenceBase
 
         conversation.messages = loadedState.messages
         conversation.systemPrompt = loadedState.systemPrompt
@@ -227,16 +242,152 @@ extension ChatViewModel {
         }
         loadedState.conversation = conversation
         state = .loaded(loadedState)
+        return (conversation, expectedBase)
+    }
 
+    @discardableResult
+    private func enqueuePersistence(
+        of snapshot: (conversation: Conversation, expectedBase: Conversation?)
+    ) -> Task<PersistenceResult, Never> {
+        let previousTask = persistenceTask
+        persistenceGeneration += 1
+        let generation = persistenceGeneration
+        let resetGeneration = persistenceResetGeneration
+        queuedPersistenceConversation = snapshot.conversation
+        let task = Task { [weak self] in
+            let previousResult = await withTaskCancellationHandler {
+                await previousTask?.value
+            } onCancel: {
+                previousTask?.cancel()
+            }
+            guard !Task.isCancelled, let self,
+                  resetGeneration == persistenceResetGeneration else {
+                return PersistenceResult(didPersist: false, durableConversation: nil)
+            }
+            return await persistSnapshot(
+                snapshot,
+                previousResult: previousResult,
+                generation: generation,
+                resetGeneration: resetGeneration
+            )
+        }
+        persistenceTask = task
+        return task
+    }
+
+    private func persistSnapshot(
+        _ snapshot: (conversation: Conversation, expectedBase: Conversation?),
+        previousResult: PersistenceResult?,
+        generation: Int,
+        resetGeneration: Int
+    ) async -> PersistenceResult {
         do {
-            try saveConversationUseCase.execute(conversation)
+            let durableBase = previousResult?.durableConversation?.id == snapshot.conversation.id
+                ? previousResult?.durableConversation
+                : persistenceBase?.id == snapshot.conversation.id
+                    ? persistenceBase
+                    : snapshot.expectedBase
+            let submittedConversation: Conversation
+            if let localBase = snapshot.expectedBase, let durableBase, localBase != durableBase {
+                submittedConversation = try rebasePersistenceConversation(
+                    snapshot.conversation,
+                    base: localBase,
+                    onto: durableBase
+                )
+            } else {
+                submittedConversation = snapshot.conversation
+            }
+            let persisted = try await saveConversationUseCase.execute(
+                submittedConversation,
+                expectedBase: durableBase
+            )
+            guard !Task.isCancelled, resetGeneration == persistenceResetGeneration else {
+                return PersistenceResult(didPersist: false, durableConversation: nil)
+            }
+            applyPersistedConversation(persisted, submittedConversation: submittedConversation)
             NotificationCenter.default.post(name: .conversationDidUpdate, object: nil)
             onConversationUpdated?()
-            return true
+            finishPersistenceIfCurrent(generation)
+            return PersistenceResult(didPersist: true, durableConversation: persisted)
         } catch {
             LogManager.error("persistConversation failed: \(error)")
-            return false
+            finishPersistenceIfCurrent(generation)
+            return PersistenceResult(didPersist: false, durableConversation: nil)
         }
+    }
+
+    private func finishPersistenceIfCurrent(_ generation: Int) {
+        guard generation == persistenceGeneration else { return }
+        queuedPersistenceConversation = nil
+        persistenceTask = nil
+    }
+
+    func applyPersistedConversation(
+        _ persistedConversation: Conversation,
+        submittedConversation: Conversation
+    ) {
+        guard case .loaded(var loadedState) = state,
+              loadedState.conversation?.id == persistedConversation.id else { return }
+        persistenceBase = persistedConversation
+        var desiredConversation = loadedState.conversation ?? submittedConversation
+        desiredConversation.messages = loadedState.messages
+        desiredConversation.systemPrompt = loadedState.systemPrompt
+        desiredConversation.modelParameters = loadedState.modelParameters
+        desiredConversation.contextWindowTokens = loadedState.contextWindowTokens
+        if let selectedModel = loadedState.selectedModel {
+            desiredConversation.modelId = selectedModel.id
+        }
+        guard var mergedConversation = try? rebasePersistenceConversation(
+            desiredConversation,
+            base: submittedConversation,
+            onto: persistedConversation
+        ) else {
+            return
+        }
+        mergedConversation.updatedAt = max(desiredConversation.updatedAt, persistedConversation.updatedAt)
+        loadedState.conversation = mergedConversation
+        loadedState.messages = mergedConversation.messages
+        loadedState.systemPrompt = mergedConversation.systemPrompt
+        loadedState.modelParameters = mergedConversation.modelParameters
+        loadedState.contextWindowTokens = mergedConversation.contextWindowTokens
+        if let model = loadedState.availableModels.first(where: { $0.id == mergedConversation.modelId }) {
+            loadedState.selectedModel = model
+        }
+        refreshContextUsage(in: &loadedState)
+        state = .loaded(loadedState)
+    }
+
+    func rebasePersistenceConversation(
+        _ incoming: Conversation,
+        base: Conversation,
+        onto current: Conversation
+    ) throws -> Conversation {
+        var normalizedIncoming = incoming
+        var normalizedBase = base
+        var normalizedCurrent = current
+        for baseIndex in normalizedBase.messages.indices {
+            let baseMessage = normalizedBase.messages[baseIndex]
+            guard let incomingIndex = normalizedIncoming.messages.firstIndex(where: { $0.id == baseMessage.id }),
+                  let currentIndex = normalizedCurrent.messages.firstIndex(where: { $0.id == baseMessage.id }) else {
+                continue
+            }
+            let incomingMessage = normalizedIncoming.messages[incomingIndex]
+            let currentMessage = normalizedCurrent.messages[currentIndex]
+            if incomingMessage != baseMessage {
+                normalizedCurrent.messages[currentIndex] = incomingMessage
+                normalizedBase.messages[baseIndex] = incomingMessage
+            } else if currentMessage != baseMessage {
+                normalizedBase.messages[baseIndex] = currentMessage
+                normalizedIncoming.messages[incomingIndex] = currentMessage
+            }
+        }
+        var rebased = try ConversationRebaser.rebase(
+            normalizedIncoming,
+            base: normalizedBase,
+            onto: normalizedCurrent
+        )
+        rebased.updatedAt = max(incoming.updatedAt, current.updatedAt)
+        return rebased
     }
 
     func scheduleCompactionIfNeeded() {
@@ -268,7 +419,7 @@ extension ChatViewModel {
                 currentState.conversation?.contextSummaryCursorMessageId = compacted.cursorMessageId
                 refreshContextUsage(in: &currentState)
                 state = .loaded(currentState)
-                let didPersist = persistConversation()
+                let didPersist = await persistConversation()
                 compactionTask = nil
                 if didPersist { scheduleCompactionIfNeeded() }
             } catch is CancellationError {
@@ -334,49 +485,15 @@ extension ChatViewModel {
     func generatedImageAttachment(
         data: Data,
         mimeType: String = "image/png",
-        state: LoadedState
+        state _: LoadedState
     ) -> ChatMessage.Attachment? {
-        if isPrivateChat {
-            return ChatMessage.Attachment(
-                type: .image,
-                fileName: String(localized: "Generated Image"),
-                mimeType: mimeType,
-                fileRelativePath: "",
-                transientData: data
-            )
-        }
-        let attachmentID = UUID()
-        let placeholder = ChatMessage.Attachment(
-            id: attachmentID,
+        ChatMessage.Attachment(
             type: .image,
             fileName: String(localized: "Generated Image"),
             mimeType: mimeType,
-            fileRelativePath: ""
-        )
-        guard let relativePath = try? attachmentRepository.save(
-            data: data,
-            for: placeholder,
-            conversationId: state.conversation?.id ?? state.pendingSessionId
-        ) else {
-            LogManager.error("generatedImageAttachment: failed to save image")
-            return nil
-        }
-        return ChatMessage.Attachment(
-            id: attachmentID,
-            type: .image,
-            fileName: String(localized: "Generated Image"),
-            mimeType: mimeType,
-            fileRelativePath: relativePath
+            fileRelativePath: "",
+            transientData: data
         )
     }
 
-    func scheduleErrorDismiss() {
-        errorDismissTask?.cancel()
-        errorDismissTask = Task {
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
-            currentState.errorMessage = nil
-            state = .loaded(currentState)
-        }
-    }
 }

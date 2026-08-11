@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
+nonisolated struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
     // MARK: - Properties
 
     let id: UUID
@@ -83,7 +83,7 @@ struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
 // MARK: - Attachment
 
 extension ChatMessage {
-    enum AttachmentType: String, Sendable, Equatable, Codable {
+    nonisolated enum AttachmentType: String, Sendable, Equatable, Codable {
         case image
         case pdf
     }
@@ -93,7 +93,7 @@ extension ChatMessage {
     /// Binary data is stored on disk (via `AttachmentRepository`) and referenced here
     /// by `fileRelativePath`. The `data` property loads it from disk on demand and is
     /// intentionally excluded from `Codable` serialisation.
-    struct Attachment: Identifiable, Equatable, Sendable, Codable {
+    nonisolated struct Attachment: Identifiable, Equatable, Sendable, Codable {
         // MARK: - Properties
 
         let id: UUID
@@ -131,8 +131,8 @@ extension ChatMessage {
 
         /// Custom decoder that tolerates legacy JSON format (pre-v2) where
         /// `fileRelativePath` and `mimeType` were absent and `data` held raw bytes.
-        /// The `data` key is intentionally ignored; `AttachmentMigrationUseCase`
-        /// handles extracting and persisting those bytes to disk.
+        /// Legacy inline bytes are retained in memory until synchronization or migration
+        /// has materialized and verified the disk-backed representation.
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: ChatMessageAttachmentCodingKeys.self)
             id = try container.decode(UUID.self, forKey: .id)
@@ -144,7 +144,7 @@ extension ChatMessage {
                 ?? Self.inferMimeType(for: decodedType, fileName: decodedFileName)
             // Legacy attachments won't have this key; migration will populate it
             fileRelativePath = try container.decodeIfPresent(String.self, forKey: .fileRelativePath) ?? ""
-            transientData = nil
+            transientData = try container.decodeIfPresent(Data.self, forKey: .data)
         }
 
         func encode(to encoder: Encoder) throws {
@@ -174,16 +174,17 @@ extension ChatMessage {
     }
 }
 
-private enum ChatMessageAttachmentCodingKeys: String, CodingKey {
+private nonisolated enum ChatMessageAttachmentCodingKeys: String, CodingKey {
     case id
     case type
     case fileName
     case mimeType
     case fileRelativePath
+    case data
 }
 
 private extension ChatMessage {
-    enum CodingKeys: String, CodingKey {
+    nonisolated enum CodingKeys: String, CodingKey {
         case id
         case role
         case content

@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum ConversationContextMetadataError: LocalizedError {
+nonisolated enum ConversationContextMetadataError: LocalizedError {
     case invalidContextWindow
     case inconsistentSummary
     case invalidSummaryCursor
@@ -25,7 +25,7 @@ enum ConversationContextMetadataError: LocalizedError {
     }
 }
 
-struct Conversation: Identifiable, Equatable, Sendable, Codable {
+nonisolated struct Conversation: Identifiable, Equatable, Sendable, Codable {
     // MARK: - Properties
 
     let id: UUID
@@ -85,7 +85,7 @@ struct Conversation: Identifiable, Equatable, Sendable, Codable {
         id = try container.decode(UUID.self, forKey: .id)
         title = try container.decode(String.self, forKey: .title)
         modelId = try container.decode(String.self, forKey: .modelId)
-        systemPrompt = try container.decode(String.self, forKey: .systemPrompt)
+        systemPrompt = try container.decodeIfPresent(String.self, forKey: .systemPrompt) ?? ""
         contextWindowTokens = try container.decodeIfPresent(Int.self, forKey: .contextWindowTokens)
         contextSummary = try container.decodeIfPresent(String.self, forKey: .contextSummary)
         contextSummaryCursorMessageId = try container.decodeIfPresent(UUID.self, forKey: .contextSummaryCursorMessageId)

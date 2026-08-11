@@ -9,43 +9,37 @@
 import Foundation
 
 protocol ImportConversationsUseCaseProtocol: Sendable {
-    func execute(_ data: Data) throws -> ImportConversationsResult
+    func execute(_ data: Data) async throws -> ImportConversationsResult
 }
 
 struct ImportConversationsUseCase: ImportConversationsUseCaseProtocol {
     // MARK: - Properties
 
     private let saveConversationUseCase: SaveConversationUseCaseProtocol
-    private let deleteConversationUseCase: DeleteConversationUseCaseProtocol
     private let loadConversationsUseCase: LoadConversationsUseCaseProtocol
-    private let attachmentRepository: AttachmentRepositoryProtocol
 
     // MARK: - Init
 
     init(
         saveConversationUseCase: SaveConversationUseCaseProtocol = SaveConversationUseCase(),
-        deleteConversationUseCase: DeleteConversationUseCaseProtocol = DeleteConversationUseCase(),
-        loadConversationsUseCase: LoadConversationsUseCaseProtocol = LoadConversationsUseCase(),
-        attachmentRepository: AttachmentRepositoryProtocol = AttachmentRepository()
+        loadConversationsUseCase: LoadConversationsUseCaseProtocol = LoadConversationsUseCase()
     ) {
         self.saveConversationUseCase = saveConversationUseCase
-        self.deleteConversationUseCase = deleteConversationUseCase
         self.loadConversationsUseCase = loadConversationsUseCase
-        self.attachmentRepository = attachmentRepository
     }
 
     // MARK: - Execute
 
-    func execute(_ data: Data) throws -> ImportConversationsResult {
+    func execute(_ data: Data) async throws -> ImportConversationsResult {
         let document = try decodeDocument(from: data)
         try validate(document)
         let context = ImportContext(
             conversationIds: makeConversationIds(for: document),
             messageIds: makeMessageIds(for: document),
             attachmentData: makeAttachmentData(for: document),
-            tagColors: try makeTagColors(for: document)
+            tagColors: try await makeTagColors(for: document)
         )
-        return try importDocument(document, context: context)
+        return try await importDocument(document, context: context)
     }
 }
 
@@ -148,9 +142,9 @@ private extension ImportConversationsUseCase {
         }
     }
 
-    func makeTagColors(for document: ConversationExportDocument) throws -> [String: TagColor] {
+    func makeTagColors(for document: ConversationExportDocument) async throws -> [String: TagColor] {
         let importedTags = document.conversations.flatMap(\.conversation.tags)
-        return (try loadConversationsUseCase.execute().flatMap(\.tags) + importedTags)
+        return (try await loadConversationsUseCase.execute().flatMap(\.tags) + importedTags)
             .reduce(into: [String: TagColor]()) { colors, tag in
                 if colors[tag.name] == nil {
                     colors[tag.name] = tag.color
@@ -161,52 +155,24 @@ private extension ImportConversationsUseCase {
     func importDocument(
         _ document: ConversationExportDocument,
         context: ImportContext
-    ) throws -> ImportConversationsResult {
+    ) async throws -> ImportConversationsResult {
         var result = ImportConversationsResult(
             importedConversationCount: 0,
             restoredAttachmentCount: 0,
             skippedAttachmentCount: 0
         )
-        var savedConversationIds: [UUID] = []
-        do {
-            for exportedConversation in document.conversations {
-                guard let conversationId = context.conversationIds[exportedConversation.conversation.id] else {
-                    throw ImportConversationsError.invalidDocument
-                }
-                let imported = try importConversation(exportedConversation, context: context)
-                savedConversationIds.append(conversationId)
-                result = ImportConversationsResult(
-                    importedConversationCount: result.importedConversationCount + 1,
-                    restoredAttachmentCount: result.restoredAttachmentCount + imported.restoredAttachmentCount,
-                    skippedAttachmentCount: result.skippedAttachmentCount + imported.skippedAttachmentCount
-                )
-            }
-        } catch {
-            rollbackConversations(savedConversationIds)
-            throw error
+        var restoredConversations: [Conversation] = []
+        for exportedConversation in document.conversations {
+            let restored = try restoreConversation(exportedConversation.conversation, context: context)
+            restoredConversations.append(restored.conversation)
+            result = ImportConversationsResult(
+                importedConversationCount: result.importedConversationCount + 1,
+                restoredAttachmentCount: result.restoredAttachmentCount + restored.attachments.count,
+                skippedAttachmentCount: result.skippedAttachmentCount + restored.skippedAttachmentCount
+            )
         }
+        _ = try await saveConversationUseCase.executeImportBatch(restoredConversations)
         return result
-    }
-
-    func rollbackConversations(_ conversationIds: [UUID]) {
-        conversationIds.reversed().forEach { try? deleteConversationUseCase.execute($0) }
-    }
-
-    func importConversation(
-        _ exportedConversation: ConversationExportDocument.ExportedConversation,
-        context: ImportContext
-    ) throws -> (restoredAttachmentCount: Int, skippedAttachmentCount: Int) {
-        let restored = try restoreConversation(
-            exportedConversation.conversation,
-            context: context
-        )
-        do {
-            try saveConversationUseCase.execute(restored.conversation)
-            return (restored.attachments.count, restored.skippedAttachmentCount)
-        } catch {
-            restored.attachments.forEach { try? attachmentRepository.delete(attachment: $0) }
-            throw error
-        }
     }
 
     func restoreConversation(
@@ -217,19 +183,12 @@ private extension ImportConversationsUseCase {
             throw ImportConversationsError.invalidDocument
         }
         var attachmentRestoration = AttachmentRestoration()
-        let messages: [ChatMessage]
-        do {
-            messages = try conversation.messages.map { message in
-                try restoreMessage(
-                    message,
-                    conversationId: conversationId,
-                    context: context,
-                    attachmentRestoration: &attachmentRestoration
-                )
-            }
-        } catch {
-            attachmentRestoration.saved.forEach { try? attachmentRepository.delete(attachment: $0) }
-            throw error
+        let messages = try conversation.messages.map { message in
+            try restoreMessage(
+                message,
+                context: context,
+                attachmentRestoration: &attachmentRestoration
+            )
         }
         return RestoredConversation(
             conversation: Conversation(
@@ -249,7 +208,7 @@ private extension ImportConversationsUseCase {
                 parentConversationId: conversation.parentConversationId.flatMap { context.conversationIds[$0] },
                 branchedFromMessageId: conversation.branchedFromMessageId.flatMap { context.messageIds[$0] },
                 createdAt: conversation.createdAt,
-                updatedAt: conversation.updatedAt
+                updatedAt: Date()
             ),
             attachments: attachmentRestoration.saved,
             skippedAttachmentCount: attachmentRestoration.skippedCount
@@ -264,17 +223,15 @@ private extension ImportConversationsUseCase {
 
     func restoreMessage(
         _ message: ChatMessage,
-        conversationId: UUID,
         context: ImportContext,
         attachmentRestoration: inout AttachmentRestoration
     ) throws -> ChatMessage {
         guard let messageId = context.messageIds[message.id] else {
             throw ImportConversationsError.invalidDocument
         }
-        let attachments = try restoreAttachments(
+        let attachments = restoreAttachments(
             message.attachments,
             messageId: message.id,
-            conversationId: conversationId,
             context: context,
             attachmentRestoration: &attachmentRestoration
         )
@@ -297,11 +254,10 @@ private extension ImportConversationsUseCase {
     func restoreAttachments(
         _ attachments: [ChatMessage.Attachment],
         messageId: UUID,
-        conversationId: UUID,
         context: ImportContext,
         attachmentRestoration: inout AttachmentRestoration
-    ) throws -> [ChatMessage.Attachment] {
-        try attachments.compactMap { attachment in
+    ) -> [ChatMessage.Attachment] {
+        attachments.compactMap { attachment in
             guard let encodedData = context.attachmentData[messageId]?[attachment.id],
                   let data = Data(base64Encoded: encodedData) else {
                 attachmentRestoration.skippedCount += 1
@@ -312,22 +268,11 @@ private extension ImportConversationsUseCase {
                 type: attachment.type,
                 fileName: attachment.fileName,
                 mimeType: attachment.mimeType,
-                fileRelativePath: ""
+                fileRelativePath: "",
+                transientData: data
             )
-            let path = try attachmentRepository.save(
-                data: data,
-                for: importedAttachment,
-                conversationId: conversationId
-            )
-            let persistedAttachment = ChatMessage.Attachment(
-                id: importedAttachment.id,
-                type: importedAttachment.type,
-                fileName: importedAttachment.fileName,
-                mimeType: importedAttachment.mimeType,
-                fileRelativePath: path
-            )
-            attachmentRestoration.saved.append(persistedAttachment)
-            return persistedAttachment
+            attachmentRestoration.saved.append(importedAttachment)
+            return importedAttachment
         }
     }
 }

@@ -18,6 +18,7 @@ final class LaunchViewModel {
         case onboardingCompleted
         case availableUpdateDismissed
         case remoteBannerDismissed
+        case resetRetried
     }
 
     enum State: Equatable {
@@ -26,6 +27,7 @@ final class LaunchViewModel {
         case home
         case maintenance
         case forceUpdate(RemoteConfig.PlatformUpdate)
+        case resetFailed
     }
 
     private(set) var state: State
@@ -77,11 +79,11 @@ final class LaunchViewModel {
             attachmentMigrationUseCase.execute()
 
             let isCompleted = checkOnboardingUseCase.execute()
-            if !isCompleted {
-                resetAppDataUseCase.execute()
+            if isCompleted {
+                startLaunch(isOnboardingCompleted: true)
+            } else {
+                resetBeforeOnboarding()
             }
-
-            startLaunch(isOnboardingCompleted: isCompleted)
         case .onboardingCompleted:
             state = .home
         case .availableUpdateDismissed:
@@ -90,6 +92,9 @@ final class LaunchViewModel {
             guard let remoteBanner else { return }
             settingsManager.setDismissedRemoteBannerKey(remoteBanner.id)
             self.remoteBanner = nil
+        case .resetRetried:
+            state = .loading
+            resetBeforeOnboarding()
         }
     }
 
@@ -100,6 +105,18 @@ final class LaunchViewModel {
             try configureVoticeUseCase.execute(userIsPremium: false)
         } catch {
             LogManager.error("LaunchViewModel: configureVoticeUseCase: execute: error: \(error)")
+        }
+    }
+
+    func resetBeforeOnboarding() {
+        Task {
+            do {
+                try await resetAppDataUseCase.execute()
+                startLaunch(isOnboardingCompleted: false)
+            } catch {
+                LogManager.error("Initial app data reset failed")
+                state = .resetFailed
+            }
         }
     }
 

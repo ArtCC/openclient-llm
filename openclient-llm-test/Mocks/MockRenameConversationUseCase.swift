@@ -19,7 +19,7 @@ final class MockRenameConversationUseCase: RenameConversationUseCaseProtocol, @u
 
     // MARK: - Public
 
-    func execute(_ conversationId: UUID, newTitle: String) throws {
+    func execute(_ conversationId: UUID, newTitle: String) async throws {
         if let error { throw error }
         capturedId = conversationId
         capturedTitle = newTitle

@@ -14,12 +14,19 @@ final class MockSyncConversationsUseCase: SyncConversationsUseCaseProtocol, @unc
     var result: ConversationSyncResult = .synchronized
     var results: [ConversationSyncResult] = []
     var executeCallCount = 0
+    var cancelCallCount = 0
+    var cancelHandler: (@Sendable () async -> Void)?
 
-    func execute() -> ConversationSyncResult {
+    func execute() async -> ConversationSyncResult {
         executeCallCount += 1
         if !results.isEmpty {
             return results.removeFirst()
         }
         return result
+    }
+
+    func cancel() async {
+        cancelCallCount += 1
+        await cancelHandler?()
     }
 }

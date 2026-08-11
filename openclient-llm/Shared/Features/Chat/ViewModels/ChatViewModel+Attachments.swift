@@ -22,10 +22,6 @@ extension ChatViewModel {
 
     func removeAttachment(_ id: UUID) {
         guard case .loaded(var loadedState) = state else { return }
-        if !isPrivateChat,
-           let attachment = loadedState.pendingAttachments.first(where: { $0.id == id }) {
-            try? attachmentRepository.delete(attachment: attachment)
-        }
         loadedState.pendingAttachments.removeAll { $0.id == id }
         state = .loaded(loadedState)
     }
@@ -71,40 +67,15 @@ private extension ChatViewModel {
         mimeType: String
     ) {
         guard case .loaded(var loadedState) = state else { return }
-        if isPrivateChat {
-            loadedState.pendingAttachments.append(ChatMessage.Attachment(
-                type: type,
-                fileName: fileName,
-                mimeType: mimeType,
-                fileRelativePath: "",
-                transientData: data
-            ))
-            state = .loaded(loadedState)
-            return
-        }
-        let folderId = loadedState.conversation?.id ?? loadedState.pendingSessionId
-        let attachmentId = UUID()
-        let placeholder = ChatMessage.Attachment(
-            id: attachmentId,
+        let attachment = ChatMessage.Attachment(
             type: type,
             fileName: fileName,
             mimeType: mimeType,
-            fileRelativePath: ""
+            fileRelativePath: "",
+            transientData: data
         )
-        do {
-            let relativePath = try attachmentRepository.save(data: data, for: placeholder, conversationId: folderId)
-            let saved = ChatMessage.Attachment(
-                id: attachmentId,
-                type: type,
-                fileName: fileName,
-                mimeType: mimeType,
-                fileRelativePath: relativePath
-            )
-            loadedState.pendingAttachments.append(saved)
-            state = .loaded(loadedState)
-        } catch {
-            LogManager.error("addAttachment failed to save to disk: \(error)")
-        }
+        loadedState.pendingAttachments.append(attachment)
+        state = .loaded(loadedState)
     }
 
     func finishPreparingAttachment(errorMessage: String? = nil) {
