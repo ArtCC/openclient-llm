@@ -58,7 +58,7 @@ final class CloudDataManagementViewModelTests: XCTestCase {
         XCTAssertEqual(state.sections[0].items.first?.title, "Plan trip")
         XCTAssertEqual(state.sections[0].items.first?.kind, .conversation(attachmentCount: 2))
         XCTAssertEqual(state.sections[1].items.first?.title, String(localized: "Personal Context"))
-        XCTAssertEqual(state.sections[2].items.first?.title, "Memory Item 1")
+        XCTAssertEqual(state.sections[2].items.first?.title, String(localized: "Memory Item \(1)"))
     }
 
     func test_send_viewAppeared_allPending_setsPendingState() async {

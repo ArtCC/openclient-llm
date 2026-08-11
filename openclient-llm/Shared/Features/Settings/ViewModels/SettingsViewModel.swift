@@ -26,6 +26,7 @@ final class SettingsViewModel {
         case cloudSyncRetryTapped
         case cloudAccountReviewConfirmed
         case cloudAccountReviewCancelled
+        case cloudAccountReviewDismissed
         case cloudAvailabilityRefresh
         case showTokenUsageToggled(Bool)
         case webSearchToolNameChanged(String)

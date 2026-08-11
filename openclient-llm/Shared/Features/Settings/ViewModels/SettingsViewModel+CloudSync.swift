@@ -29,6 +29,8 @@ extension SettingsViewModel {
             approveCloudAccount()
         case .cloudAccountReviewCancelled:
             cancelCloudAccountReview()
+        case .cloudAccountReviewDismissed:
+            dismissCloudAccountReview()
         default:
             break
         }
@@ -164,6 +166,12 @@ private extension SettingsViewModel {
 
     func cancelCloudAccountReview() {
         disableCloudSync()
+    }
+
+    func dismissCloudAccountReview() {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.showCloudAccountReviewAlert = false
+        state = .loaded(loadedState)
     }
 
     func presentProfileConflict() {

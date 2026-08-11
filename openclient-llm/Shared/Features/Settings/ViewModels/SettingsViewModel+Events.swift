@@ -15,7 +15,7 @@ extension SettingsViewModel {
         switch event {
         case .cloudSyncToggled, .cloudSyncConflictResolved, .cloudSyncConflictCancelled,
              .syncNowTapped, .cloudSyncRetryTapped, .cloudAccountReviewConfirmed,
-             .cloudAccountReviewCancelled:
+             .cloudAccountReviewCancelled, .cloudAccountReviewDismissed:
             handleCloudSyncEvent(event)
         case .showTokenUsageToggled, .privacyScreenToggled:
             handlePreferenceToggleEvent(event)

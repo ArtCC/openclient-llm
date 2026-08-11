@@ -119,10 +119,16 @@ extension SettingsViewModelTests {
 
         // When
         sut.send(.cloudAccountReviewConfirmed)
+        sut.send(.cloudAccountReviewDismissed)
 
         // Then
         await waitUntil { self.mockEnableCloudSync.approveCurrentAccountCallCount == 1 }
         XCTAssertTrue(mockSettingsManager.isCloudSyncEnabled)
+        guard case .loaded(let enabledState) = sut.state else {
+            return XCTFail("Expected loaded state")
+        }
+        XCTAssertTrue(enabledState.isCloudSyncEnabled)
+        XCTAssertFalse(enabledState.showCloudAccountReviewAlert)
     }
 
     func test_send_cloudSyncToggled_disableDuringPreflight_doesNotLateReenable() async {

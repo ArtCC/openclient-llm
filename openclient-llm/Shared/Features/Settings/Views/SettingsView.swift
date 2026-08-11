@@ -234,7 +234,7 @@ private extension SettingsView {
             },
             set: { newValue in
                 if !newValue {
-                    viewModel.send(.cloudAccountReviewCancelled)
+                    viewModel.send(.cloudAccountReviewDismissed)
                 }
             }
         )

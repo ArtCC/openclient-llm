@@ -22,7 +22,9 @@ final class CloudSyncStatusPresentationTests: XCTestCase {
         let presentation = CloudSyncStatusPresentation.make(for: status)
 
         // Then
-        XCTAssertTrue(presentation.detail?.contains("Attachments (part of conversations)") == true)
+        XCTAssertTrue(presentation.detail?.contains(String(
+            localized: "Attachments (part of conversations)"
+        )) == true)
         XCTAssertTrue(presentation.canRetry)
     }
 
@@ -34,7 +36,10 @@ final class CloudSyncStatusPresentationTests: XCTestCase {
         let presentation = CloudSyncStatusPresentation.make(for: status)
 
         // Then
-        XCTAssertTrue(presentation.title.contains("Profile"))
+        XCTAssertEqual(
+            presentation.title,
+            String(localized: "Profile synchronization needs a decision")
+        )
         XCTAssertTrue(presentation.canRetry)
     }
 
@@ -49,7 +54,7 @@ final class CloudSyncStatusPresentationTests: XCTestCase {
         let presentation = CloudSyncStatusPresentation.make(for: status)
 
         // Then
-        XCTAssertTrue(presentation.title.contains("iCloud account"))
+        XCTAssertEqual(presentation.title, String(localized: "Review iCloud account"))
         XCTAssertTrue(presentation.requiresAccountReview)
         XCTAssertTrue(presentation.canRetry)
     }
