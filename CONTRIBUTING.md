@@ -37,7 +37,8 @@ xcodebuild build -project openclient-llm.xcodeproj -scheme openclient-llm \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max'
 ```
 
-If you use VS Code with the **XcodeBuildMCP** extension, the `build-lint`, `run-app`, and `run-tests` agent prompts handle build, launch, and testing automatically — with or without MCP installed.
+When using OpenCode with **XcodeBuildMCP**, the project skills under `.opencode/skills/` guide builds, launches, tests,
+SwiftLint fixes, test coverage, and opt-in LiteLLM integration checks.
 
 ## How to Contribute
 
