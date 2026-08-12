@@ -94,28 +94,40 @@ private extension CloudDataManagementView {
     }
 
     func inventoryList(_ loadedState: CloudDataManagementViewModel.LoadedState) -> some View {
-        List {
-            operationSection
-            ForEach(loadedState.sections) { section in
-                if !section.items.isEmpty || section.failure != nil {
-                    categorySection(section)
-                }
-            }
-            if loadedState.hasInventoryFailures {
-                Section {
-                    Button(String(localized: "Retry Inventory")) {
-                        viewModel.send(.retryInventoryTapped)
-                    }
-                    .disabled(viewModel.isOperationActive)
-                } footer: {
-                    Text(String(localized: "Some categories could not be inspected and are not reported as empty."))
-                }
-            }
-            deleteAllSection
-        }
 #if os(iOS)
+        List {
+            inventorySections(loadedState)
+        }
         .listStyle(.insetGrouped)
+#else
+        Form {
+            inventorySections(loadedState)
+        }
+        .formStyle(.grouped)
+        .frame(maxWidth: 820)
+        .frame(maxWidth: .infinity)
 #endif
+    }
+
+    @ViewBuilder
+    func inventorySections(_ loadedState: CloudDataManagementViewModel.LoadedState) -> some View {
+        operationSection
+        ForEach(loadedState.sections) { section in
+            if !section.items.isEmpty || section.failure != nil {
+                categorySection(section)
+            }
+        }
+        if loadedState.hasInventoryFailures {
+            Section {
+                Button(String(localized: "Retry Inventory")) {
+                    viewModel.send(.retryInventoryTapped)
+                }
+                .disabled(viewModel.isOperationActive)
+            } footer: {
+                Text(String(localized: "Some categories could not be inspected and are not reported as empty."))
+            }
+        }
+        deleteAllSection
     }
 
     @ViewBuilder
@@ -191,8 +203,27 @@ private extension CloudDataManagementView {
                 }
             }
         } header: {
-            Text(categoryTitle(section.category))
+            categoryHeader(section)
         }
+    }
+
+    @ViewBuilder
+    func categoryHeader(_ section: CloudDataManagementViewModel.CategorySection) -> some View {
+#if os(iOS)
+        Text(categoryTitle(section.category))
+#else
+        HStack(spacing: 7) {
+            Image(systemName: categoryImage(section.category))
+                .foregroundStyle(.secondary)
+            Text(categoryTitle(section.category))
+            Spacer()
+            if section.failure == nil {
+                Text(section.items.count, format: .number)
+                    .monospacedDigit()
+                    .foregroundStyle(.tertiary)
+            }
+        }
+#endif
     }
 
     func visibleItems(
@@ -235,10 +266,14 @@ private extension CloudDataManagementView {
             )
         }
         .disabled(viewModel.isOperationActive)
+#if os(macOS)
+        .buttonStyle(.borderless)
+        .foregroundStyle(.secondary)
+#endif
     }
 
     func itemRow(_ item: CloudDataManagementViewModel.Item) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.title)
                     .font(.body)
@@ -263,7 +298,8 @@ private extension CloudDataManagementView {
             .accessibilityLabel(String(localized: "Delete \(item.title)"))
             .accessibilityHint(String(localized: "Deletes this item from iCloud and all synchronized devices."))
 #if os(macOS)
-            .buttonStyle(.bordered)
+            .buttonStyle(.borderless)
+            .help(String(localized: "Delete"))
 #endif
         }
     }
@@ -361,6 +397,15 @@ private extension CloudDataManagementView {
         case .personalContext: String(localized: "Personal Context")
         case .memory: String(localized: "Memory")
         case .customTemplates: String(localized: "Custom Templates")
+        }
+    }
+
+    func categoryImage(_ category: CloudDataManagementViewModel.Category) -> String {
+        switch category {
+        case .conversations: "bubble.left.and.bubble.right"
+        case .personalContext: "person.text.rectangle"
+        case .memory: "brain"
+        case .customTemplates: "text.document"
         }
     }
 
