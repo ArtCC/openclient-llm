@@ -88,39 +88,102 @@ private extension ModelsView {
         let localModels = chatModels.filter { $0.provider == .local }
         let cloudModels = chatModels.filter { $0.provider == .cloud }
 
-        return List {
-            if !localModels.isEmpty {
-                Section(String(localized: "Local")) {
-                    ForEach(localModels) { model in
-                        modelRow(model, loadedState: loadedState)
-                    }
-                }
-            }
-            if !cloudModels.isEmpty {
-                Section(String(localized: "Cloud")) {
-                    ForEach(cloudModels) { model in
-                        modelRow(model, loadedState: loadedState)
-                    }
-                }
-            }
-            if !ttsModels.isEmpty {
-                Section(String(localized: "Text to Speech")) {
-                    ForEach(ttsModels) { model in
-                        ttsModelRow(model, loadedState: loadedState)
-                    }
-                }
-            }
-            if !sttModels.isEmpty {
-                Section(String(localized: "Speech to Text")) {
-                    ForEach(sttModels) { model in
-                        sttModelRow(model, loadedState: loadedState)
-                    }
-                }
-            }
-        }
 #if os(iOS)
+        return List {
+            modelSections(
+                localModels: localModels,
+                cloudModels: cloudModels,
+                ttsModels: ttsModels,
+                sttModels: sttModels,
+                loadedState: loadedState
+            )
+        }
         .refreshable {
             await viewModel.refreshAsync()
+        }
+#else
+        return Form {
+            modelSections(
+                localModels: localModels,
+                cloudModels: cloudModels,
+                ttsModels: ttsModels,
+                sttModels: sttModels,
+                loadedState: loadedState
+            )
+        }
+        .formStyle(.grouped)
+        .frame(maxWidth: 820)
+        .frame(maxWidth: .infinity)
+#endif
+    }
+
+    @ViewBuilder
+    func modelSections(
+        localModels: [LLMModel],
+        cloudModels: [LLMModel],
+        ttsModels: [LLMModel],
+        sttModels: [LLMModel],
+        loadedState: ModelsViewModel.LoadedState
+    ) -> some View {
+        if !localModels.isEmpty {
+            Section {
+                ForEach(localModels) { model in
+                    modelRow(model, loadedState: loadedState)
+                }
+            } header: {
+                modelSectionHeader(String(localized: "Local"), systemImage: "desktopcomputer", count: localModels.count)
+            }
+        }
+        if !cloudModels.isEmpty {
+            Section {
+                ForEach(cloudModels) { model in
+                    modelRow(model, loadedState: loadedState)
+                }
+            } header: {
+                modelSectionHeader(String(localized: "Cloud"), systemImage: "cloud", count: cloudModels.count)
+            }
+        }
+        if !ttsModels.isEmpty {
+            Section {
+                ForEach(ttsModels) { model in
+                    ttsModelRow(model, loadedState: loadedState)
+                }
+            } header: {
+                modelSectionHeader(
+                    String(localized: "Text to Speech"),
+                    systemImage: "waveform",
+                    count: ttsModels.count
+                )
+            }
+        }
+        if !sttModels.isEmpty {
+            Section {
+                ForEach(sttModels) { model in
+                    sttModelRow(model, loadedState: loadedState)
+                }
+            } header: {
+                modelSectionHeader(
+                    String(localized: "Speech to Text"),
+                    systemImage: "waveform.badge.mic",
+                    count: sttModels.count
+                )
+            }
+        }
+    }
+
+    @ViewBuilder
+    func modelSectionHeader(_ title: String, systemImage: String, count: Int) -> some View {
+#if os(iOS)
+        Text(title)
+#else
+        HStack(spacing: 7) {
+            Image(systemName: systemImage)
+                .foregroundStyle(.secondary)
+            Text(title)
+            Spacer()
+            Text(count, format: .number)
+                .monospacedDigit()
+                .foregroundStyle(.tertiary)
         }
 #endif
     }
@@ -154,7 +217,11 @@ private extension ModelsView {
                 .padding(.vertical, 4)
                 .contentShape(Rectangle())
             }
+#if os(iOS)
             .buttonStyle(.plain)
+#else
+            .buttonStyle(.borderless)
+#endif
             .frame(maxWidth: .infinity, alignment: .leading)
 
             if isSelected {
@@ -170,7 +237,11 @@ private extension ModelsView {
                     .foregroundStyle(.secondary)
                     .font(.title2)
             }
+#if os(iOS)
             .buttonStyle(.plain)
+#else
+            .buttonStyle(.borderless)
+#endif
             .padding(.leading, 12)
         }
     }
@@ -244,6 +315,9 @@ private extension ModelsView {
                 }
                 .padding(.vertical, 4)
             }
+#if os(macOS)
+            .buttonStyle(.borderless)
+#endif
         }
     }
 
@@ -275,6 +349,9 @@ private extension ModelsView {
             }
             .padding(.vertical, 4)
         }
+#if os(macOS)
+        .buttonStyle(.borderless)
+#endif
     }
 
     func voicePicker(model: LLMModel, loadedState: ModelsViewModel.LoadedState) -> some View {
