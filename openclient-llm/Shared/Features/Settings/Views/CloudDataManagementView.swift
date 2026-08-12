@@ -288,6 +288,7 @@ private extension CloudDataManagementView {
             .accessibilityLabel(item.title)
             .accessibilityValue(itemAccessibilityValue(item))
 
+#if os(macOS)
             Button(role: .destructive) {
                 viewModel.send(.deleteRequested(item))
             } label: {
@@ -297,10 +298,21 @@ private extension CloudDataManagementView {
             .disabled(viewModel.isOperationActive)
             .accessibilityLabel(String(localized: "Delete \(item.title)"))
             .accessibilityHint(String(localized: "Deletes this item from iCloud and all synchronized devices."))
-#if os(macOS)
             .help(String(localized: "Delete"))
 #endif
         }
+#if os(iOS)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                viewModel.send(.deleteRequested(item))
+            } label: {
+                Label(String(localized: "Delete"), systemImage: "trash")
+            }
+            .tint(.red)
+            .disabled(viewModel.isOperationActive)
+            .accessibilityHint(String(localized: "Deletes this item from iCloud and all synchronized devices."))
+        }
+#endif
     }
 
     var deleteAllSection: some View {
