@@ -72,6 +72,7 @@ private struct LatestConversationWidgetView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             Divider()
+                .padding(.vertical, 5)
             if let conversation = entry.conversation {
                 conversationCard(conversation)
             } else {
