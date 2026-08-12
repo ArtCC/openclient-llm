@@ -10,7 +10,7 @@ import Foundation
 
 // MARK: - Protocol
 
-protocol AttachmentRepositoryProtocol: Sendable {
+nonisolated protocol AttachmentRepositoryProtocol: Sendable {
     /// Persists `data` for `attachment` inside the given conversation folder and returns
     /// the relative path that was stored in `attachment.fileRelativePath`.
     /// - Returns: The relative path `"Attachments/<conversationId>/<attachmentId>.<ext>"`
@@ -32,60 +32,80 @@ protocol AttachmentRepositoryProtocol: Sendable {
 
 // MARK: - AttachmentRepository
 
-struct AttachmentRepository: AttachmentRepositoryProtocol {
+// Safety: FileManager is thread-safe per Apple documentation. All stored properties are immutable (`let`).
+nonisolated struct AttachmentRepository: AttachmentRepositoryProtocol, @unchecked Sendable {
     // MARK: - Properties
 
     private let fileManager: FileManager
     private let baseURL: URL
+    private let fileResolver: AttachmentFileResolver
 
     // MARK: - Init
 
-    init(fileManager: FileManager = .default) {
+    init(fileManager: FileManager = .default, baseURL: URL? = nil) {
         self.fileManager = fileManager
-        let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        self.baseURL = documentsURL
+        let baseURL = baseURL ?? fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        self.baseURL = baseURL
+        self.fileResolver = AttachmentFileResolver(fileManager: fileManager, baseURL: baseURL)
     }
 
     // MARK: - Public
 
     @discardableResult
     func save(data: Data, for attachment: ChatMessage.Attachment, conversationId: UUID) throws -> String {
-        let ext = fileExtension(for: attachment.mimeType, fallback: attachment.fileName)
-        let relativePath = "Attachments/\(conversationId.uuidString)/\(attachment.id.uuidString).\(ext)"
+        let relativePath = ConversationAttachmentPath.relativePath(
+            for: attachment,
+            conversationId: conversationId
+        )
+        _ = try resolvedURL(for: relativePath)
         let fileURL = baseURL.appendingPathComponent(relativePath)
 
         try ensureDirectoryExists(for: fileURL)
-        try data.write(to: fileURL, options: .atomic)
+        let resolvedURL = try resolvedURL(for: relativePath)
+        try data.write(to: resolvedURL, options: .atomic)
+        guard try Data(contentsOf: resolvedURL) == data else {
+            throw AttachmentRepositoryError.fileNotFound
+        }
 
-        LogManager.debug("AttachmentRepository.save \(relativePath) (\(data.count) bytes)")
+        LogManager.debug("AttachmentRepository.save completed bytes=\(data.count)")
         return relativePath
     }
 
     func load(attachment: ChatMessage.Attachment) throws -> Data {
-        let fileURL = baseURL.appendingPathComponent(attachment.fileRelativePath)
+        let fileURL = try attachmentURL(for: attachment)
         guard fileManager.fileExists(atPath: fileURL.path) else {
-            LogManager.error("AttachmentRepository.load: file not found \(attachment.fileRelativePath)")
-            throw AttachmentRepositoryError.fileNotFound(attachment.fileRelativePath)
+            LogManager.error("AttachmentRepository.load failed reason=fileNotFound")
+            throw AttachmentRepositoryError.fileNotFound
         }
         return try Data(contentsOf: fileURL)
     }
 
     func delete(attachment: ChatMessage.Attachment) throws {
-        let fileURL = baseURL.appendingPathComponent(attachment.fileRelativePath)
+        let fileURL = try attachmentURL(for: attachment)
         guard fileManager.fileExists(atPath: fileURL.path) else { return }
         try fileManager.removeItem(at: fileURL)
-        LogManager.debug("AttachmentRepository.delete \(attachment.fileRelativePath)")
+        LogManager.debug("AttachmentRepository.delete completed")
     }
 
     func deleteAll(forConversationId conversationId: UUID) throws {
-        let dirURL = baseURL.appendingPathComponent("Attachments/\(conversationId.uuidString)", isDirectory: true)
+        let dirURL: URL
+        do {
+            dirURL = try fileResolver.conversationDirectory(conversationId)
+        } catch {
+            throw AttachmentRepositoryError.invalidPath
+        }
         guard fileManager.fileExists(atPath: dirURL.path) else { return }
         try fileManager.removeItem(at: dirURL)
         LogManager.debug("AttachmentRepository.deleteAll conversationId=\(conversationId)")
     }
 
     func deleteAll() throws {
-        let dirURL = baseURL.appendingPathComponent("Attachments", isDirectory: true)
+        let dirURL: URL
+        do {
+            dirURL = try fileResolver.attachmentRoot()
+        } catch {
+            throw AttachmentRepositoryError.invalidPath
+        }
         guard fileManager.fileExists(atPath: dirURL.path) else { return }
         try fileManager.removeItem(at: dirURL)
         LogManager.warning("AttachmentRepository.deleteAll — all attachments removed")
@@ -101,30 +121,40 @@ private extension AttachmentRepository {
         try fileManager.createDirectory(at: dirURL, withIntermediateDirectories: true)
     }
 
-    /// Derives a file extension from MIME type, with a fallback to the original file name extension.
-    func fileExtension(for mimeType: String, fallback fileName: String) -> String {
-        switch mimeType {
-        case "image/jpeg": return "jpg"
-        case "image/png":  return "png"
-        case "image/gif":  return "gif"
-        case "image/webp": return "webp"
-        case "application/pdf": return "pdf"
-        default:
-            let ext = (fileName as NSString).pathExtension.lowercased()
-            return ext.isEmpty ? "bin" : ext
+    func attachmentURL(for attachment: ChatMessage.Attachment) throws -> URL {
+        let key: CloudAttachmentKey
+        do {
+            guard let value = try ConversationAttachmentPath.key(for: attachment) else {
+                throw AttachmentRepositoryError.invalidPath
+            }
+            key = value
+        } catch {
+            throw AttachmentRepositoryError.invalidPath
+        }
+        return try resolvedURL(for: ConversationAttachmentPath.relativePath(for: key))
+    }
+
+    func resolvedURL(for relativePath: String) throws -> URL {
+        do {
+            return try fileResolver.resolve(relativePath: relativePath)
+        } catch {
+            throw AttachmentRepositoryError.invalidPath
         }
     }
 }
 
 // MARK: - AttachmentRepositoryError
 
-enum AttachmentRepositoryError: LocalizedError {
-    case fileNotFound(String)
+nonisolated enum AttachmentRepositoryError: LocalizedError {
+    case fileNotFound
+    case invalidPath
 
     var errorDescription: String? {
         switch self {
-        case .fileNotFound(let path):
-            return "Attachment file not found at path: \(path)"
+        case .fileNotFound:
+            String(localized: "The attachment file could not be found.")
+        case .invalidPath:
+            String(localized: "The attachment file path is invalid.")
         }
     }
 }

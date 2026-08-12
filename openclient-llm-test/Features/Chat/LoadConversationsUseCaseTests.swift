@@ -13,7 +13,7 @@ import XCTest
 final class LoadConversationsUseCaseTests: XCTestCase {
     // MARK: - Tests
 
-    func test_execute_sameTagWithDifferentColors_usesFirstAssignedColor() throws {
+    func test_execute_sameTagWithDifferentColors_usesFirstAssignedColor() async throws {
         // Given
         let first = Conversation(
             modelId: "gpt-4",
@@ -28,7 +28,7 @@ final class LoadConversationsUseCaseTests: XCTestCase {
         let sut = LoadConversationsUseCase(repository: repository)
 
         // When
-        let conversations = try sut.execute()
+        let conversations = try await sut.execute()
 
         // Then
         XCTAssertEqual(conversations.map(\.tags.first?.color), [.blue, .blue])

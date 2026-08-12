@@ -9,8 +9,8 @@
 import Foundation
 
 protocol LoadConversationsUseCaseProtocol: Sendable {
-    func execute() throws -> [Conversation]
-    func executeLocally() throws -> [Conversation]
+    func execute() async throws -> [Conversation]
+    func executeLocally() async throws -> [Conversation]
 }
 
 struct LoadConversationsUseCase: LoadConversationsUseCaseProtocol {
@@ -26,13 +26,13 @@ struct LoadConversationsUseCase: LoadConversationsUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute() throws -> [Conversation] {
-        let conversations = try repository.loadAll()
+    func execute() async throws -> [Conversation] {
+        let conversations = try await repository.loadAll()
         return normalizeTags(in: conversations)
     }
 
-    func executeLocally() throws -> [Conversation] {
-        let conversations = try repository.loadLocal()
+    func executeLocally() async throws -> [Conversation] {
+        let conversations = try await repository.loadLocal()
         return normalizeTags(in: conversations)
     }
 }

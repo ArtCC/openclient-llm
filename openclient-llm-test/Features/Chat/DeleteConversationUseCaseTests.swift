@@ -34,7 +34,7 @@ final class DeleteConversationUseCaseTests: XCTestCase {
 
     // MARK: - Tests — execute
 
-    func test_execute_deletesFromRepository() throws {
+    func test_execute_deletesFromRepository() async throws {
         // Given
         let conversationId = UUID()
         let conversation = Conversation(
@@ -45,28 +45,33 @@ final class DeleteConversationUseCaseTests: XCTestCase {
         mockRepository.conversations = [conversation]
 
         // When
-        try sut.execute(conversationId)
+        try await sut.execute(conversationId)
 
         // Then
         XCTAssertEqual(mockRepository.deletedIds, [conversationId])
         XCTAssertTrue(mockRepository.conversations.isEmpty)
     }
 
-    func test_execute_withRepositoryError_throwsError() {
+    func test_execute_withRepositoryError_throwsError() async {
         // Given
         mockRepository.deleteError = NSError(domain: "test", code: 1)
 
         // When / Then
-        XCTAssertThrowsError(try sut.execute(UUID()))
+        do {
+            try await sut.execute(UUID())
+            XCTFail("Expected repository error")
+        } catch {
+            XCTAssertNotNil(error)
+        }
     }
 
-    func test_execute_deletingNonexistentId_stillCallsRepository() throws {
+    func test_execute_deletingNonexistentId_stillCallsRepository() async throws {
         // Given
         let conversationId = UUID()
         mockRepository.conversations = []
 
         // When
-        try sut.execute(conversationId)
+        try await sut.execute(conversationId)
 
         // Then
         XCTAssertEqual(mockRepository.deletedIds, [conversationId])

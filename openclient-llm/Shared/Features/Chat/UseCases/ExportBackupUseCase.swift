@@ -9,7 +9,7 @@
 import Foundation
 
 protocol ExportBackupUseCaseProtocol: Sendable {
-    func execute() throws -> Data
+    func execute() async throws -> Data
 }
 
 struct ExportBackupUseCase: ExportBackupUseCaseProtocol {
@@ -30,7 +30,7 @@ struct ExportBackupUseCase: ExportBackupUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute() throws -> Data {
-        try exportConversationsUseCase.execute(loadConversationsUseCase.execute())
+    func execute() async throws -> Data {
+        try exportConversationsUseCase.execute(await loadConversationsUseCase.execute())
     }
 }

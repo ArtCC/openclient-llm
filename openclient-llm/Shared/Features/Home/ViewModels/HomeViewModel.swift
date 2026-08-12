@@ -122,7 +122,7 @@ private extension HomeViewModel {
 
     func resolveSpotlightConversation(id: UUID) {
         Task {
-            guard let conversations = try? loadConversationsUseCase.execute(),
+            guard let conversations = try? await loadConversationsUseCase.execute(),
                   let conversation = conversations.first(where: { $0.id == id }) else { return }
             pendingConversation = conversation
         }

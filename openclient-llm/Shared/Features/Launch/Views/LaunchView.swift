@@ -68,6 +68,8 @@ struct LaunchView: View {
                 MaintenanceView()
             case .forceUpdate(let update):
                 ForceUpdateView(update: update)
+            case .resetFailed:
+                resetFailureView
             }
         }
     }
@@ -111,6 +113,11 @@ struct LaunchView: View {
                 ForceUpdateView(update: update)
                     .transition(.opacity)
             }
+
+            if viewModel.state == .resetFailed {
+                resetFailureView
+                    .transition(.opacity)
+            }
         }
         .animation(.smooth, value: viewModel.state)
     }
@@ -127,6 +134,19 @@ private extension LaunchView {
             },
             onRemoteBannerAction: handleRemoteBannerAction
         )
+    }
+
+    var resetFailureView: some View {
+        ContentUnavailableView {
+            Label(String(localized: "App Data Reset Failed"), systemImage: "exclamationmark.triangle")
+        } description: {
+            Text(String(localized: "Some local data could not be reset. No remaining data was discarded."))
+        } actions: {
+            Button(String(localized: "Retry")) {
+                viewModel.send(.resetRetried)
+            }
+            .buttonStyle(.borderedProminent)
+        }
     }
 
     func handleRemoteBannerAction() {
@@ -164,7 +184,7 @@ private extension LaunchView {
 
     var shouldCoverMacOSHome: Bool {
         switch viewModel.state {
-        case .loading, .maintenance, .forceUpdate:
+        case .loading, .maintenance, .forceUpdate, .resetFailed:
             true
         case .onboarding, .home:
             false

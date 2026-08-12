@@ -125,7 +125,9 @@ extension ChatViewModelTests {
 
         // When
         sut.send(.conversationLoaded(selectedConversation))
-        try await Task.sleep(for: .milliseconds(400))
+        await waitUntil {
+            self.mockSaveConversation.savedConversations.contains { $0.id == previousConversation.id }
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -153,7 +155,7 @@ extension ChatViewModelTests {
         try await Task.sleep(for: .milliseconds(200))
 
         // Then
-        XCTAssertEqual(mockStreamMessage.receivedMessages.last?.count, 51)
+        XCTAssertEqual(mockStreamMessage.receivedMessages.last?.count, 50)
         XCTAssertEqual(mockStreamMessage.receivedMessages.last?.last?.content, "Latest message")
     }
 
@@ -434,6 +436,7 @@ extension ChatViewModelTests {
         // When
         let parameters = ModelParameters(temperature: 1.2)
         sut.send(.modelParametersChanged(parameters))
+        await waitUntil { self.mockSaveConversation.savedConversations.count > savedCountBefore }
 
         // Then
         XCTAssertGreaterThan(mockSaveConversation.savedConversations.count, savedCountBefore)

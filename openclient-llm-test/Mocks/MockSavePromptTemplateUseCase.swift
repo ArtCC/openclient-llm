@@ -18,7 +18,7 @@ final class MockSavePromptTemplateUseCase: SavePromptTemplateUseCaseProtocol, @u
 
     // MARK: - Execute
 
-    func execute(_ template: PromptTemplate) throws {
+    func execute(_ template: PromptTemplate) async throws {
         if let error { throw error }
         savedTemplates.append(template)
     }

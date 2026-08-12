@@ -8,6 +8,6 @@
 
 import Foundation
 
-struct ConversationDeleteAllMarker: Codable, Equatable, Sendable {
+nonisolated struct ConversationDeleteAllMarker: Codable, Equatable, Sendable {
     let deletedAt: Date
 }

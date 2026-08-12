@@ -9,7 +9,7 @@
 import Foundation
 
 protocol LoadPromptTemplatesUseCaseProtocol: Sendable {
-    func execute() throws -> [PromptTemplate]
+    func execute() async throws -> [PromptTemplate]
 }
 
 struct LoadPromptTemplatesUseCase: LoadPromptTemplatesUseCaseProtocol {
@@ -25,7 +25,7 @@ struct LoadPromptTemplatesUseCase: LoadPromptTemplatesUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute() throws -> [PromptTemplate] {
-        try repository.loadAll()
+    func execute() async throws -> [PromptTemplate] {
+        try await repository.loadAll()
     }
 }

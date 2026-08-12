@@ -18,7 +18,7 @@ final class MockLoadPromptTemplatesUseCase: LoadPromptTemplatesUseCaseProtocol, 
 
     // MARK: - Execute
 
-    func execute() throws -> [PromptTemplate] {
+    func execute() async throws -> [PromptTemplate] {
         executeCallCount += 1
         return try result.get()
     }

@@ -87,6 +87,11 @@ final class ChatViewModel {
         var isLoadingMCPTools: Bool = false
     }
 
+    struct PersistenceResult {
+        let didPersist: Bool
+        let durableConversation: Conversation?
+    }
+
     var state: State
 
     var onConversationUpdated: (() -> Void)?
@@ -123,6 +128,11 @@ final class ChatViewModel {
     let compactConversationUseCase: CompactConversationUseCaseProtocol
     var streamTask: Task<Void, Never>?
     var compactionTask: Task<Void, Never>?
+    var persistenceTask: Task<PersistenceResult, Never>?
+    var persistenceBase: Conversation?
+    var queuedPersistenceConversation: Conversation?
+    var persistenceGeneration = 0
+    var persistenceResetGeneration = 0
     private var loadTask: Task<Void, Never>?
     var activeAssistantMessageId: UUID?
     var errorDismissTask: Task<Void, Never>?
@@ -167,6 +177,11 @@ final class ChatViewModel {
     ) {
         self.state = state
         self.pendingConversation = conversation
+        if case .loaded(let loadedState) = state {
+            self.persistenceBase = loadedState.conversation ?? conversation
+        } else {
+            self.persistenceBase = conversation
+        }
         self.isPrivateChat = isPrivateChat
         self.fetchModelsUseCase = fetchModelsUseCase
         self.prepareImageAttachmentUseCase = prepareImageAttachmentUseCase
@@ -261,6 +276,16 @@ final class ChatViewModel {
             return
         }
     }
+
+    func resetAfterAppDataReset() {
+        cancelActiveStreaming(shouldPersist: false)
+        persistenceResetGeneration += 1
+        persistenceTask?.cancel()
+        persistenceTask = nil
+        queuedPersistenceConversation = nil
+        persistenceBase = nil
+        loadInitialData()
+    }
 }
 
 // MARK: - Private
@@ -324,6 +349,7 @@ private extension ChatViewModel {
             pendingConversation = conversation
             return
         }
+        persistenceBase = conversation
         loadedState.conversation = conversation
         loadedState.messages = conversation.messages
         loadedState.systemPrompt = conversation.systemPrompt
@@ -350,7 +376,7 @@ private extension ChatViewModel {
         if loadedState.conversation != nil {
             loadedState.conversation?.modelId = model.id
             state = .loaded(loadedState)
-            persistConversation()
+            scheduleConversationPersistence()
         }
     }
 
@@ -363,7 +389,7 @@ private extension ChatViewModel {
         }
         refreshContextUsage(in: &loadedState)
         state = .loaded(loadedState)
-        persistConversation()
+        scheduleConversationPersistence()
     }
 
     func updateModelParameters(_ parameters: ModelParameters) {
@@ -374,7 +400,7 @@ private extension ChatViewModel {
             loadedState.conversation?.modelParameters = parameters
         }
         state = .loaded(loadedState)
-        persistConversation()
+        scheduleConversationPersistence()
     }
 
     func speakMessage(_ message: ChatMessage) {
@@ -422,8 +448,25 @@ private extension ChatViewModel {
                 .notifications(named: .appDataDidReset)
             for await _ in notifications {
                 guard let self else { return }
-                await MainActor.run { self.loadInitialData() }
+                await MainActor.run {
+                    self.resetAfterAppDataReset()
+                }
             }
+        }
+    }
+
+}
+
+// MARK: - Error State
+
+extension ChatViewModel {
+    func scheduleErrorDismiss() {
+        errorDismissTask?.cancel()
+        errorDismissTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+            currentState.errorMessage = nil
+            state = .loaded(currentState)
         }
     }
 }

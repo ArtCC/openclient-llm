@@ -23,9 +23,9 @@ Each specification must use the `.instructions.md` suffix and start with YAML fr
 | `concurrency.instructions.md` | Working with async code, isolation, or `Sendable`. |
 | `conversation-backup-format.instructions.md` | Exporting, importing, restoring, validating, or versioning conversation backups. |
 | `design-ui.instructions.md` | Designing general SwiftUI UI, accessibility, haptics, or animation. |
+| `icloud-sync.instructions.md` | Implementing or changing iCloud synchronization, storage, conflict resolution, or cloud data management. |
 | `litellm-api.instructions.md` | Changing LiteLLM/OpenAI-compatible API integration. |
 | `readme.instructions.md` | Updating `README.md`. |
-| `roadmap.instructions.md` | Planning or prioritizing future work. |
 | `roadmap-completed.instructions.md` | Reviewing completed roadmap work. |
 | `security.instructions.md` | Handling sensitive data, user input, credentials, or security review. |
 | `swiftui-multiplatform.instructions.md` | Building shared iOS, iPadOS, or macOS SwiftUI. |
@@ -71,7 +71,9 @@ main-actor isolation when compiled into either app. The test, Share Extension, a
 
 - `@MainActor` annotations on ViewModels are redundant but kept for documentation.
 - All test classes **must** be `@MainActor` — otherwise they cannot access `@MainActor`-isolated types synchronously.
-- Use `nonisolated` ONLY for genuinely background work (image processing, large JSON parsing).
+- Use `nonisolated` only when a declaration must run or be constructed outside `MainActor` and its dependencies and
+  transferred values are safe across isolation boundaries. Common cases include shared DTOs, parsing helpers, constants
+  required by nonisolated protocols, and genuinely background processing. Do not use it for UI-bound state.
 - `@unchecked Sendable` requires a documented safety invariant comment — never use without justification.
   - Production wrappers: `// Safety: <API> is thread-safe per Apple documentation. All stored properties are immutable (\`let\`).`
   - Test mocks: `// Safety: Only used within serialized @MainActor test methods.`
@@ -135,10 +137,13 @@ final class FeatureViewModel {
 }
 ```
 
-- Views access ViewModels via `@State private var viewModel = FeatureViewModel()`.
+- Root screen views generally own `@Observable` ViewModels with `@State`. Custom initialization and internal visibility are
+  allowed for split `Type+Concern.swift` implementations; child views may receive the same ViewModel and use `@Bindable`
+  when bindings are required.
 - ViewModels primarily coordinate UseCases, but some also inject Managers directly for settings, memory, cloud sync,
   user profile, and app-wide routing state. Preserve the local pattern instead of adding pass-through UseCases.
-- ViewModel `send(_:)` is the public input point; asynchronous work and state mutation stay inside the ViewModel.
+- ViewModel `send(_:)` is the primary UI event entry point. Preserve established explicit methods such as awaitable refresh
+  APIs where the surrounding feature already uses them. Asynchronous ownership and state mutation stay inside the ViewModel.
 - Typical data flow is View → ViewModel → UseCase → Repository → APIClient/LocalStorage. Managers are transversal
   services coordinated by UseCases, ViewModels, repositories, and app entry points where the implementation requires it.
 
@@ -146,10 +151,13 @@ final class FeatureViewModel {
 
 - Every `.swift` file starts with the boilerplate copyright header (see any existing file).
 - One public type per file, named after the type.
-- `// MARK: - Properties` / `// MARK: - Init` / `// MARK: - <public section>` / `// MARK: - Private` at file bottom.
-- Every SwiftUI view file must include `#Preview`.
+- Use `// MARK: -` sections where they improve navigation. Common sections are `Properties`, `Init`, a meaningful public
+  section such as `View` or `Input functions`, and `Private` near the bottom; do not force sections into small files.
+- Primary SwiftUI screens and reusable visual components need preview coverage, either in the same file or a dedicated
+  `Type+Previews.swift` file. Platform adapters and infrastructure-only views may rely on a composed parent preview.
 - Never initialize optional stored properties with `= nil` (optionals default to nil).
-- Use `String(localized:)` for ALL user-facing strings. Never manually edit `Localizable.xcstrings` — Xcode syncs it from `String(localized:)` usage.
+- Localize all user-facing source strings. Use `String(localized:)` when an API requires `String`; direct localized literals
+  are valid for APIs taking `LocalizedStringKey` or `LocalizedStringResource`. Never manually edit `Localizable.xcstrings`.
 - Write localized source strings in English only; translations are maintained manually by the project author.
 - SwiftLint configuration: warnings/errors are 120/150 lines for line length, 50/80 for function bodies, 300/400 for
   type bodies, and 500/650 for files. `force_unwrapping` and `force_cast` are errors.
@@ -164,7 +172,7 @@ final class FeatureViewModel {
   as client configuration, not as confidential server-side secrets; never place a privileged credential there.
 - Release workflows derive tag and artifact labels from the first numeric `CHANGELOG.md` header. The deployment process
   increments the published build number automatically, so the checked-in `CURRENT_PROJECT_VERSION` does not need to match
-  the changelog build suffix. Tags use the full changelog version prefixed with `v`.
+  the changelog build suffix. The standard release tag is `v<VERSION>`; the macOS DMG tag is `v<VERSION>-macos`.
 
 ## Change Completion
 

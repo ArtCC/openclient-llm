@@ -166,4 +166,21 @@ final class DeleteMemoryToolTests: XCTestCase {
         // Then
         await fulfillment(of: [expectation], timeout: 1)
     }
+
+    func test_execute_deleteFails_throwsFailure() async {
+        // Given
+        let expectedError = NSError(domain: "DeleteMemoryToolTests", code: 1)
+        let item = MemoryItem(content: "Test memory")
+        mockMemoryManager.items = [item]
+        mockMemoryManager.mutationError = expectedError
+
+        // When
+        do {
+            _ = try await sut.execute(arguments: #"{"content": "Test memory"}"#)
+            XCTFail("Expected delete failure")
+        } catch {
+            // Then
+            XCTAssertEqual(error as NSError, expectedError)
+        }
+    }
 }

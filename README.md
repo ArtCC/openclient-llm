@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/badge/Platform-iOS%2026+%20|%20iPadOS%2026+%20|%20macOS%2026+-blue?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/Swift-6+-orange?style=flat-square&logo=swift" alt="Swift" />
   <img src="https://img.shields.io/badge/UI-SwiftUI-blue?style=flat-square&logo=swift" alt="SwiftUI" />
-  <img src="https://img.shields.io/badge/Version-1.6.10-brightgreen?style=flat-square" alt="Version 1.6.10" />
+  <img src="https://img.shields.io/badge/Development-1.6.15-brightgreen?style=flat-square" alt="Development version 1.6.15" />
   <img src="https://img.shields.io/badge/Xcode-26+-blue?style=flat-square&logo=xcode" alt="Xcode" />
 </p>
 
@@ -42,22 +42,23 @@ servers that provide the endpoints used by your selected features; point the app
 - Deep-link into the app with `openclient://chat?text=…`, `openclient://chat?url=…`, or `openclient://conversation?id=…` for third-party automation
 - Apple Shortcuts integration: "New Chat", "Search Chats", and "Send File to Chat" actions available in the Shortcuts app and via Siri
 - Control Center toggle: add a "New Chat" button for instant one-tap access from any screen or the lock screen
-- Home-screen widgets: New Chat (small), Search (small), Quick Actions (medium), and Recent Conversations (medium/large) — tap any widget to jump directly into the app
-- iCloud sync across all your Apple devices
+- Home-screen widgets: New Chat and Search (small); Quick Actions and Continue Chat (medium); and Recent, Pinned, or Tagged Conversations (medium/large)
+- Optional iCloud sync for conversations, attachments, personal context, memory, and custom prompt templates across supported iPhone, iPad, and Mac devices
 - Export individual conversations or full JSON backups, and restore backups on another device ([format specification](specs/conversation-backup-format.instructions.md))
 - Private Chat: start a session-only chat whose messages and attachments are discarded when you close it; personal memory is neither read nor changed
-- Token usage per message and estimated conversation cost
+- Token usage per message and estimated conversation cost when the backend returns usage and pricing metadata
 
 **Models**
-- Browse all available models with capability badges (vision, tools, JSON mode, image generation...)
-- Model detail sheet: context window, pricing (per token), provider, mode, and capabilities at a glance
+- Browse available models with capability badges supplied by `/model/info`, plus best-effort Ollama capability detection
+- Model detail sheet showing available context, pricing, provider, mode, and capability metadata
 - Voice selector for Text-to-Speech models
 - Switch models per conversation
 
 **Personalization**
 - Prompt template library: save and reuse system prompts for any workflow
 - User profile: set your name and context so every model addresses you personally
-- Memory: save facts and preferences (manually or let the model save them automatically); injected into every conversation's system prompt and synced via iCloud
+- Memory: save facts and preferences (manually or let the model save them automatically); injected into every conversation's system prompt and synced when iCloud synchronization is enabled
+- Localized in English, Spanish, French, Italian, German, Portuguese (Portugal), Japanese, Dutch, Greek, and Swedish
 
 **macOS**
 - Menu bar companion for instant access without opening the main window
@@ -91,7 +92,7 @@ servers that provide the endpoints used by your selected features; point the app
 | ConfettiSwiftUI | Tip-jar celebration effect |
 | SF Symbols | Iconography |
 | AppIntents | Apple Shortcuts, Siri & Control Center integration |
-| WidgetKit | Control Center toggle and home-screen widgets (New Chat, Search, Quick Actions, Recent Conversations) |
+| WidgetKit | Control Center toggle and seven home-screen widgets for actions, recent chats, pins, and tags |
 | Votice | In-app feedback & feature requests |
 
 This project was developed entirely with Xcode, Visual Studio Code and GitHub Copilot (with Claude Opus / Sonnet 4.6).
@@ -128,7 +129,10 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full project tree and layer respo
    - **Ollama** (direct): `http://your-server:11434/v1`
    OpenClient appends API paths to this value without adding or removing `/v1`: LiteLLM uses paths such as
    `/models` and `/chat/completions`, while direct Ollama requires its `/v1` OpenAI-compatible base.
-5. **Run** on your device or simulator
+   If your server requires authentication, enter its API key in the app; OpenClient stores it in Keychain and sends it as
+   a Bearer token. This server credential is separate from the Votice values in `Secrets.xcconfig`.
+5. **Run** with the `openclient-llm` scheme for iOS/iPadOS or `openclient-llm-macOS` for macOS, selecting the corresponding
+   device, simulator, or Mac destination.
 
 ### Requirements
 
@@ -136,6 +140,8 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for the full project tree and layer respo
 - iOS 26+ / macOS 26+
 - A running [LiteLLM](https://docs.litellm.ai/) server — recommended backend; proxies [Ollama](https://ollama.com) and cloud providers (OpenAI, Anthropic, Google…) under a single endpoint. See [LiteLLM.md](LiteLLM.md).
 - **Or** a running [Ollama](https://ollama.com) instance directly (OpenAI-compatible `/v1` endpoint). See [Ollama.md](Ollama.md). Note: using Ollama through LiteLLM is preferred as it unlocks multi-provider support, virtual keys, and cost tracking.
+- **Or** another OpenAI-compatible server that implements `GET /models` and `POST /chat/completions`; endpoints for
+  optional features are required only when those features are used.
 
 ### Self-hosting guides
 

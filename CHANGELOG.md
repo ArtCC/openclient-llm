@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.15-build-69] - 2026-08-12
+
+### Added
+
+- **iCloud data management** — Settings now shows a privacy-safe inventory and supports durable deletion of individual synchronized records or all cloud data
+- **iCloud runtime status** — Settings now reports checking, synchronizing, pending-download, unavailable, failed, and last-successful synchronization states
+- **iCloud account-change protection** — synchronization requires explicit approval before associating local data with a different iCloud account
+
+### Changed
+
+- **Complete iCloud reconciliation** — conversations, attachments, personal context, memory, and prompt templates now use consistent conflict, recovery, deletion-marker, and purge semantics
+- **Cloud synchronization lifecycle** — automatic observation, foreground refresh, manual synchronization, and enablement preflight now share one authoritative runtime coordinator
+
+### Removed
+
+- Default system prompt restriction that discouraged structured response formats unless explicitly requested
+
+### Fixed
+
+- Stale devices can no longer resurrect records removed by individual deletion, delete-all markers, or global purge operations
+- Equal-revision conflicts preserve losing representations for recovery and converge deterministically across devices
+- iCloud serialization now preserves canonical date precision across local files, cloud files, deletion markers, and retries
+- Pending iCloud downloads and partial category failures no longer overwrite valid local or cloud data
+
 ## [1.6.10-build-67] - 2026-08-09
 
 ### Added

@@ -54,7 +54,7 @@ struct SaveMemoryTool: ChatToolProtocol {
 
         let trimmed = content.trimmingCharacters(in: .whitespaces)
         let item = MemoryItem(content: trimmed, source: .model)
-        memoryManager.add(item)
+        try await memoryManager.add(item)
 
         NotificationCenter.default.post(
             name: MemoryManager.memoryDidChangeExternallyNotification,

@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum TagColor: String, CaseIterable, Codable, Identifiable, Sendable {
+nonisolated enum TagColor: String, CaseIterable, Codable, Identifiable, Sendable {
     case red
     case orange
     case yellow

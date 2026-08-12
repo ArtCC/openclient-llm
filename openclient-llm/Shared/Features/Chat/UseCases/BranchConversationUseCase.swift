@@ -20,37 +20,50 @@ enum BranchConversationError: LocalizedError {
 }
 
 protocol BranchConversationUseCaseProtocol: Sendable {
-    func execute(conversation: Conversation, fromMessageId: UUID) throws -> Conversation
+    func execute(conversation: Conversation, fromMessageId: UUID) async throws -> Conversation
 }
 
 struct BranchConversationUseCase: BranchConversationUseCaseProtocol {
     // MARK: - Properties
 
     private let saveConversationUseCase: SaveConversationUseCaseProtocol
+    private let attachmentRepository: AttachmentRepositoryProtocol
 
     // MARK: - Init
 
-    init(saveConversationUseCase: SaveConversationUseCaseProtocol = SaveConversationUseCase()) {
+    init(
+        saveConversationUseCase: SaveConversationUseCaseProtocol = SaveConversationUseCase(),
+        attachmentRepository: AttachmentRepositoryProtocol = AttachmentRepository()
+    ) {
         self.saveConversationUseCase = saveConversationUseCase
+        self.attachmentRepository = attachmentRepository
     }
 
     // MARK: - Execute
 
-    func execute(conversation: Conversation, fromMessageId: UUID) throws -> Conversation {
+    func execute(conversation: Conversation, fromMessageId: UUID) async throws -> Conversation {
         guard let messageIndex = conversation.messages.firstIndex(where: { $0.id == fromMessageId }) else {
             throw BranchConversationError.messageNotFound
         }
 
-        let branchedMessages = Array(conversation.messages.prefix(messageIndex + 1))
+        let forkId = UUID()
+        let sourceMessages = Array(conversation.messages.prefix(messageIndex + 1))
         let retainsSummary = conversation.contextSummaryCursorMessageId.flatMap { cursorMessageId in
             conversation.messages.firstIndex(where: { $0.id == cursorMessageId })
         }.map { $0 <= messageIndex } ?? false
+        let branchedMessages = try cloneMessages(sourceMessages)
+        let messageIds = Dictionary(uniqueKeysWithValues: zip(sourceMessages, branchedMessages).map { pair in
+            (pair.0.id, pair.1.id)
+        })
         let fork = Conversation(
+            id: forkId,
             modelId: conversation.modelId,
             systemPrompt: conversation.systemPrompt,
             contextWindowTokens: conversation.contextWindowTokens,
             contextSummary: retainsSummary ? conversation.contextSummary : nil,
-            contextSummaryCursorMessageId: retainsSummary ? conversation.contextSummaryCursorMessageId : nil,
+            contextSummaryCursorMessageId: retainsSummary
+                ? conversation.contextSummaryCursorMessageId.flatMap { messageIds[$0] }
+                : nil,
             messages: branchedMessages,
             modelParameters: conversation.modelParameters,
             isPinned: false,
@@ -59,7 +72,46 @@ struct BranchConversationUseCase: BranchConversationUseCaseProtocol {
             branchedFromMessageId: fromMessageId
         )
 
-        try saveConversationUseCase.execute(fork)
-        return fork
+        return try await saveConversationUseCase.execute(fork)
+    }
+}
+
+// MARK: - Private
+
+private extension BranchConversationUseCase {
+    func cloneMessages(_ messages: [ChatMessage]) throws -> [ChatMessage] {
+        try messages.map { message in
+            var attachments = message.attachments
+            for attachmentIndex in attachments.indices {
+                let source = attachments[attachmentIndex]
+                let data: Data
+                if let transientData = source.transientData {
+                    data = transientData
+                } else {
+                    data = try attachmentRepository.load(attachment: source)
+                }
+                attachments[attachmentIndex] = ChatMessage.Attachment(
+                    id: source.id,
+                    type: source.type,
+                    fileName: source.fileName,
+                    mimeType: source.mimeType,
+                    fileRelativePath: "",
+                    transientData: data
+                )
+            }
+            return ChatMessage(
+                role: message.role,
+                content: message.content,
+                reasoningContent: message.reasoningContent,
+                timestamp: message.timestamp,
+                attachments: attachments,
+                tokenUsage: message.tokenUsage,
+                webSearchResults: message.webSearchResults,
+                toolCalls: message.toolCalls,
+                toolCallId: message.toolCallId,
+                toolName: message.toolName,
+                isFavourite: message.isFavourite
+            )
+        }
     }
 }

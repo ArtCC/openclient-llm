@@ -47,10 +47,15 @@ struct ExportConversationsUseCase: ExportConversationsUseCaseProtocol {
     ) -> [ConversationExportDocument.ExportedAttachment] {
         conversation.messages.flatMap { message in
             message.attachments.compactMap { attachment in
-                guard !attachment.fileRelativePath.isEmpty,
-                      let data = try? attachmentRepository.load(attachment: attachment) else {
-                    return nil
+                let data: Data?
+                if let transientData = attachment.transientData {
+                    data = transientData
+                } else if !attachment.fileRelativePath.isEmpty {
+                    data = try? attachmentRepository.load(attachment: attachment)
+                } else {
+                    data = nil
                 }
+                guard let data else { return nil }
                 return .init(
                     messageId: message.id,
                     attachmentId: attachment.id,

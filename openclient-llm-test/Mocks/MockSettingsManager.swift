@@ -21,6 +21,8 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     var selectedSTTModelId: String?
     var ttsVoices: [String: String] = [:]
     var isCloudSyncEnabled: Bool = false
+    var lastSuccessfulCloudSyncDate: Date?
+    var acceptedCloudAccountFingerprint: String?
     var showTokenUsage: Bool = true
     var isWebSearchEnabled: Bool = false
     var webSearchToolName: String = "brave-search"
@@ -72,6 +74,22 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
     func setIsCloudSyncEnabled(_ value: Bool) {
         isCloudSyncEnabled = value
+    }
+
+    func getLastSuccessfulCloudSyncDate() -> Date? {
+        lastSuccessfulCloudSyncDate
+    }
+
+    func setLastSuccessfulCloudSyncDate(_ value: Date) {
+        lastSuccessfulCloudSyncDate = value
+    }
+
+    func getAcceptedCloudAccountFingerprint() -> String? {
+        acceptedCloudAccountFingerprint
+    }
+
+    func setAcceptedCloudAccountFingerprint(_ value: String) {
+        acceptedCloudAccountFingerprint = value
     }
 
     func getShowTokenUsage() -> Bool {
@@ -177,6 +195,8 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         selectedModelId = nil
         selectedTTSModelId = nil
         selectedSTTModelId = nil
+        lastSuccessfulCloudSyncDate = nil
+        acceptedCloudAccountFingerprint = nil
         ttsVoices = [:]
         hasEnoughConversationsForMemoryTip = false
         dismissedRemoteBannerKey = nil

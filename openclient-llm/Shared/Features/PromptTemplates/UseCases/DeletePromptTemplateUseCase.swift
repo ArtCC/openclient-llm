@@ -9,7 +9,7 @@
 import Foundation
 
 protocol DeletePromptTemplateUseCaseProtocol: Sendable {
-    func execute(_ templateId: UUID) throws
+    func execute(_ templateId: UUID) async throws
 }
 
 struct DeletePromptTemplateUseCase: DeletePromptTemplateUseCaseProtocol {
@@ -25,7 +25,7 @@ struct DeletePromptTemplateUseCase: DeletePromptTemplateUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute(_ templateId: UUID) throws {
-        try repository.delete(templateId)
+    func execute(_ templateId: UUID) async throws {
+        try await repository.delete(templateId)
     }
 }

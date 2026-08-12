@@ -56,6 +56,11 @@ struct SettingsView: View {
         settingsContent
 #endif
     }
+
+    func synchronizeAppData() {
+        shouldRequestReviewAfterSync = true
+        viewModel.send(.syncNowTapped)
+    }
 }
 
 // MARK: - Private
@@ -118,7 +123,27 @@ private extension SettingsView {
             self.requestedPresentation = nil
         }
         .alert(
-            String(localized: "iCloud Sync Conflict"),
+            String(localized: "Review iCloud Account"),
+            isPresented: cloudAccountReviewBinding,
+            actions: {
+                Button(String(localized: "Merge and Enable Sync")) {
+                    viewModel.send(.cloudAccountReviewConfirmed)
+                }
+                Button(String(localized: "Cancel"), role: .cancel) {
+                    viewModel.send(.cloudAccountReviewCancelled)
+                }
+            },
+            message: {
+                Text(String(
+                    localized: """
+                    Your local data will be merged into the current iCloud account. \
+                    Cancel to keep iCloud Sync disabled.
+                    """
+                ))
+            }
+        )
+        .alert(
+            String(localized: "Profile Sync Conflict"),
             isPresented: cloudSyncConflictBinding,
             actions: {
                 Button(String(localized: "Use Local Data")) {
@@ -130,11 +155,13 @@ private extension SettingsView {
                 Button(String(localized: "Cancel"), role: .cancel) {
                     viewModel.send(.cloudSyncConflictCancelled)
                 }
-                .buttonStyle(.plain)
             },
             message: {
                 Text(String(
-                    localized: "Your local personal context differs from iCloud. Which version would you like to keep?"
+                    localized: """
+                    Your local profile and iCloud profile have different content with the same revision. \
+                    Which profile would you like to keep?
+                    """
                 ))
             }
         )
@@ -163,12 +190,18 @@ private extension SettingsView {
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 viewModel.send(.notificationStatusRefresh)
+                viewModel.send(.cloudAvailabilityRefresh)
             }
         }
         .onChange(of: viewModel.state) { _, newState in
             if case .loaded(let loadedState) = newState {
                 serverURL = loadedState.serverURL
                 apiKey = loadedState.apiKey
+                if viewModel.cloudSyncStatus != .synchronizing,
+                   let result = loadedState.synchronizationResult,
+                   !result.isSuccessful {
+                    shouldRequestReviewAfterSync = false
+                }
             }
         }
         .onDisappear(perform: requestReviewAfterSuccessfulSyncIfNeeded)
@@ -188,6 +221,20 @@ private extension SettingsView {
             set: { newValue in
                 if !newValue {
                     viewModel.send(.cloudSyncConflictCancelled)
+                }
+            }
+        )
+    }
+
+    var cloudAccountReviewBinding: Binding<Bool> {
+        Binding(
+            get: {
+                guard case .loaded(let loadedState) = viewModel.state else { return false }
+                return loadedState.showCloudAccountReviewAlert
+            },
+            set: { newValue in
+                if !newValue {
+                    viewModel.send(.cloudAccountReviewDismissed)
                 }
             }
         )
@@ -337,52 +384,6 @@ private extension SettingsView {
         }
     }
 
-    func cloudSyncSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
-        Section {
-            Toggle(isOn: Binding(
-                get: { loadedState.isCloudSyncEnabled },
-                set: { viewModel.send(.cloudSyncToggled($0)) }
-            )) {
-                Label(String(localized: "iCloud Sync"), systemImage: "icloud")
-            }
-            .disabled(!loadedState.isCloudAvailable)
-
-            if loadedState.isCloudSyncEnabled {
-                Button(String(localized: "Sync Now")) {
-                    synchronizeConversations()
-                }
-            }
-
-            if !loadedState.isCloudAvailable {
-                Label(
-                    String(localized: "Sign in to iCloud to enable sync"),
-                    systemImage: "exclamationmark.triangle"
-                )
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            }
-        } header: {
-            Text(String(localized: "Sync"))
-        } footer: {
-            Text(cloudSyncFooter(loadedState.conversationSyncResult))
-        }
-    }
-
-    func cloudSyncFooter(_ result: ConversationSyncResult?) -> String {
-        switch result {
-        case .synchronized:
-            return String(localized: "Conversations are synchronized across your devices via iCloud.")
-        case .pendingDownload:
-            return String(localized: "iCloud is downloading changes. Sync will continue automatically.")
-        case .unavailable:
-            return String(localized: "iCloud is unavailable. Your changes will stay on this device until sync resumes.")
-        case .failed:
-            return String(localized: "Sync could not finish. Your changes remain safely stored on this device.")
-        case nil:
-            return String(localized: "Sync conversations across your devices via iCloud.")
-        }
-    }
-
     func chatSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
         Section {
             Toggle(isOn: Binding(
@@ -456,13 +457,6 @@ private extension SettingsView {
         }
     }
 
-    func synchronizeConversations() {
-        viewModel.send(.syncConversationsTapped)
-        guard case .loaded(let loadedState) = viewModel.state,
-              loadedState.conversationSyncResult == .synchronized else { return }
-        shouldRequestReviewAfterSync = true
-    }
-
     func requestReviewAfterSuccessfulSyncIfNeeded() {
         guard shouldRequestReviewAfterSync else { return }
         shouldRequestReviewAfterSync = false
@@ -478,12 +472,24 @@ private extension SettingsView {
                     .foregroundStyle(.red)
             }
             .buttonStyle(.plain)
+
+            if let resetErrorMessage = currentLoadedState?.resetErrorMessage {
+                Label(resetErrorMessage, systemImage: "exclamationmark.triangle")
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
         } header: {
             Text(String(localized: "App Data"))
         } footer: {
             Text(String(localized: "Deletes all local settings and credentials. iCloud data will not be affected."))
         }
     }
+
+    var currentLoadedState: SettingsViewModel.LoadedState? {
+        guard case .loaded(let loadedState) = viewModel.state else { return nil }
+        return loadedState
+    }
+
 }
 
 #Preview {

@@ -44,7 +44,7 @@ final class WidgetSnapshotTests: XCTestCase {
 
     // MARK: - Tests
 
-    func test_loadAll_existingLocalConversations_rebuildsWidgetSnapshot() throws {
+    func test_loadAll_existingLocalConversations_rebuildsWidgetSnapshot() async throws {
         // Given
         let conversations = (0..<7).map { index in
             Conversation(
@@ -57,7 +57,7 @@ final class WidgetSnapshotTests: XCTestCase {
         try conversations.forEach { try saveLocally($0) }
 
         // When
-        _ = try sut.loadAll()
+        _ = try await sut.loadAll()
 
         // Then
         let snapshot = AppGroupStore.loadConversations()

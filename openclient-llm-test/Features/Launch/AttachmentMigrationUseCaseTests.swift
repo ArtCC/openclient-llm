@@ -120,14 +120,6 @@ final class AttachmentMigrationUseCaseTests: XCTestCase {
 
         mockAttachmentRepository.saveResult = .success("Attachments/\(conversationId)/\(attachmentId).jpg")
 
-        // Inject a custom sut that reads from our test directory
-        sut = AttachmentMigrationUseCase(
-            fileManager: .default,
-            attachmentRepository: mockAttachmentRepository,
-            userDefaults: testUserDefaults,
-            baseDirectory: testDirectory
-        )
-
         // When
         sut.execute()
 
@@ -136,6 +128,7 @@ final class AttachmentMigrationUseCaseTests: XCTestCase {
         XCTAssertEqual(mockAttachmentRepository.savedAttachments.first?.data, imageData)
         XCTAssertEqual(mockAttachmentRepository.savedAttachments.first?.attachment.fileName, "photo.jpg")
         XCTAssertTrue(testUserDefaults.bool(forKey: "attachmentMigrationV1Done"))
+        try assertRecoveryContains(fileData)
 
         // The written JSON should no longer have "data" in attachments
         let updatedData = try Data(contentsOf: fileURL)
@@ -155,7 +148,201 @@ final class AttachmentMigrationUseCaseTests: XCTestCase {
         // but the flag prevents the second run entirely)
         XCTAssertEqual(mockAttachmentRepository.savedAttachments.count, 0)
     }
+
+    func test_execute_attachmentWriteFails_keepsMigrationRetryable() throws {
+        // Given
+        let conversationId = UUID()
+        let legacyJSON: [String: Any] = [
+            "id": conversationId.uuidString,
+            "messages": [[
+                "attachments": [[
+                    "id": UUID().uuidString,
+                    "type": "image",
+                    "fileName": "photo.jpg",
+                    "data": Data([0x01]).base64EncodedString()
+                ]]
+            ]]
+        ]
+        let conversationsURL = testDirectory.appendingPathComponent("Conversations", isDirectory: true)
+        try FileManager.default.createDirectory(at: conversationsURL, withIntermediateDirectories: true)
+        try JSONSerialization.data(withJSONObject: legacyJSON).write(
+            to: conversationsURL.appendingPathComponent("\(conversationId.uuidString).json")
+        )
+        mockAttachmentRepository.saveResult = .failure(AttachmentRepositoryError.invalidPath)
+
+        // When
+        sut.execute()
+
+        // Then
+        XCTAssertFalse(testUserDefaults.bool(forKey: "attachmentMigrationV1Done"))
+    }
+
+    func test_execute_conversationsPathIsFile_keepsMigrationRetryable() throws {
+        // Given
+        try Data("not a directory".utf8).write(
+            to: testDirectory.appendingPathComponent("Conversations")
+        )
+
+        // When
+        sut.execute()
+
+        // Then
+        XCTAssertFalse(testUserDefaults.bool(forKey: "attachmentMigrationV1Done"))
+    }
+
+    func test_execute_sameDestinationWithDifferentBytes_doesNotWriteOrReplaceRawJSON() throws {
+        // Given
+        let conversationId = UUID()
+        let attachmentId = UUID()
+        let legacyJSON = legacyConversationJSON(
+            conversationId: conversationId,
+            attachments: [
+                legacyAttachment(id: attachmentId, data: Data([0x01])),
+                legacyAttachment(id: attachmentId, data: Data([0x02]))
+            ]
+        )
+        let fileURL = try writeConversationFixture(legacyJSON, conversationId: conversationId)
+        let rawData = try Data(contentsOf: fileURL)
+
+        // When
+        sut.execute()
+
+        // Then
+        XCTAssertTrue(mockAttachmentRepository.savedAttachments.isEmpty)
+        XCTAssertEqual(try Data(contentsOf: fileURL), rawData)
+        XCTAssertFalse(testUserDefaults.bool(forKey: "attachmentMigrationV1Done"))
+        try assertRecoveryContains(rawData)
+    }
+
+    func test_execute_existingDestinationWithDifferentBytes_doesNotOverwriteFile() throws {
+        // Given
+        let conversationId = UUID()
+        let attachmentId = UUID()
+        let existingData = Data("existing".utf8)
+        let incomingData = Data("incoming".utf8)
+        let legacyJSON = legacyConversationJSON(
+            conversationId: conversationId,
+            attachments: [legacyAttachment(id: attachmentId, data: incomingData)]
+        )
+        let conversationURL = try writeConversationFixture(legacyJSON, conversationId: conversationId)
+        let attachmentURL = testDirectory
+            .appendingPathComponent("Attachments/\(conversationId.uuidString)", isDirectory: true)
+            .appendingPathComponent("\(attachmentId.uuidString).jpg")
+        try FileManager.default.createDirectory(
+            at: attachmentURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+        try existingData.write(to: attachmentURL)
+
+        // When
+        sut.execute()
+
+        // Then
+        XCTAssertEqual(try Data(contentsOf: attachmentURL), existingData)
+        XCTAssertTrue(try JSONFixture(data: Data(contentsOf: conversationURL)).containsLegacyAttachmentData)
+        XCTAssertTrue(mockAttachmentRepository.savedAttachments.isEmpty)
+        XCTAssertFalse(testUserDefaults.bool(forKey: "attachmentMigrationV1Done"))
+    }
+
+    func test_execute_finalAttachmentVerificationFails_restoresRawJSONAndRemainsRetryable() throws {
+        // Given
+        let conversationId = UUID()
+        let firstId = UUID()
+        let secondId = UUID()
+        let firstData = Data([0x01])
+        let secondData = Data([0x02])
+        let legacyJSON = legacyConversationJSON(
+            conversationId: conversationId,
+            attachments: [
+                legacyAttachment(id: firstId, data: firstData),
+                legacyAttachment(id: secondId, data: secondData)
+            ]
+        )
+        let fileURL = try writeConversationFixture(legacyJSON, conversationId: conversationId)
+        let rawData = try Data(contentsOf: fileURL)
+        mockAttachmentRepository.saveHandler = { attachment, conversationId in
+            ConversationAttachmentPath.relativePath(for: attachment, conversationId: conversationId)
+        }
+        var loadCounts: [UUID: Int] = [:]
+        mockAttachmentRepository.loadHandler = { attachment in
+            loadCounts[attachment.id, default: 0] += 1
+            if attachment.id == firstId, loadCounts[attachment.id] == 2 {
+                return Data("changed".utf8)
+            }
+            return attachment.id == firstId ? firstData : secondData
+        }
+
+        // When
+        sut.execute()
+
+        // Then
+        XCTAssertEqual(try Data(contentsOf: fileURL), rawData)
+        XCTAssertFalse(testUserDefaults.bool(forKey: "attachmentMigrationV1Done"))
+        try assertRecoveryContains(rawData)
+    }
 }
 
 // MARK: - Helpers
-// (No helpers needed — testDirectory is injected directly via baseDirectory parameter)
+
+private extension AttachmentMigrationUseCaseTests {
+    struct JSONFixture {
+        let data: Data
+
+        var containsLegacyAttachmentData: Bool {
+            get throws {
+                let root = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+                let messages = try XCTUnwrap(root["messages"] as? [[String: Any]])
+                let attachments = try XCTUnwrap(messages.first?["attachments"] as? [[String: Any]])
+                return attachments.first?["data"] != nil
+            }
+        }
+    }
+
+    func legacyAttachment(id: UUID, data: Data) -> [String: Any] {
+        [
+            "id": id.uuidString,
+            "type": "image",
+            "fileName": "photo.jpg",
+            "data": data.base64EncodedString()
+        ]
+    }
+
+    func legacyConversationJSON(
+        conversationId: UUID,
+        attachments: [[String: Any]]
+    ) -> [String: Any] {
+        [
+            "id": conversationId.uuidString,
+            "modelId": "model",
+            "title": "Migration fixture",
+            "createdAt": "2026-08-11T10:00:00Z",
+            "updatedAt": "2026-08-11T10:00:00Z",
+            "isPinned": false,
+            "messages": [[
+                "id": UUID().uuidString,
+                "role": "user",
+                "content": "Attachments",
+                "timestamp": "2026-08-11T10:00:00Z",
+                "attachments": attachments
+            ]]
+        ]
+    }
+
+    func writeConversationFixture(_ json: [String: Any], conversationId: UUID) throws -> URL {
+        let directory = testDirectory.appendingPathComponent("Conversations", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let url = directory.appendingPathComponent("\(conversationId.uuidString).json")
+        try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys]).write(to: url)
+        return url
+    }
+
+    func assertRecoveryContains(_ data: Data) throws {
+        let recoveryURL = testDirectory
+            .appendingPathComponent("ConversationRecovery/Migrations/Attachments", isDirectory: true)
+        let recoveryFiles = try FileManager.default.contentsOfDirectory(
+            at: recoveryURL,
+            includingPropertiesForKeys: nil
+        )
+        XCTAssertTrue(try recoveryFiles.contains { try Data(contentsOf: $0) == data })
+    }
+}

@@ -9,7 +9,7 @@
 import Foundation
 
 protocol PinConversationUseCaseProtocol: Sendable {
-    func execute(_ conversationId: UUID, isPinned: Bool) throws
+    func execute(_ conversationId: UUID, isPinned: Bool) async throws
 }
 
 struct PinConversationUseCase: PinConversationUseCaseProtocol {
@@ -25,11 +25,7 @@ struct PinConversationUseCase: PinConversationUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute(_ conversationId: UUID, isPinned: Bool) throws {
-        var conversations = try repository.loadAll()
-        guard let index = conversations.firstIndex(where: { $0.id == conversationId }) else { return }
-        conversations[index].isPinned = isPinned
-        conversations[index].updatedAt = Date()
-        try repository.save(conversations[index])
+    func execute(_ conversationId: UUID, isPinned: Bool) async throws {
+        _ = try await repository.setPinned(isPinned, conversationId: conversationId)
     }
 }

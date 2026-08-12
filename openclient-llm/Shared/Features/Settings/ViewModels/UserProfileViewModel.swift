@@ -93,14 +93,20 @@ private extension UserProfileViewModel {
             profileDescription: description,
             extraInfo: extraInfo
         )
-        userProfileManager.saveProfile(profile)
-        guard case .loaded(var loadedState) = state else { return }
-        loadedState.name = name
-        loadedState.profileDescription = description
-        loadedState.extraInfo = extraInfo
-        loadedState.originalName = name
-        loadedState.originalDescription = description
-        loadedState.originalExtraInfo = extraInfo
-        state = .loaded(loadedState)
+        Task {
+            do {
+                try await userProfileManager.saveProfile(profile)
+            } catch {
+                return
+            }
+            guard case .loaded(var loadedState) = state else { return }
+            loadedState.name = name
+            loadedState.profileDescription = description
+            loadedState.extraInfo = extraInfo
+            loadedState.originalName = name
+            loadedState.originalDescription = description
+            loadedState.originalExtraInfo = extraInfo
+            state = .loaded(loadedState)
+        }
     }
 }

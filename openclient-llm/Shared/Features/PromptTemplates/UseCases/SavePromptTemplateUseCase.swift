@@ -9,7 +9,7 @@
 import Foundation
 
 protocol SavePromptTemplateUseCaseProtocol: Sendable {
-    func execute(_ template: PromptTemplate) throws
+    func execute(_ template: PromptTemplate) async throws
 }
 
 struct SavePromptTemplateUseCase: SavePromptTemplateUseCaseProtocol {
@@ -25,7 +25,7 @@ struct SavePromptTemplateUseCase: SavePromptTemplateUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute(_ template: PromptTemplate) throws {
-        try repository.save(template)
+    func execute(_ template: PromptTemplate) async throws {
+        try await repository.save(template)
     }
 }
