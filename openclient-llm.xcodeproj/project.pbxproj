@@ -235,15 +235,15 @@
 		805E79822F79AC9B0070CBB3 = {
 			isa = PBXGroup;
 			children = (
-				802F82FC302CBFFE0067B4DF /* TestFlight */,
+				80E6877E2F9A24A000AC491E /* Frameworks */,
 				800F26972F7A6352009A58C6 /* openclient-llm */,
 				8080773B2F7A66EF009BC8C4 /* openclient-llm-macOS */,
 				8080774B2F7A67CD009BC8C4 /* openclient-llm-test */,
-				8090B5BF2F9365D6006E9DAE /* ShareExtension */,
-				80E687832F9A24A000AC491E /* Widgets */,
-				80E6877E2F9A24A000AC491E /* Frameworks */,
 				805E798C2F79AC9B0070CBB3 /* Products */,
 				8089F4102F7D000500465D6C /* Secrets.xcconfig */,
+				8090B5BF2F9365D6006E9DAE /* ShareExtension */,
+				802F82FC302CBFFE0067B4DF /* TestFlight */,
+				80E687832F9A24A000AC491E /* Widgets */,
 			);
 			sourceTree = "<group>";
 		};
