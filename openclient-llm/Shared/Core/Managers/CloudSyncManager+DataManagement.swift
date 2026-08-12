@@ -116,7 +116,7 @@ private extension CloudSyncManager {
         do {
             let snapshot = try await loadMemorySyncSnapshot()
             let items = (snapshot.items ?? []).map {
-                CloudMemoryInventoryItem(id: $0.id, updatedAt: $0.updatedAt)
+                CloudMemoryInventoryItem(id: $0.id, content: $0.content, updatedAt: $0.updatedAt)
             }.sorted { $0.id.uuidString < $1.id.uuidString }
             return .available(.memory(items))
         } catch {

@@ -23,18 +23,18 @@ extension SettingsView {
                 Label(String(localized: "iCloud Sync"), systemImage: "icloud")
             }
 
-            cloudSyncStatusRow(presentation)
-
             if loadedState.isCloudSyncEnabled {
+                NavigationLink {
+                    CloudDataManagementView()
+                } label: {
+                    Label(String(localized: "Manage iCloud Data"), systemImage: "externaldrive.badge.icloud")
+                }
+                .accessibilityHint(String(localized: "Review and delete data stored in iCloud."))
+
+                cloudSyncStatusRow(presentation)
+
                 cloudSyncAction(presentation)
             }
-
-            NavigationLink {
-                CloudDataManagementView()
-            } label: {
-                Label(String(localized: "Manage iCloud Data"), systemImage: "externaldrive.badge.icloud")
-            }
-            .accessibilityHint(String(localized: "Review and delete data stored in iCloud."))
         } header: {
             Text(String(localized: "Sync"))
         } footer: {

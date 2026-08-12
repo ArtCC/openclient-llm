@@ -3,6 +3,7 @@ Hi there! We've got some great new features for you in this update.
 ***1.6.15:
 
 • Major improvements to iCloud conversation syncing, especially when switching between devices or returning to the app.
+• New section in Settings to manage iCloud data.
 • General stability, reliability, and performance improvements.
 • Minor bug fixes and improvements for a smoother experience.
 

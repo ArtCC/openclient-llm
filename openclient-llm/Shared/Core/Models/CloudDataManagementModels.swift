@@ -52,6 +52,7 @@ nonisolated struct CloudConversationInventoryItem: Equatable, Sendable {
 
 nonisolated struct CloudMemoryInventoryItem: Equatable, Sendable {
     let id: UUID
+    let content: String
     let updatedAt: Date
 }
 

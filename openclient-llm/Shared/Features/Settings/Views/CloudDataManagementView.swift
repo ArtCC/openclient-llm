@@ -12,6 +12,8 @@ struct CloudDataManagementView: View {
     // MARK: - Properties
 
     @State private var viewModel: CloudDataManagementViewModel
+    @State private var showsAllConversations = false
+    @State private var showsAllMemoryItems = false
 
     // MARK: - Init
 
@@ -181,8 +183,11 @@ private extension CloudDataManagementView {
                     .accessibilityLabel(categoryTitle(section.category))
                     .accessibilityValue(inventoryFailureText(failure))
             } else {
-                ForEach(section.items) { item in
+                ForEach(visibleItems(in: section)) { item in
                     itemRow(item)
+                }
+                if section.items.count > 3, supportsExpansion(section.category) {
+                    expansionButton(for: section)
                 }
             }
         } header: {
@@ -190,11 +195,54 @@ private extension CloudDataManagementView {
         }
     }
 
+    func visibleItems(
+        in section: CloudDataManagementViewModel.CategorySection
+    ) -> [CloudDataManagementViewModel.Item] {
+        isExpanded(section.category) ? section.items : Array(section.items.prefix(3))
+    }
+
+    func supportsExpansion(_ category: CloudDataManagementViewModel.Category) -> Bool {
+        category == .conversations || category == .memory
+    }
+
+    func isExpanded(_ category: CloudDataManagementViewModel.Category) -> Bool {
+        switch category {
+        case .conversations: showsAllConversations
+        case .memory: showsAllMemoryItems
+        case .personalContext, .customTemplates: true
+        }
+    }
+
+    func expansionButton(for section: CloudDataManagementViewModel.CategorySection) -> some View {
+        let isExpanded = isExpanded(section.category)
+        return Button {
+            withAnimation(.smooth) {
+                switch section.category {
+                case .conversations:
+                    showsAllConversations.toggle()
+                case .memory:
+                    showsAllMemoryItems.toggle()
+                case .personalContext, .customTemplates:
+                    break
+                }
+            }
+        } label: {
+            Label(
+                isExpanded
+                    ? String(localized: "Show Less")
+                    : String(localized: "Show All (\(section.items.count))"),
+                systemImage: isExpanded ? "chevron.up" : "chevron.down"
+            )
+        }
+        .disabled(viewModel.isOperationActive)
+    }
+
     func itemRow(_ item: CloudDataManagementViewModel.Item) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             VStack(alignment: .leading, spacing: 3) {
                 Text(item.title)
                     .font(.body)
+                    .lineLimit(item.kind == .memory ? 2 : nil)
                 if case .conversation(let attachmentCount) = item.kind {
                     Text(attachmentDescription(attachmentCount))
                         .font(.caption)
@@ -272,6 +320,9 @@ private extension CloudDataManagementView {
         guard let confirmation = viewModel.confirmation else { return String(localized: "Delete Synchronized Data?") }
         switch confirmation {
         case .item(let item):
+            if item.kind == .memory {
+                return String(localized: "Delete Memory Item?")
+            }
             return String(localized: "Delete \(item.title)?")
         case .all:
             return String(localized: "Delete All Synchronized Data?")
@@ -353,12 +404,27 @@ private extension CloudDataManagementView {
             sections: [
                 .init(
                     category: .conversations,
-                    items: [.init(id: UUID(), title: "Planning", kind: .conversation(attachmentCount: 2))],
+                    items: [
+                        .init(id: UUID(), title: "Planning", kind: .conversation(attachmentCount: 2)),
+                        .init(id: UUID(), title: "Recipes", kind: .conversation(attachmentCount: 0)),
+                        .init(id: UUID(), title: "Swift", kind: .conversation(attachmentCount: 1)),
+                        .init(id: UUID(), title: "Travel", kind: .conversation(attachmentCount: 3))
+                    ],
                     failure: nil
                 ),
                 .init(
                     category: .personalContext,
                     items: [.init(id: UUID(), title: "Personal Context", kind: .profile)],
+                    failure: nil
+                ),
+                .init(
+                    category: .memory,
+                    items: [
+                        .init(id: UUID(), title: "Prefers concise answers", kind: .memory),
+                        .init(id: UUID(), title: "Uses Swift for app development", kind: .memory),
+                        .init(id: UUID(), title: "Lives in Spain", kind: .memory),
+                        .init(id: UUID(), title: "Enjoys hiking", kind: .memory)
+                    ],
                     failure: nil
                 )
             ],

@@ -335,7 +335,7 @@ private extension CloudDataManagementViewModel {
             return memoryItems.enumerated().map { index, item in
                 Item(
                     id: item.id,
-                    title: String(localized: "Memory Item \(index + 1)"),
+                    title: sanitized(item.content, fallback: String(localized: "Memory Item \(index + 1)")),
                     kind: .memory
                 )
             }
