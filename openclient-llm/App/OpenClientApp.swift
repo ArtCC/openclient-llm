@@ -16,6 +16,7 @@ struct OpenClientApp: App {
 
     @State private var shortcutManager = ShortcutManager.shared
     @State private var isObscured = false
+
     @Environment(\.scenePhase) private var scenePhase
 
     private let settingsManager: SettingsManagerProtocol = SettingsManager()
