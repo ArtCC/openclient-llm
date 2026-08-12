@@ -104,6 +104,12 @@
         </p>
 
         <div class="cta-group">
+          <a href="https://apps.apple.com/us/app/id6761379499" class="cta-appstore-badge cta-primary">
+            <picture>
+              <source srcset="assets/app_store_white.svg" media="(prefers-color-scheme: dark)">
+              <img src="assets/app_store_black.svg" alt="Download on the App Store" width="120" height="40">
+            </picture>
+          </a>
           <a href="https://github.com/artcc/openclient-llm" class="cta-github">
             <svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"
               style="vertical-align:-2px;margin-right:8px;">
@@ -111,12 +117,6 @@
                 d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
             </svg>
             View on GitHub
-          </a>
-          <a href="https://apps.apple.com/us/app/id6761379499" class="cta-appstore-badge">
-            <picture>
-              <source srcset="assets/app_store_white.svg" media="(prefers-color-scheme: dark)">
-              <img src="assets/app_store_black.svg" alt="Download on the App Store" width="120" height="40">
-            </picture>
           </a>
           <a href="https://testflight.apple.com/join/MDxfUnGc" class="cta-testflight">
             <img src="assets/testflight.jpg" alt="" class="cta-testflight-logo" aria-hidden="true">
@@ -132,54 +132,99 @@
         <p class="section-label">FEATURES</p>
         <h2 class="section-title">Everything you need to work with your models</h2>
         <div class="features">
-          <div class="feature">
-            <div class="feature-icon-wrap" style="--icon-color: #007AFF; --icon-bg: rgba(0,122,255,0.12);">🤖</div>
+          <div class="feature feature-primary">
+            <div class="feature-icon-wrap" style="--icon-color: #007AFF; --icon-bg: rgba(0,122,255,0.12);">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="6" rx="2"></rect>
+                <rect x="3" y="14" width="18" height="6" rx="2"></rect>
+                <path d="M7 7h.01M7 17h.01M11 7h6M11 17h6"></path>
+              </svg>
+            </div>
             <h3>Your AI Server</h3>
             <p>Connect to Ollama, LiteLLM, or an OpenAI-compatible server and use the models and features it exposes.</p>
           </div>
-          <div class="feature">
-            <div class="feature-icon-wrap" style="--icon-color: #34C759; --icon-bg: rgba(52,199,89,0.12);">🔒</div>
+          <div class="feature feature-primary">
+            <div class="feature-icon-wrap" style="--icon-color: #00B8D9; --icon-bg: rgba(0,184,217,0.12);">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <path d="m9 12 2 2 4-4"></path>
+              </svg>
+            </div>
             <h3>Privacy First</h3>
-            <p>No OpenClient-hosted chat backend. Requests go to your configured server and any upstream providers it
-              uses; API keys stay securely in Keychain.</p>
+            <p>No OpenClient chat backend. Requests follow your server configuration, while API keys stay in Keychain.</p>
           </div>
-          <div class="feature">
-            <div class="feature-icon-wrap" style="--icon-color: #5856D6; --icon-bg: rgba(88,86,214,0.12);">💬</div>
+          <div class="feature feature-primary">
+            <div class="feature-icon-wrap" style="--icon-color: #5856D6; --icon-bg: rgba(88,86,214,0.12);">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="4" y="7" width="16" height="13" rx="4"></rect>
+                <path d="M9 7V4M15 7V4M8 12h.01M16 12h.01M9 16h6"></path>
+              </svg>
+            </div>
+            <h3>Agent Mode</h3>
+            <p>Let supported models call enabled tools and chain their results to complete complex tasks.</p>
+          </div>
+          <div class="feature feature-compact">
+            <div class="feature-icon-wrap" style="--icon-color: #007AFF; --icon-bg: rgba(0,122,255,0.12);">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"></path>
+                <path d="M8 11h.01M12 11h.01M16 11h.01"></path>
+              </svg>
+            </div>
             <h3>Real-time Streaming</h3>
             <p>Stream responses from compatible chat models token by token using Server-Sent Events.</p>
           </div>
-          <div class="feature">
-            <div class="feature-icon-wrap" style="--icon-color: #FF2D55; --icon-bg: rgba(255,45,85,0.12);">🖼️</div>
+          <div class="feature feature-compact">
+            <div class="feature-icon-wrap" style="--icon-color: #FF2D55; --icon-bg: rgba(255,45,85,0.12);">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+                <circle cx="9" cy="9" r="2"></circle>
+                <path d="m21 15-5-5L5 21"></path>
+              </svg>
+            </div>
             <h3>Image Generation</h3>
             <p>Generate images from text prompts using compatible image models exposed by your server.</p>
           </div>
-          <div class="feature">
-            <div class="feature-icon-wrap" style="--icon-color: #AF52DE; --icon-bg: rgba(175,82,222,0.12);">🎙️</div>
+          <div class="feature feature-compact">
+            <div class="feature-icon-wrap" style="--icon-color: #AF52DE; --icon-bg: rgba(175,82,222,0.12);">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="9" y="2" width="6" height="12" rx="3"></rect>
+                <path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"></path>
+              </svg>
+            </div>
             <h3>Voice &amp; Audio</h3>
             <p>Speech-to-text dictation and text-to-speech playback for hands-free interaction.</p>
           </div>
-          <div class="feature">
-            <div class="feature-icon-wrap" style="--icon-color: #007AFF; --icon-bg: rgba(0,122,255,0.12);">📎</div>
+          <div class="feature feature-compact">
+            <div class="feature-icon-wrap" style="--icon-color: #00B8D9; --icon-bg: rgba(0,184,217,0.12);">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <path d="M14 2v6h6M8 17l3-3 2 2 3-3 2 2"></path>
+              </svg>
+            </div>
             <h3>Vision &amp; Documents</h3>
-            <p>Attach images and PDFs for compatible multimodal models to analyze, summarize, or answer questions about.
-            </p>
+            <p>Attach images and PDFs for compatible multimodal models to analyze or summarize.</p>
           </div>
-          <div class="feature">
-            <div class="feature-icon-wrap" style="--icon-color: #FF9500; --icon-bg: rgba(255,149,0,0.12);">🤖</div>
-            <h3>Agent Mode</h3>
-            <p>Let supported models call enabled tools, use their results, and chain actions to complete complex tasks.
-            </p>
-          </div>
-          <div class="feature">
-            <div class="feature-icon-wrap" style="--icon-color: #34C759; --icon-bg: rgba(52,199,89,0.12);">🔌</div>
+          <div class="feature feature-compact">
+            <div class="feature-icon-wrap" style="--icon-color: #34C759; --icon-bg: rgba(52,199,89,0.12);">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="6" cy="6" r="3"></circle>
+                <circle cx="18" cy="6" r="3"></circle>
+                <circle cx="12" cy="18" r="3"></circle>
+                <path d="m8.5 8 2 7M15.5 8l-2 7M9 6h6"></path>
+              </svg>
+            </div>
             <h3>MCP Tools</h3>
             <p>Discover and use tools from MCP servers configured on your LiteLLM backend.</p>
           </div>
-          <div class="feature">
-            <div class="feature-icon-wrap" style="--icon-color: #AF52DE; --icon-bg: rgba(175,82,222,0.12);">🧠</div>
+          <div class="feature feature-compact">
+            <div class="feature-icon-wrap" style="--icon-color: #FF9500; --icon-bg: rgba(255,149,0,0.12);">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <ellipse cx="12" cy="5" rx="8" ry="3"></ellipse>
+                <path d="M4 5v7c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12v7c0 1.7 3.6 3 8 3s8-1.3 8-3v-7"></path>
+              </svg>
+            </div>
             <h3>Persistent Memory</h3>
-            <p>Memory that persists across conversations. Add your own notes or let the model build it automatically
-              during chat.</p>
+            <p>Save notes yourself or let enabled tools build memory across conversations.</p>
           </div>
         </div>
       </div>
@@ -191,9 +236,11 @@
         <p class="section-label">GET STARTED</p>
         <h2 class="section-title">Up and running in two steps</h2>
         <ol class="steps">
-          <li>Run <a href="https://ollama.com">Ollama</a>, deploy a <a
-              href="https://docs.litellm.ai/docs/simple_proxy">LiteLLM proxy</a>, or use a compatible server</li>
-          <li>Download OpenClient, open Settings, and enter your server URL</li>
+          <li>
+            <span>Run <a href="https://ollama.com">Ollama</a>, deploy a <a
+                href="https://docs.litellm.ai/docs/simple_proxy">LiteLLM proxy</a>, or use a compatible server</span>
+          </li>
+          <li><span>Download OpenClient, open Settings, and enter your server URL</span></li>
         </ol>
         <p class="req-note">iOS 26+ · iPadOS 26+ · macOS 26+</p>
       </div>
