@@ -95,7 +95,8 @@ private extension LatestConversationWidgetView {
                 .foregroundStyle(.primary)
             Spacer()
         }
-        .padding(2.5)
+        .frame(height: 30)
+        .padding(.horizontal, 2.5)
     }
 
     @ViewBuilder

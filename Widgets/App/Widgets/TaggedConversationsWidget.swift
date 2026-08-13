@@ -122,7 +122,8 @@ private extension TaggedConversationsWidgetView {
                 .lineLimit(1)
             Spacer()
         }
-        .padding(2.5)
+        .frame(height: 30)
+        .padding(.horizontal, 2.5)
     }
 
     var emptyState: some View {

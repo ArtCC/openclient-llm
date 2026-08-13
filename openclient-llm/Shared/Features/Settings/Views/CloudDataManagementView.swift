@@ -303,7 +303,7 @@ private extension CloudDataManagementView {
         }
 #if os(iOS)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button(role: .destructive) {
+            Button {
                 viewModel.send(.deleteRequested(item))
             } label: {
                 Label(String(localized: "Delete"), systemImage: "trash")
