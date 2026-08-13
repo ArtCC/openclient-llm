@@ -29,16 +29,15 @@ struct CloudDataManagementView: View {
 #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
 #endif
-            .confirmationDialog(
+            .alert(
                 confirmationTitle,
-                isPresented: confirmationBinding,
-                titleVisibility: .visible
+                isPresented: confirmationBinding
             ) {
-                Button(String(localized: "Delete"), role: .destructive) {
-                    viewModel.send(.deletionConfirmed)
-                }
                 Button(String(localized: "Cancel"), role: .cancel) {
                     viewModel.send(.deletionCancelled)
+                }
+                Button(String(localized: "Delete"), role: .destructive) {
+                    viewModel.send(.deletionConfirmed)
                 }
             } message: {
                 Text(confirmationMessage)
@@ -289,19 +288,31 @@ private extension CloudDataManagementView {
             .accessibilityLabel(item.title)
             .accessibilityValue(itemAccessibilityValue(item))
 
+#if os(macOS)
             Button(role: .destructive) {
                 viewModel.send(.deleteRequested(item))
             } label: {
                 Image(systemName: "trash")
             }
+            .buttonStyle(.borderless)
             .disabled(viewModel.isOperationActive)
             .accessibilityLabel(String(localized: "Delete \(item.title)"))
             .accessibilityHint(String(localized: "Deletes this item from iCloud and all synchronized devices."))
-#if os(macOS)
-            .buttonStyle(.borderless)
             .help(String(localized: "Delete"))
 #endif
         }
+#if os(iOS)
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                viewModel.send(.deleteRequested(item))
+            } label: {
+                Label(String(localized: "Delete"), systemImage: "trash")
+            }
+            .tint(.red)
+            .disabled(viewModel.isOperationActive)
+            .accessibilityHint(String(localized: "Deletes this item from iCloud and all synchronized devices."))
+        }
+#endif
     }
 
     var deleteAllSection: some View {

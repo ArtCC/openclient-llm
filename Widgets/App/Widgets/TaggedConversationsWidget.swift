@@ -86,6 +86,7 @@ private struct TaggedConversationsWidgetView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             Divider()
+                .padding(.vertical, 5)
             if entry.conversations.isEmpty {
                 emptyState
             } else {
