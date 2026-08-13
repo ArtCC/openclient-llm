@@ -80,6 +80,7 @@ private struct ConversationsOverviewWidgetView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             Divider()
+                .padding(.vertical, 5)
             if entry.conversations.isEmpty {
                 emptyState
             } else {
@@ -98,7 +99,7 @@ private extension ConversationsOverviewWidgetView {
                 .font(.headline)
                 .foregroundStyle(.primary)
             Spacer()
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
                 if let newChatURL = URL(string: "openclient://new-chat") {
                     Link(destination: newChatURL) {
                         ZStack {
@@ -125,7 +126,8 @@ private extension ConversationsOverviewWidgetView {
                 }
             }
         }
-        .padding(2.5)
+        .frame(height: 30)
+        .padding(.horizontal, 2.5)
     }
 
     var emptyState: some View {

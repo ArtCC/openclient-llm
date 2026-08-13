@@ -18,7 +18,7 @@ final class MockDeletePromptTemplateUseCase: DeletePromptTemplateUseCaseProtocol
 
     // MARK: - Execute
 
-    func execute(_ templateId: UUID) throws {
+    func execute(_ templateId: UUID) async throws {
         if let error { throw error }
         deletedIds.append(templateId)
     }

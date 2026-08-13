@@ -23,6 +23,10 @@ extension ConversationListViewModelTests {
 
         // When
         sut.send(.titleEdited(conversation.id, "New Title"))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.conversations.first?.title == "New Title"
+        }
 
         // Then
         XCTAssertEqual(mockRenameConversation.capturedId, conversation.id)
@@ -45,6 +49,10 @@ extension ConversationListViewModelTests {
 
         // When
         sut.send(.titleEdited(conversation.id, "  Trimmed  "))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.conversations.first?.title == "Trimmed"
+        }
 
         // Then
         XCTAssertEqual(mockRenameConversation.capturedTitle, "Trimmed")
@@ -66,6 +74,7 @@ extension ConversationListViewModelTests {
 
         // When
         sut.send(.titleEdited(conversation.id, "   "))
+        for _ in 0..<10 { await Task.yield() }
 
         // Then
         XCTAssertNil(mockRenameConversation.capturedId)
@@ -94,6 +103,10 @@ extension ConversationListViewModelTests {
 
         // When
         sut.send(.titleEdited(conversation.id, "New Title"))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.errorMessage == "Save failed"
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -115,6 +128,7 @@ extension ConversationListViewModelTests {
 
         // When — send an ID that does not exist in state
         sut.send(.titleEdited(UUID(), "Irrelevant"))
+        for _ in 0..<10 { await Task.yield() }
 
         // Then
         XCTAssertNil(mockRenameConversation.capturedId)

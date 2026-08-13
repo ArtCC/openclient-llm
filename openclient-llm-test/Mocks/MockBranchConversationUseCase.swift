@@ -20,7 +20,7 @@ final class MockBranchConversationUseCase: BranchConversationUseCaseProtocol, @u
 
     // MARK: - Execute
 
-    func execute(conversation: Conversation, fromMessageId: UUID) throws -> Conversation {
+    func execute(conversation: Conversation, fromMessageId: UUID) async throws -> Conversation {
         executedConversations.append(conversation)
         executedConversationIds.append(conversation.id)
         executedFromMessageIds.append(fromMessageId)

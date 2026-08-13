@@ -29,7 +29,7 @@ extension ChatViewModel {
                       case .loaded(var currentState) = state else { return }
                 applyAgentEvent(event, to: &currentState, assistantMessageId: context.assistantId)
                 state = .loaded(currentState)
-                if case .transcriptAppended = event { persistConversation() }
+                if case .transcriptAppended = event { await persistConversation() }
             }
 
             await handleAgentStreamSuccess(context.assistantId, modelId: context.modelId)
@@ -47,7 +47,7 @@ extension ChatViewModel {
             currentState.errorMessage = error.localizedDescription
             state = .loaded(currentState)
             scheduleErrorDismiss()
-            persistConversation()
+            await persistConversation()
             streamingBackgroundUseCase.end()
             completeActiveStream(context.assistantId)
         }
@@ -217,7 +217,7 @@ private extension ChatViewModel {
         refreshContextUsage(in: &finalState)
         state = .loaded(finalState)
         LogManager.success("performAgentStreaming completed model=\(modelId)")
-        let didPersist = persistConversation()
+        let didPersist = await persistConversation()
         streamingBackgroundUseCase.end()
         completeActiveStream(assistantId)
         if didPersist { scheduleCompactionIfNeeded() }

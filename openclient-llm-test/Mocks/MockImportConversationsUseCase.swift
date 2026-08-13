@@ -24,7 +24,7 @@ final class MockImportConversationsUseCase: ImportConversationsUseCaseProtocol, 
 
     // MARK: - Execute
 
-    func execute(_ data: Data) throws -> ImportConversationsResult {
+    func execute(_ data: Data) async throws -> ImportConversationsResult {
         importedData.append(data)
         return try result.get()
     }

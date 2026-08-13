@@ -13,7 +13,7 @@ import XCTest
 final class UpdateConversationTagsUseCaseTests: XCTestCase {
     // MARK: - Tests
 
-    func test_execute_existingTagName_reusesAssignedColor() throws {
+    func test_execute_existingTagName_reusesAssignedColor() async throws {
         // Given
         let existing = Conversation(
             modelId: "gpt-4",
@@ -25,7 +25,7 @@ final class UpdateConversationTagsUseCaseTests: XCTestCase {
         let sut = UpdateConversationTagsUseCase(repository: repository)
 
         // When
-        let tags = try sut.execute(
+        let tags = try await sut.execute(
             target.id,
             tags: [ConversationTag(name: "swift", color: .red)]
         )

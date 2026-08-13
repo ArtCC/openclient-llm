@@ -74,6 +74,7 @@ private struct PinnedConversationsWidgetView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             Divider()
+                .padding(.vertical, 5)
             if entry.conversations.isEmpty {
                 emptyState
             } else {
@@ -96,7 +97,8 @@ private extension PinnedConversationsWidgetView {
                 .foregroundStyle(.primary)
             Spacer()
         }
-        .padding(2.5)
+        .frame(height: 30)
+        .padding(.horizontal, 2.5)
     }
 
     var emptyState: some View {

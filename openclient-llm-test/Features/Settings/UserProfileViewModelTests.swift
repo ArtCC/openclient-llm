@@ -83,12 +83,13 @@ final class UserProfileViewModelTests: XCTestCase {
 
     // MARK: - Tests — save
 
-    func test_send_save_persistsProfile() {
+    func test_send_save_persistsProfile() async {
         // Given
         sut.send(.viewAppeared)
 
         // When
         sut.send(.save(name: "Bob", description: "Engineer", extraInfo: "Swift enthusiast"))
+        await waitUntil { self.mockUserProfileManager.savedProfile != nil }
 
         // Then
         XCTAssertEqual(mockUserProfileManager.savedProfile?.name, "Bob")
@@ -96,12 +97,16 @@ final class UserProfileViewModelTests: XCTestCase {
         XCTAssertEqual(mockUserProfileManager.savedProfile?.extraInfo, "Swift enthusiast")
     }
 
-    func test_send_save_updatesLoadedState() {
+    func test_send_save_updatesLoadedState() async {
         // Given
         sut.send(.viewAppeared)
 
         // When
         sut.send(.save(name: "Alice", description: "Designer", extraInfo: "Loves colors"))
+        await waitUntil {
+            guard case .loaded(let state) = self.sut.state else { return false }
+            return state.name == "Alice"
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -113,12 +118,16 @@ final class UserProfileViewModelTests: XCTestCase {
         XCTAssertEqual(loadedState.extraInfo, "Loves colors")
     }
 
-    func test_send_save_updatesOriginalValues() {
+    func test_send_save_updatesOriginalValues() async {
         // Given
         sut.send(.viewAppeared)
 
         // When
         sut.send(.save(name: "Alice", description: "Designer", extraInfo: "Loves colors"))
+        await waitUntil {
+            guard case .loaded(let state) = self.sut.state else { return false }
+            return state.originalName == "Alice"
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -128,5 +137,13 @@ final class UserProfileViewModelTests: XCTestCase {
         XCTAssertEqual(loadedState.originalName, "Alice")
         XCTAssertEqual(loadedState.originalDescription, "Designer")
         XCTAssertEqual(loadedState.originalExtraInfo, "Loves colors")
+    }
+
+    private func waitUntil(_ condition: @MainActor () -> Bool) async {
+        for _ in 0..<100 {
+            if condition() { return }
+            await Task.yield()
+        }
+        XCTFail("Condition was not satisfied")
     }
 }

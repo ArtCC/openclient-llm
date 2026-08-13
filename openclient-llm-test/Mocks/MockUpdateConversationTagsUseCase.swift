@@ -19,7 +19,7 @@ final class MockUpdateConversationTagsUseCase: UpdateConversationTagsUseCaseProt
 
     // MARK: - Public
 
-    func execute(_ conversationId: UUID, tags: [ConversationTag]) throws -> [ConversationTag] {
+    func execute(_ conversationId: UUID, tags: [ConversationTag]) async throws -> [ConversationTag] {
         if let error { throw error }
         executedId = conversationId
         executedTags = tags

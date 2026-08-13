@@ -24,6 +24,11 @@ extension ConversationListViewModelTests {
 
         // When
         sut.send(.refreshTapped)
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return self.mockSyncConversations.executeCallCount == 2
+                && loadedState.conversations == [remoteConversation]
+        }
 
         // Then
         XCTAssertEqual(mockSyncConversations.executeCallCount, 2)
@@ -34,7 +39,7 @@ extension ConversationListViewModelTests {
         XCTAssertEqual(loadedState.conversations, [remoteConversation])
     }
 
-    func test_cloudChangeNotification_synchronizesBeforeReloadingConversations() async throws {
+    func test_conversationUpdateNotification_reloadsWithoutStartingSynchronization() async throws {
         // Given
         mockLoadConversations.result = .success([])
         mockFetchModels.result = .success([])
@@ -44,11 +49,14 @@ extension ConversationListViewModelTests {
         mockLoadConversations.result = .success([remoteConversation])
 
         // When
-        NotificationCenter.default.post(name: .conversationCloudDidChange, object: nil)
-        try await Task.sleep(for: .milliseconds(600))
+        NotificationCenter.default.post(name: .conversationDidUpdate, object: nil)
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.conversations == [remoteConversation]
+        }
 
         // Then
-        XCTAssertEqual(mockSyncConversations.executeCallCount, 2)
+        XCTAssertEqual(mockSyncConversations.executeCallCount, 1)
         guard case .loaded(let loadedState) = sut.state else {
             XCTFail("Expected loaded state")
             return
@@ -61,10 +69,11 @@ extension ConversationListViewModelTests {
         mockLoadConversations.result = .success([])
         mockFetchModels.result = .success([])
         mockSyncConversations.results = [.pendingDownload, .synchronized]
+        mockSettingsManager.isCloudSyncEnabled = true
 
         // When
         sut.send(.viewAppeared)
-        try await Task.sleep(for: .milliseconds(1_100))
+        await waitUntil { self.mockSyncConversations.executeCallCount == 2 }
 
         // Then
         XCTAssertEqual(mockSyncConversations.executeCallCount, 2)

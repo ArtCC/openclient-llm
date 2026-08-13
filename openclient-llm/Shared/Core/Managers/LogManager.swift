@@ -8,10 +8,10 @@
 
 import Foundation
 
-enum LogManager {
+nonisolated enum LogManager {
     // MARK: - Properties
 
-    enum Level: String {
+    enum Level: String, Sendable {
         case debug = "🔍 DEBUG"
         case info = "ℹ️ INFO"
         case warning = "⚠️ WARNING"
@@ -80,7 +80,7 @@ enum LogManager {
 // MARK: - Private
 
 private extension LogManager {
-    static func log(
+    nonisolated static func log(
         level: Level,
         message: String,
         file: String,
@@ -89,14 +89,19 @@ private extension LogManager {
     ) {
         #if DEBUG
         let fileName = URL(fileURLWithPath: file).deletingPathExtension().lastPathComponent
-        let timestamp = Self.dateFormatter.string(from: Date())
+        let timestamp = makeTimestamp()
         print("[\(timestamp)] \(level.rawValue) [\(fileName):\(line)] \(function) → \(message)")
         #endif
     }
 
-    static let dateFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss.SSS"
-        return formatter
-    }()
+    nonisolated static func makeTimestamp() -> String {
+        let components = Calendar.current.dateComponents([.hour, .minute, .second, .nanosecond], from: Date())
+        return String(
+            format: "%02d:%02d:%02d.%03d",
+            components.hour ?? 0,
+            components.minute ?? 0,
+            components.second ?? 0,
+            (components.nanosecond ?? 0) / 1_000_000
+        )
+    }
 }

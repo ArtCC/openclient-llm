@@ -14,6 +14,9 @@ extension Notification.Name {
     static let appDataDidReset = Notification.Name("openclient.appDataDidReset")
     /// Posted whenever a conversation is persisted (message sent, updated, etc.).
     /// ConversationListViewModel observes this to reload the list without recreating views.
-    static let conversationDidUpdate = Notification.Name("openclient.conversationDidUpdate")
-    nonisolated static let conversationCloudDidChange = Notification.Name("openclient.conversationCloudDidChange")
+    nonisolated static let conversationDidUpdate = Notification.Name("openclient.conversationDidUpdate")
+    nonisolated static let promptTemplatesDidChangeExternally = Notification.Name(
+        "openclient.promptTemplatesDidChangeExternally"
+    )
+    nonisolated static let cloudSyncIntentDidChange = Notification.Name("openclient.cloudSyncIntentDidChange")
 }

@@ -13,7 +13,7 @@ import XCTest
 
 @MainActor
 extension ChatViewModelTests {
-    func test_send_attachmentAdded_withConvertedImage_savesPreparedImage() async throws {
+    func test_send_attachmentAdded_withConvertedImage_stagesPreparedImage() async throws {
         // Given
         let preparedData = Data([0xFF, 0xD8, 0xFF])
         mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
@@ -30,10 +30,14 @@ extension ChatViewModelTests {
         try await Task.sleep(for: .milliseconds(50))
 
         // Then
-        let record = try XCTUnwrap(mockAttachmentRepository.savedAttachments.first)
-        XCTAssertEqual(record.data, preparedData)
-        XCTAssertEqual(record.attachment.fileName, "photo.jpg")
-        XCTAssertEqual(record.attachment.mimeType, "image/jpeg")
+        guard case .loaded(let loadedState) = sut.state else {
+            return XCTFail("Expected loaded state")
+        }
+        let attachment = try XCTUnwrap(loadedState.pendingAttachments.first)
+        XCTAssertEqual(attachment.transientData, preparedData)
+        XCTAssertEqual(attachment.fileName, "photo.jpg")
+        XCTAssertEqual(attachment.mimeType, "image/jpeg")
+        XCTAssertTrue(mockAttachmentRepository.savedAttachments.isEmpty)
     }
 
     func test_send_attachmentAdded_whenImagePreparationFails_showsErrorWithoutSaving() async throws {

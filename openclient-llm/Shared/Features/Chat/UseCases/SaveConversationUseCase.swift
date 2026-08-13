@@ -9,7 +9,16 @@
 import Foundation
 
 protocol SaveConversationUseCaseProtocol: Sendable {
-    func execute(_ conversation: Conversation) throws
+    @discardableResult
+    func execute(_ conversation: Conversation, expectedBase: Conversation?) async throws -> Conversation
+    func executeImportBatch(_ conversations: [Conversation]) async throws -> [Conversation]
+}
+
+extension SaveConversationUseCaseProtocol {
+    @discardableResult
+    func execute(_ conversation: Conversation) async throws -> Conversation {
+        try await execute(conversation, expectedBase: nil)
+    }
 }
 
 struct SaveConversationUseCase: SaveConversationUseCaseProtocol {
@@ -25,8 +34,16 @@ struct SaveConversationUseCase: SaveConversationUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute(_ conversation: Conversation) throws {
-        try repository.save(conversation)
-        SpotlightManager.index(conversation)
+    @discardableResult
+    func execute(_ conversation: Conversation, expectedBase: Conversation?) async throws -> Conversation {
+        let saved = try await repository.save(conversation, expectedBase: expectedBase)
+        SpotlightManager.index(saved)
+        return saved
+    }
+
+    func executeImportBatch(_ conversations: [Conversation]) async throws -> [Conversation] {
+        let saved = try await repository.importBatch(conversations)
+        saved.forEach(SpotlightManager.index)
+        return saved
     }
 }

@@ -33,7 +33,7 @@ final class LaunchViewModelTests: XCTestCase {
             resetAppDataUseCase: mockResetAppData,
             attachmentMigrationUseCase: mockAttachmentMigration,
             remoteConfigManager: mockRemoteConfigManager,
-            currentVersion: "1.6.10",
+            currentVersion: "1.6.15",
             launchDelay: .zero
         )
     }
@@ -67,15 +67,45 @@ final class LaunchViewModelTests: XCTestCase {
         XCTAssertEqual(sut.state, .onboarding)
     }
 
-    func test_send_viewAppeared_onboardingNotCompleted_resetsAppData() {
+    func test_send_viewAppeared_onboardingNotCompleted_resetsAppData() async {
         // Given
         mockUseCase.result = false
 
         // When
         sut.send(.viewAppeared)
+        await waitForLaunch()
 
         // Then
         XCTAssertTrue(mockResetAppData.executeCalled)
+    }
+
+    func test_send_viewAppeared_initialResetFails_setsResetFailedState() async {
+        // Given
+        mockUseCase.result = false
+        mockResetAppData.executeError = NSError(domain: "LaunchViewModelTests", code: 1)
+
+        // When
+        sut.send(.viewAppeared)
+        await waitForLaunch()
+
+        // Then
+        XCTAssertEqual(sut.state, .resetFailed)
+    }
+
+    func test_send_resetRetried_afterFailure_retriesReset() async {
+        // Given
+        mockUseCase.result = false
+        mockResetAppData.executeError = NSError(domain: "LaunchViewModelTests", code: 1)
+        sut.send(.viewAppeared)
+        await waitForLaunch()
+        mockResetAppData.executeError = nil
+
+        // When
+        sut.send(.resetRetried)
+        await waitForLaunch()
+
+        // Then
+        XCTAssertEqual(sut.state, .onboarding)
     }
 
     func test_send_viewAppeared_onboardingCompleted_setsHomeState() async {
@@ -98,7 +128,7 @@ final class LaunchViewModelTests: XCTestCase {
             resetAppDataUseCase: mockResetAppData,
             attachmentMigrationUseCase: mockAttachmentMigration,
             remoteConfigManager: mockRemoteConfigManager,
-            currentVersion: "1.6.10",
+            currentVersion: "1.6.15",
             launchDelay: .milliseconds(500)
         )
 
@@ -128,7 +158,7 @@ final class LaunchViewModelTests: XCTestCase {
             resetAppDataUseCase: mockResetAppData,
             attachmentMigrationUseCase: mockAttachmentMigration,
             remoteConfigManager: mockRemoteConfigManager,
-            currentVersion: "1.6.10",
+            currentVersion: "1.6.15",
             launchDelay: .zero
         )
 

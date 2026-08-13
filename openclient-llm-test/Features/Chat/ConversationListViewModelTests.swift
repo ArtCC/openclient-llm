@@ -22,7 +22,6 @@ final class ConversationListViewModelTests: XCTestCase {
     var mockFetchModels: MockFetchModelsUseCase!
     var mockSyncConversations: MockSyncConversationsUseCase!
     var mockSettingsManager: MockSettingsManager!
-    var mockConversationCloudObserver: MockConversationCloudObserver!
     var mockExportBackup: MockExportBackupUseCase!
     var mockImportConversations: MockImportConversationsUseCase!
 
@@ -39,7 +38,6 @@ final class ConversationListViewModelTests: XCTestCase {
         mockFetchModels = MockFetchModelsUseCase()
         mockSyncConversations = MockSyncConversationsUseCase()
         mockSettingsManager = MockSettingsManager()
-        mockConversationCloudObserver = MockConversationCloudObserver()
         mockExportBackup = MockExportBackupUseCase()
         mockImportConversations = MockImportConversationsUseCase()
         sut = ConversationListViewModel(
@@ -53,7 +51,7 @@ final class ConversationListViewModelTests: XCTestCase {
             exportBackupUseCase: mockExportBackup,
             importConversationsUseCase: mockImportConversations,
             settingsManager: mockSettingsManager,
-            conversationCloudObserver: mockConversationCloudObserver
+            cloudRetryDelays: [.zero]
         )
     }
 
@@ -67,7 +65,6 @@ final class ConversationListViewModelTests: XCTestCase {
         mockFetchModels = nil
         mockSyncConversations = nil
         mockSettingsManager = nil
-        mockConversationCloudObserver = nil
         mockExportBackup = nil
         mockImportConversations = nil
 
@@ -175,6 +172,10 @@ final class ConversationListViewModelTests: XCTestCase {
 
         // When
         sut.send(.deleteConversation(conversation.id))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.conversations.isEmpty
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -202,6 +203,10 @@ final class ConversationListViewModelTests: XCTestCase {
 
         // When
         sut.send(.deleteConversation(conversation.id))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.selectedConversation == nil
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -224,6 +229,10 @@ final class ConversationListViewModelTests: XCTestCase {
 
         // When
         sut.send(.deleteConversation(conversation.id))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.errorMessage != nil
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -249,6 +258,10 @@ final class ConversationListViewModelTests: XCTestCase {
 
         // When
         sut.refresh()
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.conversations.count == 1
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
@@ -359,5 +372,21 @@ final class ConversationListViewModelTests: XCTestCase {
             return
         }
         XCTAssertTrue(loadedState.filteredConversations.isEmpty)
+    }
+}
+
+// MARK: - Helpers
+
+extension ConversationListViewModelTests {
+    func waitUntil(
+        _ condition: @MainActor () -> Bool,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async {
+        for _ in 0..<100 {
+            if condition() { return }
+            await Task.yield()
+        }
+        XCTFail("Condition was not satisfied", file: file, line: line)
     }
 }

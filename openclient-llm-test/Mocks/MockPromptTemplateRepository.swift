@@ -19,15 +19,18 @@ final class MockPromptTemplateRepository: PromptTemplateRepositoryProtocol, @unc
     var deleteError: Error?
     var savedTemplates: [PromptTemplate] = []
     var deletedIds: [UUID] = []
+    var loadCallCount = 0
+    var deleteAllLocalCalled = false
 
     // MARK: - Public
 
-    func loadAll() throws -> [PromptTemplate] {
+    func loadAll() async throws -> [PromptTemplate] {
+        loadCallCount += 1
         if let loadError { throw loadError }
         return templates
     }
 
-    func save(_ template: PromptTemplate) throws {
+    func save(_ template: PromptTemplate) async throws {
         if let saveError { throw saveError }
         savedTemplates.append(template)
         if let index = templates.firstIndex(where: { $0.id == template.id }) {
@@ -37,9 +40,30 @@ final class MockPromptTemplateRepository: PromptTemplateRepositoryProtocol, @unc
         }
     }
 
-    func delete(_ templateId: UUID) throws {
+    func delete(_ templateId: UUID) async throws {
         if let deleteError { throw deleteError }
         deletedIds.append(templateId)
         templates.removeAll { $0.id == templateId }
+    }
+
+    func deleteSynchronized(_ templateId: UUID) async throws {
+        try await delete(templateId)
+    }
+
+    func deleteAllLocal() async throws {
+        if let deleteError { throw deleteError }
+        deleteAllLocalCalled = true
+        templates.removeAll { !$0.isBuiltIn }
+    }
+
+    func purgeLocalData(through marker: CloudPurgeMarker) async throws {
+        if let deleteError { throw deleteError }
+        deleteAllLocalCalled = true
+        templates.removeAll { !$0.isBuiltIn && $0.updatedAt <= marker.deletedAt }
+    }
+
+    func validateLocalReset() async throws {
+        if let deleteError { throw deleteError }
+        if let loadError { throw loadError }
     }
 }

@@ -27,6 +27,10 @@ extension ConversationListViewModelTests {
 
         // When
         sut.send(.tagsUpdated(conversation.id, tags))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.conversations.first?.tags == tags
+        }
 
         // Then
         XCTAssertEqual(mockUpdateTags.executedId, conversation.id)
@@ -173,6 +177,11 @@ extension ConversationListViewModelTests {
 
         // When
         sut.send(.tagsUpdated(conv1.id, []))
+        await waitUntil {
+            guard case .loaded(let loadedState) = self.sut.state else { return false }
+            return loadedState.activeTagFilter == nil
+                && loadedState.conversations.first(where: { $0.id == conv1.id })?.tags.isEmpty == true
+        }
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {

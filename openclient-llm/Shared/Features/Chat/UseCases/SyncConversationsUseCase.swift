@@ -9,7 +9,8 @@ import Foundation
 
 protocol SyncConversationsUseCaseProtocol: Sendable {
     @discardableResult
-    func execute() -> ConversationSyncResult
+    func execute() async -> ConversationSyncResult
+    func cancel() async
 }
 
 struct SyncConversationsUseCase: SyncConversationsUseCaseProtocol {
@@ -26,7 +27,11 @@ struct SyncConversationsUseCase: SyncConversationsUseCaseProtocol {
     // MARK: - Execute
 
     @discardableResult
-    func execute() -> ConversationSyncResult {
-        repository.synchronize()
+    func execute() async -> ConversationSyncResult {
+        await repository.synchronize()
+    }
+
+    func cancel() async {
+        await repository.cancelSynchronization()
     }
 }

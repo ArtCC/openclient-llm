@@ -9,7 +9,7 @@
 import Foundation
 
 protocol DeleteConversationUseCaseProtocol: Sendable {
-    func execute(_ conversationId: UUID) throws
+    func execute(_ conversationId: UUID) async throws
 }
 
 struct DeleteConversationUseCase: DeleteConversationUseCaseProtocol {
@@ -25,8 +25,8 @@ struct DeleteConversationUseCase: DeleteConversationUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute(_ conversationId: UUID) throws {
-        try repository.delete(conversationId)
+    func execute(_ conversationId: UUID) async throws {
+        try await repository.delete(conversationId)
         SpotlightManager.deindex(id: conversationId)
     }
 }

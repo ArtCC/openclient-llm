@@ -18,11 +18,11 @@ final class MockLoadConversationsUseCase: LoadConversationsUseCaseProtocol, @unc
 
     // MARK: - Execute
 
-    func execute() throws -> [Conversation] {
+    func execute() async throws -> [Conversation] {
         try result.get()
     }
 
-    func executeLocally() throws -> [Conversation] {
+    func executeLocally() async throws -> [Conversation] {
         executeLocallyCallCount += 1
         return try result.get()
     }

@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct ModelParameters: Equatable, Sendable, Codable {
+nonisolated struct ModelParameters: Equatable, Sendable, Codable {
     // MARK: - Properties
 
     var temperature: Double?

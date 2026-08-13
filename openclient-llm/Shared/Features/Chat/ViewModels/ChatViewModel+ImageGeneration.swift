@@ -32,7 +32,7 @@ extension ChatViewModel {
             currentState.isStreaming = false
             state = .loaded(currentState)
             LogManager.success("performImageGeneration completed model=\(context.modelId)")
-            persistConversation()
+            await persistConversation()
             streamingBackgroundUseCase.end()
             completeActiveStream(assistantMessageId)
             await notifyStreamingCompletedUseCase.execute()
@@ -50,7 +50,7 @@ extension ChatViewModel {
             currentState.errorMessage = error.localizedDescription
             state = .loaded(currentState)
             scheduleErrorDismiss()
-            persistConversation()
+            await persistConversation()
             streamingBackgroundUseCase.end()
             completeActiveStream(assistantMessageId)
         }

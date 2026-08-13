@@ -19,7 +19,7 @@ final class MockPinConversationUseCase: PinConversationUseCaseProtocol, @uncheck
 
     // MARK: - Public
 
-    func execute(_ conversationId: UUID, isPinned: Bool) throws {
+    func execute(_ conversationId: UUID, isPinned: Bool) async throws {
         if let error { throw error }
         executedId = conversationId
         executedIsPinned = isPinned

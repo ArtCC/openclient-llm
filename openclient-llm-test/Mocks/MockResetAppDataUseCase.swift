@@ -14,10 +14,12 @@ final class MockResetAppDataUseCase: ResetAppDataUseCaseProtocol, @unchecked Sen
     // MARK: - Properties
 
     var executeCalled: Bool = false
+    var executeError: Error?
 
     // MARK: - Execute
 
-    func execute() {
+    func execute() async throws {
         executeCalled = true
+        if let executeError { throw executeError }
     }
 }

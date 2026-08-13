@@ -104,7 +104,10 @@ Widgets/                           # WidgetsExtension target (iOS 26+)
 │       ├── NewChatWidget.swift
 │       ├── SearchWidget.swift
 │       ├── QuickActionsWidget.swift
-│       └── ConversationsOverviewWidget.swift
+│       ├── ConversationsOverviewWidget.swift
+│       ├── LatestConversationWidget.swift
+│       ├── PinnedConversationsWidget.swift
+│       └── TaggedConversationsWidget.swift
 └── Resources/
 
 openclient-llm-test/               # Unit tests
@@ -143,7 +146,7 @@ SwiftLintPlugins, VoticeSDK, and ConfettiSwiftUI.
 - **`openclient-llm/`** (outside Shared) — iOS/iPadOS-specific views, app entry point, iOS resources.
 - **`openclient-llm-macOS/`** — macOS-specific views, app entry point, macOS resources. No shared logic duplicated here.
 - **`ShareExtension/`** — iOS/iPadOS Share Extension. It owns compatible write-side payload/store types; the main app owns the read side. They exchange JSON and attachments through `group.com.artcc.openclient-llm`; the extension does not link `Shared/`.
-- **`Widgets/`** — Source folder for `WidgetsExtension` (iOS 26+), containing four home-screen widgets and a Control Center control. `AppGroupStore` and `WidgetConversation` compile into both apps and the extension; `WidgetControlStore` compiles into the iOS app and extension. The remaining widget UI does not link the shared feature layer.
+- **`Widgets/`** — Source folder for `WidgetsExtension` (iOS 26+), containing seven home-screen widgets and a Control Center control. `AppGroupStore` and `WidgetConversation` compile into both apps and the extension; `WidgetControlStore` compiles into the iOS app and extension. The remaining widget UI does not link the shared feature layer.
 - **`#if os(iOS)` / `#if os(macOS)`** — Used inside shared views for platform-specific UI variations.
 
 The iOS and macOS app targets set `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`. The test and extension targets do not;

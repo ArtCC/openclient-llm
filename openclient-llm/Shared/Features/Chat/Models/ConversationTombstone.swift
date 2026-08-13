@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct ConversationTombstone: Codable, Equatable, Sendable {
+nonisolated struct ConversationTombstone: Codable, Equatable, Sendable {
     let conversationId: UUID
     let deletedAt: Date
 }

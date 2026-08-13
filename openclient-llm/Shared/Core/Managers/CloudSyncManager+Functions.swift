@@ -6,44 +6,13 @@
 //  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
 //
 
-import SwiftUI
+import Foundation
 
 extension CloudSyncManager {
-    func cloudConversationsDirectory() -> URL? {
-        cloudDocumentsDirectory()?
-            .appendingPathComponent("Conversations", isDirectory: true)
-    }
-
-    func cloudAttachmentsDirectory() -> URL? {
-        cloudDocumentsDirectory()?
-            .appendingPathComponent("Attachments", isDirectory: true)
-    }
-
-    func cloudConversationTombstonesFileURL() -> URL? {
-        cloudDocumentsDirectory()?.appendingPathComponent("ConversationTombstones.json")
-    }
-
-    func cloudConversationTombstonesDirectory() -> URL? {
-        cloudDocumentsDirectory()?.appendingPathComponent("ConversationTombstones", isDirectory: true)
-    }
-
-    func cloudProfileFileURL() -> URL? {
-        cloudDocumentsDirectory()?
-            .appendingPathComponent("UserProfile.json")
-    }
-
-    func cloudTemplatesDirectory() -> URL? {
-        cloudDocumentsDirectory()?
-            .appendingPathComponent("PromptTemplates", isDirectory: true)
-    }
-
-    func cloudMemoryFileURL() -> URL? {
-        cloudDocumentsDirectory()?
-            .appendingPathComponent("Memory.json")
-    }
+    static let profileMarkerId = UUID(uuidString: "00000000-0000-0000-0000-000000000000") ?? UUID()
 
     func cloudDocumentsDirectory() -> URL? {
-        fileManager.url(forUbiquityContainerIdentifier: nil)?
+        containerProvider.containerURL()?
             .appendingPathComponent("Documents", isDirectory: true)
     }
 
@@ -52,80 +21,160 @@ extension CloudSyncManager {
         try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
     }
 
-    func writeIfChanged(_ data: Data, to url: URL) throws {
-        if let existing = try? Data(contentsOf: url), existing == data { return }
-        try data.write(to: url, options: .atomic)
-    }
-
     func requiresDownload(at url: URL) throws -> Bool {
         let values = try url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey])
-        guard values.ubiquitousItemDownloadingStatus != .current else { return false }
+        guard let status = values.ubiquitousItemDownloadingStatus, status != .current else { return false }
         try? fileManager.startDownloadingUbiquitousItem(at: url)
         return true
     }
 
-    func tombstonesRequireDownload() throws -> Bool {
-        if let legacyURL = cloudConversationTombstonesFileURL() {
-            if try placeholderRequiresDownload(for: legacyURL) { return true }
-            if fileManager.fileExists(atPath: legacyURL.path), try requiresDownload(at: legacyURL) {
-                return true
-            }
+    func readCategory<Value: Sendable>(
+        _ operation: @escaping @Sendable (CloudSyncManager, URL) throws -> Value
+    ) async throws -> Value {
+        let session = try makeCategorySession()
+        return try await fileCoordinator.read(at: session.containerURL) { containerURL in
+            try validateCategorySession(session)
+            let documentsURL = containerURL.appendingPathComponent("Documents", isDirectory: true)
+            try validateCategoryManifest(in: documentsURL)
+            let value = try operation(self, documentsURL)
+            try validateCategorySession(session)
+            return value
         }
-        guard let directory = cloudConversationTombstonesDirectory(),
-              fileManager.fileExists(atPath: directory.path) else {
-            return false
-        }
-        let files = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
-        let placeholders = files.filter { $0.lastPathComponent.hasPrefix(".") && $0.pathExtension == "icloud" }
-        for placeholder in placeholders {
-            try? fileManager.startDownloadingUbiquitousItem(at: placeholder)
-        }
-        guard placeholders.isEmpty else { return true }
-        return try files.filter { $0.pathExtension == "json" }.contains { try requiresDownload(at: $0) }
     }
 
-    func placeholderRequiresDownload(for url: URL) throws -> Bool {
+    func mutateCategory<Value: Sendable>(
+        _ operation: @escaping @Sendable (CloudSyncManager, URL) throws -> Value
+    ) async throws -> Value {
+        let session = try makeCategorySession()
+        return try await fileCoordinator.write(at: session.containerURL, options: []) { containerURL in
+            try validateCategorySession(session)
+            let documentsURL = containerURL.appendingPathComponent("Documents", isDirectory: true)
+            try validateCategoryManifest(in: documentsURL)
+            try ensureDirectoryExists(at: documentsURL)
+            try writeCategoryManifestIfNeeded(in: documentsURL)
+            let value = try operation(self, documentsURL)
+            try validateCategorySession(session)
+            return value
+        }
+    }
+
+    func writeEncoded<Value: Encodable>(_ value: Value, to url: URL) throws {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let data = try encoder.encode(value)
+        if fileManager.fileExists(atPath: url.path), try Data(contentsOf: url) == data { return }
+        try ensureDirectoryExists(at: url.deletingLastPathComponent())
+        try data.write(to: url, options: .atomic)
+        guard try Data(contentsOf: url) == data else { throw CloudSyncError.cloudContentChanged }
+    }
+
+    func decode<Value: Decodable>(_ type: Value.Type, at url: URL) throws -> Value {
+        try requireCategoryFileReady(at: url)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(type, from: Data(contentsOf: url))
+    }
+
+    func decodeIfPresent<Value: Decodable>(_ type: Value.Type, at url: URL) throws -> Value? {
+        try requireCategoryFileReady(at: url)
+        guard fileManager.fileExists(atPath: url.path) else { return nil }
+        return try decode(type, at: url)
+    }
+
+    func categoryContents(of directory: URL) throws -> [URL] {
+        let urls = try fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
+        for url in urls where categoryPlaceholderName(for: url) != nil {
+            try? fileManager.startDownloadingUbiquitousItem(at: url)
+        }
+        guard !urls.contains(where: { categoryPlaceholderName(for: $0) != nil }) else {
+            throw CloudSyncError.requiredDownloadPending
+        }
+        for url in urls where try requiresDownload(at: url) {
+            throw CloudSyncError.requiredDownloadPending
+        }
+        return urls
+    }
+
+    func loadTemplateDeletionIds(in documentsURL: URL) throws -> Set<UUID> {
+        let directory = documentsURL.appendingPathComponent("PromptTemplateTombstones", isDirectory: true)
+        guard fileManager.fileExists(atPath: directory.path) else { return [] }
+        return Set(try categoryContents(of: directory).compactMap { url in
+            guard url.pathExtension == "json" else { return nil }
+            return try decode(CloudDeletionMarker.self, at: url).id
+        })
+    }
+
+    func loadMemoryDeletionMarkers(in documentsURL: URL) throws -> [CloudDeletionMarker] {
+        let markers = try decodeIfPresent(
+            [CloudDeletionMarker].self,
+            at: documentsURL.appendingPathComponent("MemoryTombstones.json")
+        ) ?? []
+        var newestById: [UUID: CloudDeletionMarker] = [:]
+        for marker in markers {
+            if let current = newestById[marker.id], current.deletedAt >= marker.deletedAt { continue }
+            newestById[marker.id] = marker
+        }
+        return newestById.values.sorted { $0.id.uuidString < $1.id.uuidString }
+    }
+
+    func readPurgeMarker(in documentsURL: URL) throws -> CloudPurgeMarker? {
+        try decodeIfPresent(
+            CloudPurgeMarker.self,
+            at: documentsURL.appendingPathComponent("CloudPurgeMarker.json")
+        )
+    }
+
+    func requireCategoryFileReady(at url: URL) throws {
         let placeholder = url.deletingLastPathComponent().appendingPathComponent(".\(url.lastPathComponent).icloud")
-        guard fileManager.fileExists(atPath: placeholder.path) else { return false }
-        try? fileManager.startDownloadingUbiquitousItem(at: placeholder)
-        return true
-    }
-
-    func decodeTombstones(at url: URL) throws -> [ConversationTombstone] {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode([ConversationTombstone].self, from: Data(contentsOf: url))
-    }
-
-    func decodeTombstone(at url: URL) throws -> ConversationTombstone {
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode(ConversationTombstone.self, from: Data(contentsOf: url))
-    }
-
-    /// Copies attachment files referenced by `conversation` from local storage to iCloud.
-    func syncAttachmentFiles(for conversation: Conversation, localDocuments: URL) throws {
-        guard let cloudAttachments = cloudAttachmentsDirectory() else { return }
-
-        // Collect all attachments from all messages
-        let attachments = conversation.messages.flatMap { $0.attachments }
-        guard !attachments.isEmpty else { return }
-
-        let cloudConvFolder = cloudAttachments
-            .appendingPathComponent(conversation.id.uuidString, isDirectory: true)
-        try ensureDirectoryExists(at: cloudConvFolder)
-
-        for attachment in attachments where !attachment.fileRelativePath.isEmpty {
-            let localFile = localDocuments.appendingPathComponent(attachment.fileRelativePath)
-            guard fileManager.fileExists(atPath: localFile.path) else { continue }
-
-            let fileName = localFile.lastPathComponent
-            let cloudFile = cloudConvFolder.appendingPathComponent(fileName)
-
-            // Skip if already synced and same size (avoid unnecessary writes)
-            if fileManager.fileExists(atPath: cloudFile.path) { continue }
-
-            try fileManager.copyItem(at: localFile, to: cloudFile)
+        if fileManager.fileExists(atPath: placeholder.path) {
+            try? fileManager.startDownloadingUbiquitousItem(at: placeholder)
+            throw CloudSyncError.requiredDownloadPending
+        }
+        if fileManager.fileExists(atPath: url.path), try requiresDownload(at: url) {
+            throw CloudSyncError.requiredDownloadPending
         }
     }
+
+    func removeCategoryItemIfPresent(at url: URL) throws {
+        guard fileManager.fileExists(atPath: url.path) else { return }
+        try fileManager.removeItem(at: url)
+        guard !fileManager.fileExists(atPath: url.path) else { throw CloudSyncError.cloudContentChanged }
+    }
+
+    func makeCategorySession() throws -> CloudSyncSession {
+        guard let session = containerProvider.currentSession() else { throw CloudSyncError.containerUnavailable }
+        guard containerProvider.isMetadataReady(for: session) else {
+            throw CloudSyncError.requiredDownloadPending
+        }
+        return session
+    }
+
+    func validateCategorySession(_ session: CloudSyncSession) throws {
+        guard let current = containerProvider.currentSession() else { throw CloudSyncError.containerUnavailable }
+        guard current == session else { throw CloudSyncError.containerIdentityChanged }
+        guard containerProvider.isMetadataReady(for: session) else {
+            throw CloudSyncError.requiredDownloadPending
+        }
+    }
+
+    func validateCategoryManifest(in documentsURL: URL) throws {
+        let url = documentsURL.appendingPathComponent("SyncManifest.json")
+        try requireCategoryFileReady(at: url)
+        let data = fileManager.fileExists(atPath: url.path) ? try Data(contentsOf: url) : nil
+        _ = try CloudSyncManifest.decode(data)
+    }
+
+    func writeCategoryManifestIfNeeded(in documentsURL: URL) throws {
+        let url = documentsURL.appendingPathComponent("SyncManifest.json")
+        guard !fileManager.fileExists(atPath: url.path) else { return }
+        try writeEncoded(CloudSyncManifest.current, to: url)
+    }
+
+    private func categoryPlaceholderName(for url: URL) -> String? {
+        let name = url.lastPathComponent
+        guard name.hasPrefix("."), name.hasSuffix(".icloud") else { return nil }
+        return String(name.dropFirst().dropLast(".icloud".count))
+    }
+
 }

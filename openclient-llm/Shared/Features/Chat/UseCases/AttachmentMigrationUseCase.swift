@@ -6,6 +6,7 @@
 //  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
 //
 
+import CryptoKit
 import Foundation
 
 // MARK: - Protocol
@@ -57,75 +58,115 @@ struct AttachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol {
 
         LogManager.info("AttachmentMigrationUseCase: starting migration")
         let conversationsURL = baseDirectory.appendingPathComponent("Conversations", isDirectory: true)
-
-        guard let fileURLs = try? fileManager.contentsOfDirectory(
-            at: conversationsURL,
-            includingPropertiesForKeys: nil,
-            options: .skipsHiddenFiles
-        ) else {
+        guard fileManager.fileExists(atPath: conversationsURL.path) else {
             LogManager.info("AttachmentMigrationUseCase: no conversations directory found")
             markDone()
             return
         }
 
+        let fileURLs: [URL]
+        do {
+            let values = try conversationsURL.resourceValues(forKeys: [.isDirectoryKey])
+            guard values.isDirectory == true else {
+                LogManager.error("AttachmentMigrationUseCase: conversations path is not a directory")
+                return
+            }
+            fileURLs = try fileManager.contentsOfDirectory(
+                at: conversationsURL,
+                includingPropertiesForKeys: nil,
+                options: .skipsHiddenFiles
+            )
+        } catch {
+            LogManager.error("AttachmentMigrationUseCase: failed to enumerate conversations")
+            return
+        }
+
         var migratedCount = 0
+        var hasFailure = false
         for url in fileURLs where url.pathExtension == "json" {
             let conversationId = UUID(uuidString: url.deletingPathExtension().lastPathComponent)
-            if migrateConversationFile(at: url, conversationId: conversationId) {
+            switch migrateConversationFile(at: url, conversationId: conversationId) {
+            case .migrated:
                 migratedCount += 1
+            case .failed:
+                hasFailure = true
+            case .unchanged:
+                break
             }
         }
 
         LogManager.success("AttachmentMigrationUseCase: migrated \(migratedCount) conversations")
-        markDone()
+        if !hasFailure {
+            markDone()
+        }
     }
 }
 
 // MARK: - Private
 
 private extension AttachmentMigrationUseCase {
-    /// Migrates a single conversation JSON file. Returns `true` if the file was modified.
-    @discardableResult
-    func migrateConversationFile(at url: URL, conversationId: UUID?) -> Bool {
+    enum MigrationResult {
+        case unchanged
+        case migrated
+        case failed
+    }
+
+    struct MessageMigration {
+        let messages: [[String: Any]]
+        let attachments: [PlannedAttachment]
+        let hasFailure: Bool
+    }
+
+    struct PlannedAttachment {
+        let attachment: ChatMessage.Attachment
+        let data: Data
+        let relativePath: String
+    }
+
+    func migrateConversationFile(at url: URL, conversationId: UUID?) -> MigrationResult {
         guard let rawData = try? Data(contentsOf: url),
               var root = try? JSONSerialization.jsonObject(with: rawData) as? [String: Any] else {
-            return false
+            return .failed
         }
 
-        guard var messages = root["messages"] as? [[String: Any]] else { return false }
-
-        var didModify = false
-        let folderId = conversationId ?? UUID()
-
-        for messageIndex in messages.indices {
-            guard var attachments = messages[messageIndex]["attachments"] as? [[String: Any]] else { continue }
-
-            for attachmentIndex in attachments.indices {
-                guard let updated = migrateAttachment(attachments[attachmentIndex], folderId: folderId) else {
-                    continue
-                }
-                attachments[attachmentIndex] = updated
-                didModify = true
-            }
-
-            messages[messageIndex]["attachments"] = attachments
+        guard let messages = root["messages"] as? [[String: Any]] else { return .failed }
+        guard let folderId = conversationId
+            ?? (root["id"] as? String).flatMap(UUID.init(uuidString:)) else {
+            return .failed
+        }
+        if containsLegacyAttachment(in: messages),
+           !preserveForRecovery(rawData, conversationId: folderId) {
+            return .failed
         }
 
-        guard didModify else { return false }
-
-        root["messages"] = messages
+        let migration = planMessages(messages, folderId: folderId)
+        guard !migration.attachments.isEmpty else { return migration.hasFailure ? .failed : .unchanged }
+        guard !migration.hasFailure else { return .failed }
+        guard preflight(migration.attachments), persist(migration.attachments, folderId: folderId) else {
+            return .failed
+        }
+        root["messages"] = migration.messages
 
         guard let updatedData = try? JSONSerialization.data(
             withJSONObject: root,
             options: [.prettyPrinted, .sortedKeys]
-        ) else { return false }
+        ) else { return .failed }
 
         do {
             try updatedData.write(to: url, options: .atomic)
-            return true
+            guard try Data(contentsOf: url) == updatedData,
+                  verifyMigratedData(
+                    updatedData,
+                    conversationId: folderId,
+                    migratedAttachments: migration.attachments
+                  ) else {
+                try rawData.write(to: url, options: .atomic)
+                return .failed
+            }
+            return .migrated
         } catch {
             LogManager.error("AttachmentMigrationUseCase: failed to write migrated file: \(error)")
-            return false
+            return .failed
         }
     }
 
@@ -133,9 +174,81 @@ private extension AttachmentMigrationUseCase {
         userDefaults.set(true, forKey: Self.migrationKey)
     }
 
-    /// Migrates a single attachment dict. Returns the updated dict if migration was performed, nil otherwise.
-    func migrateAttachment(_ attachment: [String: Any], folderId: UUID) -> [String: Any]? {
-        // Only process legacy entries that have "data" but no "fileRelativePath"
+    func planMessages(_ source: [[String: Any]], folderId: UUID) -> MessageMigration {
+        var messages = source
+        var plannedAttachments: [PlannedAttachment] = []
+        var hasFailure = false
+        for messageIndex in messages.indices {
+            guard var attachments = messages[messageIndex]["attachments"] as? [[String: Any]] else { continue }
+            for attachmentIndex in attachments.indices {
+                let attachment = attachments[attachmentIndex]
+                guard attachment["data"] != nil, attachment["fileRelativePath"] == nil else { continue }
+                guard let planned = plannedAttachment(attachment, folderId: folderId) else {
+                    hasFailure = true
+                    continue
+                }
+                var updated = attachment
+                updated.removeValue(forKey: "data")
+                updated["fileRelativePath"] = planned.relativePath
+                updated["mimeType"] = planned.attachment.mimeType
+                attachments[attachmentIndex] = updated
+                plannedAttachments.append(planned)
+            }
+            messages[messageIndex]["attachments"] = attachments
+        }
+        return MessageMigration(messages: messages, attachments: plannedAttachments, hasFailure: hasFailure)
+    }
+
+    func containsLegacyAttachment(in messages: [[String: Any]]) -> Bool {
+        messages.contains { message in
+            guard let attachments = message["attachments"] as? [[String: Any]] else { return false }
+            return attachments.contains { $0["data"] != nil && $0["fileRelativePath"] == nil }
+        }
+    }
+
+    func preserveForRecovery(_ data: Data, conversationId: UUID) -> Bool {
+        let directory = baseDirectory
+            .appendingPathComponent("ConversationRecovery/Migrations/Attachments", isDirectory: true)
+        let digest = SHA256.hash(data: data).prefix(8).map { String(format: "%02x", $0) }.joined()
+        let url = directory.appendingPathComponent("\(conversationId.uuidString)-\(digest).json")
+        do {
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            if !fileManager.fileExists(atPath: url.path) {
+                try data.write(to: url, options: .atomic)
+            }
+            return try Data(contentsOf: url) == data
+        } catch {
+            return false
+        }
+    }
+
+    func verifyMigratedData(
+        _ data: Data,
+        conversationId: UUID,
+        migratedAttachments: [PlannedAttachment]
+    ) -> Bool {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              (root["id"] as? String).flatMap(UUID.init(uuidString:)) == conversationId,
+              let messages = root["messages"] as? [[String: Any]] else {
+            return false
+        }
+        guard messages.allSatisfy({ message in
+            guard let attachments = message["attachments"] as? [[String: Any]] else { return true }
+            return attachments.allSatisfy { attachment in
+                guard attachment["data"] == nil,
+                      let path = attachment["fileRelativePath"] as? String else { return false }
+                let components = (path as NSString).pathComponents
+                return components.count == 3
+                    && components[0] == "Attachments"
+                    && UUID(uuidString: components[1]) == conversationId
+            }
+        }) else { return false }
+        return migratedAttachments.allSatisfy { planned in
+            (try? attachmentRepository.load(attachment: planned.attachment)) == planned.data
+        }
+    }
+
+    func plannedAttachment(_ attachment: [String: Any], folderId: UUID) -> PlannedAttachment? {
         guard let base64String = attachment["data"] as? String,
               attachment["fileRelativePath"] == nil else { return nil }
 
@@ -145,34 +258,67 @@ private extension AttachmentMigrationUseCase {
             return nil
         }
 
-        let attachmentId = (attachment["id"] as? String).flatMap(UUID.init) ?? UUID()
+        guard let attachmentId = (attachment["id"] as? String).flatMap(UUID.init) else {
+            LogManager.warning("AttachmentMigrationUseCase: invalid attachment identifier")
+            return nil
+        }
         let fileName = attachment["fileName"] as? String ?? "attachment"
         let typeRaw = attachment["type"] as? String ?? "image"
         let attachmentType = ChatMessage.AttachmentType(rawValue: typeRaw) ?? .image
         let mimeType = ChatMessage.Attachment.inferMimeType(for: attachmentType, fileName: fileName)
 
-        let placeholder = ChatMessage.Attachment(
+        let relativePath = ConversationAttachmentPath.relativePath(
+            for: ChatMessage.Attachment(
+                id: attachmentId,
+                type: attachmentType,
+                fileName: fileName,
+                mimeType: mimeType,
+                fileRelativePath: ""
+            ),
+            conversationId: folderId
+        )
+        let persistedAttachment = ChatMessage.Attachment(
             id: attachmentId,
             type: attachmentType,
             fileName: fileName,
             mimeType: mimeType,
-            fileRelativePath: ""
+            fileRelativePath: relativePath
         )
+        return PlannedAttachment(attachment: persistedAttachment, data: binaryData, relativePath: relativePath)
+    }
 
-        guard let relativePath = try? attachmentRepository.save(
-            data: binaryData,
-            for: placeholder,
-            conversationId: folderId
-        ) else {
-            LogManager.error("AttachmentMigrationUseCase: failed to save attachment \(attachmentId)")
-            return nil
+    func preflight(_ attachments: [PlannedAttachment]) -> Bool {
+        var dataByPath: [String: Data] = [:]
+        let resolver = AttachmentFileResolver(fileManager: fileManager, baseURL: baseDirectory)
+        for planned in attachments {
+            if let existing = dataByPath[planned.relativePath], existing != planned.data {
+                return false
+            }
+            dataByPath[planned.relativePath] = planned.data
+            do {
+                let url = try resolver.resolve(relativePath: planned.relativePath)
+                if fileManager.fileExists(atPath: url.path), try Data(contentsOf: url) != planned.data {
+                    return false
+                }
+            } catch {
+                return false
+            }
         }
+        return true
+    }
 
-        var updated = attachment
-        updated.removeValue(forKey: "data")
-        updated["fileRelativePath"] = relativePath
-        updated["mimeType"] = mimeType
-        LogManager.debug("AttachmentMigrationUseCase: migrated attachment \(attachmentId) → \(relativePath)")
-        return updated
+    func persist(_ attachments: [PlannedAttachment], folderId: UUID) -> Bool {
+        for planned in attachments {
+            guard let savedPath = try? attachmentRepository.save(
+                data: planned.data,
+                for: planned.attachment,
+                conversationId: folderId
+            ), savedPath == planned.relativePath,
+            (try? attachmentRepository.load(attachment: planned.attachment)) == planned.data else {
+                LogManager.error("AttachmentMigrationUseCase: failed to persist attachment")
+                return false
+            }
+        }
+        return true
     }
 }
