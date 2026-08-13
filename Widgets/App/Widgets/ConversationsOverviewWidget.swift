@@ -126,6 +126,7 @@ private extension ConversationsOverviewWidgetView {
                 }
             }
         }
+        .frame(height: 30)
         .padding(.horizontal, 2.5)
     }
 
