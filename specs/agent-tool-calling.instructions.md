@@ -455,6 +455,8 @@ Each supported `MCPToolInfo` is wrapped in an `MCPTool` that conforms to `ChatTo
   description, and the complete canonical input schema. Changing any of them invalidates the prior policy.
 - Calls requiring approval are presented as one batch before any tool in that round starts. Decisions remain per call;
   permanent choices apply to every repeated call of the same tool and are persisted only when the user continues.
+- On iOS, the approval sheet uses the medium detent with internal scrolling. The accessible close action denies every
+  pending request without competing with the centered title.
 - Closing the review denies every pending call once. Stopping or leaving the chat cancels the pending authorization.
 - Tool availability, configuration identity, enablement, and policy are revalidated immediately before execution. A server
   configuration change also cancels the active agent so conversation data cannot cross endpoints.

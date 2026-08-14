@@ -26,23 +26,16 @@ struct MCPToolAuthorizationPresentationModifier: ViewModifier {
             }
             .sheet(isPresented: sheetBinding) {
                 if let batch = viewModel.mcpAuthorizationCoordinator.pendingBatch {
-                    authorizationView(batch, compact: false)
-                        .interactiveDismissDisabled()
-                        #if os(macOS)
-                        .frame(minWidth: 560, maxWidth: 560, minHeight: 620, maxHeight: 620)
-                        #endif
-                        #if os(iOS)
-                        .presentationDetents([.medium, .large])
-                        #endif
+                    sheetAuthorization(batch)
                 }
             }
             .onChange(of: scenePhase) { _, newPhase in
-                #if os(iOS)
+#if os(iOS)
                 if newPhase == .background,
                    viewModel.mcpAuthorizationCoordinator.pendingBatch != nil {
                     viewModel.send(.stopStreamingTapped)
                 }
-                #endif
+#endif
             }
     }
 }
@@ -103,5 +96,16 @@ private extension MCPToolAuthorizationPresentationModifier {
             onDismiss: { viewModel.send(.mcpAuthorizationDismissed(batchId: batch.id)) },
             onStop: { viewModel.send(.stopStreamingTapped) }
         )
+    }
+
+    @ViewBuilder
+    func sheetAuthorization(_ batch: MCPToolAuthorizationBatch) -> some View {
+        authorizationView(batch, compact: false)
+            .interactiveDismissDisabled()
+#if os(macOS)
+            .frame(minWidth: 560, maxWidth: 560, minHeight: 620, maxHeight: 620)
+#else
+            .presentationDetents([.medium])
+#endif
     }
 }

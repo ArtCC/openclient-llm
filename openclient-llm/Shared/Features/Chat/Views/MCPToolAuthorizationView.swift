@@ -38,9 +38,9 @@ struct MCPToolAuthorizationView: View {
                 footer
             }
             .navigationTitle(String(localized: "MCP Approval Required"))
-            #if os(iOS)
+#if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
-            #endif
+#endif
             .toolbar { closeToolbar }
         }
         .alert(item: $permanentRequest) { request in
@@ -243,7 +243,7 @@ private extension MCPToolAuthorizationView {
                 Button(role: .destructive, action: onStop) {
                     Text(String(localized: "Stop Response"))
                 }
-                    .buttonStyle(.bordered)
+                .buttonStyle(.bordered)
                 Button(String(localized: "Continue"), action: onSubmit)
                     .buttonStyle(.borderedProminent)
                     .disabled(!batch.isComplete || submissionError != nil)
@@ -256,20 +256,27 @@ private extension MCPToolAuthorizationView {
     @ToolbarContentBuilder
     var closeToolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
+#if os(iOS)
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+            }
+            .accessibilityLabel(String(localized: "Deny All & Close"))
+#else
             Button(String(localized: "Deny All & Close"), action: onDismiss)
+#endif
         }
     }
 
     func permanentPermissionAlert(_ request: PermanentPermissionRequest) -> Alert {
         let isAllowing = request.decision == .alwaysAllow
         let title = isAllowing
-            ? String(localized: "Always Allow \(request.toolName)?")
-            : String(localized: "Always Deny \(request.toolName)?")
+        ? String(localized: "Always Allow \(request.toolName)?")
+        : String(localized: "Always Deny \(request.toolName)?")
         let message = isAllowing
-            ? String(localized: """
+        ? String(localized: """
                 If you continue, future calls can execute without confirmation for this configuration.
                 """)
-            : String(localized: "If you continue, future calls will be blocked for this server configuration.")
+        : String(localized: "If you continue, future calls will be blocked for this server configuration.")
         let confirmButton: Alert.Button
         if isAllowing {
             confirmButton = .default(Text(String(localized: "Confirm"))) {
