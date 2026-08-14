@@ -96,7 +96,8 @@ private extension ConversationsOverviewWidgetView {
     var header: some View {
         HStack(alignment: .center) {
             Text(String(localized: "Recent"))
-                .font(.headline)
+                .font(.subheadline)
+                .fontWeight(.semibold)
                 .foregroundStyle(.primary)
             Spacer()
             HStack(spacing: 5) {
@@ -126,7 +127,6 @@ private extension ConversationsOverviewWidgetView {
                 }
             }
         }
-        .frame(height: 30)
         .padding(.horizontal, 2.5)
     }
 

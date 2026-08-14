@@ -117,12 +117,12 @@ private extension TaggedConversationsWidgetView {
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Color.accentColor)
             Text(entry.tag)
-                .font(.headline)
+                .font(.subheadline)
+                .fontWeight(.semibold)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
             Spacer()
         }
-        .frame(height: 30)
         .padding(.horizontal, 2.5)
     }
 

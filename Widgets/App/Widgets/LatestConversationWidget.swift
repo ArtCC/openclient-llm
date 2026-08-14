@@ -91,11 +91,11 @@ private extension LatestConversationWidgetView {
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Color.accentColor)
             Text(String(localized: "Continue"))
-                .font(.headline)
+                .font(.subheadline)
+                .fontWeight(.semibold)
                 .foregroundStyle(.primary)
             Spacer()
         }
-        .frame(height: 30)
         .padding(.horizontal, 2.5)
     }
 
@@ -119,7 +119,7 @@ private extension LatestConversationWidgetView {
                             .foregroundStyle(.tertiary)
                     }
                     Text(conversation.title.isEmpty ? String(localized: "New Chat") : conversation.title)
-                        .font(.subheadline)
+                        .font(.caption)
                         .fontWeight(.semibold)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
@@ -139,6 +139,7 @@ private extension LatestConversationWidgetView {
                 }
                 .padding(2.5)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
