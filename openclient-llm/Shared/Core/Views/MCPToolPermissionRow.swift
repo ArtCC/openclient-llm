@@ -28,14 +28,16 @@ struct MCPToolPermissionRow: View {
                         Text(description)
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                            .lineLimit(2)
+                            .lineLimit(3)
                     }
                 }
             }
             .disabled(!isAvailable)
 
             if isAvailable {
-                LabeledContent(String(localized: "Permission")) {
+                HStack(spacing: 16) {
+                    Text(String(localized: "Permission"))
+                    Spacer(minLength: 0)
                     Picker(
                         String(localized: "Permission"),
                         selection: Binding(
@@ -50,10 +52,15 @@ struct MCPToolPermissionRow: View {
                     }
                     .labelsHidden()
                     .pickerStyle(.menu)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .layoutPriority(1)
                 }
                 .font(.subheadline)
             } else {
-                LabeledContent(String(localized: "Permission")) {
+                HStack(spacing: 16) {
+                    Text(String(localized: "Permission"))
+                    Spacer(minLength: 0)
                     Label(String(localized: "Unavailable"), systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.secondary)
                 }
@@ -65,6 +72,7 @@ struct MCPToolPermissionRow: View {
                 .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .contain)
     }
 }

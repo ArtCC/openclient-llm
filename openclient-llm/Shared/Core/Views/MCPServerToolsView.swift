@@ -76,7 +76,14 @@ private extension MCPServerToolsView {
             .toggleStyle(.switch)
             .disabled(!isServerAvailable || configurableTools.isEmpty)
 
-            LabeledContent {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(String(localized: "Permission"))
+                    Text(String(localized: "All"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
                 Menu {
                     ForEach(MCPToolPermission.allCases, id: \.self) { option in
                         Button {
@@ -93,13 +100,6 @@ private extension MCPServerToolsView {
                         commonPermission?.title ?? String(localized: "Custom"),
                         systemImage: commonPermission?.systemImage ?? "slider.horizontal.3"
                     )
-                }
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(String(localized: "Permission"))
-                    Text(String(localized: "All"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
                 }
             }
             .disabled(!isServerAvailable || configurableTools.isEmpty)
