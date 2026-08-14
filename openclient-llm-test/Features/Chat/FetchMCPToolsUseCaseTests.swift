@@ -96,10 +96,110 @@ final class FetchMCPToolsUseCaseTests: XCTestCase {
         XCTAssertEqual(result.tools.map(\.serverId), ["good"])
         XCTAssertNotNil(result.errorMessage)
     }
+
+    func test_execute_multipleServers_startsConcurrentlyAndPreservesServerOrder() async {
+        // Given
+        let servers = [
+            MCPServerInfo(serverId: "first", serverName: "First", description: nil, allowedTools: nil),
+            MCPServerInfo(serverId: "second", serverName: "Second", description: nil, allowedTools: nil)
+        ]
+        let gate = MCPDiscoveryGate()
+        let settings = MockSettingsManager()
+        settings.serverBaseURL = "https://example.com"
+        let sut = FetchMCPToolsUseCase(
+            repository: ControlledMCPRepository(servers: servers, gate: gate),
+            settingsManager: settings
+        )
+        let task = Task { await sut.execute() }
+
+        // When
+        for _ in 0..<100 {
+            if await gate.startedCount == 2 { break }
+            await Task.yield()
+        }
+        let startedCount = await gate.startedCount
+        await gate.resume(serverId: "second", toolName: "second_tool")
+        await gate.resume(serverId: "first", toolName: "first_tool")
+        let result = await task.value
+
+        // Then
+        XCTAssertEqual(startedCount, 2)
+        XCTAssertEqual(result.tools.map(\.name), ["first_tool", "second_tool"])
+    }
+
+    func test_execute_configurationChangesDuringDiscovery_discardsResult() async {
+        // Given
+        let server = MCPServerInfo(serverId: "server", serverName: "Server", description: nil, allowedTools: nil)
+        let gate = MCPDiscoveryGate()
+        let settings = MockSettingsManager()
+        settings.serverBaseURL = "https://example.com"
+        settings.apiKey = "first-key"
+        let sut = FetchMCPToolsUseCase(
+            repository: ControlledMCPRepository(servers: [server], gate: gate),
+            settingsManager: settings
+        )
+        let task = Task { await sut.execute() }
+        for _ in 0..<100 {
+            if await gate.startedCount == 1 { break }
+            await Task.yield()
+        }
+
+        // When
+        settings.apiKey = "second-key"
+        await gate.resume(serverId: server.serverId, toolName: "stale_tool")
+        let result = await task.value
+
+        // Then
+        XCTAssertTrue(result.servers.isEmpty)
+        XCTAssertTrue(result.tools.isEmpty)
+    }
 }
 
-// Safety: Only used within serialized @MainActor test methods.
-private final class MockMCPRepository: MCPRepositoryProtocol, @unchecked Sendable {
+@MainActor
+private struct ControlledMCPRepository: MCPRepositoryProtocol {
+    let servers: [MCPServerInfo]
+    let gate: MCPDiscoveryGate
+
+    func fetchServers() async throws -> [MCPServerInfo] { servers }
+
+    func fetchTools(serverId: String) async throws -> [MCPToolInfo] {
+        await gate.wait(serverId: serverId)
+    }
+
+    func executeTool(serverId: String, toolName: String, arguments: String) async throws -> String { "" }
+}
+
+private actor MCPDiscoveryGate {
+    private(set) var startedCount = 0
+    private var continuations: [String: CheckedContinuation<[MCPToolInfo], Never>] = [:]
+    private var queuedTools: [String: [MCPToolInfo]] = [:]
+
+    func wait(serverId: String) async -> [MCPToolInfo] {
+        startedCount += 1
+        if let tools = queuedTools.removeValue(forKey: serverId) { return tools }
+        return await withCheckedContinuation { continuation in
+            continuations[serverId] = continuation
+        }
+    }
+
+    func resume(serverId: String, toolName: String) {
+        let tools = [MCPToolInfo(
+            name: toolName,
+            description: nil,
+            serverId: "",
+            serverName: "",
+            inputSchema: nil
+        )]
+        if let continuation = continuations.removeValue(forKey: serverId) {
+            continuation.resume(returning: tools)
+        } else {
+            queuedTools[serverId] = tools
+        }
+    }
+}
+
+@MainActor
+private final class MockMCPRepository: MCPRepositoryProtocol {
     let servers: [MCPServerInfo]
     let toolsByServerId: [String: [MCPToolInfo]]
     let failingServerIds: Set<String>

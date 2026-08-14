@@ -1,0 +1,138 @@
+//
+//  MCPServerToolsView.swift
+//  openclient-llm
+//
+//  Created by Arturo Carretero Calvo on 14/08/2026.
+//  Copyright © 2026 Arturo Carretero Calvo. All rights reserved.
+//
+
+import SwiftUI
+
+struct MCPServerToolsView: View {
+    let tools: [MCPToolInfo]
+    let isServerAvailable: Bool
+    let enabledToolIds: Set<String>
+    let permissions: [String: MCPToolPermission]
+    let onToolEnabledChanged: @MainActor @Sendable (String, Bool) -> Void
+    let onPermissionChanged: @MainActor @Sendable (String, MCPToolPermission) -> Void
+    let onRetry: @MainActor @Sendable () -> Void
+
+    var body: some View {
+        if tools.isEmpty {
+            MCPServerToolsEmptyView(didFail: !isServerAvailable, onRetry: onRetry)
+        } else {
+            List {
+                availabilitySection
+                enableAllSection
+                toolRowsSection
+            }
+        }
+    }
+}
+
+private extension MCPServerToolsView {
+    var configurableTools: [MCPToolInfo] { tools.filter(\.isInputSchemaSupported) }
+
+    var allEnabled: Bool {
+        !configurableTools.isEmpty && configurableTools.allSatisfy { enabledToolIds.contains($0.id) }
+    }
+
+    @ViewBuilder
+    var availabilitySection: some View {
+        if !isServerAvailable {
+            Section {
+                Label(
+                    String(localized: "These tools are unavailable until this server refreshes successfully."),
+                    systemImage: "exclamationmark.triangle"
+                )
+                .foregroundStyle(.red)
+            }
+        }
+    }
+
+    var enableAllSection: some View {
+        Section {
+            Toggle(isOn: Binding(
+                get: { allEnabled },
+                set: { enabled in
+                    for tool in configurableTools {
+                        onToolEnabledChanged(tool.id, enabled)
+                    }
+                }
+            )) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(String(localized: "Enable All Tools"))
+                        .font(.headline)
+                    Text(isServerAvailable
+                        ? availableToolCountText(configurableTools.count)
+                        : String(localized: "Tools unavailable"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .toggleStyle(.switch)
+            .disabled(!isServerAvailable || configurableTools.isEmpty)
+        }
+    }
+
+    var toolRowsSection: some View {
+        Section {
+            ForEach(tools) { tool in
+                MCPToolPermissionRow(
+                    tool: tool,
+                    isEnabled: enabledToolIds.contains(tool.id),
+                    isAvailable: isServerAvailable && tool.isInputSchemaSupported,
+                    permission: permissions[tool.id] ?? .ask,
+                    onEnabledChanged: { onToolEnabledChanged(tool.id, $0) },
+                    onPermissionChanged: { onPermissionChanged(tool.id, $0) }
+                )
+            }
+        } footer: {
+            Text(String(localized: """
+                Permissions apply to this device and the current MCP server configuration.
+                """))
+        }
+    }
+
+    func availableToolCountText(_ count: Int) -> String {
+        count == 1
+            ? String(localized: "1 tool available")
+            : String(localized: "\(count) tools available")
+    }
+}
+
+#Preview {
+    MCPServerToolsView(
+        tools: [MCPToolInfo(
+            name: "create_issue",
+            description: "Create an issue in a repository",
+            serverId: "github",
+            serverName: "GitHub",
+            inputSchema: nil
+        )],
+        isServerAvailable: true,
+        enabledToolIds: [],
+        permissions: [:],
+        onToolEnabledChanged: { _, _ in },
+        onPermissionChanged: { _, _ in },
+        onRetry: {}
+    )
+}
+
+#Preview("Unavailable") {
+    MCPServerToolsView(
+        tools: [MCPToolInfo(
+            name: "create_issue",
+            description: "Create an issue in a repository",
+            serverId: "github",
+            serverName: "GitHub",
+            inputSchema: nil
+        )],
+        isServerAvailable: false,
+        enabledToolIds: [],
+        permissions: [:],
+        onToolEnabledChanged: { _, _ in },
+        onPermissionChanged: { _, _ in },
+        onRetry: {}
+    )
+}

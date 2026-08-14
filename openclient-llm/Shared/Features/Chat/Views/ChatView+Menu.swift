@@ -46,6 +46,7 @@ extension ChatView {
 
 extension ChatView {
     func menuActions(for loadedSt: ChatViewModel.LoadedState) -> [MenuAction] {
+        guard !loadedSt.isStreaming else { return [] }
         var items: [MenuAction] = []
         if loadedSt.conversation != nil, !loadedSt.messages.isEmpty {
             items.append(.export)
@@ -59,5 +60,14 @@ extension ChatView {
         items.append(.modelParameters)
         items.append(.systemPrompt)
         return items.sorted { $0.title.localizedCompare($1.title) == .orderedAscending }
+    }
+
+    var chatOptionsTip: ChatOptionsTip? {
+        guard case .loaded(let loadedState) = viewModel.state,
+              loadedState.conversation != nil,
+              !loadedState.isStreaming else {
+            return nil
+        }
+        return AppTips.chatOptions
     }
 }

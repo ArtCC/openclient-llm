@@ -44,6 +44,41 @@ nonisolated struct ToolParameters: Codable, Sendable {
     let type: String
     let properties: [String: ToolParameterProperty]
     let required: [String]
+    let additionalProperties: ToolAdditionalProperties?
+
+    init(
+        type: String,
+        properties: [String: ToolParameterProperty],
+        required: [String],
+        additionalProperties: ToolAdditionalProperties? = nil
+    ) {
+        self.type = type
+        self.properties = properties
+        self.required = required
+        self.additionalProperties = additionalProperties
+    }
+}
+
+nonisolated indirect enum ToolAdditionalProperties: Codable, Sendable {
+    case allowed(Bool)
+    case schema(ToolParameterProperty)
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let value = try? container.decode(Bool.self) {
+            self = .allowed(value)
+        } else {
+            self = try .schema(container.decode(ToolParameterProperty.self))
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .allowed(let value): try container.encode(value)
+        case .schema(let schema): try container.encode(schema)
+        }
+    }
 }
 
 // MARK: - ToolParameterProperty
@@ -56,6 +91,7 @@ nonisolated final class ToolParameterProperty: Codable, @unchecked Sendable {
     let items: ToolParameterProperty?
     let required: [String]?
     let `enum`: [String]?
+    let additionalProperties: ToolAdditionalProperties?
 
     init(
         type: String,
@@ -63,7 +99,8 @@ nonisolated final class ToolParameterProperty: Codable, @unchecked Sendable {
         properties: [String: ToolParameterProperty]? = nil,
         items: ToolParameterProperty? = nil,
         required: [String]? = nil,
-        `enum`: [String]? = nil
+        `enum`: [String]? = nil,
+        additionalProperties: ToolAdditionalProperties? = nil
     ) {
         self.type = type
         self.description = description
@@ -71,6 +108,7 @@ nonisolated final class ToolParameterProperty: Codable, @unchecked Sendable {
         self.items = items
         self.required = required
         self.enum = `enum`
+        self.additionalProperties = additionalProperties
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -80,6 +118,7 @@ nonisolated final class ToolParameterProperty: Codable, @unchecked Sendable {
         case items
         case required
         case `enum`
+        case additionalProperties
     }
 
     init(from decoder: Decoder) throws {
@@ -93,5 +132,9 @@ nonisolated final class ToolParameterProperty: Codable, @unchecked Sendable {
         items = try container.decodeIfPresent(ToolParameterProperty.self, forKey: .items)
         required = try container.decodeIfPresent([String].self, forKey: .required)
         self.enum = try container.decodeIfPresent([String].self, forKey: .enum)
+        additionalProperties = try container.decodeIfPresent(
+            ToolAdditionalProperties.self,
+            forKey: .additionalProperties
+        )
     }
 }

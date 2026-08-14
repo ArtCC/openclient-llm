@@ -17,6 +17,7 @@ final class MenuBarManager: NSObject {
 
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
+    private var isAuthorizationPending = false
 
     // MARK: - Public
 
@@ -37,13 +38,19 @@ final class MenuBarManager: NSObject {
         pop.contentSize = NSSize(width: 380, height: 540)
         pop.behavior = .transient
         pop.contentViewController = NSHostingController(
-            rootView: MenuBarChatView { [weak self] in
-                self?.popover?.performClose(nil)
-                NSApplication.shared.activate()
-                NSApplication.shared.windows
-                    .first { !($0 is NSPanel) }?
-                    .makeKeyAndOrderFront(nil)
-            }
+            rootView: MenuBarChatView(
+                onOpenInApp: { [weak self] in
+                    self?.popover?.performClose(nil)
+                    NSApplication.shared.activate()
+                    NSApplication.shared.windows
+                        .first { !($0 is NSPanel) }?
+                        .makeKeyAndOrderFront(nil)
+                },
+                onAuthorizationStateChanged: { [weak self, weak pop] isPending in
+                    self?.isAuthorizationPending = isPending
+                    pop?.behavior = isPending ? .applicationDefined : .transient
+                }
+            )
         )
 
         statusItem = item
@@ -55,6 +62,10 @@ final class MenuBarManager: NSObject {
     @objc private func togglePopover(_ sender: AnyObject?) {
         guard let popover, let button = statusItem?.button else { return }
         if popover.isShown {
+            guard !isAuthorizationPending else {
+                NSSound.beep()
+                return
+            }
             popover.performClose(sender)
         } else {
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)

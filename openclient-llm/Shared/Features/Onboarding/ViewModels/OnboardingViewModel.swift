@@ -41,6 +41,7 @@ final class OnboardingViewModel {
 #endif
         var connectionStatus: ConnectionStatus = .idle
         var showLiteLLMHint: Bool = false
+        var persistenceFailureCount: Int = 0
     }
 
     enum ConnectionStatus: Equatable {
@@ -186,11 +187,18 @@ private extension OnboardingViewModel {
     }
 
     func handleComplete() {
-        guard case .loaded(let loadedState) = state else { return }
-        saveServerConfigurationUseCase.execute(
+        guard case .loaded(var loadedState) = state else { return }
+        guard saveServerConfigurationUseCase.execute(
             serverURL: loadedState.serverURL,
             apiKey: loadedState.apiKey
-        )
+        ) else {
+            loadedState.persistenceFailureCount += 1
+            loadedState.connectionStatus = .failure(
+                String(localized: "The server configuration could not be saved.")
+            )
+            state = .loaded(loadedState)
+            return
+        }
         completeOnboardingUseCase.execute()
         Task { await requestNotificationPermissionUseCase.execute() }
         onComplete?()

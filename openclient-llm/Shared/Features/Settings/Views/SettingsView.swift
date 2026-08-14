@@ -272,6 +272,9 @@ private extension SettingsView {
             serverURLField()
             apiKeyField()
             connectionStatusView(loadedState.connectionStatus)
+            if let error = loadedState.serverPersistenceError {
+                SettingsPersistenceErrorView(message: error, attempt: loadedState.serverPersistenceFailureCount)
+            }
             Button {
                 focusedField = nil
                 viewModel.send(.testConnectionTapped)

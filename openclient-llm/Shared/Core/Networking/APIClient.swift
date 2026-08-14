@@ -8,64 +8,12 @@
 
 import Foundation
 
-struct MultipartFileData: Sendable {
-    let field: String
-    let data: Data
-    let fileName: String
-    let mimeType: String
-}
-
-protocol APIClientProtocol: Sendable {
-    func request<T: Decodable & Sendable>(
-        endpoint: String,
-        method: HTTPMethod,
-        body: (any Encodable & Sendable)?,
-        timeoutInterval: TimeInterval
-    ) async throws -> T
-    func streamRequest(
-        endpoint: String,
-        body: any Encodable & Sendable
-    ) -> AsyncThrowingStream<Data, Error>
-    func multipartRequest<T: Decodable & Sendable>(
-        endpoint: String,
-        fields: [String: String],
-        file: MultipartFileData
-    ) async throws -> T
-    func rawDataRequest(
-        endpoint: String,
-        body: any Encodable & Sendable
-    ) async throws -> Data
-    func downloadData(from url: URL) async throws -> (data: Data, mimeType: String)
-    func searchRequest(
-        toolName: String,
-        body: LiteLLMSearchRequest
-    ) async throws -> LiteLLMSearchResponse
-    func fetchSearchTools() async throws -> SearchToolsResponse
-    func listMCPServers() async throws -> [MCPServerInfo]
-    func listMCPTools(serverId: String) async throws -> [MCPToolInfo]
-    func callMCPTool(serverId: String, toolName: String, arguments: String) async throws -> String
-}
-
-extension APIClientProtocol {
-    func request<T: Decodable & Sendable>(
-        endpoint: String,
-        method: HTTPMethod,
-        body: (any Encodable & Sendable)?
-    ) async throws -> T {
-        try await request(endpoint: endpoint, method: method, body: body, timeoutInterval: 60)
-    }
-}
-
-enum HTTPMethod: String, Sendable {
-    case get = "GET"
-    case post = "POST"
-}
-
 struct APIClient: APIClientProtocol, Sendable {
     // MARK: - Properties
 
     private let session: URLSession
-    private let settingsManager: SettingsManagerProtocol
+    private let serverBaseURLProvider: @MainActor @Sendable () -> String
+    private let apiKeyProvider: @MainActor @Sendable () -> String
 
     // MARK: - Init
 
@@ -74,7 +22,18 @@ struct APIClient: APIClientProtocol, Sendable {
         settingsManager: SettingsManagerProtocol = SettingsManager()
     ) {
         self.session = session
-        self.settingsManager = settingsManager
+        self.serverBaseURLProvider = { settingsManager.getServerBaseURL() }
+        self.apiKeyProvider = { settingsManager.getAPIKey() }
+    }
+
+    init(
+        session: URLSession = .shared,
+        serverBaseURL: String,
+        apiKey: String
+    ) {
+        self.session = session
+        self.serverBaseURLProvider = { serverBaseURL }
+        self.apiKeyProvider = { apiKey }
     }
 
     // MARK: - Public
@@ -176,7 +135,7 @@ struct APIClient: APIClientProtocol, Sendable {
         file: MultipartFileData
     ) async throws -> T {
         LogManager.network("→ MULTIPART POST /\(endpoint) file=\(file.fileName) (\(file.data.count) bytes)")
-        let baseURL = settingsManager.getServerBaseURL()
+        let baseURL = serverBaseURLProvider()
         guard let url = URL(string: baseURL)?.appendingPathComponent(endpoint) else {
             LogManager.error("Invalid URL for multipart /\(endpoint)")
             throw APIError.invalidURL
@@ -188,7 +147,7 @@ struct APIClient: APIClientProtocol, Sendable {
         request.timeoutInterval = 125
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
 
-        let apiKey = settingsManager.getAPIKey()
+        let apiKey = apiKeyProvider()
         if !apiKey.isEmpty {
             request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         }
@@ -271,7 +230,9 @@ struct APIClient: APIClientProtocol, Sendable {
                 description: tool.description,
                 serverId: serverId,
                 serverName: serverId,
-                inputSchema: tool.inputSchema
+                inputSchema: tool.inputSchema,
+                rawInputSchemaData: tool.rawInputSchemaData,
+                isInputSchemaSupported: tool.isInputSchemaSupported
             )
         }
         LogManager.success("listMCPTools server=\(serverId) tools=\(tools.count)")
@@ -343,7 +304,7 @@ private extension APIClient {
         queryItems: [URLQueryItem]? = nil,
         timeoutInterval: TimeInterval = 60
     ) throws -> URLRequest {
-        let baseURL = settingsManager.getServerBaseURL()
+        let baseURL = serverBaseURLProvider()
 
         let url: URL
         if let queryItems, !queryItems.isEmpty {
@@ -370,7 +331,7 @@ private extension APIClient {
         request.httpMethod = method.rawValue
         request.timeoutInterval = timeoutInterval
 
-        let apiKey = settingsManager.getAPIKey()
+        let apiKey = apiKeyProvider()
         if !apiKey.isEmpty {
             request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         }

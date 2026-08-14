@@ -9,6 +9,10 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 ## [1.6.20-build-73] - 2026-08-14
 
+### Added
+
+- **Per-tool MCP permissions and approval** — users can set each tool to Always Allow, Ask, or Deny and review requested MCP calls together before execution
+
 ### Fixed
 
 - Conversation widgets now use more compact typography and balanced header spacing to prevent compressed or crowded layouts

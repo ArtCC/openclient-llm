@@ -8,48 +8,6 @@
 
 import Foundation
 
-protocol SettingsManagerProtocol: Sendable {
-    func getIsOnboardingCompleted() -> Bool
-    func setIsOnboardingCompleted(_ value: Bool)
-    func getServerBaseURL() -> String
-    func setServerBaseURL(_ value: String)
-    func getAPIKey() -> String
-    func setAPIKey(_ value: String)
-    func getSelectedModelId() -> String?
-    func setSelectedModelId(_ value: String?)
-    func getIsCloudSyncEnabled() -> Bool
-    func setIsCloudSyncEnabled(_ value: Bool)
-    func getLastSuccessfulCloudSyncDate() -> Date?
-    func setLastSuccessfulCloudSyncDate(_ value: Date)
-    func getAcceptedCloudAccountFingerprint() -> String?
-    func setAcceptedCloudAccountFingerprint(_ value: String)
-    func getShowTokenUsage() -> Bool
-    func setShowTokenUsage(_ value: Bool)
-    func getIsWebSearchEnabled() -> Bool
-    func setIsWebSearchEnabled(_ value: Bool)
-    func getSelectedTTSModelId() -> String?
-    func setSelectedTTSModelId(_ value: String?)
-    func getSelectedTTSVoice(forModelId modelId: String) -> String
-    func setSelectedTTSVoice(_ voice: String, forModelId modelId: String)
-    func getSelectedSTTModelId() -> String?
-    func setSelectedSTTModelId(_ value: String?)
-    func getWebSearchToolName() -> String
-    func setWebSearchToolName(_ value: String)
-    func getWebSearchMaxResults() -> Int
-    func setWebSearchMaxResults(_ value: Int)
-    func getAvailableSearchTools() -> [SearchToolItem]
-    func setAvailableSearchTools(_ tools: [SearchToolItem])
-    func getIsPrivacyScreenEnabled() -> Bool
-    func setIsPrivacyScreenEnabled(_ value: Bool)
-    func getHasEnoughConversationsForMemoryTip() -> Bool
-    func setHasEnoughConversationsForMemoryTip(_ value: Bool)
-    func getEnabledMCPToolIds() -> [String]
-    func setEnabledMCPToolIds(_ ids: [String])
-    func getDismissedRemoteBannerKey() -> String?
-    func setDismissedRemoteBannerKey(_ value: String?)
-    func deleteAll()
-}
-
 // Safety: UserDefaults is thread-safe per Apple documentation.
 // All stored properties are immutable (`let`).
 final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
@@ -71,6 +29,12 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         static let isPrivacyScreenEnabled = "isPrivacyScreenEnabled"
         static let hasEnoughConversationsForMemoryTip = "hasEnoughConversationsForMemoryTip"
         static let enabledMCPToolIds = "enabledMCPToolIds"
+        static let mcpToolPermissionPrefix = "mcpToolPermission."
+        static let mcpToolConfigurationPrefix = "mcpToolConfiguration."
+        static let mcpDiscoverySequence = "mcpDiscoverySequence"
+        static let publishedMCPDiscoverySequence = "publishedMCPDiscoverySequence"
+        static let failedMCPServerIds = "failedMCPServerIds"
+        static let mcpDiscoveryFailed = "mcpDiscoveryFailed"
         static let dismissedRemoteBannerKey = "dismissedRemoteBannerKey"
 
         static func ttsVoiceKey(forModelId modelId: String) -> String {
@@ -113,7 +77,7 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     }
 
     func setServerBaseURL(_ value: String) {
-        keychainManager.setServerBaseURL(value)
+        _ = setServerConfiguration(serverBaseURL: value, apiKey: keychainManager.getAPIKey())
     }
 
     func getAPIKey() -> String {
@@ -121,7 +85,34 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     }
 
     func setAPIKey(_ value: String) {
-        keychainManager.setAPIKey(value)
+        _ = setServerConfiguration(serverBaseURL: keychainManager.getServerBaseURL(), apiKey: value)
+    }
+
+    @discardableResult
+    func setServerConfiguration(serverBaseURL: String, apiKey: String) -> Bool {
+        let previousURL = keychainManager.getServerBaseURL()
+        let previousAPIKey = keychainManager.getAPIKey()
+        let endpointChanged = MCPToolInfo.normalizedServerURL(previousURL)
+            != MCPToolInfo.normalizedServerURL(serverBaseURL)
+        let credentialsChanged = previousAPIKey != apiKey
+
+        guard endpointChanged || credentialsChanged else {
+            guard previousURL != serverBaseURL else { return true }
+            return keychainManager.setServerConfiguration(serverBaseURL: serverBaseURL, apiKey: apiKey)
+        }
+        guard rotateMCPAuthorizationScope() else { return false }
+        _ = updateMCPToolConfigurationKeys([:])
+        let didSave = keychainManager.setServerConfiguration(serverBaseURL: serverBaseURL, apiKey: apiKey)
+        NotificationCenter.default.post(name: .mcpToolSettingsDidChange, object: nil)
+        return didSave
+    }
+
+    func getMCPAuthorizationScope() -> String {
+        if let scope = keychainManager.getMCPAuthorizationScope() { return scope }
+        let scope = UUID().uuidString
+        guard keychainManager.setMCPAuthorizationScope(scope),
+              keychainManager.getMCPAuthorizationScope() == scope else { return "" }
+        return scope
     }
 
     func getSelectedModelId() -> String? {
@@ -249,14 +240,6 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         defaults.set(value, forKey: Keys.hasEnoughConversationsForMemoryTip)
     }
 
-    func getEnabledMCPToolIds() -> [String] {
-        defaults.stringArray(forKey: Keys.enabledMCPToolIds) ?? []
-    }
-
-    func setEnabledMCPToolIds(_ ids: [String]) {
-        defaults.set(ids, forKey: Keys.enabledMCPToolIds)
-    }
-
     func getDismissedRemoteBannerKey() -> String? {
         defaults.string(forKey: Keys.dismissedRemoteBannerKey)
     }
@@ -282,6 +265,16 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         defaults.removeObject(forKey: Keys.isPrivacyScreenEnabled)
         defaults.removeObject(forKey: Keys.hasEnoughConversationsForMemoryTip)
         defaults.removeObject(forKey: Keys.enabledMCPToolIds)
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(Keys.mcpToolPermissionPrefix) {
+            defaults.removeObject(forKey: key)
+        }
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix(Keys.mcpToolConfigurationPrefix) {
+            defaults.removeObject(forKey: key)
+        }
+        defaults.removeObject(forKey: Keys.mcpDiscoverySequence)
+        defaults.removeObject(forKey: Keys.publishedMCPDiscoverySequence)
+        defaults.removeObject(forKey: Keys.failedMCPServerIds)
+        defaults.removeObject(forKey: Keys.mcpDiscoveryFailed)
         defaults.removeObject(forKey: Keys.dismissedRemoteBannerKey)
         defaults.removeObject(forKey: LegacyKeys.serverBaseURL)
         defaults.removeObject(forKey: LegacyKeys.apiKey)
@@ -292,18 +285,162 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     }
 }
 
+// MARK: - MCP settings
+
+extension SettingsManager {
+    func getEnabledMCPToolIds() -> [String] {
+        defaults.stringArray(forKey: Keys.enabledMCPToolIds) ?? []
+    }
+
+    func setEnabledMCPToolIds(_ ids: [String]) {
+        guard updateEnabledMCPToolIds(ids) else { return }
+        NotificationCenter.default.post(name: .mcpToolSettingsDidChange, object: nil)
+    }
+
+    func getMCPToolPermissionRawValue(for key: String) -> String? {
+        defaults.string(forKey: Keys.mcpToolPermissionPrefix + key)
+    }
+
+    func setMCPToolPermissionRawValue(_ value: String, for key: String) {
+        defaults.set(value, forKey: Keys.mcpToolPermissionPrefix + key)
+        NotificationCenter.default.post(name: .mcpToolSettingsDidChange, object: nil)
+    }
+
+    func getMCPToolConfigurationKey(for toolId: String) -> String? {
+        defaults.string(forKey: Keys.mcpToolConfigurationPrefix + toolId)
+    }
+
+    func setMCPToolConfigurationKey(_ key: String, for toolId: String) {
+        let storageKey = Keys.mcpToolConfigurationPrefix + toolId
+        guard defaults.string(forKey: storageKey) != key else { return }
+        defaults.set(key, forKey: storageKey)
+        NotificationCenter.default.post(name: .mcpToolSettingsDidChange, object: nil)
+    }
+
+    func replaceMCPToolConfigurationKeys(_ keys: [String: String]) {
+        guard updateMCPToolConfigurationKeys(keys) else { return }
+        NotificationCenter.default.post(name: .mcpToolSettingsDidChange, object: nil)
+    }
+
+    func beginMCPToolDiscovery() -> Int {
+        let currentRevision = max(
+            defaults.integer(forKey: Keys.mcpDiscoverySequence),
+            defaults.integer(forKey: Keys.publishedMCPDiscoverySequence)
+        )
+        let revision = currentRevision + 1
+        defaults.set(revision, forKey: Keys.mcpDiscoverySequence)
+        return revision
+    }
+
+    func getPublishedMCPToolDiscoveryRevision() -> Int {
+        defaults.integer(forKey: Keys.publishedMCPDiscoverySequence)
+    }
+
+    func getFailedMCPServerIds() -> Set<String> {
+        Set(defaults.stringArray(forKey: Keys.failedMCPServerIds) ?? [])
+    }
+
+    func getIsMCPDiscoveryFailed() -> Bool {
+        defaults.bool(forKey: Keys.mcpDiscoveryFailed)
+    }
+
+    func publishMCPToolDiscoveryFailure(revision: Int) -> Bool {
+        let publishedRevision = defaults.integer(forKey: Keys.publishedMCPDiscoverySequence)
+        guard revision > publishedRevision else { return false }
+        let failureChanged = !defaults.bool(forKey: Keys.mcpDiscoveryFailed)
+        defaults.set(true, forKey: Keys.mcpDiscoveryFailed)
+        defaults.set(revision, forKey: Keys.publishedMCPDiscoverySequence)
+        if failureChanged {
+            NotificationCenter.default.post(name: .mcpToolSettingsDidChange, object: nil)
+        }
+        return true
+    }
+
+    func publishMCPToolDiscovery(
+        revision: Int,
+        configurationKeys: [String: String],
+        enabledToolIds: [String],
+        servers: [MCPServerInfo],
+        failedServerIds: Set<String>
+    ) -> Bool {
+        let publishedRevision = defaults.integer(forKey: Keys.publishedMCPDiscoverySequence)
+        guard revision > publishedRevision else { return false }
+        let publication = MCPToolDiscoveryPublication.merging(
+            existingConfigurationKeys: currentMCPToolConfigurationKeys(),
+            existingEnabledToolIds: getEnabledMCPToolIds(),
+            discoveredConfigurationKeys: configurationKeys,
+            discoveredEnabledToolIds: enabledToolIds,
+            serverState: MCPDiscoveryServerState(servers: servers, failedServerIds: failedServerIds)
+        )
+        let configurationChanged = updateMCPToolConfigurationKeys(publication.configurationKeys)
+        let enabledToolsChanged = updateEnabledMCPToolIds(publication.enabledToolIds)
+        let previousFailedServerIds = getFailedMCPServerIds()
+        let failedServersChanged = previousFailedServerIds != failedServerIds
+            || defaults.bool(forKey: Keys.mcpDiscoveryFailed)
+        defaults.set(failedServerIds.sorted(), forKey: Keys.failedMCPServerIds)
+        defaults.set(false, forKey: Keys.mcpDiscoveryFailed)
+        defaults.set(revision, forKey: Keys.publishedMCPDiscoverySequence)
+        if configurationChanged || enabledToolsChanged || failedServersChanged {
+            NotificationCenter.default.post(name: .mcpToolSettingsDidChange, object: nil)
+        }
+        return true
+    }
+}
+
 // MARK: - Private
 
 private extension SettingsManager {
-    func migrateToKeychain() {
-        if let legacyURL = defaults.string(forKey: LegacyKeys.serverBaseURL) {
-            keychainManager.setServerBaseURL(legacyURL)
-            defaults.removeObject(forKey: LegacyKeys.serverBaseURL)
+    func currentMCPToolConfigurationKeys() -> [String: String] {
+        defaults.dictionaryRepresentation().reduce(into: [String: String]()) { result, entry in
+            guard entry.key.hasPrefix(Keys.mcpToolConfigurationPrefix),
+                  let value = entry.value as? String else { return }
+            let toolId = String(entry.key.dropFirst(Keys.mcpToolConfigurationPrefix.count))
+            result[toolId] = value
         }
+    }
 
-        if let legacyKey = defaults.string(forKey: LegacyKeys.apiKey) {
-            keychainManager.setAPIKey(legacyKey)
-            defaults.removeObject(forKey: LegacyKeys.apiKey)
+    func updateEnabledMCPToolIds(_ ids: [String]) -> Bool {
+        guard Set(getEnabledMCPToolIds()) != Set(ids) else { return false }
+        defaults.set(ids.sorted(), forKey: Keys.enabledMCPToolIds)
+        return true
+    }
+
+    func updateMCPToolConfigurationKeys(_ keys: [String: String]) -> Bool {
+        let existingStorageKeys = defaults.dictionaryRepresentation().keys.filter {
+            $0.hasPrefix(Keys.mcpToolConfigurationPrefix)
         }
+        let desiredStorageKeys = Set(keys.keys.map { Keys.mcpToolConfigurationPrefix + $0 })
+        var didChange = false
+
+        for storageKey in existingStorageKeys where !desiredStorageKeys.contains(storageKey) {
+            defaults.removeObject(forKey: storageKey)
+            didChange = true
+        }
+        for (toolId, key) in keys {
+            let storageKey = Keys.mcpToolConfigurationPrefix + toolId
+            guard defaults.string(forKey: storageKey) != key else { continue }
+            defaults.set(key, forKey: storageKey)
+            didChange = true
+        }
+        return didChange
+    }
+
+    func rotateMCPAuthorizationScope() -> Bool {
+        let scope = UUID().uuidString
+        return keychainManager.setMCPAuthorizationScope(scope)
+            && keychainManager.getMCPAuthorizationScope() == scope
+    }
+
+    func migrateToKeychain() {
+        let legacyURL = defaults.string(forKey: LegacyKeys.serverBaseURL)
+        let legacyKey = defaults.string(forKey: LegacyKeys.apiKey)
+        guard legacyURL != nil || legacyKey != nil else { return }
+        let didMigrate = keychainManager.setServerConfiguration(
+            serverBaseURL: legacyURL ?? keychainManager.getServerBaseURL(),
+            apiKey: legacyKey ?? keychainManager.getAPIKey()
+        )
+        guard didMigrate else { return }
+        defaults.removeObject(forKey: LegacyKeys.serverBaseURL)
+        defaults.removeObject(forKey: LegacyKeys.apiKey)
     }
 }

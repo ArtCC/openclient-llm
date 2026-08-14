@@ -26,6 +26,7 @@ final class SettingsViewModelTests: XCTestCase {
     var mockEnableCloudSync: MockEnableCloudSyncUseCase!
     var cloudSyncRuntimeStore: CloudSyncRuntimeStore!
     var mockCloudAccountAssociation: MockCloudAccountAssociation!
+    var mockFetchMCPTools: MockFetchMCPToolsUseCase!
 
     // MARK: - Setup
 
@@ -44,11 +45,13 @@ final class SettingsViewModelTests: XCTestCase {
         mockEnableCloudSync = MockEnableCloudSyncUseCase()
         cloudSyncRuntimeStore = CloudSyncRuntimeStore()
         mockCloudAccountAssociation = MockCloudAccountAssociation()
+        mockFetchMCPTools = MockFetchMCPToolsUseCase()
         sut = SettingsViewModel(
             saveServerConfigurationUseCase: mockSaveServerConfig,
             testServerConnectionUseCase: mockTestConnection,
             checkLiteLLMHealthUseCase: mockCheckLiteLLMHealth,
             fetchSearchToolsUseCase: mockFetchSearchTools,
+            fetchMCPToolsUseCase: mockFetchMCPTools,
             settingsManager: mockSettingsManager,
             cloudSyncManager: mockCloudSyncManager,
             synchronizeAppDataUseCase: mockSynchronizeAppData,
@@ -74,6 +77,7 @@ final class SettingsViewModelTests: XCTestCase {
         mockEnableCloudSync = nil
         cloudSyncRuntimeStore = nil
         mockCloudAccountAssociation = nil
+        mockFetchMCPTools = nil
 
         try await super.tearDown()
     }

@@ -413,17 +413,17 @@ MCP (Model Context Protocol) tools are external tools provided by MCP servers co
 
 ### Discovery
 
-- `FetchMCPToolsUseCase.execute()` (never throws, returns `[]` on failure) calls `GET /v1/mcp/server` to list configured MCP servers, then concurrently calls `GET /mcp-rest/tools/list?server_id=X` for each server.
-- Discovered tools are stored in `ChatViewModel.LoadedState.availableMCPTools` and populated during `fetchAndBuildInitialState()` alongside model data.
-- If the server does not expose MCP endpoints, the use case returns `[]` and `isMCPSupported` remains `false`.
+- `FetchMCPToolsUseCase.execute()` never throws and returns an `MCPDiscoveryResult`. It calls `GET /v1/mcp/server`, then concurrently calls `GET /mcp-rest/tools/list?server_id=X` for each server using one captured endpoint/credential pair.
+- Discovered tools are stored in `ChatViewModel.LoadedState.availableMCPTools`. MCP discovery starts after the initial model state is available and can be refreshed independently.
+- A top-level failure returns an empty result with an error. Partial failures retain prior tools for management visibility but mark their servers failed, so those tools are neither configurable nor advertised until a refresh succeeds.
 
 ### Tool Definition Conversion
 
-Each `MCPToolInfo` is wrapped in an `MCPTool` that conforms to `ChatToolProtocol`. `MCPTool.toolParameters(from:)` converts the `MCPJSONSchema` (recursive JSON Schema class) into the flat `ToolParameters` format used by the agent loop:
+Each supported `MCPToolInfo` is wrapped in an `MCPTool` that conforms to `ChatToolProtocol`. `MCPTool.toolParameters(from:)` converts the recursive `MCPJSONSchema` into `ToolParameters`:
 
-- Top-level `type` and `required` are forwarded directly.
-- Nested property schemas are resolved to a `type` string (e.g. `"array of string"` for arrays with items).
-- Complex nested schemas beyond surface depth are described through their textual descriptions rather than full schema fidelity.
+- Top-level object type, properties, required keys, and `additionalProperties` are forwarded.
+- Nested object, array, primitive, string-enum, and `additionalProperties` schemas remain recursive.
+- A schema using unsupported constraints or a non-object root remains visible for management but is not advertised or executable.
 
 ### Execution
 
@@ -436,8 +436,26 @@ Each `MCPToolInfo` is wrapped in an `MCPTool` that conforms to `ChatToolProtocol
 - An MCP antenna icon next to the web search globe opens the `MCPToolsSheet`.
 - The sheet lists every discovered tool with a toggle; toggling a tool persists the `enabledMCPToolIds` set via `SettingsManager`.
 - The `ChatViewModel+Agent.makeToolRegistry()` method reads the enabled set and only injects activated `MCPTool` instances.
-- The system prompt in `buildAgentSystemPrompt()` includes a short description line for each enabled MCP tool.
+- MCP descriptions are carried by formal tool definitions. The custom agent system prompt does not duplicate MCP tools, so
+  disabling a tool removes its advertisement from subsequent rounds of an active response.
 - A corresponding MCP section in Settings allows the same tool management and re-fetch from a Settings context.
+
+### Authorization
+
+- Every enabled MCP tool defaults to `ask`; built-in tools and web search remain automatic.
+- Policies are `alwaysAllow`, `ask`, and `deny`. A denied enabled tool remains advertised and returns an ordered synthetic
+  denial result, while a disabled or stale-configuration tool is omitted from definitions.
+- Policy identity includes the normalized endpoint, an opaque credential scope stored in Keychain, server/tool identity,
+  description, and the complete canonical input schema. Changing any of them invalidates the prior policy.
+- Calls requiring approval are presented as one batch before any tool in that round starts. Decisions remain per call;
+  permanent choices apply to every repeated call of the same tool and are persisted only when the user continues.
+- Closing the review denies every pending call once. Stopping or leaving the chat cancels the pending authorization.
+- Tool availability, configuration identity, enablement, and policy are revalidated immediately before execution. A server
+  configuration change also cancels the active agent so conversation data cannot cross endpoints.
+- Unsupported input schemas and tools retained from a failed server are omitted from model definitions and cannot execute.
+- MCP results are encoded as explicitly untrusted data before they are returned to the model; external result text is never
+  treated as a source of tool instructions.
+- Approval time is excluded from the agent timeout. Cancellation remains active while approval is pending.
 
 ### Relationship with Web Search
 

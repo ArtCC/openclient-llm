@@ -67,46 +67,6 @@ extension ChatViewModel {
         compactionTask = nil
     }
 
-    func cancelActiveStreaming(shouldPersist: Bool = true) {
-        streamTask?.cancel()
-        streamTask = nil
-        activeAssistantMessageId = nil
-        streamingBackgroundUseCase.end()
-        guard case .loaded(var loadedState) = state else { return }
-        guard loadedState.isStreaming else { return }
-        loadedState.isStreaming = false
-        loadedState.isSearchingWeb = false
-        loadedState.activeToolCallIds = []
-        refreshContextUsage(in: &loadedState)
-        state = .loaded(loadedState)
-        if shouldPersist {
-            scheduleConversationPersistence()
-        }
-    }
-
-    func stopStreaming() {
-        LogManager.debug("stopStreaming requested")
-        cancelActiveStreaming()
-    }
-
-    func beginStreamingBackground(for assistantMessageId: UUID) {
-        streamingBackgroundUseCase.begin { [weak self] in
-            LogManager.warning("Background time expired — saving partial response")
-            guard let self, self.activeAssistantMessageId == assistantMessageId else { return }
-            self.streamTask?.cancel()
-            self.streamTask = nil
-            self.activeAssistantMessageId = nil
-            guard case .loaded(var currentState) = self.state else { return }
-            currentState.isStreaming = false
-            currentState.isSearchingWeb = false
-            currentState.activeToolCallIds = []
-            self.refreshContextUsage(in: &currentState)
-            self.state = .loaded(currentState)
-            self.scheduleConversationPersistence()
-            Task { await self.notifyStreamingCompletedUseCase.executeExpired() }
-        }
-    }
-
     func buildEffectiveSystemPrompt(
         profileContext: String,
         memoryContext: String,
@@ -473,13 +433,7 @@ extension ChatViewModel {
     }
 
     func contextTools(for loadedState: LoadedState) -> [ToolDefinition] {
-        guard loadedState.selectedModel?.capabilities.contains(.functionCalling) == true else { return [] }
-        return ToolRegistry.default(
-            webSearchEnabled: loadedState.isWebSearchEnabled,
-            includesMemoryTools: !isPrivateChat,
-            webSearchUseCase: webSearchUseCase,
-            memoryManager: memoryManager
-        ).definitions
+        agentToolDefinitions(for: loadedState)
     }
 
     func generatedImageAttachment(
