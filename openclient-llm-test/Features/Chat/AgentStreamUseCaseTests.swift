@@ -257,8 +257,8 @@ final class AgentStreamUseCaseTests: XCTestCase {
             XCTAssertEqual(error as? AgentStreamError, .iterationLimitReached)
         }
 
-        // Then — called max 10 times
-        XCTAssertEqual(infiniteRepo.callCount, 10)
+        // Then — called max 15 times
+        XCTAssertEqual(infiniteRepo.callCount, 15)
     }
 
     // MARK: - Tests — Network error

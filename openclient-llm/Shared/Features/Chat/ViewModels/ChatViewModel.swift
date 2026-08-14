@@ -39,10 +39,11 @@ final class ChatViewModel {
         case forkFromMessage(UUID)
         case branchedConversationConsumed
         case webSearchToggled
-        case mcpButtonTapped
-        case mcpToolsRefreshed
+        case mcpButtonTapped, mcpToolsRefreshed
         case mcpToolToggled(toolId: String, enabled: Bool)
+        case mcpToolsToggled(toolIds: [String], enabled: Bool)
         case mcpToolPermissionChanged(toolId: String, permission: MCPToolPermission)
+        case mcpToolsPermissionChanged(toolIds: [String], permission: MCPToolPermission)
         case mcpAuthorizationDecision(batchId: UUID, requestId: UUID, decision: MCPToolAuthorizationDecision)
         case mcpAuthorizationSubmitted(batchId: UUID)
         case mcpAuthorizationDismissed(batchId: UUID)
@@ -295,7 +296,8 @@ final class ChatViewModel {
             handlePhase6Event(event)
         case .webSearchToggled:
             toggleWebSearch()
-        case .mcpButtonTapped, .mcpToolsRefreshed, .mcpToolToggled, .mcpToolPermissionChanged,
+        case .mcpButtonTapped, .mcpToolsRefreshed, .mcpToolToggled, .mcpToolsToggled,
+             .mcpToolPermissionChanged, .mcpToolsPermissionChanged,
              .mcpAuthorizationDecision, .mcpAuthorizationSubmitted, .mcpAuthorizationDismissed:
             handleMCPEvent(event)
         case .viewDisappeared, .viewAppeared, .conversationLoaded, .inputChanged, .sendTapped, .stopStreamingTapped:

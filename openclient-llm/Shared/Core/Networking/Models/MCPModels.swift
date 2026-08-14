@@ -166,7 +166,7 @@ nonisolated struct MCPToolInfo: Codable, Equatable, Identifiable, Sendable {
             inputSchema = try? container.decode(MCPJSONSchema.self, forKey: .inputSchema)
             rawInputSchemaData = rawInputSchema.flatMap(Self.canonicalData)
             isInputSchemaSupported = inputSchema != nil
-                && rawInputSchema.map { Self.isSupportedSchema($0, depth: 0) } == true
+                && rawInputSchema.map(Self.isSupportedInputSchema) == true
         } else {
             inputSchema = nil
             rawInputSchemaData = nil
@@ -206,19 +206,20 @@ nonisolated struct MCPToolInfo: Codable, Equatable, Identifiable, Sendable {
         return try? encoder.encode(value)
     }
 
-    private nonisolated static func isSupportedSchema(_ value: MCPCallValue, depth: Int) -> Bool {
-        guard depth <= 10, case .object(let schema) = value else { return false }
-        let supportedKeys = Set([
-            "type", "properties", "required", "description", "items", "enum", "additionalProperties"
-        ])
-        guard Set(schema.keys).isSubset(of: supportedKeys) else { return false }
-        return isSupportedType(schema, depth: depth)
-            && isStringValue(schema["description"])
-            && isStringArray(schema["required"])
-            && isStringArray(schema["enum"])
-            && isSupportedProperties(schema["properties"], depth: depth)
-            && (schema["items"].map { isSupportedSchema($0, depth: depth + 1) } ?? true)
-            && isSupportedAdditionalProperties(schema["additionalProperties"], depth: depth)
+    private nonisolated static func isSupportedInputSchema(_ value: MCPCallValue) -> Bool {
+        guard case .object(let schema) = value else { return false }
+        if let type = schema["type"] {
+            guard case .string(let typeName) = type, typeName == "object" else { return false }
+        } else {
+            let hasObjectShape = schema["properties"] != nil
+                || schema["required"] != nil
+                || schema["additionalProperties"] != nil
+            guard hasObjectShape else { return false }
+        }
+        if let properties = schema["properties"] {
+            guard case .object = properties else { return false }
+        }
+        return isStringArray(schema["required"])
     }
 
     private nonisolated static func isSupportedSchema(_ schema: MCPJSONSchema, depth: Int) -> Bool {
@@ -235,14 +236,6 @@ nonisolated struct MCPToolInfo: Codable, Equatable, Identifiable, Sendable {
         return true
     }
 
-    private nonisolated static func isSupportedType(_ schema: [String: MCPCallValue], depth: Int) -> Bool {
-        guard let type = schema["type"] else {
-            return depth > 0 || (schema["items"] == nil && schema["enum"] == nil)
-        }
-        guard case .string(let name) = type else { return false }
-        return supportedSchemaTypes.contains(name) && (depth > 0 || name == "object")
-    }
-
     private nonisolated static func isStringValue(_ value: MCPCallValue?) -> Bool {
         guard let value else { return true }
         if case .string = value { return true }
@@ -253,27 +246,6 @@ nonisolated struct MCPToolInfo: Codable, Equatable, Identifiable, Sendable {
         guard let value else { return true }
         guard case .array(let values) = value else { return false }
         return values.allSatisfy { isStringValue($0) }
-    }
-
-    private nonisolated static func isSupportedProperties(_ value: MCPCallValue?, depth: Int) -> Bool {
-        guard let value else { return true }
-        guard case .object(let properties) = value else { return false }
-        return properties.values.allSatisfy { isSupportedSchema($0, depth: depth + 1) }
-    }
-
-    private nonisolated static func isSupportedAdditionalProperties(
-        _ value: MCPCallValue?,
-        depth: Int
-    ) -> Bool {
-        guard let value else { return true }
-        switch value {
-        case .bool:
-            return true
-        case .object:
-            return isSupportedSchema(value, depth: depth + 1)
-        default:
-            return false
-        }
     }
 
     private nonisolated static let supportedSchemaTypes: Set<String> = [

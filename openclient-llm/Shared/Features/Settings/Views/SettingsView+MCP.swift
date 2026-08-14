@@ -201,8 +201,14 @@ extension SettingsView {
             onToolEnabledChanged: { toolId, enabled in
                 viewModel.send(.mcpToolToggled(toolId: toolId, enabled: enabled))
             },
+            onAllToolsEnabledChanged: { enabled in
+                viewModel.send(.mcpToolsToggled(toolIds: tools.map(\.id), enabled: enabled))
+            },
             onPermissionChanged: { toolId, permission in
                 viewModel.send(.mcpToolPermissionChanged(toolId: toolId, permission: permission))
+            },
+            onAllPermissionsChanged: { permission in
+                viewModel.send(.mcpToolsPermissionChanged(toolIds: tools.map(\.id), permission: permission))
             },
             onRetry: {
                 mcpServerSheet = nil

@@ -61,27 +61,44 @@ extension SettingsViewModel {
     }
 
     func toggleMCPTool(toolId: String, enabled: Bool) {
-        guard case .loaded(var loadedState) = state,
-              let tool = loadedState.availableMCPTools.first(where: { $0.id == toolId }),
-              tool.isInputSchemaSupported,
-              !loadedState.failedMCPServerIds.contains(tool.serverId) else { return }
+        toggleMCPTools(toolIds: [toolId], enabled: enabled)
+    }
+
+    func toggleMCPTools(toolIds: [String], enabled: Bool) {
+        guard case .loaded(var loadedState) = state else { return }
+        let configurableIds = configurableMCPTools(toolIds: toolIds, state: loadedState).map(\.id)
+        guard !configurableIds.isEmpty else { return }
         if enabled {
-            loadedState.enabledMCPToolIds.insert(toolId)
+            loadedState.enabledMCPToolIds.formUnion(configurableIds)
         } else {
-            loadedState.enabledMCPToolIds.remove(toolId)
+            loadedState.enabledMCPToolIds.subtract(configurableIds)
         }
         settingsManager.setEnabledMCPToolIds(Array(loadedState.enabledMCPToolIds))
         state = .loaded(loadedState)
     }
 
     func updateMCPToolPermission(toolId: String, permission: MCPToolPermission) {
-        guard case .loaded(var loadedState) = state,
-              let tool = loadedState.availableMCPTools.first(where: { $0.id == toolId }),
-              tool.isInputSchemaSupported,
-              !loadedState.failedMCPServerIds.contains(tool.serverId) else { return }
-        settingsManager.setMCPToolPermission(permission, for: permissionKey(for: tool))
-        loadedState.mcpToolPermissions[toolId] = permission
+        updateMCPToolPermissions(toolIds: [toolId], permission: permission)
+    }
+
+    func updateMCPToolPermissions(toolIds: [String], permission: MCPToolPermission) {
+        guard case .loaded(var loadedState) = state else { return }
+        let tools = configurableMCPTools(toolIds: toolIds, state: loadedState)
+        guard !tools.isEmpty else { return }
+        settingsManager.setMCPToolPermission(permission, for: tools.map(permissionKey))
+        for tool in tools {
+            loadedState.mcpToolPermissions[tool.id] = permission
+        }
         state = .loaded(loadedState)
+    }
+
+    private func configurableMCPTools(toolIds: [String], state: LoadedState) -> [MCPToolInfo] {
+        let requestedIds = Set(toolIds)
+        return state.availableMCPTools.filter {
+            requestedIds.contains($0.id)
+                && $0.isInputSchemaSupported
+                && !state.failedMCPServerIds.contains($0.serverId)
+        }
     }
 }
 

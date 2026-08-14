@@ -32,7 +32,9 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     var isPrivacyScreenEnabled: Bool = true
     var hasEnoughConversationsForMemoryTip: Bool = false
     var enabledMCPToolIds: [String] = []
+    var enabledMCPToolWriteCount = 0
     var mcpToolPermissions: [String: MCPToolPermission] = [:]
+    var mcpPermissionBatchWriteCount = 0
     var mcpToolConfigurationKeys: [String: String] = [:]
     var mcpDiscoverySequence = 0
     var publishedMCPDiscoverySequence = 0
@@ -202,6 +204,7 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     }
 
     func setEnabledMCPToolIds(_ ids: [String]) {
+        enabledMCPToolWriteCount += 1
         enabledMCPToolIds = ids
     }
 
@@ -211,6 +214,13 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
     func setMCPToolPermissionRawValue(_ value: String, for key: String) {
         mcpToolPermissions[key] = MCPToolPermission(rawValue: value)
+    }
+
+    func setMCPToolPermissionRawValues(_ value: String, for keys: [String]) {
+        mcpPermissionBatchWriteCount += 1
+        for key in Set(keys) {
+            mcpToolPermissions[key] = MCPToolPermission(rawValue: value)
+        }
     }
 
     func getMCPToolConfigurationKey(for toolId: String) -> String? {

@@ -20,7 +20,8 @@ extension SettingsViewModel {
         case .showTokenUsageToggled, .privacyScreenToggled:
             handlePreferenceToggleEvent(event)
         case .webSearchToolNameChanged, .webSearchMaxResultsChanged, .fetchSearchToolsTapped,
-             .fetchMCPToolsTapped, .mcpToolToggled, .mcpToolPermissionChanged:
+             .fetchMCPToolsTapped, .mcpToolToggled, .mcpToolsToggled,
+             .mcpToolPermissionChanged, .mcpToolsPermissionChanged:
             handleServerDiscoveryEvent(event)
         default:
             handleCoreEvent(event)
@@ -81,8 +82,12 @@ extension SettingsViewModel {
             fetchMCPTools()
         case .mcpToolToggled(let toolId, let enabled):
             toggleMCPTool(toolId: toolId, enabled: enabled)
+        case .mcpToolsToggled(let toolIds, let enabled):
+            toggleMCPTools(toolIds: toolIds, enabled: enabled)
         case .mcpToolPermissionChanged(let toolId, let permission):
             updateMCPToolPermission(toolId: toolId, permission: permission)
+        case .mcpToolsPermissionChanged(let toolIds, let permission):
+            updateMCPToolPermissions(toolIds: toolIds, permission: permission)
         default:
             break
         }

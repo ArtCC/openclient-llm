@@ -49,6 +49,7 @@ protocol SettingsManagerProtocol: Sendable {
     func setEnabledMCPToolIds(_ ids: [String])
     func getMCPToolPermissionRawValue(for key: String) -> String?
     func setMCPToolPermissionRawValue(_ value: String, for key: String)
+    func setMCPToolPermissionRawValues(_ value: String, for keys: [String])
     func getMCPToolConfigurationKey(for toolId: String) -> String?
     func setMCPToolConfigurationKey(_ key: String, for toolId: String)
     func replaceMCPToolConfigurationKeys(_ keys: [String: String])

@@ -59,7 +59,7 @@ final class MCPModelsTests: XCTestCase {
         XCTAssertFalse(tool.isInputSchemaSupported)
     }
 
-    func test_decodeTool_withUnsupportedSchemaConstraint_marksSchemaUnsupported() throws {
+    func test_decodeTool_withNonObjectPatternSchema_marksSchemaUnsupported() throws {
         // Given
         let data = Data(#"{"name":"search","inputSchema":{"type":"string","pattern":"^[a-z]+$"}}"#.utf8)
 
@@ -68,6 +68,33 @@ final class MCPModelsTests: XCTestCase {
 
         // Then
         XCTAssertFalse(tool.isInputSchemaSupported)
+    }
+
+    func test_decodeTool_withGitHubSchemaConstraints_preservesSchemaAndMarksSupported() throws {
+        // Given
+        let data = Data(#"""
+        {
+        "name":"search_repositories",
+        "inputSchema":{
+            "type":"object",
+            "properties":{
+                "minimal_output":{"type":"boolean","default":true},
+                "page":{"type":"number","minimum":1,"maximum":100}
+            }
+        }
+        }
+        """#.utf8)
+
+        // When
+        let tool = try JSONDecoder().decode(MCPToolInfo.self, from: data)
+        let encodedParameters = try JSONEncoder().encode(MCPTool.toolParameters(from: tool))
+        let encodedJSON = try XCTUnwrap(String(data: encodedParameters, encoding: .utf8))
+
+        // Then
+        XCTAssertTrue(tool.isInputSchemaSupported)
+        XCTAssertTrue(encodedJSON.contains("\"default\":true"))
+        XCTAssertTrue(encodedJSON.contains("\"minimum\":1"))
+        XCTAssertTrue(encodedJSON.contains("\"maximum\":100"))
     }
 
     func test_decodeTool_withImplicitNonObjectRoot_marksSchemaUnsupported() throws {

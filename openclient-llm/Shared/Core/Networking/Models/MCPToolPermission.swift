@@ -24,6 +24,10 @@ extension SettingsManagerProtocol {
     func setMCPToolPermission(_ permission: MCPToolPermission, for key: String) {
         setMCPToolPermissionRawValue(permission.rawValue, for: key)
     }
+
+    func setMCPToolPermission(_ permission: MCPToolPermission, for keys: [String]) {
+        setMCPToolPermissionRawValues(permission.rawValue, for: keys)
+    }
 }
 
 extension MCPToolInfo {

@@ -195,7 +195,7 @@ private extension ChatViewModel {
             toolName: tool.prefixedName,
             rawName: tool.name,
             description: tool.description ?? tool.name,
-            parameters: MCPTool.toolParameters(from: tool.inputSchema),
+            parameters: MCPTool.toolParameters(from: tool),
             repository: repository,
             inputSchema: tool.inputSchema,
             serverName: tool.serverName,

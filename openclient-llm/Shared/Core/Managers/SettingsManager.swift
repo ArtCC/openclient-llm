@@ -302,7 +302,17 @@ extension SettingsManager {
     }
 
     func setMCPToolPermissionRawValue(_ value: String, for key: String) {
-        defaults.set(value, forKey: Keys.mcpToolPermissionPrefix + key)
+        setMCPToolPermissionRawValues(value, for: [key])
+    }
+
+    func setMCPToolPermissionRawValues(_ value: String, for keys: [String]) {
+        let changedKeys = Set(keys).filter {
+            defaults.string(forKey: Keys.mcpToolPermissionPrefix + $0) != value
+        }
+        guard !changedKeys.isEmpty else { return }
+        for key in changedKeys {
+            defaults.set(value, forKey: Keys.mcpToolPermissionPrefix + key)
+        }
         NotificationCenter.default.post(name: .mcpToolSettingsDidChange, object: nil)
     }
 

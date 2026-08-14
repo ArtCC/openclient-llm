@@ -38,7 +38,9 @@ final class SettingsViewModel {
         case privacyScreenToggled(Bool)
         case fetchMCPToolsTapped
         case mcpToolToggled(toolId: String, enabled: Bool)
+        case mcpToolsToggled(toolIds: [String], enabled: Bool)
         case mcpToolPermissionChanged(toolId: String, permission: MCPToolPermission)
+        case mcpToolsPermissionChanged(toolIds: [String], permission: MCPToolPermission)
     }
 
     enum State: Equatable {

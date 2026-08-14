@@ -128,6 +128,39 @@ extension SettingsViewModelTests {
         XCTAssertEqual(loadedState.mcpToolPermissions[tool.id], .deny)
     }
 
+    func test_send_mcpToolsPermissionChanged_updatesAllToolsInSingleBatch() {
+        // Given
+        let first = makePermissionTool(name: "first")
+        let second = makePermissionTool(name: "second")
+        mockSettingsManager.serverBaseURL = "https://example.com"
+        sut.state = .loaded(SettingsViewModel.LoadedState(
+            availableMCPTools: [first, second],
+            mcpToolPermissions: [first.id: .ask, second.id: .deny]
+        ))
+
+        // When
+        sut.send(.mcpToolsPermissionChanged(
+            toolIds: [first.id, second.id],
+            permission: .alwaysAllow
+        ))
+
+        // Then
+        let keys = [first, second].map {
+            $0.permissionKey(
+                serverBaseURL: mockSettingsManager.serverBaseURL,
+                authorizationScope: mockSettingsManager.mcpAuthorizationScope
+            )
+        }
+        XCTAssertEqual(mockSettingsManager.mcpPermissionBatchWriteCount, 1)
+        XCTAssertTrue(keys.allSatisfy { mockSettingsManager.mcpToolPermissions[$0] == .alwaysAllow })
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.mcpToolPermissions[first.id], .alwaysAllow)
+        XCTAssertEqual(loadedState.mcpToolPermissions[second.id], .alwaysAllow)
+    }
+
     func test_fetchMCPTools_configurationChanges_discardsStaleDiscovery() async {
         // Given
         let controller = MCPDiscoveryController()

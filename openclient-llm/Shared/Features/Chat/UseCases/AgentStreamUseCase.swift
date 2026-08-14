@@ -70,7 +70,7 @@ extension AgentStreamUseCaseProtocol {
 struct AgentStreamUseCase: AgentStreamUseCaseProtocol {
     // MARK: - Properties
 
-    private static let maxIterations = 10
+    private static let maxIterations = 15
     private static let maxToolCalls = 20
     private static let maxToolCallsPerIteration = 8
     private static let maximumToolResultCharacters = 12_000
@@ -79,7 +79,7 @@ struct AgentStreamUseCase: AgentStreamUseCaseProtocol {
 
     // MARK: - Init
 
-    init(repository: ChatRepositoryProtocol = ChatRepository(), timeout: Duration = .seconds(125)) {
+    init(repository: ChatRepositoryProtocol = ChatRepository(), timeout: Duration = .seconds(300)) {
         self.repository = repository
         self.timeout = timeout
     }

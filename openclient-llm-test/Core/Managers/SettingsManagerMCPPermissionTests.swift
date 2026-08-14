@@ -66,6 +66,18 @@ final class SettingsManagerMCPPermissionTests: XCTestCase {
         XCTAssertEqual(sut.getMCPToolPermission(for: denyKey), .deny)
     }
 
+    func test_setMCPToolPermission_multipleKeys_updatesEveryPermission() {
+        // Given
+        let permissionKeys = ["first", "second", "first"]
+
+        // When
+        sut.setMCPToolPermission(.alwaysAllow, for: permissionKeys)
+
+        // Then
+        XCTAssertEqual(sut.getMCPToolPermission(for: "first"), .alwaysAllow)
+        XCTAssertEqual(sut.getMCPToolPermission(for: "second"), .alwaysAllow)
+    }
+
     func test_setMCPToolPermission_fromDifferentManagers_preservesIndependentValues() {
         // Given
         let second = SettingsManager(defaults: defaults, keychainManager: MockKeychainManager())

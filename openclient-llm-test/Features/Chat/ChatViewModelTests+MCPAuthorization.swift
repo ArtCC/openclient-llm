@@ -108,6 +108,33 @@ extension ChatViewModelTests {
         XCTAssertEqual(loadedState.mcpToolPermissions[tool.id], .alwaysAllow)
     }
 
+    func test_send_mcpToolsToggled_enablesAllToolsInSingleWrite() {
+        // Given
+        let settings = MockSettingsManager()
+        let first = MCPToolInfo(
+            name: "first", description: nil, serverId: "github", serverName: "GitHub", inputSchema: nil
+        )
+        let second = MCPToolInfo(
+            name: "second", description: nil, serverId: "github", serverName: "GitHub", inputSchema: nil
+        )
+        let viewModel = ChatViewModel(
+            state: .loaded(ChatViewModel.LoadedState(availableMCPTools: [first, second])),
+            settingsManager: settings
+        )
+
+        // When
+        viewModel.send(.mcpToolsToggled(toolIds: [first.id, second.id], enabled: true))
+
+        // Then
+        XCTAssertEqual(settings.enabledMCPToolWriteCount, 1)
+        XCTAssertEqual(Set(settings.enabledMCPToolIds), [first.id, second.id])
+        guard case .loaded(let loadedState) = viewModel.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.enabledMCPToolIds, [first.id, second.id])
+    }
+
     func test_agentToolDefinitions_mixedAvailability_advertisesOnlyCurrentSupportedTool() {
         // Given
         let settings = MockSettingsManager()
@@ -158,6 +185,47 @@ extension ChatViewModelTests {
 
         // Then
         XCTAssertFalse(definitionsAfterSharedFailure.contains { $0.function.name == currentTool.prefixedName })
+    }
+
+    func test_agentToolDefinitions_enabledGitHubToolWithStandardConstraints_advertisesTool() throws {
+        // Given
+        let data = Data(#"""
+        {
+        "name":"search_repositories",
+        "inputSchema":{
+            "type":"object",
+            "properties":{"page":{"type":"number","minimum":1,"maximum":100}}
+        }
+        }
+        """#.utf8)
+        let server = MCPServerInfo(
+            serverId: "github",
+            serverName: "GitHub",
+            description: nil,
+            allowedTools: nil
+        )
+        let tool = try JSONDecoder().decode(MCPToolInfo.self, from: data).withServer(server)
+        let settings = MockSettingsManager()
+        settings.serverBaseURL = "https://example.com"
+        settings.enabledMCPToolIds = [tool.id]
+        settings.mcpToolConfigurationKeys[tool.id] = tool.permissionKey(
+            serverBaseURL: settings.serverBaseURL,
+            authorizationScope: settings.mcpAuthorizationScope
+        )
+        let model = LLMModel(id: "gpt-4", capabilities: [.functionCalling])
+        let loadedState = ChatViewModel.LoadedState(
+            selectedModel: model,
+            availableMCPTools: [tool],
+            enabledMCPToolIds: [tool.id],
+            mcpDiscoveryScope: settings.mcpAuthorizationScope
+        )
+        let viewModel = ChatViewModel(state: .loaded(loadedState), settingsManager: settings)
+
+        // When
+        let definitions = viewModel.agentToolDefinitions(for: loadedState)
+
+        // Then
+        XCTAssertTrue(definitions.contains { $0.function.name == tool.prefixedName })
     }
 
     func test_observeMCPToolSettingsChanges_serverScopeChanges_cancelsActiveStream() async {

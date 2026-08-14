@@ -135,6 +135,15 @@ struct MCPTool: MCPAuthorizableToolProtocol {
         )
     }
 
+    static func toolParameters(from tool: MCPToolInfo) -> ToolParameters {
+        guard tool.isInputSchemaSupported,
+              let data = tool.rawInputSchemaData,
+              let rawSchema = try? JSONDecoder().decode(MCPCallValue.self, from: data) else {
+            return toolParameters(from: tool.inputSchema)
+        }
+        return ToolParameters(rawSchema: rawSchema)
+    }
+
     // MARK: - Private
 
     func validateForAuthorization(arguments: String) throws {

@@ -14,7 +14,9 @@ struct MCPServerToolsView: View {
     let enabledToolIds: Set<String>
     let permissions: [String: MCPToolPermission]
     let onToolEnabledChanged: @MainActor @Sendable (String, Bool) -> Void
+    let onAllToolsEnabledChanged: @MainActor @Sendable (Bool) -> Void
     let onPermissionChanged: @MainActor @Sendable (String, MCPToolPermission) -> Void
+    let onAllPermissionsChanged: @MainActor @Sendable (MCPToolPermission) -> Void
     let onRetry: @MainActor @Sendable () -> Void
 
     var body: some View {
@@ -37,6 +39,11 @@ private extension MCPServerToolsView {
         !configurableTools.isEmpty && configurableTools.allSatisfy { enabledToolIds.contains($0.id) }
     }
 
+    var commonPermission: MCPToolPermission? {
+        let values = Set(configurableTools.map { permissions[$0.id] ?? .ask })
+        return values.count == 1 ? values.first : nil
+    }
+
     @ViewBuilder
     var availabilitySection: some View {
         if !isServerAvailable {
@@ -54,11 +61,7 @@ private extension MCPServerToolsView {
         Section {
             Toggle(isOn: Binding(
                 get: { allEnabled },
-                set: { enabled in
-                    for tool in configurableTools {
-                        onToolEnabledChanged(tool.id, enabled)
-                    }
-                }
+                set: { enabled in onAllToolsEnabledChanged(enabled) }
             )) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(String(localized: "Enable All Tools"))
@@ -71,6 +74,34 @@ private extension MCPServerToolsView {
                 }
             }
             .toggleStyle(.switch)
+            .disabled(!isServerAvailable || configurableTools.isEmpty)
+
+            LabeledContent {
+                Menu {
+                    ForEach(MCPToolPermission.allCases, id: \.self) { option in
+                        Button {
+                            onAllPermissionsChanged(option)
+                        } label: {
+                            Label(
+                                option.title,
+                                systemImage: option == commonPermission ? "checkmark" : option.systemImage
+                            )
+                        }
+                    }
+                } label: {
+                    Label(
+                        commonPermission?.title ?? String(localized: "Custom"),
+                        systemImage: commonPermission?.systemImage ?? "slider.horizontal.3"
+                    )
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(String(localized: "Permission"))
+                    Text(String(localized: "All"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
             .disabled(!isServerAvailable || configurableTools.isEmpty)
         }
     }
@@ -91,6 +122,9 @@ private extension MCPServerToolsView {
             Text(String(localized: """
                 Permissions apply to this device and the current MCP server configuration.
                 """))
+                .lineLimit(nil)
+                .padding(.top, 10)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -102,19 +136,29 @@ private extension MCPServerToolsView {
 }
 
 #Preview {
+    let first = MCPToolInfo(
+        name: "create_issue",
+        description: "Create an issue in a repository",
+        serverId: "github",
+        serverName: "GitHub",
+        inputSchema: nil
+    )
+    let second = MCPToolInfo(
+        name: "search_repositories",
+        description: "Search repositories",
+        serverId: "github",
+        serverName: "GitHub",
+        inputSchema: nil
+    )
     MCPServerToolsView(
-        tools: [MCPToolInfo(
-            name: "create_issue",
-            description: "Create an issue in a repository",
-            serverId: "github",
-            serverName: "GitHub",
-            inputSchema: nil
-        )],
+        tools: [first, second],
         isServerAvailable: true,
         enabledToolIds: [],
-        permissions: [:],
+        permissions: [first.id: .alwaysAllow, second.id: .ask],
         onToolEnabledChanged: { _, _ in },
+        onAllToolsEnabledChanged: { _ in },
         onPermissionChanged: { _, _ in },
+        onAllPermissionsChanged: { _ in },
         onRetry: {}
     )
 }
@@ -132,7 +176,9 @@ private extension MCPServerToolsView {
         enabledToolIds: [],
         permissions: [:],
         onToolEnabledChanged: { _, _ in },
+        onAllToolsEnabledChanged: { _ in },
         onPermissionChanged: { _, _ in },
+        onAllPermissionsChanged: { _ in },
         onRetry: {}
     )
 }

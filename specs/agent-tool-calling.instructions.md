@@ -185,13 +185,13 @@ Some models can request multiple tool calls in a single response:
 
 ### Loop Safety
 
-- **Maximum iterations**: Cap the loop at 10 iterations to prevent infinite loops
+- **Maximum iterations**: Cap the loop at 15 iterations to prevent infinite loops
 - **Tool-call budget**: Cap the total number of calls at 20 and a single tool round at 8 calls.
-- **Final-response round**: On the tenth iteration, after exhausting the total tool-call budget, or after rejecting excess calls from a round, send the next request without tools to force a final response.
+- **Final-response round**: On the fifteenth iteration, after exhausting the total tool-call budget, or after rejecting excess calls from a round, send the next request without tools to force a final response.
 - **Tool-result budget**: Rebuild the request context after every tool round and bound each result from the remaining input budget so tool output cannot consume the final-response space.
 - **Continuous context**: Preserve the latest complete user turn and its assistant/tool messages atomically; never skip a recent turn to include an older one.
 - **Transcript persistence**: Emit and persist every assistant `tool_calls` message and matching tool result before continuing the loop.
-- **Timeout**: Overall timeout for the entire agentic flow (e.g., 120 seconds)
+- **Timeout**: Allow up to 300 seconds of active time for the entire agentic flow; pause the timer while waiting for user authorization.
 - **User cancellation**: Allow the user to stop the loop at any point
 - **Error in tool execution**: Return error message as tool content, let the model handle it
 
@@ -421,9 +421,12 @@ MCP (Model Context Protocol) tools are external tools provided by MCP servers co
 
 Each supported `MCPToolInfo` is wrapped in an `MCPTool` that conforms to `ChatToolProtocol`. `MCPTool.toolParameters(from:)` converts the recursive `MCPJSONSchema` into `ToolParameters`:
 
-- Top-level object type, properties, required keys, and `additionalProperties` are forwarded.
-- Nested object, array, primitive, string-enum, and `additionalProperties` schemas remain recursive.
-- A schema using unsupported constraints or a non-object root remains visible for management but is not advertised or executable.
+- Object-root schemas are forwarded intact, including provider-specific annotations and standard constraints such as
+  defaults, numeric bounds, lengths, and unions.
+- The decoded structural subset is validated locally before authorization and execution; the MCP server remains
+  authoritative for constraints the client does not interpret.
+- A malformed schema, provider-specific non-object placeholder, or non-object root remains visible for management but is
+  not advertised or executable.
 
 ### Execution
 
@@ -435,6 +438,8 @@ Each supported `MCPToolInfo` is wrapped in an `MCPTool` that conforms to `ChatTo
 
 - An MCP antenna icon next to the web search globe opens the `MCPToolsSheet`.
 - The sheet lists every discovered tool with a toggle; toggling a tool persists the `enabledMCPToolIds` set via `SettingsManager`.
+- Server detail includes bulk controls directly below the enable-all switch to update availability or permission for every
+  configurable tool with one persisted state change.
 - The `ChatViewModel+Agent.makeToolRegistry()` method reads the enabled set and only injects activated `MCPTool` instances.
 - MCP descriptions are carried by formal tool definitions. The custom agent system prompt does not duplicate MCP tools, so
   disabling a tool removes its advertisement from subsequent rounds of an active response.
@@ -445,6 +450,7 @@ Each supported `MCPToolInfo` is wrapped in an `MCPTool` that conforms to `ChatTo
 - Every enabled MCP tool defaults to `ask`; built-in tools and web search remain automatic.
 - Policies are `alwaysAllow`, `ask`, and `deny`. A denied enabled tool remains advertised and returns an ordered synthetic
   denial result, while a disabled or stale-configuration tool is omitted from definitions.
+- Bulk permission changes update every configurable tool in the selected server and emit one settings notification.
 - Policy identity includes the normalized endpoint, an opaque credential scope stored in Keychain, server/tool identity,
   description, and the complete canonical input schema. Changing any of them invalidates the prior policy.
 - Calls requiring approval are presented as one batch before any tool in that round starts. Decisions remain per call;
@@ -452,7 +458,8 @@ Each supported `MCPToolInfo` is wrapped in an `MCPTool` that conforms to `ChatTo
 - Closing the review denies every pending call once. Stopping or leaving the chat cancels the pending authorization.
 - Tool availability, configuration identity, enablement, and policy are revalidated immediately before execution. A server
   configuration change also cancels the active agent so conversation data cannot cross endpoints.
-- Unsupported input schemas and tools retained from a failed server are omitted from model definitions and cannot execute.
+- Malformed or non-object input schemas and tools retained from a failed server are omitted from model definitions and
+  cannot execute.
 - MCP results are encoded as explicitly untrusted data before they are returned to the model; external result text is never
   treated as a source of tool instructions.
 - Approval time is excluded from the agent timeout. Cancellation remains active while approval is pending.

@@ -34,24 +34,31 @@ struct MCPToolPermissionRow: View {
             }
             .disabled(!isAvailable)
 
-            LabeledContent(String(localized: "Permission")) {
-                Picker(
-                    String(localized: "Permission"),
-                    selection: Binding(
-                        get: { permission },
-                        set: { permission in onPermissionChanged(permission) }
-                    )
-                ) {
-                    ForEach(MCPToolPermission.allCases, id: \.self) { option in
-                        Label(option.title, systemImage: option.systemImage)
-                            .tag(option)
+            if isAvailable {
+                LabeledContent(String(localized: "Permission")) {
+                    Picker(
+                        String(localized: "Permission"),
+                        selection: Binding(
+                            get: { permission },
+                            set: { permission in onPermissionChanged(permission) }
+                        )
+                    ) {
+                        ForEach(MCPToolPermission.allCases, id: \.self) { option in
+                            Label(option.title, systemImage: option.systemImage)
+                                .tag(option)
+                        }
                     }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
                 }
-                .labelsHidden()
-                .pickerStyle(.menu)
-                .disabled(!isAvailable)
+                .font(.subheadline)
+            } else {
+                LabeledContent(String(localized: "Permission")) {
+                    Label(String(localized: "Unavailable"), systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.secondary)
+                }
+                .font(.subheadline)
             }
-            .font(.subheadline)
 
             Label(impactText, systemImage: "network")
                 .font(.caption)
@@ -74,7 +81,7 @@ private extension MCPToolPermissionRow {
     }
 }
 
-private extension MCPToolPermission {
+extension MCPToolPermission {
     var title: String {
         switch self {
         case .alwaysAllow: String(localized: "Always Allow")
