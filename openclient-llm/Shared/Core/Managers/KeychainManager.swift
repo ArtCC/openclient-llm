@@ -13,6 +13,9 @@ protocol KeychainManagerProtocol: Sendable {
     func setServerBaseURL(_ value: String)
     func getAPIKey() -> String
     func setAPIKey(_ value: String)
+    @discardableResult func setServerConfiguration(serverBaseURL: String, apiKey: String) -> Bool
+    func getMCPAuthorizationScope() -> String?
+    @discardableResult func setMCPAuthorizationScope(_ value: String) -> Bool
     func deleteAll()
 }
 
@@ -24,6 +27,8 @@ final class KeychainManager: KeychainManagerProtocol, @unchecked Sendable {
     private enum Keys {
         static let serverBaseURL = "com.openclient-llm.serverBaseURL"
         static let apiKey = "com.openclient-llm.apiKey"
+        static let serverConfiguration = "com.openclient-llm.serverConfiguration"
+        static let mcpAuthorizationScope = "com.openclient-llm.mcpAuthorizationScope"
     }
 
     private let service: String
@@ -37,31 +42,80 @@ final class KeychainManager: KeychainManagerProtocol, @unchecked Sendable {
     // MARK: - Public
 
     func getServerBaseURL() -> String {
-        getString(forKey: Keys.serverBaseURL) ?? ""
+        getServerConfiguration().serverBaseURL
     }
 
     func setServerBaseURL(_ value: String) {
-        setString(value, forKey: Keys.serverBaseURL)
+        _ = setServerConfiguration(serverBaseURL: value, apiKey: getAPIKey())
     }
 
     func getAPIKey() -> String {
-        getString(forKey: Keys.apiKey) ?? ""
+        getServerConfiguration().apiKey
     }
 
     func setAPIKey(_ value: String) {
-        setString(value, forKey: Keys.apiKey)
+        _ = setServerConfiguration(serverBaseURL: getServerBaseURL(), apiKey: value)
+    }
+
+    @discardableResult
+    func setServerConfiguration(serverBaseURL: String, apiKey: String) -> Bool {
+        let configuration = StoredServerConfiguration(serverBaseURL: serverBaseURL, apiKey: apiKey)
+        guard let data = try? JSONEncoder().encode(configuration),
+              setData(data, forKey: Keys.serverConfiguration) else { return false }
+        deleteItem(forKey: Keys.serverBaseURL)
+        deleteItem(forKey: Keys.apiKey)
+        return true
+    }
+
+    func getMCPAuthorizationScope() -> String? {
+        getString(forKey: Keys.mcpAuthorizationScope)
+    }
+
+    @discardableResult
+    func setMCPAuthorizationScope(_ value: String) -> Bool {
+        setString(value, forKey: Keys.mcpAuthorizationScope)
     }
 
     func deleteAll() {
         deleteItem(forKey: Keys.serverBaseURL)
         deleteItem(forKey: Keys.apiKey)
+        deleteItem(forKey: Keys.serverConfiguration)
+        deleteItem(forKey: Keys.mcpAuthorizationScope)
     }
 }
 
 // MARK: - Private
 
 private extension KeychainManager {
+    struct StoredServerConfiguration: Codable {
+        let serverBaseURL: String
+        let apiKey: String
+    }
+
+    func getServerConfiguration() -> StoredServerConfiguration {
+        if let data = getData(forKey: Keys.serverConfiguration),
+           let configuration = try? JSONDecoder().decode(StoredServerConfiguration.self, from: data) {
+            return configuration
+        }
+        let legacyConfiguration = StoredServerConfiguration(
+            serverBaseURL: getString(forKey: Keys.serverBaseURL) ?? "",
+            apiKey: getString(forKey: Keys.apiKey) ?? ""
+        )
+        if !legacyConfiguration.serverBaseURL.isEmpty || !legacyConfiguration.apiKey.isEmpty {
+            _ = setServerConfiguration(
+                serverBaseURL: legacyConfiguration.serverBaseURL,
+                apiKey: legacyConfiguration.apiKey
+            )
+        }
+        return legacyConfiguration
+    }
+
     func getString(forKey key: String) -> String? {
+        guard let data = getData(forKey: key) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    func getData(forKey key: String) -> Data? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -78,24 +132,31 @@ private extension KeychainManager {
             return nil
         }
 
-        return String(data: data, encoding: .utf8)
+        return data
     }
 
-    func setString(_ value: String, forKey key: String) {
-        guard let data = value.data(using: .utf8) else { return }
+    func setString(_ value: String, forKey key: String) -> Bool {
+        guard let data = value.data(using: .utf8) else { return false }
+        return setData(data, forKey: key)
+    }
 
-        deleteItem(forKey: key)
-
-        let query: [String: Any] = [
+    func setData(_ data: Data, forKey key: String) -> Bool {
+        let baseQuery: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: key,
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleAfterFirstUnlock,
             kSecUseDataProtectionKeychain as String: true
         ]
-
-        SecItemAdd(query as CFDictionary, nil)
+        let updateStatus = SecItemUpdate(
+            baseQuery as CFDictionary,
+            [kSecValueData as String: data] as CFDictionary
+        )
+        if updateStatus == errSecSuccess { return true }
+        guard updateStatus == errSecItemNotFound else { return false }
+        var addQuery = baseQuery
+        addQuery[kSecValueData as String] = data
+        addQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        return SecItemAdd(addQuery as CFDictionary, nil) == errSecSuccess
     }
 
     func deleteItem(forKey key: String) {

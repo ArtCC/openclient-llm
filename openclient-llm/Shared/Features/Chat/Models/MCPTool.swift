@@ -8,13 +8,25 @@
 
 import Foundation
 
-struct MCPTool: ChatToolProtocol {
+struct MCPTool: MCPAuthorizableToolProtocol {
     // MARK: - Properties
 
     let serverId: String
     let toolName: String
     let rawName: String
     private let repository: MCPRepositoryProtocol
+    private let isConfigurationCurrent: @MainActor @Sendable () -> Bool
+    private let isEnabled: @MainActor @Sendable () -> Bool
+    private let baseAuthorizationMetadata: MCPToolAuthorizationMetadata
+    private let permissionProvider: @MainActor @Sendable () -> MCPToolPermission
+
+    var authorizationMetadata: MCPToolAuthorizationMetadata {
+        baseAuthorizationMetadata.withPermission(permissionProvider())
+    }
+
+    var isAvailableForAdvertisement: Bool {
+        isEnabled() && isConfigurationCurrent()
+    }
 
     var definition: ToolDefinition {
         ToolDefinition(
@@ -40,7 +52,13 @@ struct MCPTool: ChatToolProtocol {
         description: String,
         parameters: ToolParameters,
         repository: MCPRepositoryProtocol = MCPRepository(),
-        inputSchema: MCPJSONSchema? = nil
+        inputSchema: MCPJSONSchema? = nil,
+        serverName: String? = nil,
+        permissionKey: String? = nil,
+        permission: MCPToolPermission = .ask,
+        permissionProvider: (@MainActor @Sendable () -> MCPToolPermission)? = nil,
+        isEnabled: @escaping @MainActor @Sendable () -> Bool = { true },
+        isConfigurationCurrent: @escaping @MainActor @Sendable () -> Bool = { true }
     ) {
         self.serverId = serverId
         self.toolName = toolName
@@ -49,12 +67,48 @@ struct MCPTool: ChatToolProtocol {
         self.parameters = parameters
         self.repository = repository
         self.inputSchema = inputSchema
+        self.isConfigurationCurrent = isConfigurationCurrent
+        self.isEnabled = isEnabled
+        self.permissionProvider = permissionProvider ?? { permission }
+        let sanitizedName = MCPDisplayText.sanitize(
+            rawName,
+            fallback: String(localized: "External MCP tool"),
+            maximumLength: 160
+        )
+        let sanitizedServerName = MCPDisplayText.sanitize(
+            serverName ?? serverId,
+            fallback: String(localized: "MCP server"),
+            maximumLength: 160
+        )
+        let sanitizedDescription = MCPDisplayText.sanitize(
+            description,
+            fallback: sanitizedName,
+            maximumLength: 500
+        )
+        self.baseAuthorizationMetadata = MCPToolAuthorizationMetadata(
+            toolId: MCPToolInfo.identifier(serverId: serverId, name: rawName),
+            displayName: sanitizedName,
+            serverName: sanitizedServerName,
+            toolDescription: sanitizedDescription,
+            permissionKey: permissionKey ?? "\(serverId)-\(rawName)",
+            permission: permission
+        )
     }
 
     // MARK: - Execute
 
     func execute(arguments: String) async throws -> ToolExecutionResult {
-        try validate(arguments: arguments)
+        try validateBeforeExecution(arguments: arguments, approvedByUser: false)
+        return try await executeRepository(arguments: arguments)
+    }
+
+    func executeAuthorized(arguments: String, approvedByUser: Bool) async throws -> ToolExecutionResult {
+        try validateBeforeExecution(arguments: arguments, approvedByUser: approvedByUser)
+        return try await executeRepository(arguments: arguments)
+    }
+
+    private func executeRepository(arguments: String) async throws -> ToolExecutionResult {
+        try Task.checkCancellation()
         let resultText = try await repository.executeTool(
             serverId: serverId,
             toolName: rawName,
@@ -76,11 +130,37 @@ struct MCPTool: ChatToolProtocol {
         return ToolParameters(
             type: schema.type ?? "object",
             properties: properties,
-            required: schema.required ?? []
+            required: schema.required ?? [],
+            additionalProperties: makeAdditionalProperties(schema.additionalProperties)
         )
     }
 
+    static func toolParameters(from tool: MCPToolInfo) -> ToolParameters {
+        guard tool.isInputSchemaSupported,
+              let data = tool.rawInputSchemaData,
+              let rawSchema = try? JSONDecoder().decode(MCPCallValue.self, from: data) else {
+            return toolParameters(from: tool.inputSchema)
+        }
+        return ToolParameters(rawSchema: rawSchema)
+    }
+
     // MARK: - Private
+
+    func validateForAuthorization(arguments: String) throws {
+        guard isEnabled() else { throw MCPToolError.toolDisabled }
+        guard isConfigurationCurrent() else { throw MCPToolError.configurationChanged }
+        try validate(arguments: arguments)
+    }
+
+    func validateBeforeExecution(arguments: String, approvedByUser: Bool) throws {
+        try validateForAuthorization(arguments: arguments)
+        let permission = permissionProvider()
+        if approvedByUser {
+            guard permission != .deny else { throw MCPToolError.authorizationChanged }
+        } else {
+            guard permission == .alwaysAllow else { throw MCPToolError.authorizationChanged }
+        }
+    }
 
     private static func makeProperty(
         _ schema: MCPJSONSchema,
@@ -93,13 +173,27 @@ struct MCPTool: ChatToolProtocol {
             makeProperty($0, fallbackDescription: "")
         }
         return ToolParameterProperty(
-            type: schema.type ?? "string",
+            type: inferredType(for: schema),
             description: schema.description ?? fallbackDescription,
             properties: nestedProperties,
             items: nestedItems,
             required: schema.required,
-            enum: schema.enum
+            enum: schema.enum,
+            additionalProperties: makeAdditionalProperties(schema.additionalProperties)
         )
+    }
+
+    private static func makeAdditionalProperties(
+        _ additionalProperties: MCPAdditionalProperties?
+    ) -> ToolAdditionalProperties? {
+        switch additionalProperties {
+        case .allowed(let value):
+            .allowed(value)
+        case .schema(let schema):
+            .schema(makeProperty(schema, fallbackDescription: ""))
+        case nil:
+            nil
+        }
     }
 
     private func validate(arguments: String) throws {
@@ -117,10 +211,17 @@ struct MCPTool: ChatToolProtocol {
 
     private func validate(_ value: Any, against schema: MCPJSONSchema, depth: Int) -> Bool {
         guard depth <= 10 else { return false }
-        if let allowedValues = schema.enum,
-           let stringValue = value as? String,
-           !allowedValues.contains(stringValue) {
-            return false
+        if let allowedValues = schema.enum {
+            guard let stringValue = value as? String,
+                  allowedValues.contains(stringValue) else { return false }
+        }
+
+        if schema.type == nil,
+           schema.properties != nil || schema.required != nil || schema.additionalProperties != nil {
+            return validateObject(value, against: schema, depth: depth)
+        }
+        if schema.type == nil, schema.items != nil {
+            return validateArray(value, against: schema, depth: depth)
         }
 
         switch schema.type {
@@ -147,19 +248,31 @@ struct MCPTool: ChatToolProtocol {
         case "null":
             return value is NSNull
         default:
-            return true
+            return type == nil
         }
     }
 
     private func validateObject(_ value: Any, against schema: MCPJSONSchema, depth: Int) -> Bool {
         guard let object = value as? [String: Any] else { return false }
+        let declaredProperties = schema.properties ?? [:]
         for requiredKey in schema.required ?? [] where object[requiredKey] == nil {
             return false
         }
-        for (key, propertySchema) in schema.properties ?? [:] {
+        for (key, propertySchema) in declaredProperties {
             if let property = object[key], !validate(property, against: propertySchema, depth: depth + 1) {
                 return false
             }
+        }
+        let additionalValues = object.filter { declaredProperties[$0.key] == nil }.map(\.value)
+        switch schema.additionalProperties {
+        case .allowed(false):
+            return additionalValues.isEmpty
+        case .schema(let additionalSchema):
+            return additionalValues.allSatisfy {
+                validate($0, against: additionalSchema, depth: depth + 1)
+            }
+        case .allowed(true), nil:
+            break
         }
         return true
     }
@@ -169,11 +282,23 @@ struct MCPTool: ChatToolProtocol {
         guard let itemSchema = schema.items else { return true }
         return array.allSatisfy { validate($0, against: itemSchema, depth: depth + 1) }
     }
+
+    private static func inferredType(for schema: MCPJSONSchema) -> String {
+        if let type = schema.type { return type }
+        if schema.properties != nil || schema.required != nil || schema.additionalProperties != nil {
+            return "object"
+        }
+        if schema.items != nil { return "array" }
+        return "string"
+    }
 }
 
 enum MCPToolError: LocalizedError, Sendable, Equatable {
     case invalidArguments
     case argumentsDoNotMatchSchema
+    case configurationChanged
+    case toolDisabled
+    case authorizationChanged
 
     var errorDescription: String? {
         switch self {
@@ -181,6 +306,12 @@ enum MCPToolError: LocalizedError, Sendable, Equatable {
             String(localized: "The MCP tool arguments are not valid JSON.")
         case .argumentsDoNotMatchSchema:
             String(localized: "The MCP tool arguments do not match the tool schema.")
+        case .configurationChanged:
+            String(localized: "The MCP server configuration changed. Request the tool again before executing it.")
+        case .toolDisabled:
+            String(localized: "The MCP tool was disabled before it could execute.")
+        case .authorizationChanged:
+            String(localized: "The MCP tool permission changed before it could execute.")
         }
     }
 }

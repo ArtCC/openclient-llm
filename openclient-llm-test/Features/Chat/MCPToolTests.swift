@@ -20,7 +20,8 @@ final class MCPToolTests: XCTestCase {
             rawName: "search",
             description: "Search",
             parameters: ToolParameters(type: "object", properties: [:], required: []),
-            repository: repository
+            repository: repository,
+            permission: .alwaysAllow
         )
 
         // When
@@ -44,19 +45,24 @@ final class MCPToolTests: XCTestCase {
             repository: repository
         )
 
-        // When / Then
+        // When
+        let caughtError: Error?
         do {
             _ = try await tool.execute(arguments: "not-json")
-            XCTFail("Expected invalid arguments to throw")
+            caughtError = nil
         } catch {
-            XCTAssertNil(repository.serverId)
+            caughtError = error
         }
+
+        // Then
+        XCTAssertEqual(caughtError as? MCPToolError, .invalidArguments)
+        XCTAssertNil(repository.serverId)
     }
 
     func test_execute_missingRequiredArgument_doesNotCallRepository() async {
         // Given
         let schema = MCPJSONSchema(
-            type: "object",
+            type: nil,
             properties: [
                 "query": MCPJSONSchema(
                     type: "string",
@@ -83,13 +89,221 @@ final class MCPToolTests: XCTestCase {
             inputSchema: schema
         )
 
-        // When / Then
+        // When
+        let caughtError: Error?
         do {
             _ = try await tool.execute(arguments: "{}")
-            XCTFail("Expected schema validation to throw")
+            caughtError = nil
         } catch {
-            XCTAssertNil(repository.serverId)
+            caughtError = error
         }
+
+        // Then
+        XCTAssertEqual(caughtError as? MCPToolError, .argumentsDoNotMatchSchema)
+        XCTAssertNil(repository.serverId)
+    }
+
+    func test_execute_configurationChanged_doesNotCallRepository() async {
+        // Given
+        let repository = MockMCPToolRepository()
+        let tool = MCPTool(
+            serverId: "srv-1",
+            toolName: "GitHub-search",
+            rawName: "search",
+            description: "Search",
+            parameters: ToolParameters(type: "object", properties: [:], required: []),
+            repository: repository,
+            isConfigurationCurrent: { false }
+        )
+
+        // When
+        let caughtError: Error?
+        do {
+            _ = try await tool.execute(arguments: "{}")
+            caughtError = nil
+        } catch {
+            caughtError = error
+        }
+
+        // Then
+        XCTAssertEqual(caughtError as? MCPToolError, .configurationChanged)
+        XCTAssertNil(repository.serverId)
+    }
+
+    func test_execute_askPermissionWithoutPermit_doesNotCallRepository() async {
+        // Given
+        let repository = MockMCPToolRepository()
+        let tool = MCPTool(
+            serverId: "srv-1",
+            toolName: "GitHub-search",
+            rawName: "search",
+            description: "Search",
+            parameters: ToolParameters(type: "object", properties: [:], required: []),
+            repository: repository
+        )
+
+        // When
+        let caughtError: Error?
+        do {
+            _ = try await tool.execute(arguments: "{}")
+            caughtError = nil
+        } catch {
+            caughtError = error
+        }
+
+        // Then
+        XCTAssertEqual(caughtError as? MCPToolError, .authorizationChanged)
+        XCTAssertNil(repository.serverId)
+    }
+
+    func test_execute_additionalPropertyDisallowed_doesNotCallRepository() async {
+        // Given
+        let schema = MCPJSONSchema(
+            type: nil,
+            properties: ["query": MCPJSONSchema(
+                type: "string",
+                properties: nil,
+                required: nil,
+                description: nil,
+                items: nil,
+                enum: nil
+            )],
+            required: ["query"],
+            description: nil,
+            items: nil,
+            enum: nil,
+            additionalProperties: .allowed(false)
+        )
+        let repository = MockMCPToolRepository()
+        let tool = MCPTool(
+            serverId: "srv-1",
+            toolName: "GitHub-search",
+            rawName: "search",
+            description: "Search",
+            parameters: MCPTool.toolParameters(from: schema),
+            repository: repository,
+            inputSchema: schema,
+            permission: .alwaysAllow
+        )
+
+        // When
+        let caughtError: Error?
+        do {
+            _ = try await tool.execute(arguments: #"{"query":"Swift","unexpected":true}"#)
+            caughtError = nil
+        } catch {
+            caughtError = error
+        }
+
+        // Then
+        XCTAssertEqual(caughtError as? MCPToolError, .argumentsDoNotMatchSchema)
+        XCTAssertNil(repository.serverId)
+    }
+
+    func test_toolParameters_additionalPropertiesFalse_encodesConstraint() throws {
+        // Given
+        let schema = MCPJSONSchema(
+            type: "object",
+            properties: [:],
+            required: [],
+            description: nil,
+            items: nil,
+            enum: nil,
+            additionalProperties: .allowed(false)
+        )
+
+        // When
+        let data = try JSONEncoder().encode(MCPTool.toolParameters(from: schema))
+        let json = try XCTUnwrap(String(data: data, encoding: .utf8))
+
+        // Then
+        XCTAssertTrue(json.contains("\"additionalProperties\":false"))
+    }
+
+    func test_authorizationMetadata_untrustedControlCharacters_sanitizesDisplayText() {
+        // Given
+        let tool = MCPTool(
+            serverId: "server-id",
+            toolName: "Server-tool",
+            rawName: "safe\u{202E}evil\nnext",
+            description: "Do\u{0000}thing",
+            parameters: ToolParameters(type: "object", properties: [:], required: []),
+            serverName: "Git\nHub"
+        )
+
+        // When
+        let metadata = tool.authorizationMetadata
+
+        // Then
+        XCTAssertEqual(metadata.displayName, "safeevil next")
+        XCTAssertEqual(metadata.serverName, "Git Hub")
+        XCTAssertEqual(metadata.toolDescription, "Do thing")
+    }
+
+    func test_execute_omittedTypeEnumReceivesNumber_rejectsArguments() async {
+        // Given
+        let schema = MCPJSONSchema(
+            type: "object",
+            properties: ["mode": MCPJSONSchema(
+                type: nil,
+                properties: nil,
+                required: nil,
+                description: nil,
+                items: nil,
+                enum: ["read"]
+            )],
+            required: ["mode"],
+            description: nil,
+            items: nil,
+            enum: nil
+        )
+        let tool = MCPTool(
+            serverId: "server",
+            toolName: "tool",
+            rawName: "tool",
+            description: "Tool",
+            parameters: MCPTool.toolParameters(from: schema),
+            inputSchema: schema,
+            permission: .alwaysAllow
+        )
+
+        // When
+        let caughtError: Error?
+        do {
+            _ = try await tool.execute(arguments: #"{"mode":1}"#)
+            caughtError = nil
+        } catch {
+            caughtError = error
+        }
+
+        // Then
+        XCTAssertEqual(caughtError as? MCPToolError, .argumentsDoNotMatchSchema)
+    }
+
+    func test_toolParameters_nestedObjectWithoutType_infersObjectType() {
+        // Given
+        let nestedSchema = MCPJSONSchema(
+            type: nil,
+            properties: [:],
+            required: [],
+            description: nil,
+            items: nil,
+            enum: nil
+        )
+        let schema = MCPJSONSchema(
+            type: "object",
+            properties: ["configuration": nestedSchema],
+            required: [],
+            description: nil,
+            items: nil,
+            enum: nil
+        )
+
+        // When
+        let parameters = MCPTool.toolParameters(from: schema)
+
+        // Then
+        XCTAssertEqual(parameters.properties["configuration"]?.type, "object")
     }
 }
 

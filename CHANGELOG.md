@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.20-build-73] - 2026-08-14
+
+### Added
+
+- **MCP permissions and approval** — users can set permissions per tool or for an entire server and review requested MCP calls together before execution
+
+### Changed
+
+- Agent workflows now allow up to 300 seconds of active processing and 15 rounds for longer multi-tool tasks
+
+### Fixed
+
+- GitHub MCP tools using standard JSON Schema constraints are now available to the model and executable through the approval flow
+- Conversation widgets now use more compact typography and balanced header spacing to prevent compressed or crowded layouts
+
 ## [1.6.15-build-71] - 2026-08-13
 
 ### Added

@@ -22,31 +22,17 @@ enum AgentEvent: Sendable {
     case completed
 }
 
-// MARK: - AgentStreamError
+nonisolated struct AgentToolContext: Sendable {
+    let toolRegistry: ToolRegistry
+    let isConfigurationCurrent: @MainActor @Sendable () -> Bool
 
-enum AgentStreamError: LocalizedError, Sendable, Equatable {
-    case timedOut
-    case iterationLimitReached
-    case invalidResponse
-
-    var errorDescription: String? {
-        switch self {
-        case .timedOut:
-            String(localized: "The agent timed out before completing the response.")
-        case .iterationLimitReached:
-            String(localized: "The agent reached its maximum number of steps.")
-        case .invalidResponse:
-            String(localized: "The model returned an invalid agent response.")
-        }
+    init(
+        toolRegistry: ToolRegistry,
+        isConfigurationCurrent: @escaping @MainActor @Sendable () -> Bool = { true }
+    ) {
+        self.toolRegistry = toolRegistry
+        self.isConfigurationCurrent = isConfigurationCurrent
     }
-}
-
-// MARK: - ToolCallResult
-
-struct ToolCallResult: Sendable {
-    let toolCallId: String
-    let toolName: String
-    let executionResult: ToolExecutionResult
 }
 
 // MARK: - AgentStreamUseCaseProtocol
@@ -57,8 +43,26 @@ protocol AgentStreamUseCaseProtocol: Sendable {
         model: String,
         parameters: ModelParameters,
         contextWindowTokens: Int?,
-        toolRegistry: ToolRegistry
+        toolContext: AgentToolContext
     ) -> AsyncThrowingStream<AgentEvent, Error>
+}
+
+extension AgentStreamUseCaseProtocol {
+    func execute(
+        messages: [ChatMessage],
+        model: String,
+        parameters: ModelParameters,
+        contextWindowTokens: Int? = nil,
+        toolRegistry: ToolRegistry
+    ) -> AsyncThrowingStream<AgentEvent, Error> {
+        execute(
+            messages: messages,
+            model: model,
+            parameters: parameters,
+            contextWindowTokens: contextWindowTokens,
+            toolContext: AgentToolContext(toolRegistry: toolRegistry)
+        )
+    }
 }
 
 // MARK: - AgentStreamUseCase
@@ -66,7 +70,7 @@ protocol AgentStreamUseCaseProtocol: Sendable {
 struct AgentStreamUseCase: AgentStreamUseCaseProtocol {
     // MARK: - Properties
 
-    private static let maxIterations = 10
+    private static let maxIterations = 15
     private static let maxToolCalls = 20
     private static let maxToolCallsPerIteration = 8
     private static let maximumToolResultCharacters = 12_000
@@ -75,7 +79,7 @@ struct AgentStreamUseCase: AgentStreamUseCaseProtocol {
 
     // MARK: - Init
 
-    init(repository: ChatRepositoryProtocol = ChatRepository(), timeout: Duration = .seconds(125)) {
+    init(repository: ChatRepositoryProtocol = ChatRepository(), timeout: Duration = .seconds(300)) {
         self.repository = repository
         self.timeout = timeout
     }
@@ -87,17 +91,26 @@ struct AgentStreamUseCase: AgentStreamUseCaseProtocol {
         model: String,
         parameters: ModelParameters,
         contextWindowTokens: Int? = nil,
-        toolRegistry: ToolRegistry
+        toolContext: AgentToolContext
     ) -> AsyncThrowingStream<AgentEvent, Error> {
         AsyncThrowingStream { continuation in
+            let timeoutController = AgentTimeoutController(timeout: timeout)
+            let executionController = AgentExecutionController()
             let context = AgentLoopContext(
                 model: model,
                 parameters: parameters,
                 contextWindowTokens: contextWindowTokens,
-                toolRegistry: toolRegistry,
+                toolRegistry: toolContext.toolRegistry,
+                isConfigurationCurrent: toolContext.isConfigurationCurrent,
+                timeoutController: timeoutController,
                 continuation: continuation
             )
             let task = Task {
+                await timeoutController.start {
+                    continuation.finish(throwing: AgentStreamError.timedOut)
+                    Task { await executionController.cancel() }
+                }
+                defer { Task { await timeoutController.cancel() } }
                 do {
                     try await runAgentLoop(messages: messages, context: context)
                     continuation.finish()
@@ -105,15 +118,13 @@ struct AgentStreamUseCase: AgentStreamUseCaseProtocol {
                     continuation.finish(throwing: error)
                 }
             }
-            let timeoutTask = Task {
-                try? await Task.sleep(for: timeout)
-                guard !Task.isCancelled else { return }
-                continuation.finish(throwing: AgentStreamError.timedOut)
-                task.cancel()
-            }
+            Task { await executionController.register(task) }
             continuation.onTermination = { _ in
                 task.cancel()
-                timeoutTask.cancel()
+                Task {
+                    await executionController.cancel()
+                    await timeoutController.cancel()
+                }
             }
         }
     }
@@ -126,6 +137,8 @@ private nonisolated struct AgentLoopContext: Sendable {
     let parameters: ModelParameters
     let contextWindowTokens: Int?
     let toolRegistry: ToolRegistry
+    let isConfigurationCurrent: @MainActor @Sendable () -> Bool
+    let timeoutController: AgentTimeoutController
     let continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
 }
 
@@ -182,12 +195,15 @@ private extension AgentStreamUseCase {
         messages: [ChatMessage],
         tools: [ToolDefinition]
     ) async throws -> ChatCompletionResponse {
-        try await repository.agentCompletion(
+        guard context.isConfigurationCurrent() else { throw AgentStreamError.configurationChanged }
+        let response = try await repository.agentCompletion(
             messages: messages,
             model: context.model,
             parameters: context.parameters,
             tools: tools.isEmpty ? nil : tools
         )
+        guard context.isConfigurationCurrent() else { throw AgentStreamError.configurationChanged }
+        return response
     }
 
     func completeToolRound(
@@ -221,10 +237,9 @@ private extension AgentStreamUseCase {
             tools: nextTools,
             resultCount: toolCalls.count
         )
-        let executedResults = try await executeToolCalls(
+        let executedResults = try await authorizedToolResults(
             executable,
-            registry: context.loop.toolRegistry,
-            continuation: context.loop.continuation,
+            context: context.loop,
             maximumCharacters: resultLimit
         )
         let results = orderedResults(
@@ -239,16 +254,56 @@ private extension AgentStreamUseCase {
         return willForceFinal
     }
 
-    func executeToolCalls(
+    func authorizedToolResults(
         _ toolCalls: [ToolCall],
+        context: AgentLoopContext,
+        maximumCharacters: Int
+    ) async throws -> [ToolCallResult] {
+        let plan = context.toolRegistry.makeAuthorizationPlan(for: toolCalls)
+        let outcomes = try await resolveAuthorization(plan, context: context)
+        try Task.checkCancellation()
+        guard context.isConfigurationCurrent() else { throw AgentStreamError.configurationChanged }
+        let authorized = outcomes.compactMap { outcome -> ToolRegistry.AuthorizedInvocation? in
+            guard case .authorized(let invocation) = outcome else { return nil }
+            return invocation
+        }
+        let denied = outcomes.compactMap { outcome -> ToolCallResult? in
+            guard case .denied(let toolCall, let reason) = outcome else { return nil }
+            return ToolCallResult(
+                toolCallId: toolCall.id,
+                toolName: toolCall.function.name,
+                executionResult: ToolExecutionResult(text: reason)
+            )
+        }
+        let executed = try await executeToolCalls(
+            authorized,
+            registry: context.toolRegistry,
+            isConfigurationCurrent: context.isConfigurationCurrent,
+            continuation: context.continuation,
+            maximumCharacters: maximumCharacters
+        )
+        return executed + denied.map {
+            boundedToolResult($0, maximumCharacters: maximumCharacters)
+        }
+    }
+
+    func executeToolCalls(
+        _ invocations: [ToolRegistry.AuthorizedInvocation],
         registry: ToolRegistry,
+        isConfigurationCurrent: @escaping @MainActor @Sendable () -> Bool,
         continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation,
         maximumCharacters: Int
     ) async throws -> [ToolCallResult] {
         try await withThrowingTaskGroup(of: ToolCallResult.self) { group in
-            for toolCall in toolCalls {
-                continuation.yield(.toolCallStarted(toolCall))
-                group.addTask { try await executeToolCall(toolCall, registry: registry) }
+            for invocation in invocations {
+                continuation.yield(.toolCallStarted(invocation.toolCall))
+                group.addTask {
+                    try await executeToolCall(
+                        invocation,
+                        registry: registry,
+                        isConfigurationCurrent: isConfigurationCurrent
+                    )
+                }
             }
             var results: [ToolCallResult] = []
             for try await result in group {
@@ -265,12 +320,16 @@ private extension AgentStreamUseCase {
         }
     }
 
-    func executeToolCall(_ toolCall: ToolCall, registry: ToolRegistry) async throws -> ToolCallResult {
+    func executeToolCall(
+        _ invocation: ToolRegistry.AuthorizedInvocation,
+        registry: ToolRegistry,
+        isConfigurationCurrent: @escaping @MainActor @Sendable () -> Bool
+    ) async throws -> ToolCallResult {
+        let toolCall = invocation.toolCall
         do {
-            let result = try await registry.execute(
-                toolName: toolCall.function.name,
-                arguments: toolCall.function.arguments
-            )
+            guard isConfigurationCurrent() else { throw AgentStreamError.configurationChanged }
+            let result = try await registry.execute(invocation)
+            guard isConfigurationCurrent() else { throw AgentStreamError.configurationChanged }
             return ToolCallResult(
                 toolCallId: toolCall.id,
                 toolName: toolCall.function.name,
@@ -278,6 +337,8 @@ private extension AgentStreamUseCase {
             )
         } catch is CancellationError {
             throw CancellationError()
+        } catch let error as AgentStreamError where error == .configurationChanged {
+            throw error
         } catch {
             return ToolCallResult(
                 toolCallId: toolCall.id,
@@ -286,6 +347,24 @@ private extension AgentStreamUseCase {
                     text: "Error executing \(toolCall.function.name): \(error.localizedDescription)"
                 )
             )
+        }
+    }
+
+    func resolveAuthorization(
+        _ plan: ToolRegistry.AuthorizationPlan,
+        context: AgentLoopContext
+    ) async throws -> [ToolRegistry.AuthorizationOutcome] {
+        guard plan.requiresUserDecision else {
+            return try await context.toolRegistry.resolveAuthorization(plan)
+        }
+        await context.timeoutController.pause()
+        do {
+            let outcomes = try await context.toolRegistry.resolveAuthorization(plan)
+            await context.timeoutController.resume()
+            return outcomes
+        } catch {
+            await context.timeoutController.cancel()
+            throw error
         }
     }
 
@@ -312,7 +391,7 @@ private extension AgentStreamUseCase {
     }
 
     func toolMessage(_ result: ToolCallResult) -> ChatMessage {
-        ChatMessage(
+        return ChatMessage(
             role: .tool,
             content: result.executionResult.text,
             toolCallId: result.toolCallId,
@@ -365,40 +444,6 @@ private extension AgentStreamUseCase {
         }
     }
 
-    func boundedToolResult(_ result: ToolCallResult, maximumCharacters: Int) -> ToolCallResult {
-        let marker = "\n[Tool result truncated]"
-        guard result.executionResult.text.utf8.count > maximumCharacters else { return result }
-        guard maximumCharacters > 0 else {
-            return ToolCallResult(
-                toolCallId: result.toolCallId,
-                toolName: result.toolName,
-                executionResult: ToolExecutionResult(text: "", searchResults: result.executionResult.searchResults)
-            )
-        }
-        let contentLimit = max(0, maximumCharacters - marker.utf8.count)
-        let suffix = maximumCharacters >= marker.utf8.count ? marker : ""
-        return ToolCallResult(
-            toolCallId: result.toolCallId,
-            toolName: result.toolName,
-            executionResult: ToolExecutionResult(
-                text: utf8Prefix(result.executionResult.text, maximumBytes: contentLimit) + suffix,
-                searchResults: result.executionResult.searchResults
-            )
-        )
-    }
-
-    func utf8Prefix(_ text: String, maximumBytes: Int) -> String {
-        var result = ""
-        var byteCount = 0
-        for character in text {
-            let bytes = String(character).utf8.count
-            guard byteCount + bytes <= maximumBytes else { break }
-            result.append(character)
-            byteCount += bytes
-        }
-        return result
-    }
-
     func rebudgetedMessages(
         _ messages: [ChatMessage],
         contextWindowTokens: Int?,
@@ -440,7 +485,8 @@ private extension AgentStreamUseCase {
             model: model,
             tools: tools
         ) ?? 0
-        let characterBudget = max(0, remaining * 3 / max(1, resultCount))
-        return min(Self.maximumToolResultCharacters, characterBudget)
+        let tokensPerResult = max(0, remaining) / max(1, resultCount)
+        let cappedTokens = min(tokensPerResult, Self.maximumToolResultCharacters / 3)
+        return cappedTokens * 3
     }
 }

@@ -95,7 +95,7 @@ private extension PromptTemplatesView {
 
             content
         }
-        .frame(width: 480, height: 520)
+        .frame(width: 500, height: 520)
     }
 #endif
 

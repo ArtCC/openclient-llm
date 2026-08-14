@@ -33,7 +33,12 @@ final class ToolRegistryTests: XCTestCase {
         let sut = ToolRegistry(tools: [tool])
 
         // When
-        let result = try await sut.execute(toolName: "greet", arguments: "{}")
+        let invocation = try await authorizedInvocation(
+            in: sut,
+            toolName: "greet",
+            arguments: "{}"
+        )
+        let result = try await sut.execute(invocation)
 
         // Then
         XCTAssertEqual(result.text, "hello")
@@ -45,10 +50,229 @@ final class ToolRegistryTests: XCTestCase {
         let sut = ToolRegistry(tools: [])
 
         // When
-        let result = try await sut.execute(toolName: "nonexistent", arguments: "{}")
+        let invocation = try await authorizedInvocation(
+            in: sut,
+            toolName: "nonexistent",
+            arguments: "{}"
+        )
+        let result = try await sut.execute(invocation)
 
         // Then
         XCTAssertTrue(result.text.contains("Unknown tool"))
+    }
+
+    func test_makeAuthorizationPlan_internalAndWebTools_areAlwaysAutomatic() async throws {
+        // Given
+        let names = ["get_current_datetime", "save_memory", "delete_memory", "web_search"]
+        let sut = ToolRegistry(tools: names.map { MockChatTool(name: $0) })
+        let calls = names.enumerated().map { index, name in
+            ToolCall(
+                id: "call-\(index)",
+                type: "function",
+                function: ToolCallFunction(name: name, arguments: "{}")
+            )
+        }
+
+        // When
+        let plan = sut.makeAuthorizationPlan(for: calls)
+        let outcomes = try await sut.resolveAuthorization(plan)
+
+        // Then
+        XCTAssertFalse(plan.requiresUserDecision)
+        XCTAssertEqual(outcomes.count, calls.count)
+        for outcome in outcomes {
+            guard case .authorized = outcome else {
+                XCTFail("Internal and web tools must remain automatic")
+                return
+            }
+        }
+    }
+
+    func test_execute_sameAuthorizedInvocationTwice_rejectsSecondExecution() async throws {
+        // Given
+        let tool = MockChatTool(name: "single_use")
+        let sut = ToolRegistry(tools: [tool])
+        let invocation = try await authorizedInvocation(
+            in: sut,
+            toolName: "single_use",
+            arguments: "{}"
+        )
+
+        // When
+        _ = try await sut.execute(invocation)
+        do {
+            _ = try await sut.execute(invocation)
+            XCTFail("Expected the permit to be single-use")
+        } catch {
+            // Expected
+        }
+
+        // Then
+        XCTAssertEqual(tool.executionCount, 1)
+    }
+
+    func test_execute_mcpPermissionChangesAfterPlanning_blocksExecution() async throws {
+        // Given
+        let state = RegistryMCPState()
+        let repository = MockRegistryMCPRepository()
+        let tool = MCPTool(
+            serverId: "github",
+            toolName: "GitHub-create_issue",
+            rawName: "create_issue",
+            description: "Create an issue",
+            parameters: ToolParameters(type: "object", properties: [:], required: []),
+            repository: repository,
+            permissionProvider: { state.permission },
+            isEnabled: { state.isEnabled }
+        )
+        let sut = ToolRegistry(tools: [tool])
+        let invocation = try await authorizedInvocation(
+            in: sut,
+            toolName: "GitHub-create_issue",
+            arguments: "{}"
+        )
+
+        // When
+        state.permission = .deny
+        do {
+            _ = try await sut.execute(invocation)
+            XCTFail("Expected changed permission to block execution")
+        } catch {
+            // Expected
+        }
+
+        // Then
+        XCTAssertFalse(repository.didExecute)
+    }
+
+    func test_execute_mcpDisabledAfterPlanning_blocksExecution() async throws {
+        // Given
+        let state = RegistryMCPState()
+        let repository = MockRegistryMCPRepository()
+        let tool = MCPTool(
+            serverId: "github",
+            toolName: "GitHub-create_issue",
+            rawName: "create_issue",
+            description: "Create an issue",
+            parameters: ToolParameters(type: "object", properties: [:], required: []),
+            repository: repository,
+            permissionProvider: { state.permission },
+            isEnabled: { state.isEnabled }
+        )
+        let sut = ToolRegistry(tools: [tool])
+        let invocation = try await authorizedInvocation(
+            in: sut,
+            toolName: "GitHub-create_issue",
+            arguments: "{}"
+        )
+
+        // When
+        state.isEnabled = false
+        do {
+            _ = try await sut.execute(invocation)
+            XCTFail("Expected disabled tool to block execution")
+        } catch {
+            // Expected
+        }
+
+        // Then
+        XCTAssertFalse(repository.didExecute)
+    }
+
+    func test_definitions_mcpDisabledAfterRegistryCreation_excludesTool() {
+        // Given
+        let state = RegistryMCPState()
+        let tool = MCPTool(
+            serverId: "github",
+            toolName: "GitHub-create_issue",
+            rawName: "create_issue",
+            description: "Create an issue",
+            parameters: ToolParameters(type: "object", properties: [:], required: []),
+            permissionProvider: { state.permission },
+            isEnabled: { state.isEnabled }
+        )
+        let sut = ToolRegistry(tools: [tool])
+        let initialDefinitions = sut.definitions
+
+        // When
+        state.isEnabled = false
+        let updatedDefinitions = sut.definitions
+
+        // Then
+        XCTAssertEqual(initialDefinitions.count, 1)
+        XCTAssertTrue(updatedDefinitions.isEmpty)
+    }
+
+    func test_definitions_mcpConfigurationChangesAfterRegistryCreation_excludesTool() {
+        // Given
+        let state = RegistryMCPState()
+        let tool = MCPTool(
+            serverId: "github",
+            toolName: "GitHub-create_issue",
+            rawName: "create_issue",
+            description: "Create an issue",
+            parameters: ToolParameters(type: "object", properties: [:], required: []),
+            permissionProvider: { state.permission },
+            isConfigurationCurrent: { state.isConfigurationCurrent }
+        )
+        let sut = ToolRegistry(tools: [tool])
+        let initialDefinitions = sut.definitions
+
+        // When
+        state.isConfigurationCurrent = false
+        let updatedDefinitions = sut.definitions
+
+        // Then
+        XCTAssertEqual(initialDefinitions.count, 1)
+        XCTAssertTrue(updatedDefinitions.isEmpty)
+    }
+
+    func test_definitions_mcpDeniedByPolicy_keepsToolAdvertised() {
+        // Given
+        let tool = MCPTool(
+            serverId: "github",
+            toolName: "GitHub-create_issue",
+            rawName: "create_issue",
+            description: "Create an issue",
+            parameters: ToolParameters(type: "object", properties: [:], required: []),
+            permission: .deny
+        )
+        let sut = ToolRegistry(tools: [tool])
+
+        // When
+        let definitions = sut.definitions
+
+        // Then
+        XCTAssertEqual(definitions.map(\.function.name), ["GitHub-create_issue"])
+    }
+
+    func test_execute_cancelledAfterAuthorization_doesNotExecuteMCPTool() async throws {
+        // Given
+        let state = RegistryMCPState()
+        let repository = MockRegistryMCPRepository()
+        let tool = MCPTool(
+            serverId: "github",
+            toolName: "GitHub-create_issue",
+            rawName: "create_issue",
+            description: "Create an issue",
+            parameters: ToolParameters(type: "object", properties: [:], required: []),
+            repository: repository,
+            permissionProvider: { state.permission }
+        )
+        let sut = ToolRegistry(tools: [tool])
+        let invocation = try await authorizedInvocation(
+            in: sut,
+            toolName: "GitHub-create_issue",
+            arguments: "{}"
+        )
+
+        // When
+        let execution = Task { try await sut.execute(invocation) }
+        execution.cancel()
+        _ = try? await execution.value
+
+        // Then
+        XCTAssertFalse(repository.didExecute)
     }
 
     // MARK: - Tests — default factory
@@ -86,6 +310,32 @@ final class ToolRegistryTests: XCTestCase {
     }
 }
 
+private extension ToolRegistryTests {
+    func authorizedInvocation(
+        in registry: ToolRegistry,
+        toolName: String,
+        arguments: String
+    ) async throws -> ToolRegistry.AuthorizedInvocation {
+        let toolCall = ToolCall(
+            id: "test-call",
+            type: "function",
+            function: ToolCallFunction(name: toolName, arguments: arguments)
+        )
+        let outcomes = try await registry.resolveAuthorization(
+            registry.makeAuthorizationPlan(for: [toolCall])
+        )
+        guard let outcome = outcomes.first,
+              case .authorized(let invocation) = outcome else {
+            throw TestError.notAuthorized
+        }
+        return invocation
+    }
+
+    enum TestError: Error {
+        case notAuthorized
+    }
+}
+
 // MARK: - MockChatTool
 
 // Safety: Only used within serialized @MainActor test methods.
@@ -93,6 +343,7 @@ private final class MockChatTool: ChatToolProtocol, @unchecked Sendable {
     let toolName: String
     var executionResult: ToolExecutionResult = ToolExecutionResult(text: "mock")
     var lastArguments: String?
+    var executionCount = 0
 
     var definition: ToolDefinition {
         ToolDefinition(
@@ -111,7 +362,28 @@ private final class MockChatTool: ChatToolProtocol, @unchecked Sendable {
     }
 
     func execute(arguments: String) async throws -> ToolExecutionResult {
+        executionCount += 1
         lastArguments = arguments
         return executionResult
+    }
+}
+
+@MainActor
+private final class RegistryMCPState {
+    var permission: MCPToolPermission = .alwaysAllow
+    var isEnabled = true
+    var isConfigurationCurrent = true
+}
+
+// Safety: Only used within serialized @MainActor test methods.
+private final class MockRegistryMCPRepository: MCPRepositoryProtocol, @unchecked Sendable {
+    var didExecute = false
+
+    func fetchServers() async throws -> [MCPServerInfo] { [] }
+    func fetchTools(serverId: String) async throws -> [MCPToolInfo] { [] }
+
+    func executeTool(serverId: String, toolName: String, arguments: String) async throws -> String {
+        didExecute = true
+        return "ok"
     }
 }

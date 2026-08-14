@@ -39,9 +39,14 @@ final class ChatViewModel {
         case forkFromMessage(UUID)
         case branchedConversationConsumed
         case webSearchToggled
-        case mcpButtonTapped
-        case mcpToolsRefreshed
+        case mcpButtonTapped, mcpToolsRefreshed
         case mcpToolToggled(toolId: String, enabled: Bool)
+        case mcpToolsToggled(toolIds: [String], enabled: Bool)
+        case mcpToolPermissionChanged(toolId: String, permission: MCPToolPermission)
+        case mcpToolsPermissionChanged(toolIds: [String], permission: MCPToolPermission)
+        case mcpAuthorizationDecision(batchId: UUID, requestId: UUID, decision: MCPToolAuthorizationDecision)
+        case mcpAuthorizationSubmitted(batchId: UUID)
+        case mcpAuthorizationDismissed(batchId: UUID)
         case toggleFavourite(UUID)
     }
 
@@ -80,11 +85,17 @@ final class ChatViewModel {
         var isWebSearchToolConfigured: Bool = false
         var isSearchingWeb: Bool = false
         var activeToolCallIds: Set<String> = []
+        var activeToolNamesById: [String: String] = [:]
         var isMCPSupported: Bool = false
         var availableMCPTools: [MCPToolInfo] = []
         var availableMCPServers: [MCPServerInfo] = []
+        var failedMCPServerIds: Set<String> = []
         var enabledMCPToolIds: Set<String> = []
+        var mcpToolPermissions: [String: MCPToolPermission] = [:]
+        var mcpDiscoveryScope: String?
+        var mcpDiscoveryRevision: Int = 0
         var isLoadingMCPTools: Bool = false
+        var mcpToolsError: String?
     }
 
     struct PersistenceResult {
@@ -115,6 +126,7 @@ final class ChatViewModel {
     let setWebSearchEnabledUseCase: SetWebSearchEnabledUseCaseProtocol
     let fetchMCPToolsUseCase: FetchMCPToolsUseCaseProtocol
     let settingsManager: SettingsManagerProtocol
+    let mcpAuthorizationCoordinator: MCPToolAuthorizationCoordinator
     let resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol
     let getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol?
     let getMemoryContextUseCase: GetMemoryContextUseCaseProtocol?
@@ -137,6 +149,10 @@ final class ChatViewModel {
     var activeAssistantMessageId: UUID?
     var errorDismissTask: Task<Void, Never>?
     var durationTrackingTask: Task<Void, Never>?
+    var mcpSettingsObservationTask: Task<Void, Never>?
+    var mcpDiscoveryTask: Task<Void, Never>?
+    var mcpDiscoveryGeneration = 0
+    var observedMCPAuthorizationScope: String
     private var pendingConversation: Conversation?
     var attachmentPreparationCount = 0
 
@@ -163,6 +179,7 @@ final class ChatViewModel {
         setWebSearchEnabledUseCase: SetWebSearchEnabledUseCaseProtocol = SetWebSearchEnabledUseCase(),
         fetchMCPToolsUseCase: FetchMCPToolsUseCaseProtocol = FetchMCPToolsUseCase(),
         settingsManager: SettingsManagerProtocol = SettingsManager(),
+        mcpAuthorizationCoordinator: MCPToolAuthorizationCoordinator? = nil,
         resolveAudioModelIdsUseCase: ResolveAudioModelIdsUseCaseProtocol = ResolveAudioModelIdsUseCase(),
         getUserProfileContextUseCase: GetUserProfileContextUseCaseProtocol? = nil,
         getMemoryContextUseCase: GetMemoryContextUseCaseProtocol? = nil,
@@ -200,6 +217,9 @@ final class ChatViewModel {
         self.setWebSearchEnabledUseCase = setWebSearchEnabledUseCase
         self.fetchMCPToolsUseCase = fetchMCPToolsUseCase
         self.settingsManager = settingsManager
+        self.observedMCPAuthorizationScope = settingsManager.getMCPAuthorizationScope()
+        self.mcpAuthorizationCoordinator = mcpAuthorizationCoordinator
+            ?? MCPToolAuthorizationCoordinator(settingsManager: settingsManager)
         self.resolveAudioModelIdsUseCase = resolveAudioModelIdsUseCase
         self.getUserProfileContextUseCase = getUserProfileContextUseCase ?? (
             isPrivateChat ? nil : GetUserProfileContextUseCase()
@@ -216,6 +236,12 @@ final class ChatViewModel {
         self.notifyStreamingCompletedUseCase = notifyStreamingCompletedUseCase
         self.compactConversationUseCase = compactConversationUseCase
         observeAppDataReset()
+        observeMCPToolSettingsChanges()
+    }
+
+    isolated deinit {
+        mcpSettingsObservationTask?.cancel()
+        mcpDiscoveryTask?.cancel()
     }
 
     // MARK: - Input functions
@@ -270,7 +296,9 @@ final class ChatViewModel {
             handlePhase6Event(event)
         case .webSearchToggled:
             toggleWebSearch()
-        case .mcpButtonTapped, .mcpToolsRefreshed, .mcpToolToggled:
+        case .mcpButtonTapped, .mcpToolsRefreshed, .mcpToolToggled, .mcpToolsToggled,
+             .mcpToolPermissionChanged, .mcpToolsPermissionChanged,
+             .mcpAuthorizationDecision, .mcpAuthorizationSubmitted, .mcpAuthorizationDismissed:
             handleMCPEvent(event)
         case .viewDisappeared, .viewAppeared, .conversationLoaded, .inputChanged, .sendTapped, .stopStreamingTapped:
             return

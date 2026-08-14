@@ -33,7 +33,7 @@ final class LaunchViewModelTests: XCTestCase {
             resetAppDataUseCase: mockResetAppData,
             attachmentMigrationUseCase: mockAttachmentMigration,
             remoteConfigManager: mockRemoteConfigManager,
-            currentVersion: "1.6.15",
+            currentVersion: "1.6.20",
             launchDelay: .zero
         )
     }
@@ -128,7 +128,7 @@ final class LaunchViewModelTests: XCTestCase {
             resetAppDataUseCase: mockResetAppData,
             attachmentMigrationUseCase: mockAttachmentMigration,
             remoteConfigManager: mockRemoteConfigManager,
-            currentVersion: "1.6.15",
+            currentVersion: "1.6.20",
             launchDelay: .milliseconds(500)
         )
 
@@ -158,7 +158,7 @@ final class LaunchViewModelTests: XCTestCase {
             resetAppDataUseCase: mockResetAppData,
             attachmentMigrationUseCase: mockAttachmentMigration,
             remoteConfigManager: mockRemoteConfigManager,
-            currentVersion: "1.6.15",
+            currentVersion: "1.6.20",
             launchDelay: .zero
         )
 

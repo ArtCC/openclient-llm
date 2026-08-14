@@ -27,6 +27,9 @@ private extension MCPToolsSheet {
             Group {
                 if loadedState.isLoadingMCPTools {
                     loadingContent
+                } else if let error = loadedState.mcpToolsError,
+                          loadedState.availableMCPServers.isEmpty {
+                    errorContent(error)
                 } else if loadedState.availableMCPServers.isEmpty {
                     emptyContent
                 } else {
@@ -69,7 +72,13 @@ private extension MCPToolsSheet {
 
     func serverListView(_ loadedState: ChatViewModel.LoadedState) -> some View {
         List {
-            Section(String(localized: "Available Servers")) {
+            if let error = loadedState.mcpToolsError {
+                Section {
+                    Label(error, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.red)
+                }
+            }
+            Section(String(localized: "MCP Servers")) {
                 ForEach(loadedState.availableMCPServers) { server in
                     let serverTools = loadedState.toolsForServer(server.serverId)
                     NavigationLink {
@@ -86,19 +95,34 @@ private extension MCPToolsSheet {
         }
     }
 
+    func errorContent(_ error: String) -> some View {
+        ContentUnavailableView {
+            Label(String(localized: "Unable to Load MCP Tools"), systemImage: "exclamationmark.triangle")
+        } description: {
+            Text(error)
+        } actions: {
+            Button(String(localized: "Retry")) {
+                viewModel.send(.mcpToolsRefreshed)
+            }
+        }
+    }
+
     func serverRow(
         server: MCPServerInfo,
         tools: [MCPToolInfo],
         loadedState: ChatViewModel.LoadedState
     ) -> some View {
-        let enabled = tools.filter { loadedState.enabledMCPToolIds.contains($0.id) }.count
+        let isServerAvailable = !loadedState.failedMCPServerIds.contains(server.serverId)
+        let enabled = tools.filter {
+            isServerAvailable && $0.isInputSchemaSupported && loadedState.enabledMCPToolIds.contains($0.id)
+        }.count
         return HStack {
-            Image(systemName: enabled > 0 ? "server.rack" : "server.rack")
-                .foregroundStyle(enabled > 0 ? Color.appAccent : .secondary)
+            Image(systemName: isServerAvailable ? "server.rack" : "exclamationmark.triangle")
+                .foregroundStyle(isServerAvailable ? (enabled > 0 ? Color.appAccent : .secondary) : .red)
             VStack(alignment: .leading, spacing: 2) {
-                Text(server.serverName)
+                Text(server.displayName)
                     .font(.headline)
-                if let description = server.description {
+                if let description = server.displayDescription {
                     Text(description)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -106,76 +130,47 @@ private extension MCPToolsSheet {
                 }
             }
             Spacer()
-            Text(String(localized: "\(enabled)/\(tools.count)"))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            if isServerAvailable {
+                Text(String(localized: "\(enabled)/\(tools.count)"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                Text(String(localized: "Unavailable"))
+                    .font(.caption)
+                    .foregroundStyle(.red)
+            }
         }
     }
 
+    @ViewBuilder
     func serverDetailView(
         server: MCPServerInfo,
         tools: [MCPToolInfo],
         loadedState: ChatViewModel.LoadedState
     ) -> some View {
-        let allEnabled = tools.allSatisfy { loadedState.enabledMCPToolIds.contains($0.id) }
-        let serverId = server.serverName
-        return List {
-            Section {
-                Toggle(isOn: Binding(
-                    get: { allEnabled },
-                    set: { enable in
-                        for tool in tools {
-                             viewModel.send(.mcpToolToggled(
-                                 toolId: tool.id,
-                                enabled: enable
-                            ))
-                        }
-                    }
-                )) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(String(localized: "Enable All Tools"))
-                            .font(.headline)
-                        let count = tools.count
-                        Text(String(localized: "\(count) tool(s) available"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .toggleStyle(.switch)
-            }
-            Section {
-                ForEach(tools) { tool in
-                    mcpToolRow(tool, loadedState: loadedState)
-                }
-            }
-        }
-        .navigationTitle(serverId)
+        MCPServerToolsView(
+            tools: tools,
+            isServerAvailable: !loadedState.failedMCPServerIds.contains(server.serverId),
+            enabledToolIds: loadedState.enabledMCPToolIds,
+            permissions: loadedState.mcpToolPermissions,
+            onToolEnabledChanged: { toolId, enabled in
+                viewModel.send(.mcpToolToggled(toolId: toolId, enabled: enabled))
+            },
+            onAllToolsEnabledChanged: { enabled in
+                viewModel.send(.mcpToolsToggled(toolIds: tools.map(\.id), enabled: enabled))
+            },
+            onPermissionChanged: { toolId, permission in
+                viewModel.send(.mcpToolPermissionChanged(toolId: toolId, permission: permission))
+            },
+            onAllPermissionsChanged: { permission in
+                viewModel.send(.mcpToolsPermissionChanged(toolIds: tools.map(\.id), permission: permission))
+            },
+            onRetry: { viewModel.send(.mcpToolsRefreshed) }
+        )
+        .navigationTitle(server.displayName)
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
-    }
-
-    func mcpToolRow(
-        _ tool: MCPToolInfo,
-        loadedState: ChatViewModel.LoadedState
-    ) -> some View {
-        let isEnabled = loadedState.enabledMCPToolIds.contains(tool.id)
-        return Toggle(isOn: Binding(
-            get: { isEnabled },
-            set: { enabled in
-                viewModel.send(.mcpToolToggled(toolId: tool.id, enabled: enabled))
-            }
-        )) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(tool.name)
-                if let description = tool.description {
-                    Text(description)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-            }
-        }
     }
 
     @ToolbarContentBuilder
@@ -229,7 +224,8 @@ extension ChatViewModel.LoadedState {
             isMCPSupported: true,
             availableMCPTools: [tool1, tool2],
             availableMCPServers: servers,
-            enabledMCPToolIds: ["gh-search_issues"]
+            enabledMCPToolIds: [tool1.id],
+            mcpToolPermissions: [tool1.id: .ask]
         ))),
         isPresented: .constant(true)
     )

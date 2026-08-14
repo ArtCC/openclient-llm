@@ -1,14 +1,16 @@
 Hi there! We've got some great new features for you in this update.
 
-***1.6.15:
+***1.6.20:
 
-• Major improvements to iCloud conversation syncing, especially when switching between devices or returning to the app.
-• New section in Settings to manage iCloud data.
-• General stability, reliability, and performance improvements.
+• Test the new per-tool MCP permissions and approval flow: set tools to Always Allow, Ask, or Deny, then review requested MCP calls before execution.
+• Fix widgets layout issues.
 • Minor bug fixes and improvements for a smoother experience.
 
 ***Recent Updates:
 
+• Major improvements to iCloud conversation syncing, especially when switching between devices or returning to the app.
+• New section in Settings to manage iCloud data.
+• General stability, reliability, and performance improvements.
 • You can now generate images directly in chat with supported models.
 • We’ve added update notifications so you can easily keep the app up to date.
 • The app can now display important announcements and news directly on the Home screen.

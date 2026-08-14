@@ -350,6 +350,36 @@ final class ConversationRepositorySyncTests: XCTestCase {
         }
     }
 
+    func test_save_syncDisabled_newConversationCreatedAfterLocalReset_persistsConversation() async throws {
+        // Given
+        settingsManager.isCloudSyncEnabled = false
+        try await sut.deleteAll()
+        let markerURL = directory.appendingPathComponent("ConversationLocalReset.json")
+        let markerData = try Data(contentsOf: markerURL)
+        let marker = try SyncJSONCoding.makeDecoder().decode(ConversationDeleteAllMarker.self, from: markerData)
+        let draft = Conversation(
+            modelId: "model",
+            updatedAt: marker.deletedAt.addingTimeInterval(1)
+        )
+        var conversation = draft
+        conversation.messages = [ChatMessage(
+            role: .user,
+            content: "New message",
+            timestamp: Date(timeIntervalSince1970: 1_700_000_000)
+        )]
+        conversation.updatedAt = draft.updatedAt.addingTimeInterval(1)
+
+        // When
+        let saved = try await sut.save(conversation, expectedBase: draft)
+
+        // Then
+        let local = try await sut.loadLocal()
+        XCTAssertEqual(saved.id, conversation.id)
+        XCTAssertEqual(saved.messages, conversation.messages)
+        XCTAssertGreaterThan(saved.updatedAt, marker.deletedAt)
+        XCTAssertEqual(local, [saved])
+    }
+
     func test_delete_attachmentRemovalFails_rollsBackPayloadAndTombstone() async throws {
         // Given
         settingsManager.isCloudSyncEnabled = false

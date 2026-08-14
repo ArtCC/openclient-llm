@@ -36,14 +36,16 @@ struct ChatInputBarView: View {
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 0) {
-                if loadedState.isSearchingWeb {
+                if let activeToolStatus {
                     HStack(spacing: 6) {
                         ProgressView()
                             .controlSize(.mini)
                             .tint(.secondary)
-                        Text(String(localized: "Searching the web..."))
+                        Text(activeToolStatus)
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
                         Spacer()
                     }
                     .padding(.horizontal, 16)
@@ -61,7 +63,7 @@ struct ChatInputBarView: View {
                             arrowEdge: .bottom
                         )
                         .padding(.horizontal, 16)
-                        .padding(.top, loadedState.isSearchingWeb ? 4 : 10)
+                        .padding(.top, activeToolStatus == nil ? 10 : 4)
                         .padding(.bottom, 4)
                 }
 
@@ -93,29 +95,63 @@ struct ChatInputBarView: View {
         .animation(.spring(duration: 0.35), value: loadedState.isRecording)
         .animation(.spring(duration: 0.35), value: loadedState.isTranscribing)
         .animation(.easeInOut(duration: 0.2), value: loadedState.isSearchingWeb)
+        .animation(.easeInOut(duration: 0.2), value: loadedState.activeToolCallIds)
     }
 }
 
 // MARK: - Private
 
 private extension ChatInputBarView {
+    var activeToolStatus: String? {
+        let activeToolNames = loadedState.activeToolNamesById.values
+        guard !activeToolNames.isEmpty else { return nil }
+        if activeToolNames.count > 1 {
+            return String(localized: "Running \(activeToolNames.count) tool calls...")
+        }
+        if loadedState.isSearchingWeb {
+            return String(localized: "Searching the web...")
+        }
+        guard let toolName = activeToolNames.first else { return nil }
+        switch toolName {
+        case "get_current_datetime":
+            return String(localized: "Getting the current date and time...")
+        case "save_memory":
+            return String(localized: "Saving a memory...")
+        case "delete_memory":
+            return String(localized: "Deleting a memory...")
+        default:
+            break
+        }
+        let displayName = loadedState.availableMCPTools
+            .first(where: { $0.prefixedName == toolName })?.displayName
+            ?? MCPDisplayText.sanitize(
+                toolName,
+                fallback: String(localized: "External tool"),
+                maximumLength: 160
+            )
+        return String(localized: "Running \(displayName)...")
+    }
+
     // MARK: Bar states
 
     var normalBar: some View {
         HStack(spacing: 5) {
             if loadedState.selectedModel?.mode != .imageGeneration {
-                actionsToggleButton
+                Group {
+                    actionsToggleButton
 
-                if showActions {
-                    attachmentMenu
-                        .transition(.scale.combined(with: .opacity))
+                    if showActions {
+                        attachmentMenu
+                            .transition(.scale.combined(with: .opacity))
 
-                    webSearchButton
-                        .transition(.scale.combined(with: .opacity))
+                        webSearchButton
+                            .transition(.scale.combined(with: .opacity))
 
-                    mcpButton
-                        .transition(.scale.combined(with: .opacity))
+                        mcpButton
+                            .transition(.scale.combined(with: .opacity))
+                    }
                 }
+                .disabled(loadedState.isStreaming)
             }
 
             TextField(
@@ -302,7 +338,7 @@ private extension ChatInputBarView {
     }
 
     var actionsToggleButton: some View {
-        let hasActive = loadedState.isWebSearchEnabled || !loadedState.enabledMCPToolIds.isEmpty
+        let hasActive = loadedState.isWebSearchEnabled || hasEnabledMCPTool
         return Button {
             withAnimation(.easeInOut(duration: 0.25)) {
                 showActions.toggle()
@@ -326,45 +362,6 @@ private extension ChatInputBarView {
         .accessibilityLabel(showActions
             ? String(localized: "Hide Actions")
             : String(localized: "Show Actions"))
-    }
-
-    var mcpButton: some View {
-        let modelSupportsTools = loadedState.selectedModel.map {
-            $0.capabilities.contains(.functionCalling)
-        } ?? false
-
-        return Button {
-            AppTips.mcpServers.invalidate(reason: .actionPerformed)
-            onMCPButtonTapped()
-        } label: {
-            Image(systemName: mcpIcon(modelSupportsTools))
-                .font(.title2)
-                .foregroundStyle(
-                    mcpColor(
-                        supported: loadedState.isMCPSupported && modelSupportsTools,
-                        hasEnabled: !loadedState.enabledMCPToolIds.isEmpty
-                    )
-                )
-                .frame(minWidth: 44, minHeight: 44)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .popoverTip(canShowMCPTip ? AppTips.mcpServers : nil, arrowEdge: .bottom)
-        .accessibilityLabel(
-            loadedState.isMCPSupported && modelSupportsTools
-            ? String(localized: "MCP Servers")
-            : String(localized: "MCP Servers Unavailable")
-        )
-        .animation(.easeInOut(duration: 0.2), value: loadedState.enabledMCPToolIds)
-    }
-
-    func mcpIcon(_ modelSupportsTools: Bool) -> String {
-        "server.rack"
-    }
-
-    func mcpColor(supported: Bool, hasEnabled: Bool) -> Color {
-        guard supported else { return .red }
-        return hasEnabled ? Color.appAccent : .secondary
     }
 
     @ViewBuilder
@@ -453,9 +450,4 @@ private extension ChatInputBarView {
             && loadedState.selectedModel?.capabilities.contains(.functionCalling) == true
     }
 
-    var canShowMCPTip: Bool {
-        canShowInputTips
-            && loadedState.isMCPSupported
-            && loadedState.selectedModel?.capabilities.contains(.functionCalling) == true
-    }
 }

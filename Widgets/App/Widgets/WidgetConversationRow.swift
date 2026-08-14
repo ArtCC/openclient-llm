@@ -27,7 +27,7 @@ struct WidgetConversationRow: View {
                         .padding(.top, 4)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(conversation.title.isEmpty ? String(localized: "New Chat") : conversation.title)
-                            .font(.subheadline)
+                            .font(.caption)
                             .fontWeight(.semibold)
                             .foregroundStyle(.primary)
                             .lineLimit(1)

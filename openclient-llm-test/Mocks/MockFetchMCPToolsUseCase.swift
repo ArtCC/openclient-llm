@@ -12,8 +12,12 @@ import Foundation
 // Safety: Only used within serialized @MainActor test methods.
 final class MockFetchMCPToolsUseCase: FetchMCPToolsUseCaseProtocol, @unchecked Sendable {
     var result = MCPDiscoveryResult(servers: [], tools: [])
+    var executeHandler: (@Sendable () async -> MCPDiscoveryResult)?
+    var executeCallCount = 0
 
     func execute() async -> MCPDiscoveryResult {
-        result
+        executeCallCount += 1
+        if let executeHandler { return await executeHandler() }
+        return result
     }
 }

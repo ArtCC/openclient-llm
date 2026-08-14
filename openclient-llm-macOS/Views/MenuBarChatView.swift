@@ -14,8 +14,10 @@ struct MenuBarChatView: View {
     // MARK: - Properties
 
     var onOpenInApp: () -> Void
+    var onAuthorizationStateChanged: (Bool) -> Void = { _ in }
 
     @State private var chatId = UUID()
+    @State private var viewModel = ChatViewModel()
 
     // MARK: - View
 
@@ -23,10 +25,18 @@ struct MenuBarChatView: View {
         VStack(spacing: 0) {
             headerBar
             Divider()
-            ChatView()
+            ChatView(
+                isMenuBarPresentation: true,
+                presentsMCPAuthorization: false,
+                viewModel: viewModel
+            )
                 .id(chatId)
         }
         .frame(width: 380, height: 540)
+        .mcpToolAuthorizationPresentation(viewModel: viewModel, compact: true)
+        .onChange(of: viewModel.mcpAuthorizationCoordinator.pendingBatch != nil, initial: true) { _, isPending in
+            onAuthorizationStateChanged(isPending)
+        }
     }
 }
 
@@ -50,6 +60,8 @@ private extension MenuBarChatView {
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
             Button {
+                viewModel.send(.stopStreamingTapped)
+                viewModel = ChatViewModel()
                 chatId = UUID()
             } label: {
                 Image(systemName: "square.and.pencil")
