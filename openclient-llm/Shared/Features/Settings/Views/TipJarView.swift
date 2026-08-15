@@ -42,6 +42,15 @@ struct TipJarView: View {
         }
     }
 
+    struct HeaderMetrics {
+        let logoSize: CGFloat
+        let spacing: CGFloat
+        let textSpacing: CGFloat
+        let topPadding: CGFloat
+        let shadowRadius: CGFloat
+        let shadowOffset: CGFloat
+    }
+
     @State private var viewModel = TipJarViewModel()
     @State private var confettiTrigger: Int = 0
     @State private var selectedSupportSection: SupportSection = .subscriptions
@@ -137,6 +146,7 @@ private extension TipJarView {
         ) {
             Button(String(localized: "You're welcome!"), role: .cancel) {
                 viewModel.send(.thankYouDismissed)
+                dismiss()
             }
         } message: {
             Text(String(localized: "Your support means a lot and helps keep the app free and open source."))
@@ -147,6 +157,7 @@ private extension TipJarView {
         ) {
             Button(String(localized: "OK"), role: .cancel) {
                 viewModel.send(.restoreConfirmationDismissed)
+                dismiss()
             }
         } message: {
             Text(String(localized: "Your App Store purchases have been synchronized."))
@@ -154,15 +165,20 @@ private extension TipJarView {
     }
 
     func headerSection() -> some View {
-        VStack(spacing: 20) {
+        VStack(spacing: headerMetrics.spacing) {
             Image("logo")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 125, height: 125)
+                .frame(width: headerMetrics.logoSize, height: headerMetrics.logoSize)
                 .cornerRadius(25)
-                .shadow(color: .cyan.opacity(0.4), radius: 24, x: 0, y: 8)
+                .shadow(
+                    color: .cyan.opacity(0.4),
+                    radius: headerMetrics.shadowRadius,
+                    x: 0,
+                    y: headerMetrics.shadowOffset
+                )
 
-            VStack(spacing: 15) {
+            VStack(spacing: headerMetrics.textSpacing) {
                 Text(String(localized: "OpenClient is free and open source"))
                     .font(.title2)
                     .fontWeight(.semibold)
@@ -174,7 +190,7 @@ private extension TipJarView {
                     .multilineTextAlignment(.center)
             }
         }
-        .padding(.top, 8)
+        .padding(.top, headerMetrics.topPadding)
     }
 
     func supportSectionPicker() -> some View {
@@ -234,7 +250,7 @@ private extension TipJarView {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
-                        .background(Color.accentColor, in: .capsule)
+                        .background(subscriptionHighlightColor, in: .capsule)
                 }
 
                 HStack(spacing: 14) {
@@ -248,7 +264,7 @@ private extension TipJarView {
                     VStack(alignment: .trailing, spacing: 2) {
                         Text(product.displayPrice)
                             .font(.headline)
-                            .foregroundStyle(isAnnual ? Color.accentColor : Color.primary)
+                            .foregroundStyle(isAnnual ? subscriptionHighlightColor : Color.primary)
                         Text(billingPeriodText(for: product.kind))
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -260,9 +276,9 @@ private extension TipJarView {
             .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 20))
             .overlay {
                 RoundedRectangle(cornerRadius: 20)
-                    .stroke(isAnnual ? Color.accentColor : .clear, lineWidth: 2)
+                    .stroke(isAnnual ? subscriptionHighlightColor : .clear, lineWidth: 2)
             }
-            .shadow(color: isAnnual ? Color.accentColor.opacity(0.18) : .clear, radius: 12, y: 5)
+            .shadow(color: isAnnual ? subscriptionHighlightColor.opacity(0.18) : .clear, radius: 12, y: 5)
         }
         .buttonStyle(.plain)
         .disabled(isDisabled)
@@ -346,6 +362,10 @@ private extension TipJarView {
                     }
                 }
             }
+#if os(macOS)
+            .buttonStyle(.plain)
+            .foregroundStyle(subscriptionHighlightColor)
+#endif
             .font(.footnote)
         }
     }
@@ -355,7 +375,7 @@ private extension TipJarView {
             presentedLegalPage = page
         } label: {
             Text(page.title)
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(subscriptionHighlightColor)
         }
         .buttonStyle(.plain)
     }
@@ -395,6 +415,36 @@ private extension TipJarView {
 
     func oneTimeProducts(from products: [TipProduct]) -> [TipProduct] {
         products.filter { $0.kind == .oneTimeTip }
+    }
+
+    var headerMetrics: HeaderMetrics {
+#if os(macOS)
+        HeaderMetrics(
+            logoSize: 96,
+            spacing: 14,
+            textSpacing: 10,
+            topPadding: 4,
+            shadowRadius: 16,
+            shadowOffset: 6
+        )
+#else
+        HeaderMetrics(
+            logoSize: 125,
+            spacing: 20,
+            textSpacing: 15,
+            topPadding: 8,
+            shadowRadius: 24,
+            shadowOffset: 8
+        )
+#endif
+    }
+
+    var subscriptionHighlightColor: Color {
+#if os(macOS)
+        Color("AccentColor")
+#else
+        Color.accentColor
+#endif
     }
 
     func subscriptionProducts(from products: [TipProduct]) -> [TipProduct] {
