@@ -54,7 +54,9 @@ final class TipJarViewModelTests: XCTestCase {
         }
         XCTAssertTrue(loadedState.products.isEmpty)
         XCTAssertFalse(loadedState.isPurchasing)
+        XCTAssertFalse(loadedState.isRestoring)
         XCTAssertFalse(loadedState.showThankYou)
+        XCTAssertFalse(loadedState.showRestoreConfirmation)
     }
 
     func test_send_viewAppeared_withProducts_loadsProducts() async {
@@ -75,6 +77,22 @@ final class TipJarViewModelTests: XCTestCase {
         XCTAssertEqual(loadedState.products.first?.id, "com.artcc.openclient.tip.small")
     }
 
+    func test_send_viewAppeared_withSubscriptions_preservesProductKinds() async {
+        // Given
+        mockUseCase.productsResult = .success(makeSubscriptionProducts())
+
+        // When
+        sut.send(.viewAppeared)
+        await Task.yield()
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.products.map(\.kind), [.monthlySubscription, .annualSubscription])
+    }
+
     func test_send_viewAppeared_onFetchError_setsErrorState() async {
         // Given
         mockUseCase.productsResult = .failure(NSError(domain: "test", code: -1))
@@ -90,9 +108,9 @@ final class TipJarViewModelTests: XCTestCase {
         }
     }
 
-    // MARK: - Tests — tipTapped
+    // MARK: - Tests — productTapped
 
-    func test_send_tipTapped_onSuccess_showsThankYou() async {
+    func test_send_productTapped_onSuccess_showsThankYou() async {
         // Given
         let products = makeTipProducts()
         mockUseCase.productsResult = .success(products)
@@ -101,7 +119,7 @@ final class TipJarViewModelTests: XCTestCase {
         await Task.yield()
 
         // When
-        sut.send(.tipTapped(id: "com.artcc.openclient.tip.small"))
+        sut.send(.productTapped(id: "com.artcc.openclient.tip.small"))
         await Task.yield()
 
         // Then
@@ -114,7 +132,28 @@ final class TipJarViewModelTests: XCTestCase {
         XCTAssertEqual(mockUseCase.purchasedProductId, "com.artcc.openclient.tip.small")
     }
 
-    func test_send_tipTapped_onCancelled_doesNotShowThankYou() async {
+    func test_send_productTapped_withAnnualSubscription_purchasesSubscription() async {
+        // Given
+        let productID = "com.artcc.openclient.support.annual"
+        mockUseCase.productsResult = .success(makeSubscriptionProducts())
+        mockUseCase.purchaseResult = .success(.success)
+        sut.send(.viewAppeared)
+        await Task.yield()
+
+        // When
+        sut.send(.productTapped(id: productID))
+        await Task.yield()
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertTrue(loadedState.showThankYou)
+        XCTAssertEqual(mockUseCase.purchasedProductId, productID)
+    }
+
+    func test_send_productTapped_onCancelled_doesNotShowThankYou() async {
         // Given
         let products = makeTipProducts()
         mockUseCase.productsResult = .success(products)
@@ -123,7 +162,7 @@ final class TipJarViewModelTests: XCTestCase {
         await Task.yield()
 
         // When
-        sut.send(.tipTapped(id: "com.artcc.openclient.tip.small"))
+        sut.send(.productTapped(id: "com.artcc.openclient.tip.small"))
         await Task.yield()
 
         // Then
@@ -135,7 +174,7 @@ final class TipJarViewModelTests: XCTestCase {
         XCTAssertFalse(loadedState.isPurchasing)
     }
 
-    func test_send_tipTapped_onPurchaseError_clearsIsPurchasing() async {
+    func test_send_productTapped_onPurchaseError_clearsIsPurchasing() async {
         // Given
         let products = makeTipProducts()
         mockUseCase.productsResult = .success(products)
@@ -144,7 +183,7 @@ final class TipJarViewModelTests: XCTestCase {
         await Task.yield()
 
         // When
-        sut.send(.tipTapped(id: "com.artcc.openclient.tip.small"))
+        sut.send(.productTapped(id: "com.artcc.openclient.tip.small"))
         await Task.yield()
 
         // Then
@@ -154,6 +193,68 @@ final class TipJarViewModelTests: XCTestCase {
         }
         XCTAssertFalse(loadedState.isPurchasing)
         XCTAssertFalse(loadedState.showThankYou)
+    }
+
+    // MARK: - Tests — restorePurchasesTapped
+
+    func test_send_restorePurchasesTapped_onSuccess_showsConfirmation() async {
+        // Given
+        mockUseCase.productsResult = .success(makeSubscriptionProducts())
+        sut.send(.viewAppeared)
+        await Task.yield()
+
+        // When
+        sut.send(.restorePurchasesTapped)
+        await Task.yield()
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(mockUseCase.restoreCallCount, 1)
+        XCTAssertFalse(loadedState.isRestoring)
+        XCTAssertTrue(loadedState.showRestoreConfirmation)
+        XCTAssertFalse(loadedState.showThankYou)
+    }
+
+    func test_send_restorePurchasesTapped_onError_clearsIsRestoring() async {
+        // Given
+        mockUseCase.productsResult = .success(makeSubscriptionProducts())
+        mockUseCase.restoreResult = .failure(NSError(domain: "StoreKit", code: -1))
+        sut.send(.viewAppeared)
+        await Task.yield()
+
+        // When
+        sut.send(.restorePurchasesTapped)
+        await Task.yield()
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertFalse(loadedState.isRestoring)
+        XCTAssertFalse(loadedState.showRestoreConfirmation)
+    }
+
+    func test_send_restoreConfirmationDismissed_hidesConfirmation() async {
+        // Given
+        mockUseCase.productsResult = .success(makeSubscriptionProducts())
+        sut.send(.viewAppeared)
+        await Task.yield()
+        sut.send(.restorePurchasesTapped)
+        await Task.yield()
+
+        // When
+        sut.send(.restoreConfirmationDismissed)
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertFalse(loadedState.showRestoreConfirmation)
     }
 
     // MARK: - Tests — thankYouDismissed
@@ -165,7 +266,7 @@ final class TipJarViewModelTests: XCTestCase {
         mockUseCase.purchaseResult = .success(.success)
         sut.send(.viewAppeared)
         await Task.yield()
-        sut.send(.tipTapped(id: "com.artcc.openclient.tip.small"))
+        sut.send(.productTapped(id: "com.artcc.openclient.tip.small"))
         await Task.yield()
 
         // When
@@ -189,13 +290,34 @@ private extension TipJarViewModelTests {
                 id: "com.artcc.openclient.tip.small",
                 displayName: "Small Tip",
                 displayPrice: "$0.99",
-                price: 0.99
+                price: 0.99,
+                kind: .oneTimeTip
             ),
             TipProduct(
                 id: "com.artcc.openclient.tip.medium",
                 displayName: "Medium Tip",
                 displayPrice: "$2.99",
-                price: 2.99
+                price: 2.99,
+                kind: .oneTimeTip
+            )
+        ]
+    }
+
+    func makeSubscriptionProducts() -> [TipProduct] {
+        [
+            TipProduct(
+                id: "com.artcc.openclient.support.monthly",
+                displayName: "Monthly Support",
+                displayPrice: "$1.99",
+                price: 1.99,
+                kind: .monthlySubscription
+            ),
+            TipProduct(
+                id: "com.artcc.openclient.support.annual",
+                displayName: "Annual Support",
+                displayPrice: "$19.99",
+                price: 19.99,
+                kind: .annualSubscription
             )
         ]
     }
