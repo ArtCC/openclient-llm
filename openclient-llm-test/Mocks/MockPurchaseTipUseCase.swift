@@ -15,7 +15,9 @@ final class MockPurchaseTipUseCase: PurchaseTipUseCaseProtocol, @unchecked Senda
 
     var productsResult: Result<[TipProduct], Error> = .success([])
     var purchaseResult: Result<TipPurchaseResult, Error> = .success(.success)
+    var restoreResult: Result<Void, Error> = .success(())
     var purchasedProductId: String?
+    var restoreCallCount = 0
 
     // MARK: - PurchaseTipUseCaseProtocol
 
@@ -26,5 +28,10 @@ final class MockPurchaseTipUseCase: PurchaseTipUseCaseProtocol, @unchecked Senda
     func purchase(productId: String) async throws -> TipPurchaseResult {
         purchasedProductId = productId
         return try purchaseResult.get()
+    }
+
+    func restorePurchases() async throws {
+        restoreCallCount += 1
+        try restoreResult.get()
     }
 }

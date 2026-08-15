@@ -15,7 +15,9 @@ final class TipJarViewModel {
 
     enum Event {
         case viewAppeared
-        case tipTapped(id: String)
+        case productTapped(id: String)
+        case restorePurchasesTapped
+        case restoreConfirmationDismissed
         case thankYouDismissed
     }
 
@@ -41,12 +43,16 @@ final class TipJarViewModel {
     struct LoadedState: Equatable {
         var products: [TipProduct]
         var isPurchasing: Bool
+        var isRestoring: Bool
         var showThankYou: Bool
+        var showRestoreConfirmation: Bool
 
         static func == (lhs: LoadedState, rhs: LoadedState) -> Bool {
             lhs.products.map(\.id) == rhs.products.map(\.id)
                 && lhs.isPurchasing == rhs.isPurchasing
+                && lhs.isRestoring == rhs.isRestoring
                 && lhs.showThankYou == rhs.showThankYou
+                && lhs.showRestoreConfirmation == rhs.showRestoreConfirmation
         }
     }
 
@@ -70,8 +76,14 @@ final class TipJarViewModel {
         switch event {
         case .viewAppeared:
             loadProducts()
-        case .tipTapped(let id):
+        case .productTapped(let id):
             purchase(productId: id)
+        case .restorePurchasesTapped:
+            restorePurchases()
+        case .restoreConfirmationDismissed:
+            guard case .loaded(var loadedState) = state else { return }
+            loadedState.showRestoreConfirmation = false
+            state = .loaded(loadedState)
         case .thankYouDismissed:
             guard case .loaded(var loadedState) = state else { return }
             loadedState.showThankYou = false
@@ -87,7 +99,15 @@ private extension TipJarViewModel {
         Task {
             do {
                 let products = try await purchaseTipUseCase.fetchProducts()
-                state = .loaded(LoadedState(products: products, isPurchasing: false, showThankYou: false))
+                state = .loaded(
+                    LoadedState(
+                        products: products,
+                        isPurchasing: false,
+                        isRestoring: false,
+                        showThankYou: false,
+                        showRestoreConfirmation: false
+                    )
+                )
             } catch {
                 LogManager.error("TipJarViewModel fetchProducts error: \(error)")
                 state = .error(String(localized: "Could not load tip options. Please try again later."))
@@ -113,6 +133,27 @@ private extension TipJarViewModel {
                 LogManager.error("TipJarViewModel purchase error: \(error)")
                 guard case .loaded(var currentState) = state else { return }
                 currentState.isPurchasing = false
+                state = .loaded(currentState)
+            }
+        }
+    }
+
+    func restorePurchases() {
+        guard case .loaded(var loadedState) = state else { return }
+        loadedState.isRestoring = true
+        state = .loaded(loadedState)
+
+        Task {
+            do {
+                try await purchaseTipUseCase.restorePurchases()
+                guard case .loaded(var currentState) = state else { return }
+                currentState.isRestoring = false
+                currentState.showRestoreConfirmation = true
+                state = .loaded(currentState)
+            } catch {
+                LogManager.error("TipJarViewModel restorePurchases error: \(error)")
+                guard case .loaded(var currentState) = state else { return }
+                currentState.isRestoring = false
                 state = .loaded(currentState)
             }
         }

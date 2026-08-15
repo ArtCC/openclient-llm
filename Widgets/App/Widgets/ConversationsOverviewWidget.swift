@@ -143,7 +143,7 @@ private extension ConversationsOverviewWidgetView {
     }
 
     var conversationsList: some View {
-        let maxItems = family == .systemMedium ? 2 : 6
+        let maxItems = family == .systemMedium ? 2 : 5
         return VStack(spacing: 0) {
             ForEach(Array(entry.conversations.prefix(maxItems).enumerated()), id: \.element.id) { index, conversation in
                 if index > 0 {

@@ -11,6 +11,7 @@ import StoreKit
 protocol TipJarManagerProtocol: Sendable {
     func fetchProducts() async throws -> [TipProduct]
     func purchase(productId: String) async throws -> TipPurchaseResult
+    func restorePurchases() async throws
 }
 
 enum TipPurchaseResult: Sendable, Equatable {
@@ -20,10 +21,17 @@ enum TipPurchaseResult: Sendable, Equatable {
 }
 
 struct TipProduct: Identifiable, Sendable, Equatable {
+    enum Kind: Sendable, Equatable {
+        case oneTimeTip
+        case monthlySubscription
+        case annualSubscription
+    }
+
     let id: String
     let displayName: String
     let displayPrice: String
     let price: Decimal
+    let kind: Kind
 }
 
 // Safety: Stateless struct — all StoreKit calls use async/await.
@@ -34,8 +42,23 @@ struct TipJarManager: TipJarManagerProtocol, @unchecked Sendable {
         static let small = "com.artcc.openclient.tip.small"
         static let medium = "com.artcc.openclient.tip.medium"
         static let large = "com.artcc.openclient.tip.large"
+        static let monthlySupport = "com.artcc.openclient.support.monthly"
+        static let annualSupport = "com.artcc.openclient.support.annual"
 
-        static var all: [String] { [small, medium, large] }
+        static var all: [String] { [small, medium, large, monthlySupport, annualSupport] }
+
+        static func kind(for productID: String) -> TipProduct.Kind? {
+            switch productID {
+            case small, medium, large:
+                .oneTimeTip
+            case monthlySupport:
+                .monthlySubscription
+            case annualSupport:
+                .annualSubscription
+            default:
+                nil
+            }
+        }
     }
 
     // MARK: - TipJarManagerProtocol
@@ -45,8 +68,15 @@ struct TipJarManager: TipJarManagerProtocol, @unchecked Sendable {
         let skProducts = try await Product.products(for: ProductID.all)
         let sorted = skProducts.sorted { $0.price < $1.price }
         LogManager.success("TipJarManager products=\(sorted.count)")
-        return sorted.map {
-            TipProduct(id: $0.id, displayName: $0.displayName, displayPrice: $0.displayPrice, price: $0.price)
+        return sorted.compactMap {
+            guard let kind = ProductID.kind(for: $0.id) else { return nil }
+            return TipProduct(
+                id: $0.id,
+                displayName: $0.displayName,
+                displayPrice: $0.displayPrice,
+                price: $0.price,
+                kind: kind
+            )
         }
     }
 
@@ -74,5 +104,10 @@ struct TipJarManager: TipJarManagerProtocol, @unchecked Sendable {
         @unknown default:
             return .cancelled
         }
+    }
+
+    func restorePurchases() async throws {
+        LogManager.info("TipJarManager → restorePurchases")
+        try await AppStore.sync()
     }
 }
