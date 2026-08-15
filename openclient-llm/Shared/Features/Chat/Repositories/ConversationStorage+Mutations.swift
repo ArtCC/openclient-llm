@@ -277,7 +277,8 @@ extension ConversationStorage {
             throw CloudSyncError.staleConversationRevision
         }
         guard latestLocal == nil else { return }
-        guard try deletionBarrier(for: conversationId) == nil else {
+        guard let barrier = try deletionBarrier(for: conversationId) else { return }
+        guard expectedBase.updatedAt > barrier else {
             throw CloudSyncError.staleConversationRevision
         }
     }

@@ -37,7 +37,7 @@ struct ModelDetailView: View {
             #endif
         }
         #if os(macOS)
-        .frame(width: 480, height: 420)
+        .frame(width: 500, height: 460)
         #endif
     }
 }

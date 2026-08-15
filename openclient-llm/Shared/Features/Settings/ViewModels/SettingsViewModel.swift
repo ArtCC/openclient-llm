@@ -38,6 +38,9 @@ final class SettingsViewModel {
         case privacyScreenToggled(Bool)
         case fetchMCPToolsTapped
         case mcpToolToggled(toolId: String, enabled: Bool)
+        case mcpToolsToggled(toolIds: [String], enabled: Bool)
+        case mcpToolPermissionChanged(toolId: String, permission: MCPToolPermission)
+        case mcpToolsPermissionChanged(toolIds: [String], permission: MCPToolPermission)
     }
 
     enum State: Equatable {
@@ -50,6 +53,8 @@ final class SettingsViewModel {
         var apiKey: String = ""
         var connectionStatus: ConnectionStatus = .idle
         var isSaved: Bool = false
+        var serverPersistenceError: String?
+        var serverPersistenceFailureCount: Int = 0
         var isCloudSyncEnabled: Bool = false
         var showTokenUsage: Bool = true
         var showCloudSyncConflictAlert: Bool = false
@@ -66,7 +71,11 @@ final class SettingsViewModel {
         var resetErrorMessage: String?
         var availableMCPTools: [MCPToolInfo] = []
         var availableMCPServers: [MCPServerInfo] = []
+        var failedMCPServerIds: Set<String> = []
         var enabledMCPToolIds: Set<String> = []
+        var mcpToolPermissions: [String: MCPToolPermission] = [:]
+        var mcpDiscoveryScope: String?
+        var mcpDiscoveryRevision: Int = 0
         var isLoadingMCPTools: Bool = false
         var mcpToolsError: String?
     }
@@ -92,7 +101,7 @@ final class SettingsViewModel {
     private let testServerConnectionUseCase: TestServerConnectionUseCaseProtocol
     private let checkLiteLLMHealthUseCase: CheckLiteLLMHealthUseCaseProtocol
     private let fetchSearchToolsUseCase: FetchSearchToolsUseCaseProtocol
-    private let fetchMCPToolsUseCase: FetchMCPToolsUseCaseProtocol
+    let fetchMCPToolsUseCase: FetchMCPToolsUseCaseProtocol
     let settingsManager: SettingsManagerProtocol
     let cloudSyncManager: CloudSyncManagerProtocol
     let synchronizeAppDataUseCase: SynchronizeAppDataUseCaseProtocol
@@ -106,6 +115,10 @@ final class SettingsViewModel {
     var synchronizationTask: Task<Void, Never>?
     var cloudEnableTask: Task<Void, Never>?
     var cloudSyncGeneration = 0
+    var mcpSettingsObservationTask: Task<Void, Never>?
+    var mcpDiscoveryTask: Task<Void, Never>?
+    var mcpDiscoveryGeneration = 0
+    var observedMCPAuthorizationScope: String
 
     // MARK: - Init
 
@@ -134,6 +147,7 @@ final class SettingsViewModel {
         self.fetchSearchToolsUseCase = fetchSearchToolsUseCase
         self.fetchMCPToolsUseCase = fetchMCPToolsUseCase
         self.settingsManager = settingsManager
+        self.observedMCPAuthorizationScope = settingsManager.getMCPAuthorizationScope()
         self.cloudSyncManager = cloudSyncManager
         self.synchronizeAppDataUseCase = synchronizeAppDataUseCase
         self.cloudSyncCoordinator = cloudSyncCoordinator
@@ -143,6 +157,12 @@ final class SettingsViewModel {
         self.resetAppUseCase = resetAppUseCase
         self.checkNotificationPermissionUseCase = checkNotificationPermissionUseCase
         self.notificationPermissionUseCase = notificationPermissionUseCase
+        observeMCPToolSettingsChanges()
+    }
+
+    isolated deinit {
+        mcpSettingsObservationTask?.cancel()
+        mcpDiscoveryTask?.cancel()
     }
 }
 
@@ -198,6 +218,7 @@ extension SettingsViewModel {
         loadedState.serverURL = url
         loadedState.connectionStatus = .idle
         loadedState.isSaved = false
+        loadedState.serverPersistenceError = nil
         state = .loaded(loadedState)
     }
 
@@ -206,6 +227,7 @@ extension SettingsViewModel {
         loadedState.apiKey = key
         loadedState.connectionStatus = .idle
         loadedState.isSaved = false
+        loadedState.serverPersistenceError = nil
         state = .loaded(loadedState)
     }
 
@@ -238,14 +260,24 @@ extension SettingsViewModel {
         guard case .loaded(var loadedState) = state else { return }
         let serverURL = loadedState.serverURL
         let apiKey = loadedState.apiKey
+        let configurationChanged = serverURL != settingsManager.getServerBaseURL()
+            || apiKey != settingsManager.getAPIKey()
         LogManager.info("saveSettings url=\(serverURL)")
-        saveServerConfigurationUseCase.execute(serverURL: serverURL, apiKey: apiKey)
+        guard saveServerConfigurationUseCase.execute(serverURL: serverURL, apiKey: apiKey) else {
+            loadedState.isSaved = false
+            loadedState.serverPersistenceFailureCount += 1
+            loadedState.serverPersistenceError = String(localized: "The server configuration could not be saved.")
+            state = .loaded(loadedState)
+            return
+        }
         loadedState.isSaved = true
+        loadedState.serverPersistenceError = nil
         state = .loaded(loadedState)
         LogManager.success("saveSettings done")
         Task {
             await updateLiteLLMHint(serverURL: serverURL)
         }
+        if configurationChanged { fetchMCPTools(replacingCurrent: true) }
     }
 
     func updateLiteLLMHint(serverURL: String) async {
@@ -373,47 +405,4 @@ extension SettingsViewModel {
         }
     }
 
-    func fetchMCPTools() {
-        guard case .loaded(let loadedState) = state, !loadedState.isLoadingMCPTools else { return }
-        var update = loadedState
-        update.isLoadingMCPTools = true
-        update.mcpToolsError = nil
-        state = .loaded(update)
-        Task { [weak self] in
-            guard let self else { return }
-            let result = await fetchMCPToolsUseCase.execute()
-            guard case .loaded(var currentState) = state else { return }
-            if result.errorMessage != nil && result.servers.isEmpty {
-                currentState.isLoadingMCPTools = false
-                currentState.mcpToolsError = result.errorMessage
-                state = .loaded(currentState)
-                return
-            }
-            let retainedTools = currentState.availableMCPTools.filter {
-                result.failedServerIds.contains($0.serverId)
-            }
-            let discoveredTools = result.tools + retainedTools
-            currentState.availableMCPTools = discoveredTools
-            currentState.availableMCPServers = result.servers
-            let normalizedEnabledIds = enabledMCPToolIds(
-                savedIds: settingsManager.getEnabledMCPToolIds(),
-                tools: discoveredTools
-            )
-            settingsManager.setEnabledMCPToolIds(Array(normalizedEnabledIds))
-            currentState.enabledMCPToolIds = normalizedEnabledIds
-            currentState.mcpToolsError = result.errorMessage
-            currentState.isLoadingMCPTools = false
-            state = .loaded(currentState)
-        }
-    }
-    func toggleMCPTool(toolId: String, enabled: Bool) {
-        guard case .loaded(var loadedState) = state else { return }
-        if enabled {
-            loadedState.enabledMCPToolIds.insert(toolId)
-        } else {
-            loadedState.enabledMCPToolIds.remove(toolId)
-        }
-        settingsManager.setEnabledMCPToolIds(Array(loadedState.enabledMCPToolIds))
-        state = .loaded(loadedState)
-    }
 }

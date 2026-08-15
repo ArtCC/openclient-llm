@@ -84,12 +84,27 @@ final class KeychainManagerTests: XCTestCase {
         XCTAssertEqual(sut.getAPIKey(), "sk-new-key")
     }
 
+    func test_setServerConfiguration_validValues_storesURLAndAPIKeyTogether() {
+        // Given
+        let serverURL = "https://example.com"
+        let apiKey = "sk-test-key"
+
+        // When
+        let didSave = sut.setServerConfiguration(serverBaseURL: serverURL, apiKey: apiKey)
+
+        // Then
+        XCTAssertTrue(didSave)
+        XCTAssertEqual(sut.getServerBaseURL(), serverURL)
+        XCTAssertEqual(sut.getAPIKey(), apiKey)
+    }
+
     // MARK: - Tests — Delete All
 
     func test_deleteAll_removesAllStoredValues() {
         // Given
         sut.setServerBaseURL("https://example.com")
         sut.setAPIKey("sk-test-key")
+        XCTAssertTrue(sut.setMCPAuthorizationScope("scope"))
 
         // When
         sut.deleteAll()
@@ -97,6 +112,7 @@ final class KeychainManagerTests: XCTestCase {
         // Then
         XCTAssertEqual(sut.getServerBaseURL(), "")
         XCTAssertEqual(sut.getAPIKey(), "")
+        XCTAssertNil(sut.getMCPAuthorizationScope())
     }
 
     // MARK: - Tests — Isolation

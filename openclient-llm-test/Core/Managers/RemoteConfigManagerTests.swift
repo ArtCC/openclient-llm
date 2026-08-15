@@ -40,7 +40,7 @@ final class RemoteConfigManagerTests: XCTestCase {
         // Given
         let manager = RemoteConfigManager(
             endpoint: endpoint,
-            dataLoader: try makeLoader(version: "1.6.15"),
+            dataLoader: try makeLoader(version: "1.6.20"),
             defaults: defaults,
             refreshInterval: 6 * 60 * 60
         )
@@ -49,13 +49,13 @@ final class RemoteConfigManagerTests: XCTestCase {
         let config = try await manager.loadConfig()
 
         // Then
-        XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.15")
+        XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.20")
     }
 
     func test_loadConfig_withFreshCache_returnsCachedConfig() async throws {
         // Given
         let now = Date(timeIntervalSince1970: 1_000)
-        _ = try await makeManager(version: "1.6.15", now: now, refreshInterval: .zero).loadConfig()
+        _ = try await makeManager(version: "1.6.20", now: now, refreshInterval: .zero).loadConfig()
         let manager = try makeManager(
             version: "2.0.0",
             now: now.addingTimeInterval(60),
@@ -66,13 +66,13 @@ final class RemoteConfigManagerTests: XCTestCase {
         let config = try await manager.loadConfig()
 
         // Then
-        XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.15")
+        XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.20")
     }
 
     func test_loadConfig_withExpiredCache_downloadsLatestConfig() async throws {
         // Given
         let now = Date(timeIntervalSince1970: 1_000)
-        _ = try await makeManager(version: "1.6.15", now: now, refreshInterval: .zero).loadConfig()
+        _ = try await makeManager(version: "1.6.20", now: now, refreshInterval: .zero).loadConfig()
         let manager = try makeManager(
             version: "2.0.0",
             now: now.addingTimeInterval((6 * 60 * 60) + 1),
@@ -89,7 +89,7 @@ final class RemoteConfigManagerTests: XCTestCase {
     func test_loadConfig_whenRefreshFails_returnsCachedConfig() async throws {
         // Given
         let now = Date(timeIntervalSince1970: 1_000)
-        _ = try await makeManager(version: "1.6.15", now: now, refreshInterval: .zero).loadConfig()
+        _ = try await makeManager(version: "1.6.20", now: now, refreshInterval: .zero).loadConfig()
         let manager = RemoteConfigManager(
             endpoint: endpoint,
             dataLoader: { _ in throw URLError(.notConnectedToInternet) },
@@ -102,7 +102,7 @@ final class RemoteConfigManagerTests: XCTestCase {
         let config = try await manager.loadConfig()
 
         // Then
-        XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.15")
+        XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.20")
     }
 }
 

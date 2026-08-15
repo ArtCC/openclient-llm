@@ -9,7 +9,7 @@
 import Foundation
 
 protocol SaveServerConfigurationUseCaseProtocol: Sendable {
-    func execute(serverURL: String, apiKey: String)
+    @discardableResult func execute(serverURL: String, apiKey: String) -> Bool
 }
 
 struct SaveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol {
@@ -25,8 +25,8 @@ struct SaveServerConfigurationUseCase: SaveServerConfigurationUseCaseProtocol {
 
     // MARK: - Execute
 
-    func execute(serverURL: String, apiKey: String) {
-        settingsManager.setServerBaseURL(serverURL)
-        settingsManager.setAPIKey(apiKey)
+    @discardableResult
+    func execute(serverURL: String, apiKey: String) -> Bool {
+        settingsManager.setServerConfiguration(serverBaseURL: serverURL, apiKey: apiKey)
     }
 }

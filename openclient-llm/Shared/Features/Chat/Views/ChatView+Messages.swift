@@ -58,4 +58,21 @@ extension ChatView {
         .padding(.bottom, 15)
         .frame(maxWidth: .infinity)
     }
+
+    // MARK: - Scroll Navigation
+
+    func scrollAnchorButton(isTop: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: isTop ? "chevron.up" : "chevron.down")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(Color.primary)
+                .frame(width: 44, height: 44)
+                .glassEffect(.regular, in: .circle)
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .padding(.trailing, 16)
+        .padding(isTop ? .top : .bottom, 16)
+        .transition(.scale(scale: 0.8).combined(with: .opacity))
+    }
 }

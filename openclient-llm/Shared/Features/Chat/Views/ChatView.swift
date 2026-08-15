@@ -41,6 +41,8 @@ struct ChatView: View {
     var onForkCreated: ((Conversation) -> Void)?
     var onShareItemProcessed: (() -> Void)?
     var onURLSchemeTextProcessed: (() -> Void)?
+    var isMenuBarPresentation: Bool
+    var presentsMCPAuthorization: Bool
     private let appReviewManager: AppReviewManagerProtocol
 
     // MARK: - Init
@@ -51,12 +53,15 @@ struct ChatView: View {
         shareItem: ShareExtensionItem? = nil,
         urlSchemeText: String? = nil,
         appReviewManager: AppReviewManagerProtocol = AppReviewManager(),
+        isMenuBarPresentation: Bool = false,
+        presentsMCPAuthorization: Bool = true,
+        viewModel: ChatViewModel? = nil,
         onConversationUpdated: (() -> Void)? = nil,
         onForkCreated: ((Conversation) -> Void)? = nil,
         onShareItemProcessed: (() -> Void)? = nil,
         onURLSchemeTextProcessed: (() -> Void)? = nil
     ) {
-        _viewModel = State(initialValue: ChatViewModel(
+        _viewModel = State(initialValue: viewModel ?? ChatViewModel(
             conversation: conversation,
             isPrivateChat: isPrivateChat
         ))
@@ -65,6 +70,8 @@ struct ChatView: View {
         self.shareItem = shareItem
         self.urlSchemeText = urlSchemeText
         self.appReviewManager = appReviewManager
+        self.isMenuBarPresentation = isMenuBarPresentation
+        self.presentsMCPAuthorization = presentsMCPAuthorization
         self.onConversationUpdated = onConversationUpdated
         self.onForkCreated = onForkCreated
         self.onShareItemProcessed = onShareItemProcessed
@@ -75,13 +82,20 @@ struct ChatView: View {
 
     var body: some View {
 #if os(macOS)
-        macOSBody
+        macOSBody.mcpToolAuthorizationPresentation(
+            viewModel: viewModel,
+            compact: isMenuBarPresentation,
+            isEnabled: presentsMCPAuthorization
+        )
 #else
-        iOSBody
+        iOSBody.mcpToolAuthorizationPresentation(
+            viewModel: viewModel,
+            compact: false,
+            isEnabled: presentsMCPAuthorization
+        )
 #endif
     }
 }
-
 // MARK: - Private
 
 private extension ChatView {
@@ -464,34 +478,6 @@ private extension ChatView {
                 }
             }
         }
-    }
-
-    // MARK: - Scroll Navigation
-
-    func scrollAnchorButton(isTop: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: isTop ? "chevron.up" : "chevron.down")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color.primary)
-                .frame(width: 44, height: 44)
-                .glassEffect(.regular, in: .circle)
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .padding(.trailing, 16)
-        .padding(isTop ? .top : .bottom, 16)
-        .transition(.scale(scale: 0.8).combined(with: .opacity))
-    }
-
-    // MARK: - Tips
-
-    var chatOptionsTip: ChatOptionsTip? {
-        guard case .loaded(let loadedState) = viewModel.state,
-              loadedState.conversation != nil,
-              !loadedState.isStreaming else {
-            return nil
-        }
-        return AppTips.chatOptions
     }
 
 }

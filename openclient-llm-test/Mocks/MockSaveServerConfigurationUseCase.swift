@@ -15,11 +15,14 @@ final class MockSaveServerConfigurationUseCase: SaveServerConfigurationUseCasePr
 
     var savedServerURL: String?
     var savedAPIKey: String?
+    var result = true
 
     // MARK: - Execute
 
-    func execute(serverURL: String, apiKey: String) {
+    @discardableResult
+    func execute(serverURL: String, apiKey: String) -> Bool {
         savedServerURL = serverURL
         savedAPIKey = apiKey
+        return result
     }
 }

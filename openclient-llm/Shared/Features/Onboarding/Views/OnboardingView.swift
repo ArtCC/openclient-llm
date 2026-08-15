@@ -215,7 +215,7 @@ private extension OnboardingView {
     }
 
     func serverConfigurationStep(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
-        VStack(spacing: 28) {
+        return VStack(spacing: 28) {
             VStack(spacing: 12) {
                 Image(systemName: "network")
                     .font(.system(size: 44, weight: .medium))
@@ -368,31 +368,14 @@ private extension OnboardingView {
     }
 
     func allSetStep(_ loadedState: OnboardingViewModel.LoadedState) -> some View {
-        VStack(spacing: 28) {
-            ZStack {
-                Circle()
-                    .fill(Color.green.opacity(0.15))
-                    .frame(width: 130, height: 130)
-                Circle()
-                    .fill(Color.green.opacity(0.08))
-                    .frame(width: 170, height: 170)
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 64))
-                    .foregroundStyle(.green)
-                    .symbolEffect(.bounce)
-            }
-
-            VStack(spacing: 10) {
-                Text(String(localized: "You're all set!"))
-                    .font(.poppins(.bold, size: 34, relativeTo: .largeTitle))
-                    .multilineTextAlignment(.center)
-
-                Text(String(localized: "Your server is ready. Let's start a conversation."))
-                    .font(.body)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(3)
-            }
+        let persistenceError: String?
+        if case .failure(let message) = loadedState.connectionStatus {
+            persistenceError = message
+        } else {
+            persistenceError = nil
+        }
+        return VStack(spacing: 28) {
+            OnboardingCompletionStatusView(hasPersistenceError: persistenceError != nil)
 
             if !loadedState.serverURL.isEmpty {
                 HStack(spacing: 8) {
@@ -412,6 +395,12 @@ private extension OnboardingView {
 #else
                 .glassEffect(.regular, in: .capsule)
 #endif
+            }
+            if let persistenceError {
+                OnboardingPersistenceErrorView(
+                    message: persistenceError,
+                    attempt: loadedState.persistenceFailureCount
+                )
             }
         }
     }

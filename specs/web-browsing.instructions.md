@@ -136,4 +136,4 @@ The `name` field is stored in `ChatMessage.toolName` and serialized via `ChatCom
 - **Web search enabled**: Stored in `SettingsManager` (`UserDefaults`) and defaults to `false` when no value exists.
 - **Search tool name**: Stored in `SettingsManager` (`UserDefaults`) and defaults to the empty string. It must match a `search_tool_name` in LiteLLM configuration; Settings can discover tools through `GET /v1/search/tools` and select the first returned tool when the saved value is unavailable.
 - **Maximum results**: Stored in `SettingsManager` (`UserDefaults`) and defaults to 10. `WebSearchUseCase` sends this value to LiteLLM, while `WebSearchTool` formats at most the first five returned results for model context and retains the full result array for source display.
-- **Tool rounds**: The agent permits up to 10 iterations, 20 tool calls in total, and 8 calls in one iteration. These are agent safeguards, not user-configurable search settings.
+- **Tool rounds**: The agent permits up to 15 iterations, 20 tool calls in total, and 8 calls in one iteration. These are agent safeguards, not user-configurable search settings.

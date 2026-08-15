@@ -15,6 +15,10 @@ final class MockKeychainManager: KeychainManagerProtocol, @unchecked Sendable {
 
     var serverBaseURL: String = ""
     var apiKey: String = ""
+    var mcpAuthorizationScope: String?
+    var persistsMCPAuthorizationScope = true
+    var persistsServerConfiguration = true
+    var mcpAuthorizationScopeWriteCount = 0
     var deleteAllCalled: Bool = false
 
     // MARK: - Public
@@ -35,9 +39,31 @@ final class MockKeychainManager: KeychainManagerProtocol, @unchecked Sendable {
         apiKey = value
     }
 
+    @discardableResult
+    func setServerConfiguration(serverBaseURL: String, apiKey: String) -> Bool {
+        guard persistsServerConfiguration else { return false }
+        self.serverBaseURL = serverBaseURL
+        self.apiKey = apiKey
+        return true
+    }
+
+    func getMCPAuthorizationScope() -> String? {
+        mcpAuthorizationScope
+    }
+
+    @discardableResult
+    func setMCPAuthorizationScope(_ value: String) -> Bool {
+        mcpAuthorizationScopeWriteCount += 1
+        guard persistsMCPAuthorizationScope else { return false }
+        mcpAuthorizationScope = value
+        return true
+    }
+
     func deleteAll() {
         serverBaseURL = ""
         apiKey = ""
+        mcpAuthorizationScope = nil
+        mcpAuthorizationScopeWriteCount = 0
         deleteAllCalled = true
     }
 }

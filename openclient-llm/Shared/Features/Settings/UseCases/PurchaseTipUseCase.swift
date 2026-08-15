@@ -11,6 +11,7 @@ import Foundation
 protocol PurchaseTipUseCaseProtocol: Sendable {
     func fetchProducts() async throws -> [TipProduct]
     func purchase(productId: String) async throws -> TipPurchaseResult
+    func restorePurchases() async throws
 }
 
 struct PurchaseTipUseCase: PurchaseTipUseCaseProtocol {
@@ -32,5 +33,9 @@ struct PurchaseTipUseCase: PurchaseTipUseCaseProtocol {
 
     func purchase(productId: String) async throws -> TipPurchaseResult {
         try await tipJarManager.purchase(productId: productId)
+    }
+
+    func restorePurchases() async throws {
+        try await tipJarManager.restorePurchases()
     }
 }

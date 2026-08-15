@@ -16,6 +16,7 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     var isOnboardingCompleted: Bool = false
     var serverBaseURL: String = ""
     var apiKey: String = ""
+    var mcpAuthorizationScope: String = "test-scope"
     var selectedModelId: String?
     var selectedTTSModelId: String?
     var selectedSTTModelId: String?
@@ -31,6 +32,14 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     var isPrivacyScreenEnabled: Bool = true
     var hasEnoughConversationsForMemoryTip: Bool = false
     var enabledMCPToolIds: [String] = []
+    var enabledMCPToolWriteCount = 0
+    var mcpToolPermissions: [String: MCPToolPermission] = [:]
+    var mcpPermissionBatchWriteCount = 0
+    var mcpToolConfigurationKeys: [String: String] = [:]
+    var mcpDiscoverySequence = 0
+    var publishedMCPDiscoverySequence = 0
+    var publishedFailedMCPServerIds: Set<String> = []
+    var mcpDiscoveryFailed = false
     var dismissedRemoteBannerKey: String?
     var deleteAllCalled: Bool = false
 
@@ -49,6 +58,7 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     }
 
     func setServerBaseURL(_ value: String) {
+        if serverBaseURL != value { mcpAuthorizationScope = UUID().uuidString }
         serverBaseURL = value
     }
 
@@ -57,7 +67,24 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     }
 
     func setAPIKey(_ value: String) {
+        if apiKey != value { mcpAuthorizationScope = UUID().uuidString }
         apiKey = value
+    }
+
+    @discardableResult
+    func setServerConfiguration(serverBaseURL: String, apiKey: String) -> Bool {
+        let endpointChanged = MCPToolInfo.normalizedServerURL(self.serverBaseURL)
+            != MCPToolInfo.normalizedServerURL(serverBaseURL)
+        if endpointChanged || self.apiKey != apiKey {
+            mcpAuthorizationScope = UUID().uuidString
+        }
+        self.serverBaseURL = serverBaseURL
+        self.apiKey = apiKey
+        return true
+    }
+
+    func getMCPAuthorizationScope() -> String {
+        mcpAuthorizationScope
     }
 
     func getSelectedModelId() -> String? {
@@ -177,7 +204,82 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
     }
 
     func setEnabledMCPToolIds(_ ids: [String]) {
+        enabledMCPToolWriteCount += 1
         enabledMCPToolIds = ids
+    }
+
+    func getMCPToolPermissionRawValue(for key: String) -> String? {
+        mcpToolPermissions[key]?.rawValue
+    }
+
+    func setMCPToolPermissionRawValue(_ value: String, for key: String) {
+        mcpToolPermissions[key] = MCPToolPermission(rawValue: value)
+    }
+
+    func setMCPToolPermissionRawValues(_ value: String, for keys: [String]) {
+        mcpPermissionBatchWriteCount += 1
+        for key in Set(keys) {
+            mcpToolPermissions[key] = MCPToolPermission(rawValue: value)
+        }
+    }
+
+    func getMCPToolConfigurationKey(for toolId: String) -> String? {
+        mcpToolConfigurationKeys[toolId]
+    }
+
+    func setMCPToolConfigurationKey(_ key: String, for toolId: String) {
+        mcpToolConfigurationKeys[toolId] = key
+    }
+
+    func replaceMCPToolConfigurationKeys(_ keys: [String: String]) {
+        mcpToolConfigurationKeys = keys
+    }
+
+    func beginMCPToolDiscovery() -> Int {
+        mcpDiscoverySequence += 1
+        return mcpDiscoverySequence
+    }
+
+    func getPublishedMCPToolDiscoveryRevision() -> Int {
+        publishedMCPDiscoverySequence
+    }
+
+    func getFailedMCPServerIds() -> Set<String> {
+        publishedFailedMCPServerIds
+    }
+
+    func getIsMCPDiscoveryFailed() -> Bool {
+        mcpDiscoveryFailed
+    }
+
+    func publishMCPToolDiscoveryFailure(revision: Int) -> Bool {
+        guard revision > publishedMCPDiscoverySequence else { return false }
+        publishedMCPDiscoverySequence = revision
+        mcpDiscoveryFailed = true
+        return true
+    }
+
+    func publishMCPToolDiscovery(
+        revision: Int,
+        configurationKeys: [String: String],
+        enabledToolIds: [String],
+        servers: [MCPServerInfo],
+        failedServerIds: Set<String>
+    ) -> Bool {
+        guard revision > publishedMCPDiscoverySequence else { return false }
+        let publication = MCPToolDiscoveryPublication.merging(
+            existingConfigurationKeys: mcpToolConfigurationKeys,
+            existingEnabledToolIds: enabledMCPToolIds,
+            discoveredConfigurationKeys: configurationKeys,
+            discoveredEnabledToolIds: enabledToolIds,
+            serverState: MCPDiscoveryServerState(servers: servers, failedServerIds: failedServerIds)
+        )
+        mcpToolConfigurationKeys = publication.configurationKeys
+        enabledMCPToolIds = publication.enabledToolIds
+        publishedMCPDiscoverySequence = revision
+        publishedFailedMCPServerIds = failedServerIds
+        mcpDiscoveryFailed = false
+        return true
     }
 
     func getDismissedRemoteBannerKey() -> String? {
@@ -198,6 +300,14 @@ final class MockSettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         lastSuccessfulCloudSyncDate = nil
         acceptedCloudAccountFingerprint = nil
         ttsVoices = [:]
+        enabledMCPToolIds = []
+        mcpToolPermissions = [:]
+        mcpToolConfigurationKeys = [:]
+        mcpDiscoverySequence = 0
+        publishedMCPDiscoverySequence = 0
+        publishedFailedMCPServerIds = []
+        mcpDiscoveryFailed = false
+        mcpAuthorizationScope = UUID().uuidString
         hasEnoughConversationsForMemoryTip = false
         dismissedRemoteBannerKey = nil
         deleteAllCalled = true

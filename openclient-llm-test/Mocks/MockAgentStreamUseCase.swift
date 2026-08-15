@@ -17,6 +17,10 @@ final class MockAgentStreamUseCase: AgentStreamUseCaseProtocol, @unchecked Senda
     var error: Error?
     var receivedToolNames: [String] = []
     var onExecute: (() -> Void)?
+    var waitsForCancellation = false
+    private(set) var executeCallCount = 0
+    private(set) var didTerminate = false
+    private var activeContinuation: AsyncThrowingStream<AgentEvent, Error>.Continuation?
 
     // MARK: - Execute
 
@@ -25,13 +29,25 @@ final class MockAgentStreamUseCase: AgentStreamUseCaseProtocol, @unchecked Senda
         model: String,
         parameters: ModelParameters,
         contextWindowTokens: Int?,
-        toolRegistry: ToolRegistry
+        toolContext: AgentToolContext
     ) -> AsyncThrowingStream<AgentEvent, Error> {
-        receivedToolNames = toolRegistry.definitions.map(\.function.name)
+        _ = toolContext.isConfigurationCurrent
+        executeCallCount += 1
+        receivedToolNames = toolContext.toolRegistry.definitions.map(\.function.name)
         onExecute?()
         let events = events
         let error = error
         return AsyncThrowingStream { continuation in
+            if waitsForCancellation {
+                activeContinuation = continuation
+                continuation.onTermination = { [weak self] _ in
+                    Task { @MainActor in
+                        self?.didTerminate = true
+                        self?.activeContinuation = nil
+                    }
+                }
+                return
+            }
             Task {
                 for event in events {
                     continuation.yield(event)
