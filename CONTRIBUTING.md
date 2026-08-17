@@ -1,4 +1,4 @@
-# Contributing to OpenClient LLM
+# Contributing to OpenClient
 
 Thank you for your interest in contributing! This guide will help you get started.
 
@@ -74,7 +74,8 @@ SwiftLint fixes, test coverage, and opt-in LiteLLM integration checks.
 - Follow [Swift API Design Guidelines](https://www.swift.org/documentation/api-design-guidelines/)
 - One public type per file, file named after the type
 - Use `// MARK: -` for logical sections
-- Include `#Preview` in every SwiftUI view file
+- Provide preview coverage for primary screens and reusable visual components, either in the same file or a dedicated
+  `Type+Previews.swift` file
 - SwiftLint warning/error limits are 120/150 lines for line length, 50/80 for function bodies, 300/400 for type
   bodies, and 500/650 for files; force unwraps and force casts are errors
 
@@ -99,8 +100,9 @@ Update settings view for macOS layout
 
 ## Code of Conduct
 
-Be respectful and constructive. We follow the [Contributor Covenant](https://www.contributor-covenant.org/version/2/1/code_of_conduct/).
+Be respectful and constructive. Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
-## License
+## License and Contributor Agreement
 
-By contributing, you agree that your contributions will be licensed under the project's license.
+Accepted contributions are published under the project's license. By submitting a contribution, you agree to the
+[Contributor License Agreement](CONTRIBUTOR_LICENSE_AGREEMENT.md).

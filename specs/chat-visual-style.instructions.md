@@ -237,9 +237,9 @@ The chat interface shares the same core layout across platforms, but macOS requi
 
 ---
 
-# Annex: App-Specific — OpenClient LLM
+# Annex: App-Specific — OpenClient
 
-> The following rules are specific to the OpenClient LLM project. Adjust for other projects as needed.
+> The following rules are specific to the OpenClient project. Adjust for other projects as needed.
 
 ## Assistant Identity
 

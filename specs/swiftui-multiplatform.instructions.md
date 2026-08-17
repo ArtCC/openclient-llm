@@ -26,7 +26,8 @@ For shared views that differ slightly by platform, use `#if os()` inside the vie
 ## View Structure
 
 - One View per file, named after the view
-- Always include `#Preview` at the bottom
+- Primary screens and reusable visual components need preview coverage, either in the same file or a dedicated
+  `Type+Previews.swift` file. Platform adapters and infrastructure-only views may rely on a composed parent preview
 - Use `@State` for view-local state, `@Environment` for injected dependencies
 - Use `@Observable` view models injected via `@State private var` in the view
 - Views switch on `viewModel.state` to render `.loading` / `.loaded` states
@@ -142,7 +143,7 @@ macOS does **not** use Tab Bar. Instead, use `NavigationSplitView` with a sideba
 - Place cross-feature shared views in `openclient-llm/Shared/Core/Views/`; feature-owned views stay under
   `openclient-llm/Shared/Features/<Feature>/Views/`.
 - Custom views must be self-contained: receive data through initializer parameters, not by reaching into parent state
-- Always include a `#Preview` block in every custom view file
+- Reusable visual components need preview coverage, either in the same file or a dedicated `Type+Previews.swift` file
 
 ### Custom ViewModifiers
 
@@ -246,7 +247,7 @@ private extension CGFloat {
 
 ## App-Specific Sections Summary
 
-The following parts of this document are specific to **OpenClient LLM**:
+The following parts of this document are specific to **OpenClient**:
 
 - **Tab Bar configuration** — Specific tabs (Chats, Models, Settings, Search), icons, and content
 - **macOS sidebar structure** — Specific sidebar sections

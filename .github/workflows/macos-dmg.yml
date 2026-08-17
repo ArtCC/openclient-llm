@@ -164,7 +164,7 @@ jobs:
           ln -s /Applications "$STAGING/Applications"
 
           hdiutil create \
-            -volname "OpenClient LLM" \
+            -volname "OpenClient" \
             -srcfolder "$STAGING" \
             -ov -format UDZO \
             "$DMG_PATH"
