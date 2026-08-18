@@ -9,7 +9,7 @@ applyTo: "**/*.swift"
 
 Native-first design. The app should feel like a first-party Apple app, leveraging system components and platform conventions.
 
-> **Generic vs. App-Specific**: This document contains both generic Apple design guidelines (reusable across projects) and app-specific configuration for OpenClient LLM. Sections marked with **"App-Specific"** should be adapted when reusing these guidelines in other projects. See the summary at the bottom for a full list.
+> **Generic vs. App-Specific**: This document contains both generic Apple design guidelines (reusable across projects) and app-specific configuration for OpenClient. Sections marked with **"App-Specific"** should be adapted when reusing these guidelines in other projects. See the summary at the bottom for a full list.
 
 ## Liquid Glass (iOS 26+ / macOS 26+)
 
@@ -654,7 +654,7 @@ ContentUnavailableView {
 
 ## App-Specific Sections Summary
 
-The following sections in this document contain project-specific configuration for **OpenClient LLM** and should be adapted when reusing these guidelines in another project:
+The following sections in this document contain project-specific configuration for **OpenClient** and should be adapted when reusing these guidelines in another project:
 
 | Section | What to adapt |
 |---|---|

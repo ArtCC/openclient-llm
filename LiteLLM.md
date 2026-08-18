@@ -1,6 +1,6 @@
 # Running LiteLLM with Docker
 
-This guide shows how to self-host [LiteLLM](https://docs.litellm.ai) as an OpenAI-compatible proxy using Docker Compose so you can use it as a backend with OpenClient LLM. It covers the full stack: Postgres for persistence, a reference `config.yaml` with both local (Ollama) and cloud models, and common operational commands.
+This guide shows how to self-host [LiteLLM](https://docs.litellm.ai) as an OpenAI-compatible proxy using Docker Compose so you can use it as a backend with OpenClient. It covers the full stack: Postgres for persistence, a reference `config.yaml` with both local (Ollama) and cloud models, and common operational commands.
 
 Configure OpenClient with the proxy root, for example `http://your-server:4000`, not
 `http://your-server:4000/v1`. OpenClient appends endpoint paths verbatim: core requests use `/models`,

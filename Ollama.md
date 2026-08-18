@@ -1,6 +1,6 @@
 # Running Ollama with Docker
 
-This guide shows how to self-host [Ollama](https://ollama.com) using Docker Compose so you can use it as a backend with OpenClient LLM. It covers both CPU-only and NVIDIA GPU setups, along with a reference `.env` file and common operational commands.
+This guide shows how to self-host [Ollama](https://ollama.com) using Docker Compose so you can use it as a backend with OpenClient. It covers both CPU-only and NVIDIA GPU setups, along with a reference `.env` file and common operational commands.
 
 Configure OpenClient with Ollama's OpenAI-compatible base URL, including `/v1`, for example
 `http://your-server:11434/v1`. OpenClient appends `/models` and `/chat/completions` to the configured value and does
