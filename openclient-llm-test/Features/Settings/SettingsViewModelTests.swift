@@ -27,6 +27,7 @@ final class SettingsViewModelTests: XCTestCase {
     var cloudSyncRuntimeStore: CloudSyncRuntimeStore!
     var mockCloudAccountAssociation: MockCloudAccountAssociation!
     var mockFetchMCPTools: MockFetchMCPToolsUseCase!
+    var mockRemoteConfigManager: MockRemoteConfigManager!
 
     // MARK: - Setup
 
@@ -46,6 +47,7 @@ final class SettingsViewModelTests: XCTestCase {
         cloudSyncRuntimeStore = CloudSyncRuntimeStore()
         mockCloudAccountAssociation = MockCloudAccountAssociation()
         mockFetchMCPTools = MockFetchMCPToolsUseCase()
+        mockRemoteConfigManager = MockRemoteConfigManager()
         sut = SettingsViewModel(
             saveServerConfigurationUseCase: mockSaveServerConfig,
             testServerConnectionUseCase: mockTestConnection,
@@ -59,7 +61,8 @@ final class SettingsViewModelTests: XCTestCase {
             userProfileManager: mockUserProfileManager,
             cloudSyncRuntimeStore: cloudSyncRuntimeStore,
             cloudAccountAssociation: mockCloudAccountAssociation,
-            resetAppUseCase: mockResetUseCase
+            resetAppUseCase: mockResetUseCase,
+            remoteConfigManager: mockRemoteConfigManager
         )
     }
 
@@ -78,6 +81,7 @@ final class SettingsViewModelTests: XCTestCase {
         cloudSyncRuntimeStore = nil
         mockCloudAccountAssociation = nil
         mockFetchMCPTools = nil
+        mockRemoteConfigManager = nil
 
         try await super.tearDown()
     }

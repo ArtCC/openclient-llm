@@ -52,7 +52,7 @@ final class LaunchViewModel {
         resetAppDataUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase(),
         configureVoticeUseCase: ConfigureVoticeUseCaseProtocol = ConfigureVoticeUseCase(),
         attachmentMigrationUseCase: AttachmentMigrationUseCaseProtocol = AttachmentMigrationUseCase(),
-        remoteConfigManager: RemoteConfigManagerProtocol = RemoteConfigManager(),
+        remoteConfigManager: RemoteConfigManagerProtocol = RemoteConfigManager.shared,
         settingsManager: SettingsManagerProtocol = SettingsManager(),
         currentVersion: String? = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
         localeIdentifier: String = Locale.current.identifier,

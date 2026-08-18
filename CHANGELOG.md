@@ -7,7 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [1.6.25-build-75] - 2026-08-18
+## [1.6.25-build-76] - 2026-08-18
+
+### Added
+
+- **Remote Tip Jar control** — Remote Config can now show or hide the Buy Me a Coffee option in Settings
 
 ### Fixed
 
