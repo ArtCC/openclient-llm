@@ -40,7 +40,7 @@ final class RemoteConfigManagerTests: XCTestCase {
         // Given
         let manager = RemoteConfigManager(
             endpoint: endpoint,
-            dataLoader: try makeLoader(version: "1.6.20"),
+            dataLoader: try makeLoader(version: "1.6.25"),
             defaults: defaults,
             refreshInterval: 6 * 60 * 60
         )
@@ -49,13 +49,14 @@ final class RemoteConfigManagerTests: XCTestCase {
         let config = try await manager.loadConfig()
 
         // Then
-        XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.20")
+        XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.25")
+        XCTAssertEqual(manager.currentConfig, config)
     }
 
     func test_loadConfig_withFreshCache_returnsCachedConfig() async throws {
         // Given
         let now = Date(timeIntervalSince1970: 1_000)
-        _ = try await makeManager(version: "1.6.20", now: now, refreshInterval: .zero).loadConfig()
+        _ = try await makeManager(version: "1.6.25", now: now, refreshInterval: .zero).loadConfig()
         let manager = try makeManager(
             version: "2.0.0",
             now: now.addingTimeInterval(60),
@@ -66,13 +67,14 @@ final class RemoteConfigManagerTests: XCTestCase {
         let config = try await manager.loadConfig()
 
         // Then
-        XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.20")
+        XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.25")
+        XCTAssertEqual(manager.currentConfig, config)
     }
 
     func test_loadConfig_withExpiredCache_downloadsLatestConfig() async throws {
         // Given
         let now = Date(timeIntervalSince1970: 1_000)
-        _ = try await makeManager(version: "1.6.20", now: now, refreshInterval: .zero).loadConfig()
+        _ = try await makeManager(version: "1.6.25", now: now, refreshInterval: .zero).loadConfig()
         let manager = try makeManager(
             version: "2.0.0",
             now: now.addingTimeInterval((6 * 60 * 60) + 1),
@@ -89,7 +91,7 @@ final class RemoteConfigManagerTests: XCTestCase {
     func test_loadConfig_whenRefreshFails_returnsCachedConfig() async throws {
         // Given
         let now = Date(timeIntervalSince1970: 1_000)
-        _ = try await makeManager(version: "1.6.20", now: now, refreshInterval: .zero).loadConfig()
+        _ = try await makeManager(version: "1.6.25", now: now, refreshInterval: .zero).loadConfig()
         let manager = RemoteConfigManager(
             endpoint: endpoint,
             dataLoader: { _ in throw URLError(.notConnectedToInternet) },
@@ -102,7 +104,39 @@ final class RemoteConfigManagerTests: XCTestCase {
         let config = try await manager.loadConfig()
 
         // Then
-        XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.20")
+        XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.25")
+    }
+
+    func test_loadConfig_tipJarDisabled_returnsDisabledFlag() async throws {
+        // Given
+        let manager = RemoteConfigManager(
+            endpoint: endpoint,
+            dataLoader: try makeLoader(version: "1.6.25", tipJarEnabled: false),
+            defaults: defaults,
+            refreshInterval: .zero
+        )
+
+        // When
+        let config = try await manager.loadConfig()
+
+        // Then
+        XCTAssertFalse(config.isTipJarEnabled)
+    }
+
+    func test_loadConfig_tipJarMissing_defaultsToEnabled() async throws {
+        // Given
+        let manager = RemoteConfigManager(
+            endpoint: endpoint,
+            dataLoader: try makeLoader(version: "1.6.25", tipJarEnabled: nil),
+            defaults: defaults,
+            refreshInterval: .zero
+        )
+
+        // When
+        let config = try await manager.loadConfig()
+
+        // Then
+        XCTAssertTrue(config.isTipJarEnabled)
     }
 }
 
@@ -123,19 +157,28 @@ private extension RemoteConfigManagerTests {
         )
     }
 
-    func makeLoader(version: String) throws -> RemoteConfigDataLoader {
+    func makeLoader(
+        version: String,
+        tipJarEnabled: Bool? = true
+    ) throws -> RemoteConfigDataLoader {
         let endpoint = try XCTUnwrap(endpoint)
         let response = try XCTUnwrap(
             HTTPURLResponse(url: endpoint, statusCode: 200, httpVersion: nil, headerFields: nil)
         )
-        let data = Data(configJSON(version: version).utf8)
+        let data = Data(configJSON(version: version, tipJarEnabled: tipJarEnabled).utf8)
         return { _ in (data, response) }
     }
 
-    func configJSON(version: String) -> String {
-        """
+    func configJSON(version: String, tipJarEnabled: Bool?) -> String {
+        let tipJar = tipJarEnabled.map {
+            """
+              "settings_section": { "tip_option": \($0) },
+            """
+        } ?? ""
+        return """
         {
           "schema_version": 1,
+        \(tipJar)
           "maintenance_mode": { "enabled": false },
           "app_update": {
             "ios": {

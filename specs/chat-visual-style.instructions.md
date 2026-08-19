@@ -46,9 +46,12 @@ Modern, clean conversational interface inspired by leading AI chat applications.
 
 ### Metadata
 
-- Message timestamps are not currently rendered in chat bubbles.
-- Optional token usage is shown after completed assistant messages in `.caption2`/tertiary styling.
-- Do not add hover-only timestamps as though that behavior already exists.
+- Message timestamps use `.caption2`/tertiary styling and sit outside message surfaces. User timestamps are below and
+  trailing the accent-tinted glass; assistant timestamps are trailing in the metadata row.
+- Optional token usage is shown in the completed assistant message metadata row.
+- While the user manually scrolls through history, a centered, noninteractive glass date capsule identifies the day of
+  the first visible message. It remains hidden during idle and programmatic scrolling.
+- Do not make timestamps hover-only; they must remain available on touch platforms.
 
 ## Input Bar
 
@@ -201,7 +204,7 @@ The chat interface shares the same core layout across platforms, but macOS requi
 
 - Same layout rules as iOS (user right-aligned with glass, assistant left-aligned without background)
 - On macOS, user bubble glass may render slightly differently due to window backgrounds — test with various desktop wallpapers
-- Current message rows do not add a macOS-only hover or timestamp state
+- Message timestamps and the transient date capsule use the same shared behavior as iOS; there is no macOS-only hover state
 
 ### Action Buttons Inside Messages
 
@@ -237,9 +240,9 @@ The chat interface shares the same core layout across platforms, but macOS requi
 
 ---
 
-# Annex: App-Specific — OpenClient LLM
+# Annex: App-Specific — OpenClient
 
-> The following rules are specific to the OpenClient LLM project. Adjust for other projects as needed.
+> The following rules are specific to the OpenClient project. Adjust for other projects as needed.
 
 ## Assistant Identity
 

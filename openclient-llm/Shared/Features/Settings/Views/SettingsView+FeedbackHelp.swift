@@ -11,14 +11,16 @@ import SwiftUI
 // MARK: - Support
 
 extension SettingsView {
-    func supportSection() -> some View {
+    func supportSection(_ loadedState: SettingsViewModel.LoadedState) -> some View {
         Section {
-            Button {
-                isShowingTipJar = true
-            } label: {
-                Label(String(localized: "Buy Me a Coffee"), systemImage: "cup.and.saucer")
+            if loadedState.isTipJarEnabled {
+                Button {
+                    isShowingTipJar = true
+                } label: {
+                    Label(String(localized: "Buy Me a Coffee"), systemImage: "cup.and.saucer")
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
 
             Button {
                 requestAppReview()

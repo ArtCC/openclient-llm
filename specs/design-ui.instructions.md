@@ -9,7 +9,7 @@ applyTo: "**/*.swift"
 
 Native-first design. The app should feel like a first-party Apple app, leveraging system components and platform conventions.
 
-> **Generic vs. App-Specific**: This document contains both generic Apple design guidelines (reusable across projects) and app-specific configuration for OpenClient LLM. Sections marked with **"App-Specific"** should be adapted when reusing these guidelines in other projects. See the summary at the bottom for a full list.
+> **Generic vs. App-Specific**: This document contains both generic Apple design guidelines (reusable across projects) and app-specific configuration for OpenClient. Sections marked with **"App-Specific"** should be adapted when reusing these guidelines in other projects. See the summary at the bottom for a full list.
 
 ## Liquid Glass (iOS 26+ / macOS 26+)
 
@@ -645,7 +645,8 @@ ContentUnavailableView {
 - **Code blocks**: Implemented as horizontally scrolling monospaced text with language/"Code" header, material
   background, and a copy button. Syntax coloring is not currently implemented.
 - **Markdown rendering**: Render assistant messages as Markdown (bold, italic, lists, links, code)
-- **Timestamps**: Not currently shown in chat message rows; token usage is optional completed-message metadata
+- **Timestamps**: Shown outside message surfaces in trailing `.caption2`/tertiary styling; a centered date capsule appears
+  only during manual history scrolling
 - **Copy message**: Long press or context menu to copy full message text
 
 > For detailed chat UI implementation patterns, see `chat-visual-style.instructions.md`.
@@ -654,7 +655,7 @@ ContentUnavailableView {
 
 ## App-Specific Sections Summary
 
-The following sections in this document contain project-specific configuration for **OpenClient LLM** and should be adapted when reusing these guidelines in another project:
+The following sections in this document contain project-specific configuration for **OpenClient** and should be adapted when reusing these guidelines in another project:
 
 | Section | What to adapt |
 |---|---|

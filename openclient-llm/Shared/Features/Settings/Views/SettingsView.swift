@@ -249,7 +249,7 @@ private extension SettingsView {
                 chatSection(loadedState)
                 webSearchSection(loadedState)
                 mcpSection(loadedState)
-                supportSection()
+                supportSection(loadedState)
                 legalSection()
                 dangerSection()
             }
@@ -294,7 +294,6 @@ private extension SettingsView {
             }
             .disabled(loadedState.serverURL.isEmpty || loadedState.connectionStatus == .testing)
             .buttonStyle(.plain)
-
             Button {
                 focusedField = nil
                 viewModel.send(.saveTapped)
@@ -475,7 +474,6 @@ private extension SettingsView {
                     .foregroundStyle(.red)
             }
             .buttonStyle(.plain)
-
             if let resetErrorMessage = currentLoadedState?.resetErrorMessage {
                 Label(resetErrorMessage, systemImage: "exclamationmark.triangle")
                     .font(.caption)
@@ -492,7 +490,6 @@ private extension SettingsView {
         guard case .loaded(let loadedState) = viewModel.state else { return nil }
         return loadedState
     }
-
 }
 
 #Preview {

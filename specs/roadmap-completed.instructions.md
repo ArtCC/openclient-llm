@@ -124,7 +124,7 @@ Goal: Surface per-model metadata and give users visibility into conversation cos
 
 ## Phase 12 — System Integration & Import
 
-Goal: Allow other apps to send content to OpenClient LLM and let users bring data from external sources.
+Goal: Allow other apps to send content to OpenClient and let users bring data from external sources.
 
 - [x] **Share Extension (iOS/iPadOS)**: System extension to receive text, URLs, images, and PDFs shared from any app (Safari, Notes, Files…). When activated, opens OpenClient and creates a new conversation with the shared content as an attachment or initial message.
 - [x] **Custom URL scheme (`openclient://`)**: URL scheme to open the app with prefilled content from external automations, Shortcuts, or third-party apps.

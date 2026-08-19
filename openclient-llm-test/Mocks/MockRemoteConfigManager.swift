@@ -9,12 +9,15 @@
 import Foundation
 @testable import openclient_llm
 
-// Safety: Only used within serialized @MainActor test methods.
-final class MockRemoteConfigManager: RemoteConfigManagerProtocol, @unchecked Sendable {
+@MainActor
+final class MockRemoteConfigManager: RemoteConfigManagerProtocol {
     var result: Result<RemoteConfig, Error> = .success(.stub())
+    var currentConfig: RemoteConfig?
 
     func loadConfig() async throws -> RemoteConfig {
-        try result.get()
+        let config = try result.get()
+        currentConfig = config
+        return config
     }
 }
 
@@ -23,8 +26,9 @@ extension RemoteConfig {
         isMaintenanceEnabled: Bool = false,
         isUpdateEnabled: Bool = true,
         isForceUpdate: Bool = false,
-        latestVersion: String = "1.6.20",
-        banner: Banner? = nil
+        latestVersion: String = "1.6.25",
+        banner: Banner? = nil,
+        isTipJarEnabled: Bool? = true
     ) -> RemoteConfig {
         let update = PlatformUpdate(
             enabled: isUpdateEnabled,
@@ -36,7 +40,8 @@ extension RemoteConfig {
             schemaVersion: 1,
             maintenanceMode: .init(enabled: isMaintenanceEnabled),
             appUpdate: .init(ios: update, macos: update),
-            banner: banner ?? .init(active: false, dismissBannerKey: "test", platforms: [], items: [:])
+            banner: banner ?? .init(active: false, dismissBannerKey: "test", platforms: [], items: [:]),
+            settingsSection: isTipJarEnabled.map { .init(tipOption: $0) }
         )
     }
 }

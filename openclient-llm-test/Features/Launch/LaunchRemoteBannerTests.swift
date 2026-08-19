@@ -32,7 +32,7 @@ final class LaunchRemoteBannerTests: XCTestCase {
             attachmentMigrationUseCase: MockAttachmentMigrationUseCase(),
             remoteConfigManager: mockRemoteConfigManager,
             settingsManager: mockSettingsManager,
-            currentVersion: "1.6.20",
+            currentVersion: "1.6.25",
             localeIdentifier: "es-ES",
             launchDelay: .zero
         )

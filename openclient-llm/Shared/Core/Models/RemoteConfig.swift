@@ -32,6 +32,10 @@ nonisolated struct RemoteConfig: Codable, Equatable, Sendable {
         let items: [String: Item]
     }
 
+    struct SettingsSection: Codable, Equatable, Sendable {
+        let tipOption: Bool
+    }
+
     struct Item: Codable, Equatable, Sendable {
         let title: String
         let subtitle: String
@@ -57,12 +61,18 @@ nonisolated struct RemoteConfig: Codable, Equatable, Sendable {
     let maintenanceMode: MaintenanceMode
     let appUpdate: AppUpdate
     let banner: Banner
+    let settingsSection: SettingsSection?
+
+    var isTipJarEnabled: Bool {
+        settingsSection?.tipOption ?? true
+    }
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion = "schema_version"
         case maintenanceMode = "maintenance_mode"
         case appUpdate = "app_update"
         case banner
+        case settingsSection = "settings_section"
     }
 }
 
@@ -83,5 +93,11 @@ private extension RemoteConfig.Banner {
         case dismissBannerKey = "dismiss_banner_key"
         case platforms
         case items
+    }
+}
+
+private extension RemoteConfig.SettingsSection {
+    enum CodingKeys: String, CodingKey {
+        case tipOption = "tip_option"
     }
 }

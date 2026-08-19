@@ -10,7 +10,9 @@ import Foundation
 
 typealias RemoteConfigDataLoader = @Sendable (URLRequest) async throws -> (Data, URLResponse)
 
-protocol RemoteConfigManagerProtocol: Sendable {
+@MainActor
+protocol RemoteConfigManagerProtocol: AnyObject {
+    var currentConfig: RemoteConfig? { get }
     func loadConfig() async throws -> RemoteConfig
 }
 
@@ -20,14 +22,20 @@ enum RemoteConfigManagerError: Error, Equatable {
     case unsupportedSchemaVersion(Int)
 }
 
-// Safety: UserDefaults is thread-safe per Apple documentation. The loader is @Sendable.
-// All stored properties are immutable (`let`).
-final class RemoteConfigManager: RemoteConfigManagerProtocol, @unchecked Sendable {
+@MainActor
+final class RemoteConfigManager: RemoteConfigManagerProtocol {
     // MARK: - Properties
 
+    static let shared = RemoteConfigManager()
+
     private enum Keys {
+#if DEBUG
+        static let cachedConfig = "remoteConfig.dev.cachedConfig"
+        static let lastFetchDate = "remoteConfig.dev.lastFetchDate"
+#else
         static let cachedConfig = "remoteConfig.cachedConfig"
         static let lastFetchDate = "remoteConfig.lastFetchDate"
+#endif
     }
 
     private static var defaultRefreshInterval: TimeInterval {
@@ -43,6 +51,7 @@ final class RemoteConfigManager: RemoteConfigManagerProtocol, @unchecked Sendabl
     private let defaults: UserDefaults
     private let refreshInterval: TimeInterval
     private let now: @Sendable () -> Date
+    private(set) var currentConfig: RemoteConfig?
 
     // MARK: - Init
 
@@ -66,7 +75,8 @@ final class RemoteConfigManager: RemoteConfigManagerProtocol, @unchecked Sendabl
     // MARK: - Public
 
     func loadConfig() async throws -> RemoteConfig {
-        let cachedConfig = loadCachedConfig()
+        let cachedConfig = currentConfig ?? loadCachedConfig()
+        currentConfig = cachedConfig
         if !shouldFetchRemoteConfig(), let cachedConfig {
             LogManager.debug("RemoteConfigManager: Using cached config")
             return cachedConfig
@@ -115,6 +125,7 @@ private extension RemoteConfigManager {
 
         defaults.set(data, forKey: Keys.cachedConfig)
         defaults.set(now(), forKey: Keys.lastFetchDate)
+        currentConfig = config
         LogManager.success("RemoteConfigManager: Config downloaded and cached")
         return config
     }
