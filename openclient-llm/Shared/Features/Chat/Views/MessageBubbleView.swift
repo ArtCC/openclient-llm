@@ -74,6 +74,8 @@ private extension MessageBubbleView {
                         .regular.tint(Color.appAccent),
                         in: .rect(cornerRadius: 18)
                     )
+                timestampLabel
+                    .padding(.trailing, 4)
             }
             .contentShape(Rectangle())
             .contextMenu {
@@ -105,8 +107,16 @@ private extension MessageBubbleView {
                     blocksView
                 }
 
-                if let usage = message.tokenUsage, !isStreaming, showTokenUsage {
-                    tokenUsageLabel(usage)
+                if !message.content.isEmpty || !message.attachments.isEmpty {
+                    HStack(spacing: 8) {
+                        if let usage = message.tokenUsage, !isStreaming, showTokenUsage {
+                            tokenUsageLabel(usage)
+                        }
+
+                        Spacer(minLength: 8)
+
+                        timestampLabel
+                    }
                 }
 
                 if let results = message.webSearchResults, !results.isEmpty, !isStreaming {
@@ -437,6 +447,13 @@ private extension MessageBubbleView {
                 .font(.caption2)
         }
         .foregroundStyle(.tertiary)
+    }
+
+    var timestampLabel: some View {
+        Text(message.timestamp, style: .time)
+            .font(.caption2)
+            .foregroundStyle(.tertiary)
+            .accessibilityLabel(message.timestamp.formatted(date: .long, time: .shortened))
     }
 
     var speakButton: some View {
