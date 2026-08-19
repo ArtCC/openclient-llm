@@ -19,6 +19,8 @@ struct ChatView: View {
     @State private var isNearTop: Bool = true
     @State private var scrollPosition = ScrollPosition(idType: UUID.self)
     @State private var isScrollThrottled: Bool = false
+    @State private var visibleMessageIds: [UUID] = []
+    @State private var isManuallyScrolling: Bool = false
     @State private var showSystemPromptSheet: Bool = false
     @State private var showModelParametersSheet: Bool = false
     @State private var showFavouritesSheet: Bool = false
@@ -351,10 +353,17 @@ private extension ChatView {
 
     // MARK: - Messages
 
-    func messagesScrollView(
-        _ loadedState: ChatViewModel.LoadedState
-    ) -> some View {
+    func messagesScrollView(_ loadedState: ChatViewModel.LoadedState) -> some View {
         scrollContent(loadedState)
+            .overlay(alignment: .top) {
+                if isManuallyScrolling,
+                   let date = visibleMessageDate(in: loadedState.messages, visibleMessageIds: visibleMessageIds) {
+                    floatingDateLabel(date)
+                        .padding(.top, 16)
+                        .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                        .allowsHitTesting(false)
+                }
+            }
             .overlay(alignment: .topTrailing) {
                 if !isNearTop && !loadedState.messages.isEmpty {
                     scrollAnchorButton(isTop: true) {
@@ -376,11 +385,10 @@ private extension ChatView {
             }
             .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearTop)
             .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearBottom)
+            .animation(.easeInOut(duration: 0.2), value: isManuallyScrolling)
     }
 
-    func scrollContent(
-        _ loadedState: ChatViewModel.LoadedState
-    ) -> some View {
+    func scrollContent(_ loadedState: ChatViewModel.LoadedState) -> some View {
         scrollViewContent(loadedState)
             .onScrollGeometryChange(for: Bool.self) {
                 $0.contentSize.height - $0.contentOffset.y - $0.containerSize.height < 150
@@ -391,8 +399,12 @@ private extension ChatView {
             .onScrollPhaseChange { oldPhase, newPhase in
                 if newPhase == .interacting {
                     shouldAutoScroll = false
-                } else if newPhase == .idle, oldPhase != .animating {
-                    shouldAutoScroll = isNearBottom
+                    isManuallyScrolling = true
+                } else if newPhase == .idle {
+                    if oldPhase != .animating {
+                        shouldAutoScroll = isNearBottom
+                    }
+                    isManuallyScrolling = false
                 }
             }
             .modifier(ScrollTriggerModifier(
@@ -405,9 +417,7 @@ private extension ChatView {
             ))
     }
 
-    func scrollViewContent(
-        _ loadedState: ChatViewModel.LoadedState
-    ) -> some View {
+    func scrollViewContent(_ loadedState: ChatViewModel.LoadedState) -> some View {
         ScrollView {
             if loadedState.messages.isEmpty {
                 ChatEmptyStateView(
@@ -421,6 +431,9 @@ private extension ChatView {
             }
         }
         .scrollPosition($scrollPosition)
+        .onScrollTargetVisibilityChange(idType: UUID.self, threshold: 0.01) {
+            visibleMessageIds = $0
+        }
 #if os(iOS)
         .scrollDismissesKeyboard(.interactively)
 #elseif os(macOS)

@@ -645,7 +645,8 @@ ContentUnavailableView {
 - **Code blocks**: Implemented as horizontally scrolling monospaced text with language/"Code" header, material
   background, and a copy button. Syntax coloring is not currently implemented.
 - **Markdown rendering**: Render assistant messages as Markdown (bold, italic, lists, links, code)
-- **Timestamps**: Not currently shown in chat message rows; token usage is optional completed-message metadata
+- **Timestamps**: Shown outside message surfaces in trailing `.caption2`/tertiary styling; a centered date capsule appears
+  only during manual history scrolling
 - **Copy message**: Long press or context menu to copy full message text
 
 > For detailed chat UI implementation patterns, see `chat-visual-style.instructions.md`.

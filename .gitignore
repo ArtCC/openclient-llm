@@ -30,3 +30,4 @@ Secrets.xcconfig
 
 # Remote config
 config.json
+config-dev.json

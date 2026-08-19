@@ -69,6 +69,7 @@ final class SettingsViewModel {
         var isPrivacyScreenEnabled: Bool = true
         var synchronizationResult: AppSynchronizationResult?
         var resetErrorMessage: String?
+        var isTipJarEnabled: Bool = true
         var availableMCPTools: [MCPToolInfo] = []
         var availableMCPServers: [MCPServerInfo] = []
         var failedMCPServerIds: Set<String> = []
@@ -112,6 +113,7 @@ final class SettingsViewModel {
     private let resetAppUseCase: ResetAppDataUseCaseProtocol
     private let checkNotificationPermissionUseCase: NotificationStatusCheckProtocol
     let notificationPermissionUseCase: NotificationPermissionUseCaseProtocol
+    private let remoteConfigManager: RemoteConfigManagerProtocol
     var synchronizationTask: Task<Void, Never>?
     var cloudEnableTask: Task<Void, Never>?
     var cloudSyncGeneration = 0
@@ -138,7 +140,8 @@ final class SettingsViewModel {
         cloudAccountAssociation: CloudAccountAssociationProtocol = CloudAccountAssociation.shared,
         resetAppUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase(),
         checkNotificationPermissionUseCase: NotificationStatusCheckProtocol = CheckNotificationPermissionUseCase(),
-        notificationPermissionUseCase: NotificationPermissionUseCaseProtocol = NotificationPermissionUseCase()
+        notificationPermissionUseCase: NotificationPermissionUseCaseProtocol = NotificationPermissionUseCase(),
+        remoteConfigManager: RemoteConfigManagerProtocol = RemoteConfigManager.shared
     ) {
         self.state = state
         self.saveServerConfigurationUseCase = saveServerConfigurationUseCase
@@ -157,6 +160,7 @@ final class SettingsViewModel {
         self.resetAppUseCase = resetAppUseCase
         self.checkNotificationPermissionUseCase = checkNotificationPermissionUseCase
         self.notificationPermissionUseCase = notificationPermissionUseCase
+        self.remoteConfigManager = remoteConfigManager
         observeMCPToolSettingsChanges()
     }
 
@@ -185,6 +189,7 @@ extension SettingsViewModel {
             webSearchMaxResults: settingsManager.getWebSearchMaxResults(),
             availableSearchTools: settingsManager.getAvailableSearchTools(),
             isPrivacyScreenEnabled: settingsManager.getIsPrivacyScreenEnabled(),
+            isTipJarEnabled: remoteConfigManager.currentConfig?.isTipJarEnabled ?? true,
             enabledMCPToolIds: Set(settingsManager.getEnabledMCPToolIds())
         )
         state = .loaded(loadedState)

@@ -50,6 +50,7 @@ final class RemoteConfigManagerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.25")
+        XCTAssertEqual(manager.currentConfig, config)
     }
 
     func test_loadConfig_withFreshCache_returnsCachedConfig() async throws {
@@ -67,6 +68,7 @@ final class RemoteConfigManagerTests: XCTestCase {
 
         // Then
         XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.25")
+        XCTAssertEqual(manager.currentConfig, config)
     }
 
     func test_loadConfig_withExpiredCache_downloadsLatestConfig() async throws {
@@ -104,6 +106,38 @@ final class RemoteConfigManagerTests: XCTestCase {
         // Then
         XCTAssertEqual(config.appUpdate.ios.latestVersion, "1.6.25")
     }
+
+    func test_loadConfig_tipJarDisabled_returnsDisabledFlag() async throws {
+        // Given
+        let manager = RemoteConfigManager(
+            endpoint: endpoint,
+            dataLoader: try makeLoader(version: "1.6.25", tipJarEnabled: false),
+            defaults: defaults,
+            refreshInterval: .zero
+        )
+
+        // When
+        let config = try await manager.loadConfig()
+
+        // Then
+        XCTAssertFalse(config.isTipJarEnabled)
+    }
+
+    func test_loadConfig_tipJarMissing_defaultsToEnabled() async throws {
+        // Given
+        let manager = RemoteConfigManager(
+            endpoint: endpoint,
+            dataLoader: try makeLoader(version: "1.6.25", tipJarEnabled: nil),
+            defaults: defaults,
+            refreshInterval: .zero
+        )
+
+        // When
+        let config = try await manager.loadConfig()
+
+        // Then
+        XCTAssertTrue(config.isTipJarEnabled)
+    }
 }
 
 // MARK: - Private
@@ -123,19 +157,28 @@ private extension RemoteConfigManagerTests {
         )
     }
 
-    func makeLoader(version: String) throws -> RemoteConfigDataLoader {
+    func makeLoader(
+        version: String,
+        tipJarEnabled: Bool? = true
+    ) throws -> RemoteConfigDataLoader {
         let endpoint = try XCTUnwrap(endpoint)
         let response = try XCTUnwrap(
             HTTPURLResponse(url: endpoint, statusCode: 200, httpVersion: nil, headerFields: nil)
         )
-        let data = Data(configJSON(version: version).utf8)
+        let data = Data(configJSON(version: version, tipJarEnabled: tipJarEnabled).utf8)
         return { _ in (data, response) }
     }
 
-    func configJSON(version: String) -> String {
-        """
+    func configJSON(version: String, tipJarEnabled: Bool?) -> String {
+        let tipJar = tipJarEnabled.map {
+            """
+              "settings_section": { "tip_option": \($0) },
+            """
+        } ?? ""
+        return """
         {
           "schema_version": 1,
+        \(tipJar)
           "maintenance_mode": { "enabled": false },
           "app_update": {
             "ios": {

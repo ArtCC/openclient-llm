@@ -121,6 +121,7 @@ private extension TaggedConversationsWidgetView {
                 .fontWeight(.semibold)
                 .foregroundStyle(.primary)
                 .lineLimit(1)
+                .privacySensitive()
             Spacer()
         }
         .padding(.horizontal, 2.5)
