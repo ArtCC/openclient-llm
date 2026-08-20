@@ -58,6 +58,7 @@ extension ChatViewModel {
 
     func completeActiveStream(_ assistantMessageId: UUID) {
         guard isActiveStream(assistantMessageId) else { return }
+        resetStreamingTextUpdates()
         activeAssistantMessageId = nil
         streamTask = nil
     }

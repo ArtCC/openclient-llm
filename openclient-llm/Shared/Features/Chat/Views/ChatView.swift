@@ -16,9 +16,9 @@ struct ChatView: View {
     @State private var inputText: String = ""
     @State private var shouldAutoScroll: Bool = true
     @State private var isNearBottom: Bool = true
+    @State private var isAtBottom: Bool = true
     @State private var isNearTop: Bool = true
     @State private var scrollPosition = ScrollPosition(idType: UUID.self)
-    @State private var isScrollThrottled: Bool = false
     @State private var visibleMessageIds: [UUID] = []
     @State private var isManuallyScrolling: Bool = false
     @State private var showSystemPromptSheet: Bool = false
@@ -367,6 +367,7 @@ private extension ChatView {
             .overlay(alignment: .topTrailing) {
                 if !isNearTop && !loadedState.messages.isEmpty {
                     scrollAnchorButton(isTop: true) {
+                        shouldAutoScroll = false
                         withAnimation(.easeInOut(duration: 0.35)) {
                             scrollPosition.scrollTo(edge: .top)
                         }
@@ -374,17 +375,18 @@ private extension ChatView {
                 }
             }
             .overlay(alignment: .bottomTrailing) {
-                if !isNearBottom && !loadedState.messages.isEmpty {
+                if (!isNearBottom || !shouldAutoScroll) && !loadedState.messages.isEmpty {
                     scrollAnchorButton(isTop: false) {
+                        shouldAutoScroll = true
                         withAnimation(.easeInOut(duration: 0.35)) {
                             scrollPosition.scrollTo(edge: .bottom)
                         }
-                        shouldAutoScroll = true
                     }
                 }
             }
             .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearTop)
             .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearBottom)
+            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: shouldAutoScroll)
             .animation(.easeInOut(duration: 0.2), value: isManuallyScrolling)
     }
 
@@ -394,6 +396,9 @@ private extension ChatView {
                 $0.contentSize.height - $0.contentOffset.y - $0.containerSize.height < 150
             } action: { _, new in isNearBottom = new }
             .onScrollGeometryChange(for: Bool.self) {
+                $0.contentSize.height - $0.contentOffset.y - $0.containerSize.height < 8
+            } action: { _, new in isAtBottom = new }
+            .onScrollGeometryChange(for: Bool.self) {
                 $0.contentOffset.y < 150
             } action: { _, new in isNearTop = new }
             .onScrollPhaseChange { oldPhase, newPhase in
@@ -402,18 +407,16 @@ private extension ChatView {
                     isManuallyScrolling = true
                 } else if newPhase == .idle {
                     if oldPhase != .animating {
-                        shouldAutoScroll = isNearBottom
+                        shouldAutoScroll = isAtBottom
                     }
                     isManuallyScrolling = false
                 }
             }
             .modifier(ScrollTriggerModifier(
                 scrollPosition: $scrollPosition,
-                isScrollThrottled: $isScrollThrottled,
                 scrollToMessageId: $scrollToMessageId,
                 shouldAutoScroll: $shouldAutoScroll,
-                loadedState: loadedState,
-                isNearBottom: isNearBottom
+                loadedState: loadedState
             ))
     }
 

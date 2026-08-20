@@ -39,16 +39,28 @@ extension ChatViewModel {
                 )
             )
             for try await chunk in stream {
-                guard !Task.isCancelled, isActiveStream(assistantMessageId),
-                      case .loaded(var currentState) = state else { return }
+                guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
+                switch chunk {
+                case .token(let text):
+                    enqueueStreamingTextUpdate(.token(text), assistantMessageId: assistantMessageId)
+                    continue
+                case .reasoning(let text):
+                    enqueueStreamingTextUpdate(.reasoning(text), assistantMessageId: assistantMessageId)
+                    continue
+                default:
+                    flushStreamingTextUpdates(for: assistantMessageId)
+                }
+                guard case .loaded(var currentState) = state else { return }
                 applyStreamChunk(chunk, to: &currentState, assistantMessageId: assistantMessageId)
                 state = .loaded(currentState)
             }
 
+            flushStreamingTextUpdates(for: assistantMessageId)
             await finishStreaming(assistantMessageId, model: sendContext.modelId)
         } catch {
-            guard !Task.isCancelled, isActiveStream(assistantMessageId),
-                  case .loaded(var currentState) = state else { return }
+            guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
+            flushStreamingTextUpdates(for: assistantMessageId)
+            guard case .loaded(var currentState) = state else { return }
             LogManager.error("performStreaming error model=\(sendContext.modelId): \(error)")
             if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }),
                currentState.messages[index].content.isEmpty {
@@ -90,6 +102,7 @@ extension ChatViewModel {
 
 private extension ChatViewModel {
     func finishStreaming(_ assistantMessageId: UUID, model: String) async {
+        flushStreamingTextUpdates(for: assistantMessageId)
         guard isActiveStream(assistantMessageId), case .loaded(var currentState) = state else { return }
         currentState.isStreaming = false
         removeEmptyAssistantMessage(assistantMessageId, from: &currentState)

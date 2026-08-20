@@ -39,17 +39,38 @@ extension ChatViewModel {
             )
 
             for try await event in stream {
-                guard !Task.isCancelled, isActiveStream(context.assistantId),
-                      case .loaded(var currentState) = state else { return }
+                guard !Task.isCancelled, isActiveStream(context.assistantId) else { return }
+                switch event {
+                case .token(let text):
+                    let didPublish = enqueueStreamingTextUpdate(
+                        .token(text),
+                        assistantMessageId: context.assistantId
+                    )
+                    if didPublish { await Task.yield() }
+                    continue
+                case .reasoning(let text):
+                    let didPublish = enqueueStreamingTextUpdate(
+                        .reasoning(text),
+                        assistantMessageId: context.assistantId
+                    )
+                    if didPublish { await Task.yield() }
+                    continue
+                default:
+                    let didPublish = flushStreamingTextUpdates(for: context.assistantId)
+                    if didPublish { await Task.yield() }
+                }
+                guard case .loaded(var currentState) = state else { return }
                 applyAgentEvent(event, to: &currentState, assistantMessageId: context.assistantId)
                 state = .loaded(currentState)
                 if case .transcriptAppended = event { await persistConversation() }
             }
 
+            flushStreamingTextUpdates(for: context.assistantId)
             await handleAgentStreamSuccess(context.assistantId, modelId: context.modelId)
         } catch {
-            guard !Task.isCancelled, isActiveStream(context.assistantId),
-                  case .loaded(var currentState) = state else { return }
+            guard !Task.isCancelled, isActiveStream(context.assistantId) else { return }
+            flushStreamingTextUpdates(for: context.assistantId)
+            guard case .loaded(var currentState) = state else { return }
             LogManager.error("performAgentStreaming error model=\(context.modelId): \(error)")
             if let index = currentState.messages.firstIndex(where: { $0.id == context.assistantId }),
                currentState.messages[index].content.isEmpty {
@@ -270,6 +291,7 @@ private extension ChatViewModel {
     }
 
     func handleAgentStreamSuccess(_ assistantId: UUID, modelId: String) async {
+        flushStreamingTextUpdates(for: assistantId)
         guard isActiveStream(assistantId), case .loaded(var finalState) = state else { return }
         finalState.isStreaming = false
         finalState.isSearchingWeb = false

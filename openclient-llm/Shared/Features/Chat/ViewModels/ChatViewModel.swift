@@ -139,6 +139,7 @@ final class ChatViewModel {
     let notifyStreamingCompletedUseCase: NotifyStreamingCompletedUseCaseProtocol
     let compactConversationUseCase: CompactConversationUseCaseProtocol
     var streamTask: Task<Void, Never>?
+    @ObservationIgnored var streamingUpdateBuffer = StreamingUpdateBuffer()
     var compactionTask: Task<Void, Never>?
     var persistenceTask: Task<PersistenceResult, Never>?
     var persistenceBase: Conversation?
@@ -240,6 +241,7 @@ final class ChatViewModel {
     }
 
     isolated deinit {
+        streamingUpdateBuffer.flushTask?.cancel()
         mcpSettingsObservationTask?.cancel()
         mcpDiscoveryTask?.cancel()
     }

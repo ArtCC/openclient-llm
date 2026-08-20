@@ -26,7 +26,7 @@ extension RemoteConfig {
         isMaintenanceEnabled: Bool = false,
         isUpdateEnabled: Bool = true,
         isForceUpdate: Bool = false,
-        latestVersion: String = "1.6.25",
+        latestVersion: String = "1.6.30",
         banner: Banner? = nil,
         isTipJarEnabled: Bool? = true
     ) -> RemoteConfig {

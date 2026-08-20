@@ -1,12 +1,12 @@
 Hi there! We've got some great new features for you in this update.
 
-***1.6.25:
+***1.6.30:
 
-• Chat messages now show their time, with a floating date indicator when scrolling through conversation history.
 • Minor bug fixes and improvements for a smoother experience.
 
 ***Recent Updates:
 
+• Chat messages now show their time, with a floating date indicator when scrolling through conversation history.
 • Test the new per-tool MCP permissions and approval flow: set tools to Always Allow, Ask, or Deny, then review requested MCP calls before execution.
 • You can now support OpenClient with optional monthly or annual subscriptions, alongside one-time coffee purchases. No features are locked.
 • Fix widgets layout issues.

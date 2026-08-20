@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.30-build-77] - 2026-08-20
+
+### Changed
+
+- Chat streaming now batches text and reasoning display updates to reduce redundant Markdown rendering while preserving response content and event order
+
+### Fixed
+
+- Chat auto-scroll now coordinates streaming, message, keyboard, and initial-position updates without overriding manual history navigation
+- The blinking streaming cursor no longer changes message geometry on each visibility cycle
+
 ## [1.6.25-build-76] - 2026-08-19
 
 ### Added

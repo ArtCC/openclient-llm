@@ -53,6 +53,17 @@ SwiftLint fixes, test coverage, and opt-in LiteLLM integration checks.
 - Open a GitHub Issue with the `enhancement` label
 - Describe the use case and why it would be useful
 
+### Issues
+
+- Add the most appropriate label whenever possible when creating an issue
+- If a branch has already been created for the work, link it to the issue in GitHub's Development section
+
+### Git Workflow
+
+The project follows Git Flow. Create feature and bug-fix branches from `develop`, use the corresponding `feature/` or
+`bugfix/` prefix, and open Pull Requests targeting `develop`. Release and hotfix branches are managed according to the
+standard Git Flow lifecycle.
+
 ### Submitting Code
 
 1. Create a feature branch from `develop`:

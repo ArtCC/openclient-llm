@@ -11,45 +11,67 @@ import SwiftUI
 import SwiftUI
 #endif
 
+private enum AutoScrollPriority: Int {
+    case content
+    case structural
+    case keyboard
+}
+
 struct ScrollTriggerModifier: ViewModifier {
     @Binding var scrollPosition: ScrollPosition
-    @Binding var isScrollThrottled: Bool
     @Binding var scrollToMessageId: UUID?
     @Binding var shouldAutoScroll: Bool
 
     let loadedState: ChatViewModel.LoadedState
-    let isNearBottom: Bool
+
+    @State private var autoScrollTask: Task<Void, Never>?
+    @State private var pendingPriority: AutoScrollPriority?
 
     func body(content: Content) -> some View {
         content
             .onChange(of: loadedState.messages.count) {
-                guard isNearBottom else { return }
-                shouldAutoScroll = true
-                withAnimation(.easeInOut(duration: 0.25)) {
-                    scrollPosition.scrollTo(edge: .bottom)
-                }
-            }
-            .onChange(of: loadedState.messages.last?.content) {
-                guard shouldAutoScroll, !isScrollThrottled else { return }
-                isScrollThrottled = true
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(80))
-                    scrollPosition.scrollTo(edge: .bottom)
-                    isScrollThrottled = false
-                }
+                scheduleBottomScroll(
+                    after: .zero,
+                    animation: .easeInOut(duration: 0.25),
+                    priority: .structural
+                )
             }
             .onChange(of: scrollToMessageId) { _, newId in
                 guard let id = newId else { return }
+                cancelAutoScroll()
+                shouldAutoScroll = false
                 withAnimation(.easeInOut(duration: 0.35)) {
                     scrollPosition.scrollTo(id: id)
                 }
                 scrollToMessageId = nil
             }
-            .modifier(InitialChatScrollModifier(
-                scrollPosition: $scrollPosition,
-                shouldAutoScroll: $shouldAutoScroll,
-                loadedState: loadedState
-            ))
+            .onChange(of: shouldAutoScroll) { _, isEnabled in
+                if !isEnabled { cancelAutoScroll() }
+            }
+            .onScrollGeometryChange(for: CGFloat.self) {
+                $0.contentSize.height - $0.containerSize.height
+            } action: { oldExtent, newExtent in
+                guard oldExtent != newExtent else { return }
+                scheduleBottomScroll(
+                    after: .milliseconds(50),
+                    animation: .linear(duration: 0.1)
+                )
+            }
+            .task(id: loadedState.conversation?.id) {
+                shouldAutoScroll = true
+                guard !loadedState.messages.isEmpty else { return }
+                do {
+                    try await Task.sleep(for: .milliseconds(500))
+                } catch {
+                    return
+                }
+                scheduleBottomScroll(
+                    after: .zero,
+                    animation: .easeInOut(duration: 0.25),
+                    priority: .structural
+                )
+            }
+            .onDisappear(perform: cancelAutoScroll)
 #if os(iOS)
             .onReceive(
                 NotificationCenter.default.publisher(
@@ -59,43 +81,56 @@ struct ScrollTriggerModifier: ViewModifier {
                 let duration = notification.userInfo?[
                     UIResponder.keyboardAnimationDurationUserInfoKey
                 ] as? Double ?? 0.25
-                Task { @MainActor in
-                    try? await Task.sleep(for: .seconds(duration))
-                    scrollPosition.scrollTo(edge: .bottom)
-                    shouldAutoScroll = true
-                }
+                scheduleBottomScroll(
+                    after: .seconds(duration),
+                    animation: .easeInOut(duration: 0.25),
+                    priority: .keyboard
+                )
             }
 #endif
     }
-}
 
-private struct InitialChatScrollModifier: ViewModifier {
-    @Binding var scrollPosition: ScrollPosition
-    @Binding var shouldAutoScroll: Bool
-
-    let loadedState: ChatViewModel.LoadedState
-
-    func body(content: Content) -> some View {
-        content
-            .onScrollGeometryChange(for: CGFloat.self) {
-                $0.contentSize.height
-            } action: { oldHeight, newHeight in
-                guard newHeight > oldHeight, shouldAutoScroll else { return }
-                Task { @MainActor in
-                    await Task.yield()
-                    guard shouldAutoScroll else { return }
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        scrollPosition.scrollTo(edge: .bottom)
-                    }
-                }
+    private func scheduleBottomScroll(
+        after delay: Duration,
+        animation: Animation? = nil,
+        priority: AutoScrollPriority = .content
+    ) {
+        guard shouldAutoScroll else { return }
+        if let pendingPriority {
+            guard priority.rawValue > pendingPriority.rawValue else { return }
+            cancelAutoScroll()
+        }
+        pendingPriority = priority
+        autoScrollTask = Task { @MainActor in
+            do {
+                try await Task.sleep(for: delay)
+            } catch {
+                return
             }
-            .task(id: loadedState.conversation?.id) {
-                guard !loadedState.messages.isEmpty else { return }
-                try? await Task.sleep(for: .milliseconds(500))
-                guard !Task.isCancelled else { return }
-                withAnimation(.easeInOut(duration: 0.25)) {
+            guard shouldAutoScroll, !Task.isCancelled else {
+                autoScrollTask = nil
+                pendingPriority = nil
+                return
+            }
+            if let animation {
+                withAnimation(animation) {
+                    scrollPosition.scrollTo(edge: .bottom)
+                }
+            } else {
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) {
                     scrollPosition.scrollTo(edge: .bottom)
                 }
             }
+            autoScrollTask = nil
+            pendingPriority = nil
+        }
+    }
+
+    private func cancelAutoScroll() {
+        autoScrollTask?.cancel()
+        autoScrollTask = nil
+        pendingPriority = nil
     }
 }

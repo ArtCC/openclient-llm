@@ -351,18 +351,17 @@ private extension MessageBubbleView {
     }
 
     func textBlockView(_ content: String, isLast: Bool) -> some View {
-        let displayContent = isLast && isStreaming && cursorVisible
-            ? content + "█"
-            : content
-
         let attributed: AttributedString = {
-            if let result = try? AttributedString(
-                markdown: displayContent,
+            var result = (try? AttributedString(
+                markdown: content,
                 options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-            ) {
-                return result
+            )) ?? AttributedString(content)
+            if isLast && isStreaming {
+                var cursor = AttributedString("█")
+                cursor.foregroundColor = cursorVisible ? Color.primary : Color.clear
+                result.append(cursor)
             }
-            return AttributedString(displayContent)
+            return result
         }()
 
         return Text(attributed)
