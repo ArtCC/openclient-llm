@@ -39,29 +39,9 @@ extension ChatViewModel {
             )
 
             for try await event in stream {
-                guard !Task.isCancelled, isActiveStream(context.assistantId) else { return }
-                switch event {
-                case .token(let text):
-                    let didPublish = enqueueStreamingTextUpdate(
-                        .token(text),
-                        assistantMessageId: context.assistantId
-                    )
-                    if didPublish { await Task.yield() }
-                    continue
-                case .reasoning(let text):
-                    let didPublish = enqueueStreamingTextUpdate(
-                        .reasoning(text),
-                        assistantMessageId: context.assistantId
-                    )
-                    if didPublish { await Task.yield() }
-                    continue
-                default:
-                    let didPublish = flushStreamingTextUpdates(for: context.assistantId)
-                    if didPublish { await Task.yield() }
-                }
-                guard case .loaded(var currentState) = state else { return }
-                applyAgentEvent(event, to: &currentState, assistantMessageId: context.assistantId)
-                state = .loaded(currentState)
+                guard !Task.isCancelled,
+                      isActiveStream(context.assistantId),
+                      await processAgentStreamEvent(event, assistantMessageId: context.assistantId) else { return }
                 if case .transcriptAppended = event { await persistConversation() }
             }
 
@@ -142,6 +122,24 @@ extension ChatViewModel {
 // MARK: - Private
 
 private extension ChatViewModel {
+    func processAgentStreamEvent(_ event: AgentEvent, assistantMessageId: UUID) async -> Bool {
+        switch event {
+        case .token(let text):
+            let didPublish = enqueueStreamingTextUpdate(.token(text), assistantMessageId: assistantMessageId)
+            if didPublish { await Task.yield() }
+        case .reasoning(let text):
+            let didPublish = enqueueStreamingTextUpdate(.reasoning(text), assistantMessageId: assistantMessageId)
+            if didPublish { await Task.yield() }
+        default:
+            let didPublish = flushStreamingTextUpdates(for: assistantMessageId)
+            if didPublish { await Task.yield() }
+            guard case .loaded(var currentState) = state else { return false }
+            applyAgentEvent(event, to: &currentState, assistantMessageId: assistantMessageId)
+            state = .loaded(currentState)
+        }
+        return true
+    }
+
     func agentRequestMessages(context: SendMessageContext, registry: ToolRegistry) throws -> [ChatMessage] {
         let requestContext = try buildRequestContext(
             messages: context.messages,

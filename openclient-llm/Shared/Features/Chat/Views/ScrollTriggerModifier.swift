@@ -58,18 +58,7 @@ struct ScrollTriggerModifier: ViewModifier {
                 )
             }
             .task(id: loadedState.conversation?.id) {
-                shouldAutoScroll = true
-                guard !loadedState.messages.isEmpty else { return }
-                do {
-                    try await Task.sleep(for: .milliseconds(500))
-                } catch {
-                    return
-                }
-                scheduleBottomScroll(
-                    after: .zero,
-                    animation: .easeInOut(duration: 0.25),
-                    priority: .structural
-                )
+                await handleInitialScroll()
             }
             .onDisappear(perform: cancelAutoScroll)
 #if os(iOS)
@@ -77,18 +66,37 @@ struct ScrollTriggerModifier: ViewModifier {
                 NotificationCenter.default.publisher(
                     for: UIResponder.keyboardWillShowNotification
                 )
-            ) { notification in
-                let duration = notification.userInfo?[
-                    UIResponder.keyboardAnimationDurationUserInfoKey
-                ] as? Double ?? 0.25
-                scheduleBottomScroll(
-                    after: .seconds(duration),
-                    animation: .easeInOut(duration: 0.25),
-                    priority: .keyboard
-                )
-            }
+            ) { handleKeyboardWillShow($0) }
 #endif
     }
+
+    private func handleInitialScroll() async {
+        shouldAutoScroll = true
+        guard !loadedState.messages.isEmpty else { return }
+        do {
+            try await Task.sleep(for: .milliseconds(500))
+        } catch {
+            return
+        }
+        scheduleBottomScroll(
+            after: .zero,
+            animation: .easeInOut(duration: 0.25),
+            priority: .structural
+        )
+    }
+
+#if os(iOS)
+    private func handleKeyboardWillShow(_ notification: Notification) {
+        let duration = notification.userInfo?[
+            UIResponder.keyboardAnimationDurationUserInfoKey
+        ] as? Double ?? 0.25
+        scheduleBottomScroll(
+            after: .seconds(duration),
+            animation: .easeInOut(duration: 0.25),
+            priority: .keyboard
+        )
+    }
+#endif
 
     private func scheduleBottomScroll(
         after delay: Duration,

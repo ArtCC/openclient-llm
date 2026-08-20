@@ -486,17 +486,3 @@ private extension ChatViewModel {
     }
 
 }
-
-// MARK: - Error State
-
-extension ChatViewModel {
-    func scheduleErrorDismiss() {
-        errorDismissTask?.cancel()
-        errorDismissTask = Task {
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
-            currentState.errorMessage = nil
-            state = .loaded(currentState)
-        }
-    }
-}
