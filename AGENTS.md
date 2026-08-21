@@ -9,6 +9,17 @@ This file is the project-wide operating guide. It resolves facts that would othe
 3. If instructions conflict, follow repository-specific instructions over general guidance. When two project instructions conflict, stop and ask for clarification.
 4. Keep this file limited to durable, project-wide facts. Put focused or evolving implementation rules in `specs/`.
 
+## Workspace Boundaries
+
+- Inspect files and directories only within this repository workspace.
+- The only exception is a document, image, log, or other artifact outside the workspace that the user explicitly provides.
+- Consult official online documentation for external APIs and framework behavior; use Apple's online developer documentation
+  for Apple platforms and frameworks.
+- Do not inspect installed Apple SDKs or frameworks, `DerivedData`, Xcode caches, system libraries, package caches, or
+  similar locations outside the repository to infer implementation details.
+- If an exceptional task appears to require inspecting any such external location, explain exactly why it is needed and
+  obtain the user's explicit permission before accessing it.
+
 ## Specifications
 
 Each specification must use the `.instructions.md` suffix and start with YAML front matter containing a `description`. Add an `applyTo` pattern when the scope can be expressed by file path. When adding or removing a specification, update this table in the same change.
@@ -30,6 +41,7 @@ Each specification must use the `.instructions.md` suffix and start with YAML fr
 | `security.instructions.md` | Handling sensitive data, user input, credentials, or security review. |
 | `swiftui-multiplatform.instructions.md` | Building shared iOS, iPadOS, or macOS SwiftUI. |
 | `testing.instructions.md` | Adding or changing tests and mocks. |
+| `version.instructions.md` | Adding changelog entries, choosing a release version/build, or updating TestFlight release notes. |
 | `web-browsing.instructions.md` | Implementing web search or browsing features. |
 
 ## Platform & Services

@@ -16,7 +16,7 @@ extension ChatViewModelTests {
     func test_sendMessage_withFunctionCallingModel_andWebSearch_usesAgentUseCase() async throws {
         // Given
         let mockAgent = MockAgentStreamUseCase()
-        mockAgent.events = [.token("Agent answer")]
+        mockAgent.events = [.token("Agent"), .token(" answer")]
         let modelWithFunctionCalling = LLMModel(id: "gpt-4", capabilities: [.functionCalling])
         mockFetchModels.result = .success([modelWithFunctionCalling])
 

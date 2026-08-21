@@ -80,6 +80,7 @@ extension ChatViewModel {
         loadedState.errorMessage = nil
         let assistantMessage = ChatMessage(role: .assistant, content: "")
         loadedState.messages.append(assistantMessage)
+        loadedState.responseRevision += 1
         refreshContextUsage(in: &loadedState)
         if loadedState.conversation?.title.isEmpty == true {
             loadedState.conversation?.title = text.isEmpty

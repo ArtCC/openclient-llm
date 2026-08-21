@@ -43,14 +43,10 @@ struct ReasoningDisclosureState: Equatable {
     }
 
     mutating func reasoningReceived(isStreaming: Bool) {
-        guard isStreaming else { return }
-        if phase != .reasoning {
-            userExpansion = nil
-        }
+        guard isStreaming, phase != .reasoning else { return }
+        userExpansion = nil
         phase = .reasoning
-        if userExpansion != false {
-            isExpanded = true
-        }
+        isExpanded = true
     }
 
     mutating func answerReceived(isStreaming: Bool) {

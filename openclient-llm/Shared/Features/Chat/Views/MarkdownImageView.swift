@@ -13,6 +13,7 @@ struct MarkdownImageView: View {
 
     let alt: String
     let urlString: String
+    var onLayoutChanged: (() -> Void)?
 
     @State private var loadState: LoadState = .loading
 
@@ -85,7 +86,7 @@ private extension MarkdownImageView {
 
     func loadImage() async {
         guard let url = URL(string: urlString) else {
-            loadState = .failed
+            finishLoading(with: .failed)
             return
         }
 
@@ -93,20 +94,25 @@ private extension MarkdownImageView {
             let (data, _) = try await URLSession.shared.data(from: url)
             #if os(macOS)
             if let nsImage = NSImage(data: data) {
-                loadState = .loaded(Image(nsImage: nsImage))
+                finishLoading(with: .loaded(Image(nsImage: nsImage)))
             } else {
-                loadState = .failed
+                finishLoading(with: .failed)
             }
             #else
             if let uiImage = UIImage(data: data) {
-                loadState = .loaded(Image(uiImage: uiImage))
+                finishLoading(with: .loaded(Image(uiImage: uiImage)))
             } else {
-                loadState = .failed
+                finishLoading(with: .failed)
             }
             #endif
         } catch {
-            loadState = .failed
+            finishLoading(with: .failed)
         }
+    }
+
+    func finishLoading(with state: LoadState) {
+        loadState = state
+        onLayoutChanged?()
     }
 }
 

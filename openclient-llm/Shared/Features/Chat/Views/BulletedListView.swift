@@ -12,6 +12,12 @@ struct BulletedListView: View {
     // MARK: - Properties
 
     let items: [MarkdownListItem]
+    let inlineContent: [String: AttributedString]
+
+    init(items: [MarkdownListItem], inlineContent: [String: AttributedString]) {
+        self.items = items
+        self.inlineContent = inlineContent
+    }
 
     // MARK: - View
 
@@ -35,7 +41,7 @@ private extension BulletedListView {
                 .frame(width: 16, alignment: .center)
                 .padding(.leading, CGFloat(item.depth) * 16)
 
-            Text(attributedContent(for: item.content))
+            Text(inlineContent[item.content] ?? AttributedString(item.content))
                 .font(.body)
                 .foregroundStyle(Color.primary)
                 .textSelection(.enabled)
@@ -49,32 +55,31 @@ private extension BulletedListView {
         return bullets[index]
     }
 
-    func attributedContent(for text: String) -> AttributedString {
-        if let result = try? AttributedString(
-            markdown: text,
-            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        ) {
-            return result
-        }
-        return AttributedString(text)
-    }
 }
 
 #Preview {
-    VStack(alignment: .leading, spacing: 16) {
-        BulletedListView(items: [
-            MarkdownListItem(content: "First item", depth: 0),
-            MarkdownListItem(content: "Second item", depth: 0),
-            MarkdownListItem(content: "Third item", depth: 0)
-        ])
+    let basicItems = [
+        MarkdownListItem(content: "First item", depth: 0),
+        MarkdownListItem(content: "Second item", depth: 0),
+        MarkdownListItem(content: "Third item", depth: 0)
+    ]
+    let nestedItems = [
+        MarkdownListItem(content: "Parent item", depth: 0),
+        MarkdownListItem(content: "Nested child", depth: 1),
+        MarkdownListItem(content: "Another nested child", depth: 1),
+        MarkdownListItem(content: "Back to parent", depth: 0),
+        MarkdownListItem(content: "Deeply nested with code", depth: 2)
+    ]
 
-        BulletedListView(items: [
-            MarkdownListItem(content: "Parent item", depth: 0),
-            MarkdownListItem(content: "Nested child", depth: 1),
-            MarkdownListItem(content: "Another nested child", depth: 1),
-            MarkdownListItem(content: "Back to parent", depth: 0),
-            MarkdownListItem(content: "Deeply **nested** with `code`", depth: 2)
-        ])
+    VStack(alignment: .leading, spacing: 16) {
+        BulletedListView(
+            items: basicItems,
+            inlineContent: [:]
+        )
+        BulletedListView(
+            items: nestedItems,
+            inlineContent: [:]
+        )
     }
     .padding()
 }

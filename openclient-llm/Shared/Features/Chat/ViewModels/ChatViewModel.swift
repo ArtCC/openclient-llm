@@ -60,6 +60,8 @@ final class ChatViewModel {
         var messages: [ChatMessage] = []
         var inputText: String = ""
         var isStreaming: Bool = false
+        var responseRevision = 0
+        var streamingRevision = 0
         var selectedModel: LLMModel?
         var availableModels: [LLMModel] = []
         var conversationStarters: [ConversationStarter] = []
@@ -139,6 +141,7 @@ final class ChatViewModel {
     let notifyStreamingCompletedUseCase: NotifyStreamingCompletedUseCaseProtocol
     let compactConversationUseCase: CompactConversationUseCaseProtocol
     var streamTask: Task<Void, Never>?
+    @ObservationIgnored var streamingUpdateBuffer = StreamingUpdateBuffer()
     var compactionTask: Task<Void, Never>?
     var persistenceTask: Task<PersistenceResult, Never>?
     var persistenceBase: Conversation?
@@ -240,6 +243,7 @@ final class ChatViewModel {
     }
 
     isolated deinit {
+        streamingUpdateBuffer.flushTask?.cancel()
         mcpSettingsObservationTask?.cancel()
         mcpDiscoveryTask?.cancel()
     }
@@ -483,18 +487,4 @@ private extension ChatViewModel {
         }
     }
 
-}
-
-// MARK: - Error State
-
-extension ChatViewModel {
-    func scheduleErrorDismiss() {
-        errorDismissTask?.cancel()
-        errorDismissTask = Task {
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
-            currentState.errorMessage = nil
-            state = .loaded(currentState)
-        }
-    }
 }

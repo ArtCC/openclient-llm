@@ -609,12 +609,11 @@ ContentUnavailableView {
 
 ### Chat Scroll
 
-- Auto-scroll to the latest message when a new message arrives (both sent and received)
-- If the user has scrolled up to read history, do NOT auto-scroll — show a "Scroll to bottom" floating button instead
-- Use the current `ScrollPosition`, `.scrollPosition(_:)`, `onScrollGeometryChange`, and `onScrollPhaseChange` approach.
-- `ScrollTriggerModifier` owns programmatic top, bottom, favourite-message, and streaming scroll triggers.
-- Preserve the user's position while they interact; current code disables auto-scroll during interaction and exposes
-  top/bottom glass buttons when away from an edge.
+- Use `ScrollViewReader` with explicit top and bottom sentinels; do not bind live chat position on macOS
+- If the user scrolls to read history, detach bottom-follow immediately and show a "Scroll to bottom" floating button
+- `ScrollTriggerModifier` owns initial, response-start, coalesced-content, final-layout, and favourite-message positioning
+- Never drive automatic chat scrolling from geometry or visibility observers; use semantic revisions and scroll phases
+- Preserve the user's position after interaction until a new response starts or the user explicitly returns to the bottom
 
 ### List Scroll
 
@@ -638,10 +637,11 @@ ContentUnavailableView {
 ## Chat UI Patterns
 
 - **Message bubbles**: Rounded rectangles, different alignment/color for user vs assistant
-- **Streaming indicator**: A blinking `█` cursor after content begins; a pulsing localized "Thinking..." label appears
+- **Streaming indicator**: A blinking `█` cursor after content begins; a static localized "Thinking..." label appears
   while streaming has started but both answer and reasoning content are empty
 - **Input area**: Text field with send button, anchored to bottom with keyboard avoidance
-- **Scroll behavior**: Auto-scroll to latest message, allow manual scroll to history
+- **Scroll behavior**: Auto-scroll with explicit `ScrollViewReader` targets, allow manual scroll to detach immediately, and
+  never bind live scroll position while a response is active
 - **Code blocks**: Implemented as horizontally scrolling monospaced text with language/"Code" header, material
   background, and a copy button. Syntax coloring is not currently implemented.
 - **Markdown rendering**: Render assistant messages as Markdown (bold, italic, lists, links, code)

@@ -11,6 +11,10 @@ import Foundation
 extension ChatViewModel {
     func cancelActiveStreaming(shouldPersist: Bool = true) {
         mcpAuthorizationCoordinator.cancelPending()
+        if let activeAssistantMessageId {
+            flushStreamingTextUpdates(for: activeAssistantMessageId)
+        }
+        resetStreamingTextUpdates()
         streamTask?.cancel()
         streamTask = nil
         activeAssistantMessageId = nil
@@ -38,6 +42,8 @@ extension ChatViewModel {
             LogManager.warning("Background time expired — saving partial response")
             guard let self, self.activeAssistantMessageId == assistantMessageId else { return }
             self.mcpAuthorizationCoordinator.cancelPending()
+            self.flushStreamingTextUpdates(for: assistantMessageId)
+            self.resetStreamingTextUpdates()
             self.streamTask?.cancel()
             self.streamTask = nil
             self.activeAssistantMessageId = nil

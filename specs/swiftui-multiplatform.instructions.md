@@ -180,8 +180,9 @@ macOS does **not** use Tab Bar. Instead, use `NavigationSplitView` with a sideba
 - Prefer built-in SwiftUI components over custom implementations
 - Use `.searchable()` for search functionality
 - Use `.sheet()`, `.popover()`, `.confirmationDialog()` for modal presentations
-- For chat programmatic scrolling, use the current `ScrollPosition` plus `.scrollPosition(_:)`, scroll geometry, and scroll
-  phase APIs. Do not regress this feature to `ScrollViewReader` without a concrete compatibility reason.
+- For chat programmatic scrolling, use `ScrollViewReader`, explicit sentinels, semantic layout revisions, and scroll phase
+  APIs. Never bind live scroll position or drive automatic scrolling from geometry/visibility observations; this avoids a
+  macOS AttributeGraph loop when users scroll during an active response.
 
 ## Platform-Specific Control Patterns
 

@@ -45,6 +45,7 @@ struct ConversationListView: View {
             case .loading:
                 ProgressView()
                     .tint(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .loaded(let loadedState):
                 loadedView(loadedState)
             }

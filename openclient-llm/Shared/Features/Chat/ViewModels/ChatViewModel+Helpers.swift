@@ -58,6 +58,7 @@ extension ChatViewModel {
 
     func completeActiveStream(_ assistantMessageId: UUID) {
         guard isActiveStream(assistantMessageId) else { return }
+        resetStreamingTextUpdates()
         activeAssistantMessageId = nil
         streamTask = nil
     }
@@ -448,6 +449,16 @@ extension ChatViewModel {
             fileRelativePath: "",
             transientData: data
         )
+    }
+
+    func scheduleErrorDismiss() {
+        errorDismissTask?.cancel()
+        errorDismissTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled, case .loaded(var currentState) = state else { return }
+            currentState.errorMessage = nil
+            state = .loaded(currentState)
+        }
     }
 
 }
