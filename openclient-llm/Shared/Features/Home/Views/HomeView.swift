@@ -112,7 +112,11 @@ struct HomeView: View {
             guard action != nil else { return }
             viewModel.send(.urlSchemeActionReceived)
         }
+#if os(macOS)
+        .animation(nil, value: remoteBanner?.id)
+#else
         .animation(.smooth, value: remoteBanner?.id)
+#endif
     }
 }
 
