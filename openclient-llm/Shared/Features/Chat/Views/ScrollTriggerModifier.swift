@@ -17,12 +17,38 @@ private enum AutoScrollPriority: Int {
     case keyboard
 }
 
+struct ChatScrollEdgeMetrics: Equatable {
+    var isNearBottom = true
+    var isAtBottom = true
+    var isNearTop = true
+}
+
+private struct BottomFollowTrigger: Equatable {
+    let lastMessage: ChatMessage?
+    let isStreaming: Bool
+    let contextUsage: ContextUsage?
+    let hasActiveToolCalls: Bool
+    let errorMessage: String?
+    let showTokenUsage: Bool
+
+    init(loadedState: ChatViewModel.LoadedState) {
+        lastMessage = loadedState.messages.last
+        isStreaming = loadedState.isStreaming
+        contextUsage = loadedState.contextUsage
+        hasActiveToolCalls = !loadedState.activeToolCallIds.isEmpty
+        errorMessage = loadedState.errorMessage
+        showTokenUsage = loadedState.showTokenUsage
+    }
+}
+
 struct ScrollTriggerModifier: ViewModifier {
     @Binding var scrollPosition: ScrollPosition
     @Binding var scrollToMessageId: UUID?
     @Binding var shouldAutoScroll: Bool
+    @Binding var isManuallyScrolling: Bool
 
     let loadedState: ChatViewModel.LoadedState
+    let isAtBottom: Bool
 
     @State private var autoScrollTask: Task<Void, Never>?
     @State private var pendingPriority: AutoScrollPriority?
@@ -48,10 +74,17 @@ struct ScrollTriggerModifier: ViewModifier {
             .onChange(of: shouldAutoScroll) { _, isEnabled in
                 if !isEnabled { cancelAutoScroll() }
             }
-            .onScrollGeometryChange(for: CGFloat.self) {
-                $0.contentSize.height - $0.containerSize.height
-            } action: { oldExtent, newExtent in
-                guard oldExtent != newExtent else { return }
+            .onChange(of: isManuallyScrolling) { _, isScrolling in
+                if isScrolling { cancelAutoScroll() }
+            }
+            .onChange(of: isAtBottom) { _, isAtBottom in
+                guard !isAtBottom else { return }
+                scheduleBottomScroll(
+                    after: .milliseconds(50),
+                    animation: .linear(duration: 0.1)
+                )
+            }
+            .onChange(of: BottomFollowTrigger(loadedState: loadedState)) {
                 scheduleBottomScroll(
                     after: .milliseconds(50),
                     animation: .linear(duration: 0.1)
@@ -103,7 +136,7 @@ struct ScrollTriggerModifier: ViewModifier {
         animation: Animation? = nil,
         priority: AutoScrollPriority = .content
     ) {
-        guard shouldAutoScroll else { return }
+        guard shouldAutoScroll, !isManuallyScrolling else { return }
         if let pendingPriority {
             guard priority.rawValue > pendingPriority.rawValue else { return }
             cancelAutoScroll()
@@ -115,7 +148,7 @@ struct ScrollTriggerModifier: ViewModifier {
             } catch {
                 return
             }
-            guard shouldAutoScroll, !Task.isCancelled else {
+            guard shouldAutoScroll, !isManuallyScrolling, !Task.isCancelled else {
                 autoScrollTask = nil
                 pendingPriority = nil
                 return

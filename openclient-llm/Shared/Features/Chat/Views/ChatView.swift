@@ -14,10 +14,8 @@ struct ChatView: View {
 
     @State var viewModel: ChatViewModel
     @State private var inputText: String = ""
-    @State private var shouldAutoScroll: Bool = true
-    @State private var isNearBottom: Bool = true
-    @State private var isAtBottom: Bool = true
-    @State private var isNearTop: Bool = true
+    @State var shouldAutoScroll: Bool = true
+    @State private var scrollEdgeMetrics = ChatScrollEdgeMetrics()
     @State private var scrollPosition = ScrollPosition(idType: UUID.self)
     @State private var visibleMessageIds: [UUID] = []
     @State private var isManuallyScrolling: Bool = false
@@ -31,7 +29,7 @@ struct ChatView: View {
     @State private var showCameraPicker: Bool = false
     @State private var showImageFilePicker: Bool = false
     @State var showMCPSheet: Bool = false
-    @State private var showActions: Bool = false
+    @State var showActions: Bool = false
     @State var editingMessage: ChatMessage?
     @State var editingMessageText: String = ""
 
@@ -318,10 +316,7 @@ private extension ChatView {
                         showCameraPicker: $showCameraPicker,
                         loadedState: loadedState,
                         onInputChanged: { viewModel.send(.inputChanged($0)) },
-                        onSend: {
-                            viewModel.send(.sendTapped)
-                            showActions = false
-                        },
+                        onSend: handleSend,
                         onStopStreaming: { viewModel.send(.stopStreamingTapped) },
                         onStartRecording: { viewModel.send(.startRecordingTapped) },
                         onStopRecording: { viewModel.send(.stopRecordingTapped) },
@@ -365,7 +360,7 @@ private extension ChatView {
                 }
             }
             .overlay(alignment: .topTrailing) {
-                if !isNearTop && !loadedState.messages.isEmpty {
+                if !scrollEdgeMetrics.isNearTop && !loadedState.messages.isEmpty {
                     scrollAnchorButton(isTop: true) {
                         shouldAutoScroll = false
                         withAnimation(.easeInOut(duration: 0.35)) {
@@ -375,7 +370,7 @@ private extension ChatView {
                 }
             }
             .overlay(alignment: .bottomTrailing) {
-                if (!isNearBottom || !shouldAutoScroll) && !loadedState.messages.isEmpty {
+                if (!scrollEdgeMetrics.isNearBottom || !shouldAutoScroll) && !loadedState.messages.isEmpty {
                     scrollAnchorButton(isTop: false) {
                         shouldAutoScroll = true
                         withAnimation(.easeInOut(duration: 0.35)) {
@@ -384,30 +379,31 @@ private extension ChatView {
                     }
                 }
             }
-            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearTop)
-            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isNearBottom)
+            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: scrollEdgeMetrics.isNearTop)
+            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: scrollEdgeMetrics.isNearBottom)
             .animation(.spring(response: 0.3, dampingFraction: 0.8), value: shouldAutoScroll)
             .animation(.easeInOut(duration: 0.2), value: isManuallyScrolling)
     }
 
     func scrollContent(_ loadedState: ChatViewModel.LoadedState) -> some View {
         scrollViewContent(loadedState)
-            .onScrollGeometryChange(for: Bool.self) {
-                $0.contentSize.height - $0.contentOffset.y - $0.containerSize.height < 150
-            } action: { _, new in isNearBottom = new }
-            .onScrollGeometryChange(for: Bool.self) {
-                $0.contentSize.height - $0.contentOffset.y - $0.containerSize.height < 8
-            } action: { _, new in isAtBottom = new }
-            .onScrollGeometryChange(for: Bool.self) {
-                $0.contentOffset.y < 150
-            } action: { _, new in isNearTop = new }
+            .onScrollGeometryChange(for: ChatScrollEdgeMetrics.self) { geometry in
+                let bottomDistance = geometry.contentSize.height
+                    - geometry.contentOffset.y
+                    - geometry.containerSize.height
+                return ChatScrollEdgeMetrics(
+                    isNearBottom: bottomDistance < 150,
+                    isAtBottom: bottomDistance < 8,
+                    isNearTop: geometry.contentOffset.y < 150
+                )
+            } action: { _, new in scrollEdgeMetrics = new }
             .onScrollPhaseChange { oldPhase, newPhase in
                 if newPhase == .interacting {
                     shouldAutoScroll = false
                     isManuallyScrolling = true
                 } else if newPhase == .idle {
                     if oldPhase != .animating {
-                        shouldAutoScroll = isAtBottom
+                        shouldAutoScroll = scrollEdgeMetrics.isAtBottom
                     }
                     isManuallyScrolling = false
                 }
@@ -416,7 +412,9 @@ private extension ChatView {
                 scrollPosition: $scrollPosition,
                 scrollToMessageId: $scrollToMessageId,
                 shouldAutoScroll: $shouldAutoScroll,
-                loadedState: loadedState
+                isManuallyScrolling: $isManuallyScrolling,
+                loadedState: loadedState,
+                isAtBottom: scrollEdgeMetrics.isAtBottom
             ))
     }
 

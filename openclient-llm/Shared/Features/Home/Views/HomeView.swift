@@ -102,6 +102,7 @@ struct HomeView: View {
             guard isPending else { return }
             viewModel.send(.shareItemReceived)
         }
+#endif
         .task {
             guard viewModel.pendingURLSchemeAction != nil else { return }
             try? await Task.sleep(for: .milliseconds(300))
@@ -111,7 +112,6 @@ struct HomeView: View {
             guard action != nil else { return }
             viewModel.send(.urlSchemeActionReceived)
         }
-#endif
         .animation(.smooth, value: remoteBanner?.id)
     }
 }
@@ -223,6 +223,7 @@ private extension HomeView {
             sidebar
         } detail: {
             detailContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .safeAreaInset(edge: .top, spacing: 0) {
                     remoteBannerInset
                 }
