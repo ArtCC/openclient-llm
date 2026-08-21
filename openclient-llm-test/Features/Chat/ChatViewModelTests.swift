@@ -222,6 +222,7 @@ final class ChatViewModelTests: XCTestCase {
         XCTAssertEqual(loadedState.messages[0].content, "Hi")
         XCTAssertEqual(loadedState.messages[1].role, .assistant)
         XCTAssertEqual(loadedState.messages[1].content, "Hello there")
+        XCTAssertEqual(loadedState.responseRevision, 1)
         XCTAssertFalse(loadedState.isStreaming)
     }
 

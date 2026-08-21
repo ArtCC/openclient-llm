@@ -11,7 +11,7 @@ import TipKit
 
 extension ChatInputBarView {
     var mcpButton: some View {
-        let modelSupportsTools = loadedState.selectedModel?.capabilities.contains(.functionCalling) == true
+        let modelSupportsTools = state.selectedModel?.capabilities.contains(.functionCalling) == true
         return Button {
             AppTips.mcpServers.invalidate(reason: .actionPerformed)
             onMCPButtonTapped()
@@ -32,32 +32,28 @@ extension ChatInputBarView {
                 ? String(localized: "MCP Servers")
                 : String(localized: "MCP Servers Unavailable")
         )
-        .animation(.easeInOut(duration: 0.2), value: loadedState.enabledMCPToolIds)
+        .animation(.easeInOut(duration: 0.2), value: state.enabledMCPToolIds)
     }
 }
 
 extension ChatInputBarView {
     var availableMCPToolIds: Set<String> {
-        Set(loadedState.availableMCPTools.compactMap { tool in
-            guard tool.isInputSchemaSupported,
-                  !loadedState.failedMCPServerIds.contains(tool.serverId) else { return nil }
-            return tool.id
-        })
+        state.availableMCPToolIds
     }
 
     var hasAvailableMCPTool: Bool { !availableMCPToolIds.isEmpty }
 
     var hasEnabledMCPTool: Bool {
-        !loadedState.enabledMCPToolIds.isDisjoint(with: availableMCPToolIds)
+        !state.enabledMCPToolIds.isDisjoint(with: availableMCPToolIds)
     }
 
     var canShowMCPTip: Bool {
-        !loadedState.isStreaming
-            && !loadedState.isRecording
-            && !loadedState.isTranscribing
-            && !loadedState.isSearchingWeb
+        !state.isStreaming
+            && !state.isRecording
+            && !state.isTranscribing
+            && !state.isSearchingWeb
             && hasAvailableMCPTool
-            && loadedState.selectedModel?.capabilities.contains(.functionCalling) == true
+            && state.selectedModel?.capabilities.contains(.functionCalling) == true
     }
 
     func mcpColor(supported: Bool, hasEnabled: Bool) -> Color {

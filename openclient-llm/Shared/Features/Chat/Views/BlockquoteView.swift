@@ -12,6 +12,12 @@ struct BlockquoteView: View {
     // MARK: - Properties
 
     let content: String
+    let inlineContent: [String: AttributedString]
+
+    init(content: String, inlineContent: [String: AttributedString]) {
+        self.content = content
+        self.inlineContent = inlineContent
+    }
 
     // MARK: - View
 
@@ -21,7 +27,7 @@ struct BlockquoteView: View {
                 .fill(Color.appAccent.opacity(0.5))
                 .frame(width: 3)
 
-            Text(attributedContent)
+            Text(inlineContent[content] ?? AttributedString(content))
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .textSelection(.enabled)
@@ -31,29 +37,17 @@ struct BlockquoteView: View {
     }
 }
 
-// MARK: - Private
-
-private extension BlockquoteView {
-    var attributedContent: AttributedString {
-        if let result = try? AttributedString(
-            markdown: content,
-            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        ) {
-            return result
-        }
-        return AttributedString(content)
-    }
-}
-
 #Preview {
+    let simple = "This is a simple blockquote with a single line."
+    let formatted = "This is a formatted blockquote with inline code."
+    let multiline = "This is a longer blockquote that spans\n"
+        + "multiple lines to demonstrate\n"
+        + "how the view handles wrapping."
+
     VStack(spacing: 16) {
-        BlockquoteView(content: "This is a simple blockquote with a single line.")
-        BlockquoteView(content: "This is a **bold** blockquote with *italic* and `inline code`.")
-        BlockquoteView(
-            content: "This is a longer blockquote that spans\n"
-                + "multiple lines to demonstrate\n"
-                + "how the view handles wrapping."
-        )
+        BlockquoteView(content: simple, inlineContent: [:])
+        BlockquoteView(content: formatted, inlineContent: [:])
+        BlockquoteView(content: multiline, inlineContent: [:])
     }
     .padding()
 }

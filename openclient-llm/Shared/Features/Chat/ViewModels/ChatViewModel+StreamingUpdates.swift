@@ -11,21 +11,11 @@ import Foundation
 enum StreamingTextUpdate {
     case token(String)
     case reasoning(String)
-
-    var characterCount: Int {
-        switch self {
-        case .token(let text), .reasoning(let text):
-            text.count
-        }
-    }
 }
 
 struct StreamingUpdateBuffer {
-    static let maximumBufferedCharacterCount = 96
-
     var assistantMessageId: UUID?
     var updates: [StreamingTextUpdate] = []
-    var bufferedCharacterCount = 0
     var flushTask: Task<Void, Never>?
 }
 
@@ -35,6 +25,10 @@ extension ChatViewModel {
     @discardableResult
     func enqueueStreamingTextUpdate(_ update: StreamingTextUpdate, assistantMessageId: UUID) -> Bool {
         guard isActiveStream(assistantMessageId) else { return false }
+        switch update {
+        case .token(let text), .reasoning(let text):
+            guard !text.isEmpty else { return false }
+        }
         if streamingUpdateBuffer.assistantMessageId != assistantMessageId {
             resetStreamingTextUpdates()
             streamingUpdateBuffer.assistantMessageId = assistantMessageId
@@ -46,26 +40,24 @@ extension ChatViewModel {
             return true
         }
         streamingUpdateBuffer.updates.append(update)
-        streamingUpdateBuffer.bufferedCharacterCount += update.characterCount
-        guard streamingUpdateBuffer.bufferedCharacterCount >= StreamingUpdateBuffer.maximumBufferedCharacterCount else {
-            return false
-        }
-        flushStreamingTextUpdates(for: assistantMessageId)
-        scheduleStreamingTextFlush(for: assistantMessageId)
-        return true
+        return false
     }
 
     @discardableResult
     func flushStreamingTextUpdates(for assistantMessageId: UUID) -> Bool {
-        guard streamingUpdateBuffer.assistantMessageId == assistantMessageId else { return false }
+        let updates = takeStreamingTextUpdates(for: assistantMessageId)
+        guard !updates.isEmpty else { return false }
+        applyStreamingTextUpdates(updates, assistantMessageId: assistantMessageId)
+        return true
+    }
+
+    func takeStreamingTextUpdates(for assistantMessageId: UUID) -> [StreamingTextUpdate] {
+        guard streamingUpdateBuffer.assistantMessageId == assistantMessageId else { return [] }
         streamingUpdateBuffer.flushTask?.cancel()
         streamingUpdateBuffer.flushTask = nil
         let updates = streamingUpdateBuffer.updates
         streamingUpdateBuffer.updates = []
-        streamingUpdateBuffer.bufferedCharacterCount = 0
-        guard !updates.isEmpty else { return false }
-        applyStreamingTextUpdates(updates, assistantMessageId: assistantMessageId)
-        return true
+        return updates
     }
 
     func resetStreamingTextUpdates() {
@@ -77,18 +69,31 @@ extension ChatViewModel {
         _ updates: [StreamingTextUpdate],
         assistantMessageId: UUID
     ) {
-        guard case .loaded(var loadedState) = state,
+        guard case .loaded(var loadedState) = state else { return }
+        applyStreamingTextUpdates(updates, to: &loadedState, assistantMessageId: assistantMessageId)
+        state = .loaded(loadedState)
+    }
+
+    func applyStreamingTextUpdates(
+        _ updates: [StreamingTextUpdate],
+        to loadedState: inout LoadedState,
+        assistantMessageId: UUID
+    ) {
+        guard !updates.isEmpty,
               let index = loadedState.messages.firstIndex(where: { $0.id == assistantMessageId }) else { return }
+        applyStreamingTextUpdates(updates, to: &loadedState.messages[index])
+        loadedState.streamingRevision += 1
+    }
+
+    func applyStreamingTextUpdates(_ updates: [StreamingTextUpdate], to message: inout ChatMessage) {
         for update in updates {
             switch update {
             case .token(let text):
-                loadedState.messages[index].content += text
+                message.content += text
             case .reasoning(let text):
-                loadedState.messages[index].reasoningContent =
-                    (loadedState.messages[index].reasoningContent ?? "") + text
+                message.reasoningContent = (message.reasoningContent ?? "") + text
             }
         }
-        state = .loaded(loadedState)
     }
 }
 
@@ -102,12 +107,12 @@ private extension ChatViewModel {
             } catch {
                 return
             }
-            guard let self,
+            guard !Task.isCancelled,
+                  let self,
                   self.streamingUpdateBuffer.assistantMessageId == assistantMessageId else { return }
             self.streamingUpdateBuffer.flushTask = nil
             let updates = self.streamingUpdateBuffer.updates
             self.streamingUpdateBuffer.updates = []
-            self.streamingUpdateBuffer.bufferedCharacterCount = 0
             guard !updates.isEmpty else { return }
             self.applyStreamingTextUpdates(updates, assistantMessageId: assistantMessageId)
             self.scheduleStreamingTextFlush(for: assistantMessageId)

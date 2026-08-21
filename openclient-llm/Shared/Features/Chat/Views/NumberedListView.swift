@@ -12,6 +12,12 @@ struct NumberedListView: View {
     // MARK: - Properties
 
     let items: [MarkdownOrderedListItem]
+    let inlineContent: [String: AttributedString]
+
+    init(items: [MarkdownOrderedListItem], inlineContent: [String: AttributedString]) {
+        self.items = items
+        self.inlineContent = inlineContent
+    }
 
     // MARK: - View
 
@@ -35,7 +41,7 @@ private extension NumberedListView {
                 .frame(minWidth: 24, alignment: .trailing)
                 .padding(.leading, CGFloat(item.depth) * 16)
 
-            Text(attributedContent(for: item.content))
+            Text(inlineContent[item.content] ?? AttributedString(item.content))
                 .font(.body)
                 .foregroundStyle(Color.primary)
                 .textSelection(.enabled)
@@ -43,31 +49,30 @@ private extension NumberedListView {
         }
     }
 
-    func attributedContent(for text: String) -> AttributedString {
-        if let result = try? AttributedString(
-            markdown: text,
-            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        ) {
-            return result
-        }
-        return AttributedString(text)
-    }
 }
 
 #Preview {
-    VStack(alignment: .leading, spacing: 16) {
-        NumberedListView(items: [
-            MarkdownOrderedListItem(number: 1, content: "First step", depth: 0),
-            MarkdownOrderedListItem(number: 2, content: "Second step", depth: 0),
-            MarkdownOrderedListItem(number: 3, content: "Third step", depth: 0)
-        ])
+    let basicItems = [
+        MarkdownOrderedListItem(number: 1, content: "First step", depth: 0),
+        MarkdownOrderedListItem(number: 2, content: "Second step", depth: 0),
+        MarkdownOrderedListItem(number: 3, content: "Third step", depth: 0)
+    ]
+    let nestedItems = [
+        MarkdownOrderedListItem(number: 1, content: "Main task", depth: 0),
+        MarkdownOrderedListItem(number: 1, content: "Subtask A", depth: 1),
+        MarkdownOrderedListItem(number: 2, content: "Subtask B", depth: 1),
+        MarkdownOrderedListItem(number: 2, content: "Another main task", depth: 0)
+    ]
 
-        NumberedListView(items: [
-            MarkdownOrderedListItem(number: 1, content: "Main task", depth: 0),
-            MarkdownOrderedListItem(number: 1, content: "Subtask A", depth: 1),
-            MarkdownOrderedListItem(number: 2, content: "Subtask B", depth: 1),
-            MarkdownOrderedListItem(number: 2, content: "Another main task with **bold**", depth: 0)
-        ])
+    VStack(alignment: .leading, spacing: 16) {
+        NumberedListView(
+            items: basicItems,
+            inlineContent: [:]
+        )
+        NumberedListView(
+            items: nestedItems,
+            inlineContent: [:]
+        )
     }
     .padding()
 }

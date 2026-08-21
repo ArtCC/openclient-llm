@@ -49,6 +49,7 @@ extension ChatViewModel {
 
         let assistantMessage = ChatMessage(role: .assistant, content: "")
         loadedState.messages.append(assistantMessage)
+        loadedState.responseRevision += 1
         refreshContextUsage(in: &loadedState)
         state = .loaded(loadedState)
 
@@ -104,6 +105,7 @@ extension ChatViewModel {
 
         let assistantMessage = ChatMessage(role: .assistant, content: "")
         loadedState.messages.append(assistantMessage)
+        loadedState.responseRevision += 1
         refreshContextUsage(in: &loadedState)
         state = .loaded(loadedState)
 

@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [1.6.30-build-77] - 2026-08-20
+## [1.6.30-build-78] - 2026-08-21
 
 ### Changed
 
@@ -15,7 +15,9 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 ### Fixed
 
-- Chat auto-scroll now coordinates streaming, message, keyboard, and initial-position updates without overriding manual history navigation
+- Chat auto-scroll now uses a stable bottom edge without geometry feedback, preserving responsive streaming and manual history navigation
+- Agent-mode final responses now emit bounded cooperative chunks without blocking the interface
+- Assistant Markdown is now rendered once outside the main actor instead of being reparsed during every streamed frame
 - The blinking streaming cursor no longer changes message geometry on each visibility cycle
 
 ## [1.6.25-build-76] - 2026-08-19

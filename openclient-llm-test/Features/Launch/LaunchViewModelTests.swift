@@ -33,7 +33,7 @@ final class LaunchViewModelTests: XCTestCase {
             resetAppDataUseCase: mockResetAppData,
             attachmentMigrationUseCase: mockAttachmentMigration,
             remoteConfigManager: mockRemoteConfigManager,
-            currentVersion: "1.6.30",
+            currentVersion: "1.0.0",
             launchDelay: .zero
         )
     }
@@ -128,7 +128,7 @@ final class LaunchViewModelTests: XCTestCase {
             resetAppDataUseCase: mockResetAppData,
             attachmentMigrationUseCase: mockAttachmentMigration,
             remoteConfigManager: mockRemoteConfigManager,
-            currentVersion: "1.6.30",
+            currentVersion: "1.0.0",
             launchDelay: .milliseconds(500)
         )
 
@@ -158,7 +158,7 @@ final class LaunchViewModelTests: XCTestCase {
             resetAppDataUseCase: mockResetAppData,
             attachmentMigrationUseCase: mockAttachmentMigration,
             remoteConfigManager: mockRemoteConfigManager,
-            currentVersion: "1.6.30",
+            currentVersion: "1.0.0",
             launchDelay: .zero
         )
 
@@ -183,7 +183,7 @@ final class LaunchViewModelTests: XCTestCase {
     func test_send_viewAppeared_forceUpdateEnabledForNewerVersion_setsForceUpdateState() async {
         // Given
         mockUseCase.result = true
-        mockRemoteConfigManager.result = .success(.stub(isForceUpdate: true, latestVersion: "2.0.0"))
+        mockRemoteConfigManager.result = .success(.stub(isForceUpdate: true, latestVersion: "1.1.0"))
 
         // When
         sut.send(.viewAppeared)
@@ -193,14 +193,14 @@ final class LaunchViewModelTests: XCTestCase {
         guard case .forceUpdate(let update) = sut.state else {
             return XCTFail("Expected force update state")
         }
-        XCTAssertEqual(update.latestVersion, "2.0.0")
+        XCTAssertEqual(update.latestVersion, "1.1.0")
         XCTAssertNil(sut.availableUpdate)
     }
 
     func test_send_viewAppeared_optionalUpdateAvailable_setsHomeStateAndAvailableUpdate() async {
         // Given
         mockUseCase.result = true
-        mockRemoteConfigManager.result = .success(.stub(isForceUpdate: false, latestVersion: "2.0.0"))
+        mockRemoteConfigManager.result = .success(.stub(isForceUpdate: false, latestVersion: "1.1.0"))
 
         // When
         sut.send(.viewAppeared)
@@ -208,13 +208,13 @@ final class LaunchViewModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sut.state, .home)
-        XCTAssertEqual(sut.availableUpdate?.latestVersion, "2.0.0")
+        XCTAssertEqual(sut.availableUpdate?.latestVersion, "1.1.0")
     }
 
     func test_send_viewAppeared_currentVersionIsNewer_setsHomeState() async {
         // Given
         mockUseCase.result = true
-        mockRemoteConfigManager.result = .success(.stub(isForceUpdate: true, latestVersion: "1.5.0"))
+        mockRemoteConfigManager.result = .success(.stub(isForceUpdate: true, latestVersion: "0.9.0"))
 
         // When
         sut.send(.viewAppeared)
@@ -243,7 +243,7 @@ final class LaunchViewModelTests: XCTestCase {
         // Given
         mockUseCase.result = true
         mockRemoteConfigManager.result = .success(
-            .stub(isMaintenanceEnabled: true, isForceUpdate: true, latestVersion: "2.0.0")
+            .stub(isMaintenanceEnabled: true, isForceUpdate: true, latestVersion: "1.1.0")
         )
 
         // When
@@ -258,7 +258,7 @@ final class LaunchViewModelTests: XCTestCase {
     func test_send_availableUpdateDismissed_availableUpdateExists_clearsAvailableUpdate() async {
         // Given
         mockUseCase.result = true
-        mockRemoteConfigManager.result = .success(.stub(latestVersion: "2.0.0"))
+        mockRemoteConfigManager.result = .success(.stub(latestVersion: "1.1.0"))
         sut.send(.viewAppeared)
         await waitForLaunch()
 
@@ -272,7 +272,7 @@ final class LaunchViewModelTests: XCTestCase {
     func test_send_onboardingCompleted_optionalUpdateAvailable_keepsUpdateForHome() async {
         // Given
         mockUseCase.result = false
-        mockRemoteConfigManager.result = .success(.stub(latestVersion: "2.0.0"))
+        mockRemoteConfigManager.result = .success(.stub(latestVersion: "1.1.0"))
         sut.send(.viewAppeared)
         await waitForLaunch()
 
@@ -281,7 +281,7 @@ final class LaunchViewModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(sut.state, .home)
-        XCTAssertEqual(sut.availableUpdate?.latestVersion, "2.0.0")
+        XCTAssertEqual(sut.availableUpdate?.latestVersion, "1.1.0")
     }
 }
 

@@ -11,30 +11,27 @@ import SwiftUI
 extension ChatView {
     // MARK: - Messages List
 
-    func messagesList(_ loadedState: ChatViewModel.LoadedState) -> some View {
-        let tipMessageId = loadedState.messages.last {
+    func messagesList(_ state: ChatMessageListState) -> some View {
+        let tipMessageId = state.messages.last {
             $0.role == .assistant && !$0.content.isEmpty
         }?.id
+        let lastMessageId = state.messages.last?.id
 
-        return LazyVStack(spacing: 16) {
-            ForEach(loadedState.messages) { message in
-                let isLast = message.id == loadedState.messages.last?.id
-                let isStreamingMsg = loadedState.isStreaming && isLast
-                let isEmptyAssistant = message.role == .assistant
-                    && message.content.isEmpty
-                    && message.reasoningContent == nil
-                    && message.attachments.isEmpty
-
-                if !isEmptyAssistant || isStreamingMsg {
+        // LazyVStack can fail to converge when upward scrolling overlaps live message layout updates.
+        return VStack(spacing: 16) {
+            ForEach(state.messages) { message in
+                let isLast = message.id == lastMessageId
+                let isStreamingMsg = state.isStreaming && isLast
+                if shouldRenderMessage(message, isStreaming: isStreamingMsg) {
                     MessageBubbleView(
                         message: message,
                         isStreaming: isStreamingMsg,
-                        isSpeaking: loadedState.speakingMessageId == message.id,
-                        hasTTS: loadedState.ttsModelId != nil,
-                        showTokenUsage: loadedState.showTokenUsage,
+                        isSpeaking: state.speakingMessageId == message.id,
+                        hasTTS: state.hasTTS,
+                        showTokenUsage: state.showTokenUsage,
                         isLastMessage: isLast,
-                        isRunningTool: isLast && !loadedState.activeToolCallIds.isEmpty,
-                        showsMessageActionsTip: message.id == tipMessageId && !loadedState.isStreaming,
+                        isRunningTool: isLast && state.isRunningTool,
+                        showsMessageActionsTip: message.id == tipMessageId && !state.isStreaming,
                         onSpeakTapped: { viewModel.send(.speakMessageTapped(message)) },
                         onStopSpeakingTapped: { viewModel.send(.stopSpeakingTapped) },
                         onEditTapped: message.role == .user ? {
@@ -44,10 +41,11 @@ extension ChatView {
                         onRegenerateTapped: (message.role == .assistant && isLast) ? {
                             viewModel.send(.regenerateLastResponse)
                         } : nil,
-                        onForkTapped: loadedState.conversation != nil ? {
+                        onForkTapped: state.canFork ? {
                             viewModel.send(.forkFromMessage(message.id))
                         } : nil,
-                        onFavouriteTapped: { viewModel.send(.toggleFavourite(message.id)) }
+                        onFavouriteTapped: { viewModel.send(.toggleFavourite(message.id)) },
+                        onLayoutChanged: isLast ? { renderedMessageRevision += 1 } : nil
                     )
                     .id(message.id)
                     .transition(.opacity)
@@ -60,14 +58,16 @@ extension ChatView {
         .frame(maxWidth: .infinity)
     }
 
+    func shouldRenderMessage(_ message: ChatMessage, isStreaming: Bool) -> Bool {
+        let isEmptyAssistant = message.role == .assistant
+            && message.content.isEmpty
+            && (message.reasoningContent ?? "").isEmpty
+            && message.attachments.isEmpty
+        return !isEmptyAssistant || isStreaming
+    }
+
     func handleSend() {
-        guard case .loaded(let stateBeforeSend) = viewModel.state else { return }
-        let previousMessageCount = stateBeforeSend.messages.count
         viewModel.send(.sendTapped)
-        if case .loaded(let stateAfterSend) = viewModel.state,
-           stateAfterSend.messages.count > previousMessageCount {
-            shouldAutoScroll = true
-        }
         showActions = false
     }
 
@@ -118,4 +118,5 @@ extension ChatView {
         }
         return date.formatted(.dateTime.day().month(.wide).year())
     }
+
 }

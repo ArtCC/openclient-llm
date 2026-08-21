@@ -50,31 +50,33 @@ extension ChatViewModelTests {
         }
         XCTAssertEqual(loadedState.messages.first?.content, "First second")
         XCTAssertEqual(loadedState.messages.first?.reasoningContent, "Think again")
+        XCTAssertEqual(loadedState.streamingRevision, 2)
         XCTAssertTrue(sut.streamingUpdateBuffer.updates.isEmpty)
     }
 
-    func test_flushStreamingTextUpdates_emptyReasoning_preservesNonNilValue() {
+    func test_enqueueStreamingTextUpdate_emptyReasoning_ignoresUpdate() {
         // Given
         let assistantId = prepareActiveStream()
         sut.enqueueStreamingTextUpdate(.token("Answer"), assistantMessageId: assistantId)
-        sut.enqueueStreamingTextUpdate(.reasoning(""), assistantMessageId: assistantId)
 
         // When
-        sut.flushStreamingTextUpdates(for: assistantId)
+        let didPublish = sut.enqueueStreamingTextUpdate(.reasoning(""), assistantMessageId: assistantId)
 
         // Then
         guard case .loaded(let loadedState) = sut.state else {
             XCTFail("Expected loaded state")
             return
         }
-        XCTAssertEqual(loadedState.messages.first?.reasoningContent, "")
+        XCTAssertFalse(didPublish)
+        XCTAssertNil(loadedState.messages.first?.reasoningContent)
+        XCTAssertTrue(sut.streamingUpdateBuffer.updates.isEmpty)
     }
 
-    func test_enqueueStreamingTextUpdate_bufferLimit_publishesWithoutWaitingForTimer() {
+    func test_enqueueStreamingTextUpdate_largeBurst_remainsBufferedUntilScheduledFlush() {
         // Given
         let assistantId = prepareActiveStream()
         sut.enqueueStreamingTextUpdate(.token("First"), assistantMessageId: assistantId)
-        let bufferedText = String(repeating: "a", count: StreamingUpdateBuffer.maximumBufferedCharacterCount)
+        let bufferedText = String(repeating: "a", count: 1_024)
 
         // When
         let didPublish = sut.enqueueStreamingTextUpdate(.token(bufferedText), assistantMessageId: assistantId)
@@ -84,9 +86,9 @@ extension ChatViewModelTests {
             XCTFail("Expected loaded state")
             return
         }
-        XCTAssertTrue(didPublish)
-        XCTAssertEqual(loadedState.messages.first?.content, "First" + bufferedText)
-        XCTAssertTrue(sut.streamingUpdateBuffer.updates.isEmpty)
+        XCTAssertFalse(didPublish)
+        XCTAssertEqual(loadedState.messages.first?.content, "First")
+        XCTAssertEqual(sut.streamingUpdateBuffer.updates.count, 1)
     }
 
     func test_cancelActiveStreaming_withBufferedText_flushesPartialResponse() {

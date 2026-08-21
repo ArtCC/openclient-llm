@@ -12,6 +12,12 @@ struct TaskListView: View {
     // MARK: - Properties
 
     let items: [MarkdownTaskItem]
+    let inlineContent: [String: AttributedString]
+
+    init(items: [MarkdownTaskItem], inlineContent: [String: AttributedString]) {
+        self.items = items
+        self.inlineContent = inlineContent
+    }
 
     // MARK: - View
 
@@ -35,7 +41,7 @@ private extension TaskListView {
                 .frame(width: 16, alignment: .center)
                 .padding(.leading, CGFloat(item.depth) * 16)
 
-            Text(attributedContent(for: item.content))
+            Text(inlineContent[item.content] ?? AttributedString(item.content))
                 .font(.body)
                 .foregroundStyle(item.isChecked ? Color.primary.opacity(0.6) : Color.primary)
                 .strikethrough(item.isChecked)
@@ -44,30 +50,29 @@ private extension TaskListView {
         }
     }
 
-    func attributedContent(for text: String) -> AttributedString {
-        if let result = try? AttributedString(
-            markdown: text,
-            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        ) {
-            return result
-        }
-        return AttributedString(text)
-    }
 }
 
 #Preview {
-    VStack(alignment: .leading, spacing: 16) {
-        TaskListView(items: [
-            MarkdownTaskItem(isChecked: false, content: "Pending task", depth: 0),
-            MarkdownTaskItem(isChecked: true, content: "Completed task", depth: 0),
-            MarkdownTaskItem(isChecked: false, content: "Another pending", depth: 0)
-        ])
+    let basicItems = [
+        MarkdownTaskItem(isChecked: false, content: "Pending task", depth: 0),
+        MarkdownTaskItem(isChecked: true, content: "Completed task", depth: 0),
+        MarkdownTaskItem(isChecked: false, content: "Another pending", depth: 0)
+    ]
+    let nestedItems = [
+        MarkdownTaskItem(isChecked: false, content: "Parent task", depth: 0),
+        MarkdownTaskItem(isChecked: true, content: "Done subtask with code", depth: 1),
+        MarkdownTaskItem(isChecked: false, content: "Pending subtask", depth: 1)
+    ]
 
-        TaskListView(items: [
-            MarkdownTaskItem(isChecked: false, content: "Parent task", depth: 0),
-            MarkdownTaskItem(isChecked: true, content: "Done **subtask** with `code`", depth: 1),
-            MarkdownTaskItem(isChecked: false, content: "Pending subtask", depth: 1)
-        ])
+    VStack(alignment: .leading, spacing: 16) {
+        TaskListView(
+            items: basicItems,
+            inlineContent: [:]
+        )
+        TaskListView(
+            items: nestedItems,
+            inlineContent: [:]
+        )
     }
     .padding()
 }

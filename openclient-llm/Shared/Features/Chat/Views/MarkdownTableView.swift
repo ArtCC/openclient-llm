@@ -13,6 +13,17 @@ struct MarkdownTableView: View {
 
     let headers: [String]
     let rows: [[String]]
+    let inlineContent: [String: AttributedString]
+
+    init(
+        headers: [String],
+        rows: [[String]],
+        inlineContent: [String: AttributedString]
+    ) {
+        self.headers = headers
+        self.rows = rows
+        self.inlineContent = inlineContent
+    }
 
     // MARK: - View
 
@@ -39,7 +50,7 @@ private extension MarkdownTableView {
     var headerRow: some View {
         HStack(spacing: 0) {
             ForEach(Array(headers.enumerated()), id: \.offset) { index, header in
-                cellView(attributedContent(for: header), isBold: true)
+                cellView(inlineContent[header] ?? AttributedString(header), isBold: true)
                     .background(.ultraThinMaterial)
                 if index < headers.count - 1 {
                     verticalDivider
@@ -56,7 +67,7 @@ private extension MarkdownTableView {
     func dataRow(_ cells: [String], isAlternate: Bool) -> some View {
         HStack(spacing: 0) {
             ForEach(Array(cells.enumerated()), id: \.offset) { index, cell in
-                cellView(attributedContent(for: cell), isBold: false)
+                cellView(inlineContent[cell] ?? AttributedString(cell), isBold: false)
                     .background(isAlternate ? Color.primary.opacity(0.03) : Color.clear)
                 if index < cells.count - 1 {
                     verticalDivider
@@ -86,35 +97,33 @@ private extension MarkdownTableView {
             .frame(width: 1)
     }
 
-    func attributedContent(for text: String) -> AttributedString {
-        if let result = try? AttributedString(
-            markdown: text,
-            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        ) {
-            return result
-        }
-        return AttributedString(text)
-    }
 }
 
 #Preview {
+    let firstHeaders = ["Name", "Type", "Description"]
+    let firstRows = [
+        ["id", "Int", "Unique identifier"],
+        ["name", "String", "User's full name"],
+        ["email", "String", "Contact email"]
+    ]
+    let secondHeaders = ["Feature", "Status"]
+    let secondRows = [
+        ["Markdown", "Done"],
+        ["Tables", "Done"],
+        ["Syntax Highlighting", "Pending"]
+    ]
+
     VStack(spacing: 16) {
         MarkdownTableView(
-            headers: ["Name", "Type", "Description"],
-            rows: [
-                ["id", "Int", "Unique identifier"],
-                ["name", "String", "User's **full name**"],
-                ["email", "String", "Contact email with `code`"]
-            ]
+            headers: firstHeaders,
+            rows: firstRows,
+            inlineContent: [:]
         )
 
         MarkdownTableView(
-            headers: ["Feature", "Status"],
-            rows: [
-                ["Markdown", "Done"],
-                ["Tables", "Done"],
-                ["Syntax Highlighting", "Pending"]
-            ]
+            headers: secondHeaders,
+            rows: secondRows,
+            inlineContent: [:]
         )
     }
     .padding()

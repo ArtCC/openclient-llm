@@ -60,6 +60,8 @@ final class ChatViewModel {
         var messages: [ChatMessage] = []
         var inputText: String = ""
         var isStreaming: Bool = false
+        var responseRevision = 0
+        var streamingRevision = 0
         var selectedModel: LLMModel?
         var availableModels: [LLMModel] = []
         var conversationStarters: [ConversationStarter] = []
