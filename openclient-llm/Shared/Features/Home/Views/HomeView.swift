@@ -22,6 +22,7 @@ struct HomeView: View {
 
 #if os(macOS)
     @State private var sidebarDestination: SidebarDestination = .chats
+    @State private var macSearchRequestID = 0
 #endif
 
 #if os(iOS)
@@ -214,7 +215,9 @@ private extension HomeView {
 #if os(iOS)
             selectedTab = .search
 #else
-            sidebarDestination = .search
+            selectedConversation = nil
+            sidebarDestination = .chats
+            macSearchRequestID += 1
 #endif
         }
     }
@@ -222,7 +225,6 @@ private extension HomeView {
 #if os(macOS)
     enum SidebarDestination: Hashable {
         case chats
-        case search
         case models
         case settings
     }
@@ -247,9 +249,6 @@ private extension HomeView {
             Section {
                 Label(String(localized: "Chats"), systemImage: "bubble.left.and.bubble.right")
                     .tag(SidebarDestination.chats)
-
-                Label(String(localized: "Search"), systemImage: "magnifyingglass")
-                    .tag(SidebarDestination.search)
             }
 
             Section {
@@ -269,7 +268,10 @@ private extension HomeView {
         switch sidebarDestination {
         case .chats:
             NavigationStack {
-                ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
+                ConversationListView(
+                    activeConversationId: selectedConversation?.id,
+                    macSearchRequestID: macSearchRequestID
+                ) { conversation in
                     selectedConversation = conversation
                 } onPrivateChatSelected: {
                     isPrivateChatActive = true
@@ -290,8 +292,6 @@ private extension HomeView {
                     ChatView(isPrivateChat: true)
                 }
             }
-        case .search:
-            SearchConversationsView()
         case .models:
             ModelsView()
         case .settings:

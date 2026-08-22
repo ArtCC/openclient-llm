@@ -41,21 +41,31 @@ extension ConversationListView {
                 TextField(String(localized: "Search conversations..."), text: $macSearchText)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 180)
+                    .focused($isMacSearchFocused)
                     .transition(.asymmetric(
                         insertion: .move(edge: .trailing).combined(with: .opacity),
                         removal: .move(edge: .trailing).combined(with: .opacity)
                     ))
+                    .onAppear {
+                        isMacSearchFocused = true
+                    }
+                    .task(id: macSearchRequestID) {
+                        guard macSearchRequestID > 0 else { return }
+                        isMacSearchFocused = true
+                    }
                     .onChange(of: macSearchText) { _, newValue in
                         viewModel.send(.searchChanged(newValue))
                     }
                     .onSubmit {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             isMacSearchExpanded = false
+                            isMacSearchFocused = false
                         }
                     }
                     .onExitCommand {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                             isMacSearchExpanded = false
+                            isMacSearchFocused = false
                             macSearchText = ""
                             viewModel.send(.searchChanged(""))
                         }
@@ -65,6 +75,7 @@ extension ConversationListView {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
                     isMacSearchExpanded.toggle()
                     if !isMacSearchExpanded {
+                        isMacSearchFocused = false
                         macSearchText = ""
                         viewModel.send(.searchChanged(""))
                     }
