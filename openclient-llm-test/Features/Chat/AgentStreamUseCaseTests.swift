@@ -254,6 +254,7 @@ final class AgentStreamUseCaseTests: XCTestCase {
         )
         let toolCallResponse = makeToolCallResponse(toolCalls: [toolCall])
 
+        // Safety: Only used within serialized @MainActor test methods.
         final class InfiniteToolRepo: ChatRepositoryProtocol, @unchecked Sendable {
             var callCount = 0
             let toolCallResponse: ChatCompletionResponse
@@ -408,6 +409,7 @@ private extension AgentStreamUseCaseTests {
 
 // MARK: - SequentialMockRepo
 
+// Safety: Only used within serialized @MainActor test methods.
 final class SequentialMockRepo: ChatRepositoryProtocol, @unchecked Sendable {
     var responses: [ChatCompletionResponse]
     var callIndex = 0

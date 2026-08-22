@@ -21,12 +21,14 @@ nonisolated enum ImageAttachmentConstraints {
 }
 
 protocol PrepareImageAttachmentUseCaseProtocol: Sendable {
+    @concurrent
     func execute(data: Data, fileName: String) async throws -> PreparedImageAttachment
 }
 
 nonisolated struct PrepareImageAttachmentUseCase: PrepareImageAttachmentUseCaseProtocol {
     // MARK: - Execute
 
+    @concurrent
     func execute(data: Data, fileName: String) async throws -> PreparedImageAttachment {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
               let typeIdentifier = CGImageSourceGetType(source),

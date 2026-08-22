@@ -97,12 +97,10 @@ private extension PromptTemplatesViewModel {
     }
 
     func startObservingCloudChanges() {
+        let notifications = notificationCenter.notifications(named: .promptTemplatesDidChangeExternally)
         cloudSyncTask = Task { [weak self] in
-            guard let self else { return }
-            for await _ in self.notificationCenter.notifications(
-                named: .promptTemplatesDidChangeExternally
-            ) {
-                guard !Task.isCancelled else { break }
+            for await _ in notifications {
+                guard let self, !Task.isCancelled else { return }
                 self.loadTemplates()
             }
         }
