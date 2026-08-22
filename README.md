@@ -25,11 +25,11 @@ servers that provide the endpoints used by your selected features; point the app
 
 <p align="center">
   <a href="https://apps.apple.com/us/app/id6761379499">
-    <img src="assets/app_store_black.svg" alt="Download on the App Store" height="52" />
+    <img src="assets/app_store_black.png" alt="Download on the App Store" width="156" height="52" />
   </a>
   &nbsp;&nbsp;
   <a href="https://testflight.apple.com/join/MDxfUnGc">
-    <img src="assets/testflight_badge_black.png" alt="Available on TestFlight" height="52" />
+    <img src="assets/testflight_badge_black.png" alt="Available on TestFlight" width="156" height="52" />
   </a>
 </p>
 
