@@ -7,7 +7,7 @@ applyTo: "**/*.swift"
 
 ## Current Project Layout
 
-The Xcode project currently has **five native targets**, all backed by File System Synchronized Groups:
+The Xcode project currently has **six native targets**, all backed by File System Synchronized Groups:
 
 ```text
 openclient-llm/                 # iOS/iPadOS app target
@@ -37,15 +37,22 @@ openclient-llm-test/            # iOS-hosted XCTest unit test target
 ShareExtension/                 # Standalone iOS Share Extension
 └── App/Models/                 # Duplicates its small App Group transfer model/store intentionally
 
-Widgets/                        # Standalone WidgetsExtension target
-└── App/                        # WidgetKit widgets, controls, intents, and App Group models
+WidgetsShared/                  # Sources and resources shared by both WidgetKit extensions
+├── App/                        # Widgets, controls, intents, App Group models, and shared @main bundle
+└── Resources/                  # Shared widget assets
+
+WidgetsExtension-iOS/          # Native iOS/iPadOS WidgetKit extension
+└── Resources/                  # iOS plist and Data Protection/App Group entitlements
+
+WidgetsExtension-macOS/        # Native macOS WidgetKit extension
+└── Resources/                  # macOS plist and App Group entitlements
 ```
 
 The macOS target includes the synchronized `openclient-llm` group as well as its own group. Shared views therefore live in
-`openclient-llm/Shared/Features/.../Views`, not in a separate iOS `Views/` directory. `ShareExtension` and
-`WidgetsExtension` do not link the shared feature layer; they communicate through `group.com.artcc.openclient-llm` and
-deep links. Through synchronized-group membership exceptions, `AppGroupStore.swift` and `WidgetConversation.swift` are
-also compiled into both apps, while `WidgetControlStore.swift` is compiled into the iOS app and WidgetsExtension.
+`openclient-llm/Shared/Features/.../Views`, not in a separate iOS `Views/` directory. `ShareExtension`,
+`WidgetsExtension-iOS`, and `WidgetsExtension-macOS` do not link the shared feature layer; they communicate through
+`group.com.artcc.openclient-llm` and deep links. Through synchronized-group membership exceptions, `AppGroupStore.swift`,
+`WidgetConversation.swift`, and `WidgetControlStore.swift` are compiled into both apps and both widget extensions.
 
 Feature folders are pragmatic rather than uniform. Create only the subfolders a feature needs. `Shortcuts`, for example,
 currently contains intents directly, while larger features use several layer folders.

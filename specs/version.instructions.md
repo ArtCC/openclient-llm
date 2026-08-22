@@ -39,7 +39,8 @@ version in all of these places:
 
 1. The latest release header in `CHANGELOG.md`, together with the chosen build number.
 2. Every existing `TestFlight/*.txt` file, following the TestFlight rules below.
-3. `MARKETING_VERSION` for the iOS app, macOS app, Share Extension, and Widgets Extension in
+3. `MARKETING_VERSION` for the iOS app, macOS app, Share Extension, `WidgetsExtension-iOS`, and
+   `WidgetsExtension-macOS` in
    `openclient-llm.xcodeproj/project.pbxproj`, for both Debug and Release configurations.
 4. Both the badge URL and alt text of the version badge in `README.md`.
 5. `app_update.ios.latest_version` and `app_update.macos.latest_version` in the existing local `config.json` and

@@ -72,8 +72,8 @@ servers that provide the endpoints used by your selected features; point the app
 - Share content from any app (Safari, Telegram, Photos, Files…) directly into a new conversation via the system Share sheet
 - Deep-link into the app with `openclient://chat?text=…`, `openclient://chat?url=…`, or `openclient://conversation?id=…` for third-party automation
 - Apple Shortcuts integration: "New Chat", "Search Chats", and "Send File to Chat" actions available in the Shortcuts app and via Siri
-- Control Center toggle: add a "New Chat" button for instant one-tap access from any screen or the lock screen
-- Home-screen widgets: New Chat and Search (small); Quick Actions and Continue Chat (medium); and Recent, Pinned, or Tagged Conversations (medium/large)
+- Control Center toggle: add a "New Chat" button for instant one-tap access on iPhone, iPad, and Mac
+- Native iOS, iPadOS, and macOS widgets: New Chat and Search (small); Quick Actions and Continue Chat (medium); and Recent, Pinned, or Tagged Conversations (medium/large)
 - Optional iCloud sync for conversations, attachments, personal context, memory, and custom prompt templates across supported iPhone, iPad, and Mac devices
 - Export individual conversations or full JSON backups, and restore backups on another device ([format specification](specs/conversation-backup-format.instructions.md))
 - Private Chat: start a session-only chat whose messages and attachments are discarded when you close it; personal memory is neither read nor changed
@@ -93,6 +93,7 @@ servers that provide the endpoints used by your selected features; point the app
 
 **macOS**
 - Menu bar companion for instant access without opening the main window
+- Native desktop and Notification Center widgets with conversation shortcuts, pinned and tagged chats, search, and New Chat
 
 **macOS:** Download the latest signed and notarized `.dmg` directly from the [Releases](https://github.com/artcc/openclient-llm/releases) page.
 
@@ -110,7 +111,7 @@ servers that provide the endpoints used by your selected features; point the app
 | ConfettiSwiftUI | Tip-jar celebration effect |
 | SF Symbols | Iconography |
 | AppIntents | Apple Shortcuts, Siri & Control Center integration |
-| WidgetKit | Control Center toggle and seven home-screen widgets for actions, recent chats, pins, and tags |
+| WidgetKit | Native iOS, iPadOS, and macOS widgets plus a New Chat system control |
 | Votice | In-app feedback & feature requests |
 
 This project was developed entirely with Xcode, Visual Studio Code and GitHub Copilot (with Claude Opus / Sonnet 4.6).

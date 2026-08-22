@@ -81,7 +81,6 @@ struct HomeView: View {
             selectedConversation = conversation
             viewModel.send(.pendingConversationConsumed)
         }
-#if os(iOS)
         .task {
             guard let action = viewModel.pendingShortcutAction else { return }
             try? await Task.sleep(for: .milliseconds(300))
@@ -93,6 +92,7 @@ struct HomeView: View {
             handleShortcutAction(action)
             viewModel.send(.shortcutActionConsumed)
         }
+#if os(iOS)
         .task {
             guard viewModel.hasPendingShare else { return }
             try? await Task.sleep(for: .milliseconds(300))
@@ -202,6 +202,7 @@ private extension HomeView {
         case settings
         case search
     }
+#endif
 
     func handleShortcutAction(_ action: ShortcutAction) {
         switch action {
@@ -210,14 +211,18 @@ private extension HomeView {
         case .newPrivateChat:
             viewModel.send(.newPrivateChatShortcutTriggered)
         case .search:
+#if os(iOS)
             selectedTab = .search
+#else
+            sidebarDestination = .search
+#endif
         }
     }
-#endif
 
 #if os(macOS)
     enum SidebarDestination: Hashable {
         case chats
+        case search
         case models
         case settings
     }
@@ -242,6 +247,9 @@ private extension HomeView {
             Section {
                 Label(String(localized: "Chats"), systemImage: "bubble.left.and.bubble.right")
                     .tag(SidebarDestination.chats)
+
+                Label(String(localized: "Search"), systemImage: "magnifyingglass")
+                    .tag(SidebarDestination.search)
             }
 
             Section {
@@ -282,6 +290,8 @@ private extension HomeView {
                     ChatView(isPrivateChat: true)
                 }
             }
+        case .search:
+            SearchConversationsView()
         case .models:
             ModelsView()
         case .settings:

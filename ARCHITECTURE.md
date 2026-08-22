@@ -90,12 +90,14 @@ ShareExtension/                    # iOS Share Extension target
 │       └── ShareExtensionStore.swift
 └── Resources/
 
-Widgets/                           # WidgetsExtension target (iOS 26+)
+WidgetsShared/                     # Shared by both WidgetKit extension targets
 ├── App/
 │   ├── WidgetsBundle.swift        # @main entry point
 │   ├── Controls/
-│   │   ├── WidgetsControl.swift   # Control Center widget (NewChatControlWidget)
+│   │   ├── WidgetsControl.swift   # NewChatControlWidget
 │   │   └── NewChatControlIntent.swift
+│   ├── Intents/
+│   │   └── TaggedConversationsWidgetIntent.swift
 │   ├── Models/
 │   │   ├── AppGroupStore.swift    # Reads/writes App Group shared container
 │   │   ├── WidgetControlStore.swift
@@ -109,6 +111,12 @@ Widgets/                           # WidgetsExtension target (iOS 26+)
 │       ├── PinnedConversationsWidget.swift
 │       └── TaggedConversationsWidget.swift
 └── Resources/
+
+WidgetsExtension-iOS/              # Native iOS/iPadOS WidgetKit extension
+└── Resources/                     # Info.plist and Data Protection/App Group entitlements
+
+WidgetsExtension-macOS/            # Native macOS WidgetKit extension
+└── Resources/                     # Info.plist and App Group entitlements
 
 openclient-llm-test/               # Unit tests
 ├── Core/
@@ -125,9 +133,9 @@ openclient-llm-test/               # Unit tests
 └── Mocks/                         # MockXxx per protocol, @unchecked Sendable
 ```
 
-The Xcode project contains five native targets: `openclient-llm`, `openclient-llm-macOS`,
-`openclient-llm-test`, `ShareExtension`, and `WidgetsExtension`. It resolves three Swift packages:
-SwiftLintPlugins, VoticeSDK, and ConfettiSwiftUI.
+The Xcode project contains six native targets: `openclient-llm`, `openclient-llm-macOS`,
+`openclient-llm-test`, `ShareExtension`, `WidgetsExtension-iOS`, and `WidgetsExtension-macOS`. It resolves three Swift
+packages: SwiftLintPlugins, VoticeSDK, and ConfettiSwiftUI.
 
 ## Layer Responsibilities
 
@@ -146,7 +154,12 @@ SwiftLintPlugins, VoticeSDK, and ConfettiSwiftUI.
 - **`openclient-llm/`** (outside Shared) — iOS/iPadOS-specific views, app entry point, iOS resources.
 - **`openclient-llm-macOS/`** — macOS-specific views, app entry point, macOS resources. No shared logic duplicated here.
 - **`ShareExtension/`** — iOS/iPadOS Share Extension. It owns compatible write-side payload/store types; the main app owns the read side. They exchange JSON and attachments through `group.com.artcc.openclient-llm`; the extension does not link `Shared/`.
-- **`Widgets/`** — Source folder for `WidgetsExtension` (iOS 26+), containing seven home-screen widgets and a Control Center control. `AppGroupStore` and `WidgetConversation` compile into both apps and the extension; `WidgetControlStore` compiles into the iOS app and extension. The remaining widget UI does not link the shared feature layer.
+- **`WidgetsShared/`** — Seven widgets and a New Chat control compiled into the native iOS/iPadOS and macOS widget
+  extensions. The widget UI does not link the shared feature layer; both extensions read snapshots from the App Group and
+  navigate through `openclient://` deep links. `AppGroupStore`, `WidgetConversation`, and `WidgetControlStore` also compile
+  into both apps.
+- **`WidgetsExtension-iOS/` / `WidgetsExtension-macOS/`** — Platform-owned plists and entitlements. Only the iOS extension
+  enables complete Data Protection so sensitive widgets are hidden while the device is locked.
 - **`#if os(iOS)` / `#if os(macOS)`** — Used inside shared views for platform-specific UI variations.
 
 The iOS and macOS app targets set `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`. The test and extension targets do not;
@@ -176,4 +189,23 @@ HomeView.onChange(pendingConversation)
                     ├── viewModel.send(.inputChanged(text/url))
                     ├── viewModel.send(.attachmentAdded(…)) per binary
                     └── ShareExtensionStore.clear()
+```
+
+## Widget Data Flow
+
+```text
+ConversationRepository
+    ├── Builds lightweight recent, pinned, and tagged snapshots
+    ├── AppGroupStore → group.com.artcc.openclient-llm
+    └── WidgetCenter.reloadTimelines(ofKind:)
+
+WidgetsExtension-iOS / WidgetsExtension-macOS
+    ├── Read WidgetConversation snapshots from AppGroupStore
+    ├── Render the shared WidgetsShared views and providers
+    └── Open openclient://new-chat, search, or conversation deep links
+
+NewChatControlWidget
+    └── WidgetControlStore.requestNewChat()
+            └── App lifecycle activation consumes the request
+                    └── ShortcutManager.pendingAction = .newChat
 ```

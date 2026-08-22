@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [1.6.30-build-78] - 2026-08-21
+## [1.6.30-build-79] - 2026-08-22
+
+### Added
+
+- Native macOS WidgetKit extension with the same seven conversation and action widgets available on iOS and iPadOS
+- New Chat system control and widget search navigation on macOS
 
 ### Changed
 
