@@ -18,16 +18,18 @@ It works with [LiteLLM](https://github.com/BerriAI/litellm), [Ollama](https://ol
 servers that provide the endpoints used by your selected features; point the app at your URL and use the models it exposes.
 
 <p align="center">
-  <a href="https://www.arturocarreterocalvo.com/openclient-llm/"><strong>Website</strong></a>
-  &nbsp;&middot;&nbsp;
-  <a href="https://apps.apple.com/us/app/id6761379499"><strong>App Store</strong></a>
-  &nbsp;&middot;&nbsp;
   <a href="https://github.com/artcc/openclient-llm/releases"><strong>macOS Releases</strong></a>
+  &nbsp;&middot;&nbsp;
+  <a href="https://www.arturocarreterocalvo.com/openclient-llm/"><strong>Website</strong></a>
 </p>
 
 <p align="center">
   <a href="https://apps.apple.com/us/app/id6761379499">
     <img src="assets/app_store_black.svg" alt="Download on the App Store" height="52" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://testflight.apple.com/join/MDxfUnGc">
+    <img src="assets/testflight_badge_black.png" alt="Available on TestFlight" height="52" />
   </a>
 </p>
 
