@@ -2,6 +2,7 @@ Hi there! We've got some great new features for you in this update.
 
 ***1.6.30:
 
+• Fixed an issue that could cause the app to freeze when manually scrolling while a model was responding, or after several responses.
 • Minor bug fixes and improvements for a smoother experience.
 
 ***Recent Updates:

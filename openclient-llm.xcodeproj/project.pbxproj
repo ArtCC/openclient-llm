@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8033EC09303980F0005D593A /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E687812F9A24A000AC491E /* SwiftUI.framework */; };
+		8033EC0A303980F0005D593A /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E6877F2F9A24A000AC491E /* WidgetKit.framework */; };
 		8042FA682F7B01E800F0E933 /* VoticeSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 8042FA672F7B01E800F0E933 /* VoticeSDK */; };
 		8042FA6B2F7B01F800F0E933 /* VoticeSDK in Frameworks */ = {isa = PBXBuildFile; productRef = 8042FA6A2F7B01F800F0E933 /* VoticeSDK */; };
 		8084C87F2F9CC4D300F4BDC3 /* ConfettiSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 8084C87E2F9CC4D300F4BDC3 /* ConfettiSwiftUI */; };
@@ -14,7 +16,7 @@
 		8090B5C82F9365D7006E9DAE /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8090B5BE2F9365D6006E9DAE /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		80E687802F9A24A000AC491E /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E6877F2F9A24A000AC491E /* WidgetKit.framework */; };
 		80E687822F9A24A000AC491E /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80E687812F9A24A000AC491E /* SwiftUI.framework */; };
-		80E687912F9A24A200AC491E /* WidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 80E6877D2F9A24A000AC491E /* WidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		80E687912F9A24A200AC491E /* WidgetsExtension-iOS.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 80E6877D2F9A24A000AC491E /* WidgetsExtension-iOS.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		80FEAFD82F9D11C300ED2905 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80FEAFD72F9D11C300ED2905 /* StoreKit.framework */; };
 		80FEAFDA2F9D11D300ED2905 /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 80FEAFD92F9D11D300ED2905 /* StoreKit.framework */; };
 /* End PBXBuildFile section */
@@ -50,7 +52,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				80E687912F9A24A200AC491E /* WidgetsExtension.appex in Embed Foundation Extensions */,
+				80E687912F9A24A200AC491E /* WidgetsExtension-iOS.appex in Embed Foundation Extensions */,
 				8090B5C82F9365D7006E9DAE /* ShareExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
@@ -59,12 +61,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		8033EC0F303980F0005D593A /* WidgetsExtension-macOS.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "WidgetsExtension-macOS.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		805E798B2F79AC9B0070CBB3 /* openclient-llm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "openclient-llm.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8080773A2F7A66EF009BC8C4 /* OpenClient.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OpenClient.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8080774A2F7A67CD009BC8C4 /* openclient-llm-test.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "openclient-llm-test.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		8089F4102F7D000500465D6C /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		8090B5BE2F9365D6006E9DAE /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		80E6877D2F9A24A000AC491E /* WidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		80E6877D2F9A24A000AC491E /* WidgetsExtension-iOS.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "WidgetsExtension-iOS.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		80E6877F2F9A24A000AC491E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		80E687812F9A24A000AC491E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		80FEAFD72F9D11C300ED2905 /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
@@ -81,6 +84,36 @@
 				Resources/Info.plist,
 			);
 			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
+		};
+		8033EC11303980F1005D593A /* Exceptions for "Widgets" folder in "WidgetsExtension-macOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/Controls/NewChatControlIntent.swift,
+				App/Controls/WidgetsControl.swift,
+				App/Intents/TaggedConversationsWidgetIntent.swift,
+				App/Models/AppGroupStore.swift,
+				App/Models/WidgetControlStore.swift,
+				App/Models/WidgetConversation.swift,
+				App/Widgets/ConversationsOverviewWidget.swift,
+				App/Widgets/LatestConversationWidget.swift,
+				App/Widgets/NewChatWidget.swift,
+				App/Widgets/PinnedConversationsWidget.swift,
+				App/Widgets/QuickActionsWidget.swift,
+				App/Widgets/SearchWidget.swift,
+				App/Widgets/TaggedConversationsWidget.swift,
+				App/Widgets/WidgetConversationRow.swift,
+				App/WidgetsBundle.swift,
+				"Resources/WidgetsExtension-iOS-Info.plist",
+				"Resources/WidgetsExtension-macOS-Info.plist",
+			);
+			target = 8033EC06303980F0005D593A /* WidgetsExtension-macOS */;
+		};
+		8033EC1C30398420005D593A /* Exceptions for "openclient-llm" folder in "WidgetsExtension-macOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Shared/Resources/Localizable.xcstrings,
+			);
+			target = 8033EC06303980F0005D593A /* WidgetsExtension-macOS */;
 		};
 		803F259D2F9A56C3005118C9 /* Exceptions for "Widgets" folder in "openclient-llm" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -99,12 +132,12 @@
 			);
 			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
 		};
-		8041CF052F9A2CAC00CF6455 /* Exceptions for "openclient-llm" folder in "WidgetsExtension" target */ = {
+		8041CF052F9A2CAC00CF6455 /* Exceptions for "openclient-llm" folder in "WidgetsExtension-iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Shared/Resources/Localizable.xcstrings,
 			);
-			target = 80E6877C2F9A24A000AC491E /* WidgetsExtension */;
+			target = 80E6877C2F9A24A000AC491E /* WidgetsExtension-iOS */;
 		};
 		80850B982F7ABA9B00021598 /* Exceptions for "openclient-llm" folder in "openclient-llm" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -127,12 +160,13 @@
 			);
 			target = 8090B5BD2F9365D6006E9DAE /* ShareExtension */;
 		};
-		80E687952F9A24A200AC491E /* Exceptions for "Widgets" folder in "WidgetsExtension" target */ = {
+		80E687952F9A24A200AC491E /* Exceptions for "Widgets" folder in "WidgetsExtension-iOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Resources/Info.plist,
+				"Resources/WidgetsExtension-iOS-Info.plist",
+				"Resources/WidgetsExtension-macOS-Info.plist",
 			);
-			target = 80E6877C2F9A24A000AC491E /* WidgetsExtension */;
+			target = 80E6877C2F9A24A000AC491E /* WidgetsExtension-iOS */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -142,7 +176,8 @@
 			exceptions = (
 				80850B982F7ABA9B00021598 /* Exceptions for "openclient-llm" folder in "openclient-llm" target */,
 				80126ECB2F7A748E00A5557C /* Exceptions for "openclient-llm" folder in "openclient-llm-macOS" target */,
-				8041CF052F9A2CAC00CF6455 /* Exceptions for "openclient-llm" folder in "WidgetsExtension" target */,
+				8041CF052F9A2CAC00CF6455 /* Exceptions for "openclient-llm" folder in "WidgetsExtension-iOS" target */,
+				8033EC1C30398420005D593A /* Exceptions for "openclient-llm" folder in "WidgetsExtension-macOS" target */,
 			);
 			path = "openclient-llm";
 			sourceTree = "<group>";
@@ -178,7 +213,8 @@
 			exceptions = (
 				803F259D2F9A56C3005118C9 /* Exceptions for "Widgets" folder in "openclient-llm" target */,
 				803F25A12F9A56F2005118C9 /* Exceptions for "Widgets" folder in "openclient-llm-macOS" target */,
-				80E687952F9A24A200AC491E /* Exceptions for "Widgets" folder in "WidgetsExtension" target */,
+				80E687952F9A24A200AC491E /* Exceptions for "Widgets" folder in "WidgetsExtension-iOS" target */,
+				8033EC11303980F1005D593A /* Exceptions for "Widgets" folder in "WidgetsExtension-macOS" target */,
 			);
 			path = Widgets;
 			sourceTree = "<group>";
@@ -186,6 +222,15 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		8033EC08303980F0005D593A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8033EC09303980F0005D593A /* SwiftUI.framework in Frameworks */,
+				8033EC0A303980F0005D593A /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		805E79882F79AC9B0070CBB3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -254,7 +299,8 @@
 				8080773A2F7A66EF009BC8C4 /* OpenClient.app */,
 				8080774A2F7A67CD009BC8C4 /* openclient-llm-test.xctest */,
 				8090B5BE2F9365D6006E9DAE /* ShareExtension.appex */,
-				80E6877D2F9A24A000AC491E /* WidgetsExtension.appex */,
+				80E6877D2F9A24A000AC491E /* WidgetsExtension-iOS.appex */,
+				8033EC0F303980F0005D593A /* WidgetsExtension-macOS.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -273,6 +319,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		8033EC06303980F0005D593A /* WidgetsExtension-macOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8033EC0C303980F0005D593A /* Build configuration list for PBXNativeTarget "WidgetsExtension-macOS" */;
+			buildPhases = (
+				8033EC07303980F0005D593A /* Sources */,
+				8033EC08303980F0005D593A /* Frameworks */,
+				8033EC0B303980F0005D593A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				80E687832F9A24A000AC491E /* Widgets */,
+			);
+			name = "WidgetsExtension-macOS";
+			packageProductDependencies = (
+			);
+			productName = widgetsExtension;
+			productReference = 8033EC0F303980F0005D593A /* WidgetsExtension-macOS.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		805E798A2F79AC9B0070CBB3 /* openclient-llm */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 805E79962F79AC9C0070CBB3 /* Build configuration list for PBXNativeTarget "openclient-llm" */;
@@ -372,9 +440,9 @@
 			productReference = 8090B5BE2F9365D6006E9DAE /* ShareExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
-		80E6877C2F9A24A000AC491E /* WidgetsExtension */ = {
+		80E6877C2F9A24A000AC491E /* WidgetsExtension-iOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 80E687942F9A24A200AC491E /* Build configuration list for PBXNativeTarget "WidgetsExtension" */;
+			buildConfigurationList = 80E687942F9A24A200AC491E /* Build configuration list for PBXNativeTarget "WidgetsExtension-iOS" */;
 			buildPhases = (
 				80E687792F9A24A000AC491E /* Sources */,
 				80E6877A2F9A24A000AC491E /* Frameworks */,
@@ -387,11 +455,11 @@
 			fileSystemSynchronizedGroups = (
 				80E687832F9A24A000AC491E /* Widgets */,
 			);
-			name = WidgetsExtension;
+			name = "WidgetsExtension-iOS";
 			packageProductDependencies = (
 			);
 			productName = widgetsExtension;
-			productReference = 80E6877D2F9A24A000AC491E /* WidgetsExtension.appex */;
+			productReference = 80E6877D2F9A24A000AC491E /* WidgetsExtension-iOS.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
@@ -455,12 +523,20 @@
 				808077392F7A66EF009BC8C4 /* openclient-llm-macOS */,
 				808077492F7A67CD009BC8C4 /* openclient-llm-test */,
 				8090B5BD2F9365D6006E9DAE /* ShareExtension */,
-				80E6877C2F9A24A000AC491E /* WidgetsExtension */,
+				80E6877C2F9A24A000AC491E /* WidgetsExtension-iOS */,
+				8033EC06303980F0005D593A /* WidgetsExtension-macOS */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		8033EC0B303980F0005D593A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		805E79892F79AC9B0070CBB3 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -540,6 +616,13 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		8033EC07303980F0005D593A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		805E79872F79AC9B0070CBB3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -590,12 +673,78 @@
 		};
 		80E687902F9A24A200AC491E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 80E6877C2F9A24A000AC491E /* WidgetsExtension */;
+			target = 80E6877C2F9A24A000AC491E /* WidgetsExtension-iOS */;
 			targetProxy = 80E6878F2F9A24A200AC491E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		8033EC0D303980F0005D593A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = "Widgets/Resources/WidgetsExtension-macOS.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = Q4X55987WE;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Widgets/Resources/WidgetsExtension-macOS-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = WidgetsExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.6.30;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.macos.widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		8033EC0E303980F0005D593A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = "Widgets/Resources/WidgetsExtension-macOS.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = Q4X55987WE;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Widgets/Resources/WidgetsExtension-macOS-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = WidgetsExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.6.30;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.macos.widgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		805E79942F79AC9C0070CBB3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -939,7 +1088,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = Q4X55987WE;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -962,6 +1111,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = Q4X55987WE;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -1045,13 +1195,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = Widgets/Resources/WidgetsExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Widgets/Resources/WidgetsExtension-iOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = Q4X55987WE;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Widgets/Resources/Info.plist;
+				INFOPLIST_FILE = "Widgets/Resources/WidgetsExtension-iOS-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetsExtension;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -1078,12 +1228,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = Widgets/Resources/WidgetsExtension.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Widgets/Resources/WidgetsExtension-iOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = Q4X55987WE;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Widgets/Resources/Info.plist;
+				INFOPLIST_FILE = "Widgets/Resources/WidgetsExtension-iOS-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = WidgetsExtension;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Arturo Carretero Calvo. All rights reserved.";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -1108,6 +1259,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		8033EC0C303980F0005D593A /* Build configuration list for PBXNativeTarget "WidgetsExtension-macOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8033EC0D303980F0005D593A /* Debug */,
+				8033EC0E303980F0005D593A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		805E79862F79AC9B0070CBB3 /* Build configuration list for PBXProject "openclient-llm" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -1153,7 +1313,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		80E687942F9A24A200AC491E /* Build configuration list for PBXNativeTarget "WidgetsExtension" */ = {
+		80E687942F9A24A200AC491E /* Build configuration list for PBXNativeTarget "WidgetsExtension-iOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				80E687922F9A24A200AC491E /* Debug */,
