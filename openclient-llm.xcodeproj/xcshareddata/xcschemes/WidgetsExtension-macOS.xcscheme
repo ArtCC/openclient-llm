@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
    LastUpgradeVersion = "2660"
+   wasCreatedForAppExtension = "YES"
    version = "2.0">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -15,9 +16,23 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "8033EC06303980F0005D593A"
+               BlueprintIdentifier = "8033EC2030398605005D593A"
                BuildableName = "WidgetsExtension-macOS.appex"
                BlueprintName = "WidgetsExtension-macOS"
+               ReferencedContainer = "container:openclient-llm.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "808077392F7A66EF009BC8C4"
+               BuildableName = "OpenClient.app"
+               BlueprintName = "openclient-llm-macOS"
                ReferencedContainer = "container:openclient-llm.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -43,6 +58,16 @@
       allowLocationSimulation = "YES"
       launchAutomaticallySubstyle = "2"
       queueDebuggingEnableBacktraceRecording = "Yes">
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
+         <BuildableReference
+            BuildableIdentifier = "primary"
+            BlueprintIdentifier = "808077392F7A66EF009BC8C4"
+            BuildableName = "OpenClient.app"
+            BlueprintName = "openclient-llm-macOS"
+            ReferencedContainer = "container:openclient-llm.xcodeproj">
+         </BuildableReference>
+      </BuildableProductRunnable>
       <EnvironmentVariables>
          <EnvironmentVariable
             key = "_XCWidgetKind"
@@ -69,15 +94,16 @@
       debugDocumentVersioning = "YES"
       askForAppToLaunch = "Yes"
       launchAutomaticallySubstyle = "2">
-      <MacroExpansion>
+      <BuildableProductRunnable
+         runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "8033EC06303980F0005D593A"
-            BuildableName = "WidgetsExtension-macOS.appex"
-            BlueprintName = "WidgetsExtension-macOS"
+            BlueprintIdentifier = "808077392F7A66EF009BC8C4"
+            BuildableName = "OpenClient.app"
+            BlueprintName = "openclient-llm-macOS"
             ReferencedContainer = "container:openclient-llm.xcodeproj">
          </BuildableReference>
-      </MacroExpansion>
+      </BuildableProductRunnable>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">
