@@ -118,7 +118,51 @@
 			);
 			target = 8033EC2030398605005D593A /* WidgetsExtension-macOS */;
 		};
-		803F259D2F9A56C3005118C9 /* Exceptions for "WidgetsExtension-iOS" folder in "openclient-llm" target */ = {
+		8033EC4030398ED1005D593A /* Exceptions for "WidgetsShared" folder in "WidgetsExtension-iOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/Controls/NewChatControlIntent.swift,
+				App/Controls/WidgetsControl.swift,
+				App/Intents/TaggedConversationsWidgetIntent.swift,
+				App/Models/AppGroupStore.swift,
+				App/Models/WidgetControlStore.swift,
+				App/Models/WidgetConversation.swift,
+				App/Widgets/ConversationsOverviewWidget.swift,
+				App/Widgets/LatestConversationWidget.swift,
+				App/Widgets/NewChatWidget.swift,
+				App/Widgets/PinnedConversationsWidget.swift,
+				App/Widgets/QuickActionsWidget.swift,
+				App/Widgets/SearchWidget.swift,
+				App/Widgets/TaggedConversationsWidget.swift,
+				App/Widgets/WidgetConversationRow.swift,
+				App/WidgetsBundle.swift,
+				Resources/Assets.xcassets,
+			);
+			target = 80E6877C2F9A24A000AC491E /* WidgetsExtension-iOS */;
+		};
+		8033EC4230398EDB005D593A /* Exceptions for "WidgetsShared" folder in "WidgetsExtension-macOS" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				App/Controls/NewChatControlIntent.swift,
+				App/Controls/WidgetsControl.swift,
+				App/Intents/TaggedConversationsWidgetIntent.swift,
+				App/Models/AppGroupStore.swift,
+				App/Models/WidgetControlStore.swift,
+				App/Models/WidgetConversation.swift,
+				App/Widgets/ConversationsOverviewWidget.swift,
+				App/Widgets/LatestConversationWidget.swift,
+				App/Widgets/NewChatWidget.swift,
+				App/Widgets/PinnedConversationsWidget.swift,
+				App/Widgets/QuickActionsWidget.swift,
+				App/Widgets/SearchWidget.swift,
+				App/Widgets/TaggedConversationsWidget.swift,
+				App/Widgets/WidgetConversationRow.swift,
+				App/WidgetsBundle.swift,
+				Resources/Assets.xcassets,
+			);
+			target = 8033EC2030398605005D593A /* WidgetsExtension-macOS */;
+		};
+		8033EC4330398EF8005D593A /* Exceptions for "WidgetsShared" folder in "openclient-llm" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				App/Models/AppGroupStore.swift,
@@ -127,10 +171,11 @@
 			);
 			target = 805E798A2F79AC9B0070CBB3 /* openclient-llm */;
 		};
-		803F25A12F9A56F2005118C9 /* Exceptions for "WidgetsExtension-iOS" folder in "openclient-llm-macOS" target */ = {
+		8033EC4430398EF8005D593A /* Exceptions for "WidgetsShared" folder in "openclient-llm-macOS" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				App/Models/AppGroupStore.swift,
+				App/Models/WidgetControlStore.swift,
 				App/Models/WidgetConversation.swift,
 			);
 			target = 808077392F7A66EF009BC8C4 /* openclient-llm-macOS */;
@@ -197,6 +242,17 @@
 			path = "WidgetsExtension-macOS";
 			sourceTree = "<group>";
 		};
+		8033EC3E30398EAF005D593A /* WidgetsShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				8033EC4330398EF8005D593A /* Exceptions for "WidgetsShared" folder in "openclient-llm" target */,
+				8033EC4430398EF8005D593A /* Exceptions for "WidgetsShared" folder in "openclient-llm-macOS" target */,
+				8033EC4030398ED1005D593A /* Exceptions for "WidgetsShared" folder in "WidgetsExtension-iOS" target */,
+				8033EC4230398EDB005D593A /* Exceptions for "WidgetsShared" folder in "WidgetsExtension-macOS" target */,
+			);
+			path = WidgetsShared;
+			sourceTree = "<group>";
+		};
 		8080773B2F7A66EF009BC8C4 /* openclient-llm-macOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -221,8 +277,6 @@
 		80E687832F9A24A000AC491E /* WidgetsExtension-iOS */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				803F259D2F9A56C3005118C9 /* Exceptions for "WidgetsExtension-iOS" folder in "openclient-llm" target */,
-				803F25A12F9A56F2005118C9 /* Exceptions for "WidgetsExtension-iOS" folder in "openclient-llm-macOS" target */,
 				80E687952F9A24A200AC491E /* Exceptions for "WidgetsExtension-iOS" folder in "WidgetsExtension-iOS" target */,
 			);
 			path = "WidgetsExtension-iOS";
@@ -299,6 +353,7 @@
 				802F82FC302CBFFE0067B4DF /* TestFlight */,
 				80E687832F9A24A000AC491E /* WidgetsExtension-iOS */,
 				8033EC2430398605005D593A /* WidgetsExtension-macOS */,
+				8033EC3E30398EAF005D593A /* WidgetsShared */,
 			);
 			sourceTree = "<group>";
 		};
@@ -712,7 +767,7 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
@@ -758,7 +813,7 @@
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
-				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = NO;
 				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
 				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
 				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
