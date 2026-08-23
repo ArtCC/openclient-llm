@@ -54,6 +54,10 @@ jobs:
           VOTICE_API_SECRET: ${{ secrets.VOTICE_API_SECRET }}
           VOTICE_APP_ID: ${{ secrets.VOTICE_APP_ID }}
         run: |
+          echo "::add-mask::$VOTICE_API_KEY"
+          echo "::add-mask::$VOTICE_API_SECRET"
+          echo "::add-mask::$VOTICE_APP_ID"
+
           cat > Secrets.xcconfig << 'EOF'
           VOTICE_API_KEY = $(VOTICE_API_KEY_PLACEHOLDER)
           VOTICE_API_SECRET = $(VOTICE_API_SECRET_PLACEHOLDER)
@@ -151,20 +155,45 @@ jobs:
 
           with open(os.path.join(os.environ["RUNNER_TEMP"], "ExportOptions.plist"), "wb") as file:
               plistlib.dump(options, file)
+
+          signing_config = f'''\
+          PROFILE_SPECIFIER_com_artcc_openclient_llm = {os.environ["MACOS_APP_PROFILE_NAME"]}
+          PROFILE_SPECIFIER_com_artcc_openclient_llm_macos_widgets = {os.environ["MACOS_WIDGETS_PROFILE_NAME"]}
+          PROVISIONING_PROFILE_SPECIFIER = $(PROFILE_SPECIFIER_$(PRODUCT_BUNDLE_IDENTIFIER:identifier))
+          '''
+
+          with open(os.path.join(os.environ["RUNNER_TEMP"], "Signing.xcconfig"), "w") as file:
+              file.write(signing_config)
           PYEOF
 
       - name: Archive macOS app
         run: |
+          set +e
+          set -o pipefail
+
           xcodebuild archive \
             -project openclient-llm.xcodeproj \
             -scheme openclient-llm-macOS \
             -destination 'platform=macOS' \
             -archivePath "$RUNNER_TEMP/openclient-llm.xcarchive" \
+            -xcconfig "$RUNNER_TEMP/Signing.xcconfig" \
             DEVELOPMENT_TEAM=Q4X55987WE \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_STYLE=Manual \
             CODE_SIGN_IDENTITY="Developer ID Application" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
-            2>&1 | xcpretty && exit ${PIPESTATUS[0]}
+            2>&1 | tee "$RUNNER_TEMP/archive.log" | xcpretty
+
+          archive_status=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$archive_status" -ne 0 ]; then
+            echo "::group::Filtered xcodebuild archive errors"
+            grep -Ei \
+              'error:|provisioning profile|code.?sign|signing certificate|requires a provisioning profile|does not match|no profiles' \
+              "$RUNNER_TEMP/archive.log" | tail -n 200 || true
+            echo "::endgroup::"
+            exit "$archive_status"
+          fi
 
       - name: Export archive
         run: |
