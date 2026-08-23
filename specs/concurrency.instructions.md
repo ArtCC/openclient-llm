@@ -13,8 +13,9 @@ The iOS and macOS **app targets** use Swift 6, approachable concurrency, member 
 `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`. Shared code is compiled in those app targets and therefore receives that
 default there.
 
-The `openclient-llm-test`, `ShareExtension`, and `WidgetsExtension` target configurations currently do **not** set
-`SWIFT_DEFAULT_ACTOR_ISOLATION`. Do not describe the whole project or every target as implicitly main-actor isolated.
+The `openclient-llm-test`, `ShareExtension`, `WidgetsExtension-iOS`, and `WidgetsExtension-macOS` target configurations
+currently do **not** set `SWIFT_DEFAULT_ACTOR_ISOLATION`. Do not describe the whole project or every target as implicitly
+main-actor isolated.
 
 ### What `MainActor` Default Isolation Means
 

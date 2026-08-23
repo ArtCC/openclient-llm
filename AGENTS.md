@@ -79,7 +79,8 @@ EOF
 ## Concurrency (critical)
 
 The iOS and macOS app targets set `SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor`; shared code therefore inherits
-main-actor isolation when compiled into either app. The test, Share Extension, and WidgetsExtension targets do not set it.
+main-actor isolation when compiled into either app. The test, Share Extension, `WidgetsExtension-iOS`, and
+`WidgetsExtension-macOS` targets do not set it.
 
 - `@MainActor` annotations on ViewModels are redundant but kept for documentation.
 - All test classes **must** be `@MainActor` — otherwise they cannot access `@MainActor`-isolated types synchronously.
@@ -121,13 +122,16 @@ are no UI tests or current tests that call a real LiteLLM/Ollama server.
 | `openclient-llm-macOS` | macOS app (macOS-only UI; references `Shared/` from iOS target) |
 | `openclient-llm-test` | Unit tests (linked to iOS target) |
 | `ShareExtension` | iOS Share Extension (does NOT link Shared code; uses App Group) |
-| `WidgetsExtension` | WidgetKit extension sourced from `Widgets/`; uses the App Group and selected shared resource files |
+| `WidgetsExtension-iOS` | Native iOS/iPadOS WidgetKit extension sourced from `WidgetsShared/` |
+| `WidgetsExtension-macOS` | Native macOS WidgetKit extension sourced from `WidgetsShared/` |
 
 - Shared business logic lives in `openclient-llm/Shared/` and is referenced by both app targets.
 - Platform-specific UI goes in each target's own folder. Use `#if os(iOS)` / `#if os(macOS)` only when the difference is small.
 - `ShareExtension` does not link `Shared/`; it has extension-local payload/store types compatible with the main app.
-- `WidgetsExtension` does not link the shared feature layer. `AppGroupStore` and `WidgetConversation` are compiled into
-  both apps and the extension; `WidgetControlStore` is compiled into the iOS app and extension.
+- `WidgetsShared/` contains the widget views, providers, intents, controls, App Group models, and resources compiled by both
+  widget extensions. The platform extension folders retain only their own plist and entitlements.
+- Neither widget extension links the shared feature layer. `AppGroupStore`, `WidgetConversation`, and `WidgetControlStore`
+  are compiled into both apps and both widget extensions.
 - App Group: `group.com.artcc.openclient-llm`
 
 ## Architecture: Event/State ViewModels

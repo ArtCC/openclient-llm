@@ -19,8 +19,8 @@ the architecture described to contributors.
 
 ### ARCHITECTURE.md
 
-- Contains a representative structural tree for all five targets: `openclient-llm`, `openclient-llm-macOS`,
-  `openclient-llm-test`, `ShareExtension`, and `WidgetsExtension`
+- Contains a representative structural tree for all six targets: `openclient-llm`, `openclient-llm-macOS`,
+  `openclient-llm-test`, `ShareExtension`, `WidgetsExtension-iOS`, and `WidgetsExtension-macOS`
 - Contains the layer diagram (`View → ViewModel → UseCase → Repository → APIClient / LocalStorage`)
 - Contains per-layer responsibility descriptions
 
