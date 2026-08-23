@@ -787,7 +787,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.6.30;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.macos.widgets";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.macos-widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
@@ -833,7 +833,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.6.30;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.macos.widgets";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.macos-widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
