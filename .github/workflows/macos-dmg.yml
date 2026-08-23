@@ -100,36 +100,58 @@ jobs:
           echo "$APPLE_API_KEY_BASE64" | base64 --decode \
             > ~/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8
 
-      - name: Install provisioning profile
+      - name: Install provisioning profiles
+        id: profiles
         env:
           MACOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.MACOS_PROVISIONING_PROFILE_BASE64 }}
+          MACOS_WIDGETS_PROVISIONING_PROFILE_BASE64: ${{ secrets.MACOS_WIDGETS_PROVISIONING_PROFILE_BASE64 }}
         run: |
           PP_DIR="$HOME/Library/MobileDevice/Provisioning Profiles"
           mkdir -p "$PP_DIR"
-          echo "$MACOS_PROVISIONING_PROFILE_BASE64" | base64 --decode \
-            > "$PP_DIR/OpenClient.provisionprofile"
+
+          install_profile() {
+            local encoded_profile="$1"
+            local output_name="$2"
+            local profile_path="$RUNNER_TEMP/${output_name}.provisionprofile"
+            local plist_path="$RUNNER_TEMP/${output_name}.plist"
+
+            printf '%s' "$encoded_profile" | base64 --decode > "$profile_path"
+            security cms -D -i "$profile_path" > "$plist_path"
+
+            local profile_uuid
+            local profile_name
+            profile_uuid=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$plist_path")
+            profile_name=$(/usr/libexec/PlistBuddy -c 'Print :Name' "$plist_path")
+
+            cp "$profile_path" "$PP_DIR/${profile_uuid}.provisionprofile"
+            echo "${output_name}_profile_name=$profile_name" >> "$GITHUB_OUTPUT"
+          }
+
+          install_profile "$MACOS_PROVISIONING_PROFILE_BASE64" app
+          install_profile "$MACOS_WIDGETS_PROVISIONING_PROFILE_BASE64" widgets
 
       - name: Create ExportOptions.plist
+        env:
+          MACOS_APP_PROFILE_NAME: ${{ steps.profiles.outputs.app_profile_name }}
+          MACOS_WIDGETS_PROFILE_NAME: ${{ steps.profiles.outputs.widgets_profile_name }}
         run: |
-          cat > "$RUNNER_TEMP/ExportOptions.plist" << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>developer-id</string>
-            <key>teamID</key>
-            <string>Q4X55987WE</string>
-            <key>signingStyle</key>
-            <string>manual</string>
-            <key>provisioningProfiles</key>
-            <dict>
-              <key>com.artcc.openclient-llm</key>
-              <string>OpenClient</string>
-            </dict>
-          </dict>
-          </plist>
-          EOF
+          python3 - << 'PYEOF'
+          import os
+          import plistlib
+
+          options = {
+              "method": "developer-id",
+              "teamID": "Q4X55987WE",
+              "signingStyle": "manual",
+              "provisioningProfiles": {
+                  "com.artcc.openclient-llm": os.environ["MACOS_APP_PROFILE_NAME"],
+                  "com.artcc.openclient-llm.macos-widgets": os.environ["MACOS_WIDGETS_PROFILE_NAME"],
+              },
+          }
+
+          with open(os.path.join(os.environ["RUNNER_TEMP"], "ExportOptions.plist"), "wb") as file:
+              plistlib.dump(options, file)
+          PYEOF
 
       - name: Archive macOS app
         run: |
@@ -139,9 +161,8 @@ jobs:
             -destination 'platform=macOS' \
             -archivePath "$RUNNER_TEMP/openclient-llm.xcarchive" \
             DEVELOPMENT_TEAM=Q4X55987WE \
-            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_STYLE=Automatic \
             CODE_SIGN_IDENTITY="Developer ID Application" \
-            PROVISIONING_PROFILE_SPECIFIER=OpenClient \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
             2>&1 | xcpretty && exit ${PIPESTATUS[0]}
 
