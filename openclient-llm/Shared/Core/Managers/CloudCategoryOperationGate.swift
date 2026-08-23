@@ -23,11 +23,13 @@ actor CloudCategoryOperationGate {
     func perform<Value: Sendable>(
         _ operation: @escaping @Sendable () async throws -> Value
     ) async throws -> Value {
+        try Task.checkCancellation()
         if CloudCategoryOperationContext.ownedGateIDs.contains(id) {
             return try await operation()
         }
         try await acquireOperation()
         do {
+            try Task.checkCancellation()
             let value = try await CloudCategoryOperationContext.$ownedGateIDs.withValue(
                 CloudCategoryOperationContext.ownedGateIDs.union([id])
             ) {
@@ -44,11 +46,13 @@ actor CloudCategoryOperationGate {
     func fence<Value: Sendable>(
         _ operation: @escaping @Sendable () async throws -> Value
     ) async throws -> Value {
+        try Task.checkCancellation()
         if CloudCategoryOperationContext.ownedGateIDs.contains(id) {
             return try await operation()
         }
         await acquireFence()
         do {
+            try Task.checkCancellation()
             let value = try await CloudCategoryOperationContext.$ownedGateIDs.withValue(
                 CloudCategoryOperationContext.ownedGateIDs.union([id])
             ) {

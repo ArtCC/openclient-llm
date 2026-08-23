@@ -152,9 +152,8 @@ final class CompactConversationUseCaseTests: XCTestCase {
 
 // MARK: - RecordingChatRepository
 
+// Safety: Only used within serialized @MainActor test methods.
 private final class RecordingChatRepository: ChatRepositoryProtocol, @unchecked Sendable {
-    // Safety: Only used within serialized @MainActor test methods.
-
     var lastParameters: ModelParameters?
     var lastMessages: [ChatMessage] = []
     var requests: [[ChatMessage]] = []
