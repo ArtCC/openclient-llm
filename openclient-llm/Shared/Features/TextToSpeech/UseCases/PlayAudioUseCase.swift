@@ -31,7 +31,12 @@ final class PlayAudioUseCase: PlayAudioUseCaseProtocol {
     func play(data: Data, messageId: UUID) async {
         manager.play(data: data, messageId: messageId)
         while manager.isPlaying {
-            try? await Task.sleep(for: .milliseconds(200))
+            do {
+                try await Task.sleep(for: .milliseconds(200))
+            } catch {
+                manager.stop()
+                return
+            }
         }
     }
 

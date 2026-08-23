@@ -31,6 +31,7 @@ extension ChatViewModelTests {
             return
         }
         let messagesBeforeRegenerate = afterFirst.messages.count
+        let revisionBeforeRegenerate = afterFirst.responseRevision
         XCTAssertEqual(afterFirst.messages.last?.role, .assistant)
         XCTAssertEqual(afterFirst.messages.last?.content, "First")
 
@@ -49,6 +50,7 @@ extension ChatViewModelTests {
         XCTAssertEqual(loadedState.messages.count, messagesBeforeRegenerate)
         XCTAssertEqual(loadedState.messages.last?.role, .assistant)
         XCTAssertEqual(loadedState.messages.last?.content, "Regenerated")
+        XCTAssertEqual(loadedState.responseRevision, revisionBeforeRegenerate + 1)
     }
 
     func test_send_regenerateLastResponse_duringStreaming_doesNothing() async throws {

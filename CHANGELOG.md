@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.30-build-81] - 2026-08-23
+
+### Added
+
+- Native macOS WidgetKit extension with the same seven conversation and action widgets available on iOS and iPadOS
+- New Chat system control and widget search navigation on macOS
+
+### Changed
+
+- Chat streaming now batches text and reasoning display updates to reduce redundant Markdown rendering while preserving response content and event order
+
+### Fixed
+
+- Chat auto-scroll now uses a stable bottom edge without geometry feedback, preserving responsive streaming and manual history navigation
+- Agent-mode final responses now emit bounded cooperative chunks without blocking the interface
+- Assistant Markdown is now rendered once outside the main actor instead of being reparsed during every streamed frame
+- The blinking streaming cursor no longer changes message geometry on each visibility cycle
+
 ## [1.6.25-build-76] - 2026-08-19
 
 ### Added

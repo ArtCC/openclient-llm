@@ -315,7 +315,13 @@ enum AgentEvent: Sendable {
 }
 ```
 
-The use case manages non-streaming completion requests for the full loop, then emits final content and reasoning in small chunks for the existing streaming UI. Failures terminate the `AsyncThrowingStream`; there is no `.error` event. Assistant tool-call messages and matching tool messages are emitted through `.transcriptAppended` and persisted before the next round.
+The use case manages non-streaming completion requests for the full loop, then emits final content and reasoning in locally
+paced, adaptively sized chunks for the existing streaming UI. Chunk count is bounded so presentation adds no more than one
+second per reasoning or answer field. Failures terminate the `AsyncThrowingStream`; there is no `.error` event. Assistant
+tool-call messages and matching tool messages are emitted through `.transcriptAppended` and persisted before the next round.
+
+Agent transcript messages remain in `ChatViewModel` for context and persistence, but presentation snapshots must exclude
+`.tool` messages and hidden assistant tool-call messages. Never retain raw tool-result payloads in SwiftUI view values.
 
 ### ViewModel Integration
 

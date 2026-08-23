@@ -17,7 +17,7 @@ struct ChatInputBarView: View {
     @Binding var showDocumentPicker: Bool
     @Binding var showCameraPicker: Bool
 
-    let loadedState: ChatViewModel.LoadedState
+    let state: ChatInputBarState
     let onInputChanged: (String) -> Void
     let onSend: () -> Void
     let onStopStreaming: () -> Void
@@ -54,10 +54,10 @@ struct ChatInputBarView: View {
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
-                if let usage = loadedState.contextUsage {
+                if let usage = state.contextUsage {
                     ChatContextUsageView(usage: usage)
                         .popoverTip(
-                            usage.percentage >= 50 && !loadedState.isStreaming
+                            usage.percentage >= 50 && !state.isStreaming
                                 ? AppTips.contextUsage
                                 : nil,
                             arrowEdge: .bottom
@@ -68,13 +68,13 @@ struct ChatInputBarView: View {
                 }
 
                 ZStack {
-                    if loadedState.isRecording {
+                    if state.isRecording {
                         recordingBar
                             .transition(.asymmetric(
                                 insertion: .push(from: .trailing).combined(with: .opacity),
                                 removal: .push(from: .leading).combined(with: .opacity)
                             ))
-                    } else if loadedState.isTranscribing {
+                    } else if state.isTranscribing {
                         transcribingBar
                             .transition(.opacity.combined(with: .scale(scale: 0.98, anchor: .center)))
                     } else {
@@ -92,10 +92,10 @@ struct ChatInputBarView: View {
             .padding(.horizontal, 16)
         }
         .padding(.bottom, 8)
-        .animation(.spring(duration: 0.35), value: loadedState.isRecording)
-        .animation(.spring(duration: 0.35), value: loadedState.isTranscribing)
-        .animation(.easeInOut(duration: 0.2), value: loadedState.isSearchingWeb)
-        .animation(.easeInOut(duration: 0.2), value: loadedState.activeToolCallIds)
+        .animation(.spring(duration: 0.35), value: state.isRecording)
+        .animation(.spring(duration: 0.35), value: state.isTranscribing)
+        .animation(.easeInOut(duration: 0.2), value: state.isSearchingWeb)
+        .animation(.easeInOut(duration: 0.2), value: state.activeToolCallIds)
     }
 }
 
@@ -103,12 +103,12 @@ struct ChatInputBarView: View {
 
 private extension ChatInputBarView {
     var activeToolStatus: String? {
-        let activeToolNames = loadedState.activeToolNamesById.values
+        let activeToolNames = state.activeToolNamesById.values
         guard !activeToolNames.isEmpty else { return nil }
         if activeToolNames.count > 1 {
             return String(localized: "Running \(activeToolNames.count) tool calls...")
         }
-        if loadedState.isSearchingWeb {
+        if state.isSearchingWeb {
             return String(localized: "Searching the web...")
         }
         guard let toolName = activeToolNames.first else { return nil }
@@ -122,8 +122,7 @@ private extension ChatInputBarView {
         default:
             break
         }
-        let displayName = loadedState.availableMCPTools
-            .first(where: { $0.prefixedName == toolName })?.displayName
+        let displayName = state.mcpToolDisplayNames[toolName]
             ?? MCPDisplayText.sanitize(
                 toolName,
                 fallback: String(localized: "External tool"),
@@ -136,7 +135,7 @@ private extension ChatInputBarView {
 
     var normalBar: some View {
         HStack(spacing: 5) {
-            if loadedState.selectedModel?.mode != .imageGeneration {
+            if state.selectedModel?.mode != .imageGeneration {
                 Group {
                     actionsToggleButton
 
@@ -151,7 +150,7 @@ private extension ChatInputBarView {
                             .transition(.scale.combined(with: .opacity))
                     }
                 }
-                .disabled(loadedState.isStreaming)
+                .disabled(state.isStreaming)
             }
 
             TextField(
@@ -172,7 +171,7 @@ private extension ChatInputBarView {
             .onChange(of: inputText) { _, newValue in
                 onInputChanged(newValue)
             }
-            .onChange(of: loadedState.inputText) { _, newValue in
+            .onChange(of: state.inputText) { _, newValue in
                 if newValue != inputText {
                     inputText = newValue
                 }
@@ -181,8 +180,8 @@ private extension ChatInputBarView {
             actionButton
         }
         .onAppear {
-            if loadedState.inputText != inputText {
-                inputText = loadedState.inputText
+            if state.inputText != inputText {
+                inputText = state.inputText
             }
         }
     }
@@ -257,7 +256,7 @@ private extension ChatInputBarView {
     }
 
     var timerText: String {
-        let total = Int(loadedState.recordingDuration)
+        let total = Int(state.recordingDuration)
         return String(format: "%d:%02d", total / 60, total % 60)
     }
 
@@ -307,7 +306,7 @@ private extension ChatInputBarView {
     }
 
     var webSearchButton: some View {
-        let modelSupportsWebSearch = loadedState.selectedModel.map {
+        let modelSupportsWebSearch = state.selectedModel.map {
             $0.capabilities.contains(.functionCalling)
         } ?? false
 
@@ -315,13 +314,13 @@ private extension ChatInputBarView {
             AppTips.webSearch.invalidate(reason: .actionPerformed)
             onWebSearchToggled()
         } label: {
-            Image(systemName: loadedState.isWebSearchEnabled ? "globe.badge.chevron.backward" : "globe")
+            Image(systemName: state.isWebSearchEnabled ? "globe.badge.chevron.backward" : "globe")
                 .font(.title2)
                 .foregroundStyle(
                     webSearchColor(
-                        enabled: loadedState.isWebSearchEnabled,
+                        enabled: state.isWebSearchEnabled,
                         supported: modelSupportsWebSearch,
-                        configured: loadedState.isWebSearchToolConfigured
+                        configured: state.isWebSearchToolConfigured
                     )
                 )
                 .frame(minWidth: 44, minHeight: 44)
@@ -330,15 +329,15 @@ private extension ChatInputBarView {
         .buttonStyle(.plain)
         .popoverTip(canShowWebSearchTip ? AppTips.webSearch : nil, arrowEdge: .bottom)
         .accessibilityLabel(
-            loadedState.isWebSearchEnabled
+            state.isWebSearchEnabled
             ? String(localized: "Disable Web Search")
             : String(localized: "Enable Web Search")
         )
-        .animation(.easeInOut(duration: 0.2), value: loadedState.isWebSearchEnabled)
+        .animation(.easeInOut(duration: 0.2), value: state.isWebSearchEnabled)
     }
 
     var actionsToggleButton: some View {
-        let hasActive = loadedState.isWebSearchEnabled || hasEnabledMCPTool
+        let hasActive = state.isWebSearchEnabled || hasEnabledMCPTool
         return Button {
             withAnimation(.easeInOut(duration: 0.25)) {
                 showActions.toggle()
@@ -366,18 +365,18 @@ private extension ChatInputBarView {
 
     @ViewBuilder
     var actionButton: some View {
-        let hasText = !loadedState.inputText
+        let hasText = !state.inputText
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .isEmpty
-        let hasModel = loadedState.selectedModel != nil
-        let hasAttachments = !loadedState.pendingAttachments.isEmpty
-        let hasTranscriptionModel = loadedState.transcriptionModelId != nil
+        let hasModel = state.selectedModel != nil
+        let hasAttachments = state.hasPendingAttachments
+        let hasTranscriptionModel = state.hasTranscriptionModel
 
-        if loadedState.isPreparingAttachment {
+        if state.isPreparingAttachment {
             ProgressView()
                 .frame(minWidth: 44, minHeight: 44)
                 .accessibilityLabel(String(localized: "Preparing image"))
-        } else if loadedState.isStreaming {
+        } else if state.isStreaming {
             if (hasText || hasAttachments) && hasModel {
                 sendButton
             } else {
@@ -437,17 +436,17 @@ private extension ChatInputBarView {
     }
 
     var canShowInputTips: Bool {
-        loadedState.selectedModel != nil
-            && !loadedState.isStreaming
-            && !loadedState.isRecording
-            && !loadedState.isTranscribing
-            && !loadedState.isSearchingWeb
+        state.selectedModel != nil
+            && !state.isStreaming
+            && !state.isRecording
+            && !state.isTranscribing
+            && !state.isSearchingWeb
     }
 
     var canShowWebSearchTip: Bool {
         canShowInputTips
-            && loadedState.isWebSearchToolConfigured
-            && loadedState.selectedModel?.capabilities.contains(.functionCalling) == true
+            && state.isWebSearchToolConfigured
+            && state.selectedModel?.capabilities.contains(.functionCalling) == true
     }
 
 }

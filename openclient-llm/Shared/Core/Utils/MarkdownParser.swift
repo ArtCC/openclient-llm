@@ -10,7 +10,7 @@ import Foundation
 
 // MARK: - MessageBlock
 
-enum MessageBlock: Equatable, Sendable {
+nonisolated enum MessageBlock: Equatable, Sendable {
     case text(String)
     case codeBlock(code: String, language: String?)
     case heading(text: String, level: Int)
@@ -25,14 +25,14 @@ enum MessageBlock: Equatable, Sendable {
 
 // MARK: - MarkdownListItem
 
-struct MarkdownListItem: Equatable, Sendable {
+nonisolated struct MarkdownListItem: Equatable, Sendable {
     let content: String
     let depth: Int
 }
 
 // MARK: - MarkdownOrderedListItem
 
-struct MarkdownOrderedListItem: Equatable, Sendable {
+nonisolated struct MarkdownOrderedListItem: Equatable, Sendable {
     let number: Int
     let content: String
     let depth: Int
@@ -40,7 +40,7 @@ struct MarkdownOrderedListItem: Equatable, Sendable {
 
 // MARK: - MarkdownTaskItem
 
-struct MarkdownTaskItem: Equatable, Sendable {
+nonisolated struct MarkdownTaskItem: Equatable, Sendable {
     let isChecked: Bool
     let content: String
     let depth: Int
@@ -48,7 +48,7 @@ struct MarkdownTaskItem: Equatable, Sendable {
 
 // MARK: - MarkdownParser
 
-struct MarkdownParser: Sendable {
+nonisolated struct MarkdownParser: Sendable {
     // MARK: - Public
 
     static func parse(_ raw: String) -> [MessageBlock] {
@@ -93,7 +93,7 @@ struct MarkdownParser: Sendable {
 
 // MARK: - Private: Mixed Block Parsing
 
-private extension MarkdownParser {
+private nonisolated extension MarkdownParser {
     static func parseMixedBlock(lines: [String], startIndex: inout Int, into blocks: inout [MessageBlock]) {
         var accumulatedText: [String] = []
 
@@ -164,7 +164,7 @@ private extension MarkdownParser {
 
 // MARK: - Private: Blockquote
 
-private extension MarkdownParser {
+private nonisolated extension MarkdownParser {
     static func isBlockquoteLine(_ line: String) -> Bool {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         return trimmed.hasPrefix(">")
@@ -197,7 +197,7 @@ private extension MarkdownParser {
 
 // MARK: - Private: Horizontal Rule
 
-private extension MarkdownParser {
+private nonisolated extension MarkdownParser {
     static func isHorizontalRule(_ line: String) -> Bool {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         guard trimmed.count >= 3 else { return false }
@@ -214,7 +214,7 @@ private extension MarkdownParser {
 
 // MARK: - Private: List Item Match
 
-private struct OrderedListItemMatch {
+private nonisolated struct OrderedListItemMatch {
     let number: Int
     let depth: Int
     let content: String
@@ -222,7 +222,7 @@ private struct OrderedListItemMatch {
 
 // MARK: - Private: Image
 
-private extension MarkdownParser {
+private nonisolated extension MarkdownParser {
     static func parseImageLine(_ line: String) -> MessageBlock? {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         guard trimmed.hasPrefix("![") else { return nil }
@@ -252,7 +252,7 @@ private extension MarkdownParser {
 
 // MARK: - Private: Task Lists
 
-private extension MarkdownParser {
+private nonisolated extension MarkdownParser {
     static func parseTaskListItem(_ line: String) -> MarkdownTaskItem? {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         let leadingSpaces = line.prefix(while: { $0 == " " }).count
@@ -307,7 +307,7 @@ private extension MarkdownParser {
 
 // MARK: - Private: Lists
 
-private extension MarkdownParser {
+private nonisolated extension MarkdownParser {
     static func parseUnorderedListItem(_ line: String) -> (depth: Int, content: String)? {
         let trimmed = line.trimmingCharacters(in: .whitespaces)
         let leadingSpaces = line.prefix(while: { $0 == " " }).count
@@ -382,7 +382,7 @@ private extension MarkdownParser {
 
 // MARK: - Private: Table
 
-private extension MarkdownParser {
+private nonisolated extension MarkdownParser {
     static func tryParseTable(lines: [String], startIndex: Int) -> MessageBlock? {
         guard startIndex + 1 < lines.count else { return nil }
 
@@ -451,7 +451,7 @@ private extension MarkdownParser {
 
 // MARK: - Private: Code & Headings
 
-private extension MarkdownParser {
+private nonisolated extension MarkdownParser {
     static func extractLanguage(from fenceLine: String) -> String? {
         let trimmed = fenceLine.trimmingCharacters(in: .whitespaces)
         guard trimmed.count > 3 else { return nil }
@@ -475,7 +475,7 @@ private extension MarkdownParser {
 
 // MARK: - String Helpers
 
-private extension String {
+private nonisolated extension String {
     func trimmingPrefix(_ character: Character) -> String {
         String(self.drop(while: { $0 == character }))
     }

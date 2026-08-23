@@ -38,11 +38,11 @@ struct ImagePreviewView: View {
     var body: some View {
         NavigationStack {
             Group {
-                #if os(iOS)
+#if os(iOS)
                 if let image = UIImage(data: data) {
                     Image(uiImage: image)
                         .resizable()
-                        .aspectRatio(contentMode: .fit)
+                        .scaledToFit()
                         .scaleEffect(zoomScale)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .ignoresSafeArea(edges: .bottom)
@@ -59,19 +59,19 @@ struct ImagePreviewView: View {
                             }
                         }
                 }
-                #elseif os(macOS)
+#elseif os(macOS)
                 if let image = NSImage(data: data) {
                     Image(nsImage: image)
                         .resizable()
-                        .aspectRatio(contentMode: .fit)
+                        .scaledToFit()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                #endif
+#endif
             }
             .navigationTitle(String(localized: "Generated Image"))
-            #if os(iOS)
+#if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
-            #endif
+#endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button {
@@ -94,34 +94,34 @@ struct ImagePreviewView: View {
 
 private extension ImagePreviewView {
     var saveButton: some View {
-        #if os(iOS)
+#if os(iOS)
         Button {
             saveImageToPhotos(data)
         } label: {
             Label(String(localized: "Save to Photos"), systemImage: "square.and.arrow.down")
         }
-        #elseif os(macOS)
+#elseif os(macOS)
         Button {
             saveImageToDownloads(data)
         } label: {
             Label(String(localized: "Save to Downloads"), systemImage: "square.and.arrow.down")
         }
-        #endif
+#endif
     }
 
-    #if os(iOS)
+#if os(iOS)
     func saveImageToPhotos(_ imageData: Data) {
         guard let image = UIImage(data: imageData) else { return }
         UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
     }
-    #elseif os(macOS)
+#elseif os(macOS)
     func saveImageToDownloads(_ imageData: Data) {
         let timestamp = Int(Date().timeIntervalSince1970)
         guard let url = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)
             .first?.appendingPathComponent("generated-image-\(timestamp).png") else { return }
         try? imageData.write(to: url)
     }
-    #endif
+#endif
 }
 
 #Preview {

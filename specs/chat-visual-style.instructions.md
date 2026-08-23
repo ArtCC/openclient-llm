@@ -50,7 +50,7 @@ Modern, clean conversational interface inspired by leading AI chat applications.
   trailing the accent-tinted glass; assistant timestamps are trailing in the metadata row.
 - Optional token usage is shown in the completed assistant message metadata row.
 - While the user manually scrolls through history, a centered, noninteractive glass date capsule identifies the day of
-  the first visible message. It remains hidden during idle and programmatic scrolling.
+  the first visible message. Visibility observations are presentation-only and must never drive automatic scrolling.
 - Do not make timestamps hover-only; they must remain available on touch platforms.
 
 ## Input Bar
@@ -128,20 +128,28 @@ Modern, clean conversational interface inspired by leading AI chat applications.
 
 - Append a blinking solid cursor character (`█`) to the final streaming text block.
 - Toggle it every 500 ms while streaming and remove it when streaming completes.
-- Before answer or reasoning content exists, show the current pulsing localized `Thinking...` label. Once text exists,
-  the integrated cursor is the answer-stream indicator.
-- Streaming reasoning also pulses the Thinking disclosure label.
+- Before answer or reasoning content exists, show a static localized `Thinking...` label. Once text exists, the integrated
+  cursor is the answer-stream indicator.
+- Streaming reasoning may blink the Thinking disclosure label on the same discrete 500 ms cadence; do not use a continuous
+  phase animation inside scroll targets.
 
 ### Progressive Rendering
 
 - Tokens appear immediately as they arrive from the stream
-- Smooth scroll-to-bottom as new content arrives
+- After the first fragment, coalesce routine text mutations on a 50 ms cadence; payload size must not force additional
+  same-frame publications, while lifecycle and non-text events may flush once to preserve content and event order
+- Use `ScrollViewReader` with explicit top and bottom sentinels; never bind `ScrollPosition` to the chat scroll view
+- Keep message rows in an eager `VStack`. `LazyVStack` can enter a non-converging layout pass when upward user scrolling
+  overlaps live message updates, freezing both iOS and macOS
+- Starting a response and each coalesced text publication scroll to the bottom without animation only while bottom-follow
+  mode remains active
+- Manual scrolling detaches bottom-follow immediately; only a new response or the bottom button resumes it
 - Do not show a loading spinner for answer generation; use the current cursor/Thinking states
 
 ## Message Entry Animations
 
 - Current message rows use `.transition(.opacity)`.
-- Top/bottom scroll buttons use scale plus opacity and spring when edge proximity changes.
+- Top/bottom scroll buttons appear only after manual detachment and do not animate the scroll container.
 - Do not add a container-wide animation keyed to every token or message mutation; streaming updates should remain stable
   and readable.
 
@@ -153,6 +161,10 @@ Modern, clean conversational interface inspired by leading AI chat applications.
 - Supports: **bold**, *italic*, `inline code`, [links], ~~strikethrough~~
 - Graceful fallback to plain text if markdown parsing fails
 - Apply to assistant messages only — user messages stay as plain text
+- While an answer streams, render its source as immediate plain text with the integrated cursor; apply full Markdown once
+  after streaming completes
+- Parse structural and inline Markdown outside `MainActor`, cache the rendered result, and never invoke
+  `AttributedString(markdown:)` from a SwiftUI `body`
 
 ### Code Blocks (Current)
 

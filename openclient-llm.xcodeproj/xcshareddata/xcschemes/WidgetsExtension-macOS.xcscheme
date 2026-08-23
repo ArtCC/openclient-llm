@@ -16,9 +16,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "80E6877C2F9A24A000AC491E"
-               BuildableName = "WidgetsExtension.appex"
-               BlueprintName = "WidgetsExtension"
+               BlueprintIdentifier = "8033EC2030398605005D593A"
+               BuildableName = "WidgetsExtension-macOS.appex"
+               BlueprintName = "WidgetsExtension-macOS"
                ReferencedContainer = "container:openclient-llm.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -30,9 +30,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "805E798A2F79AC9B0070CBB3"
-               BuildableName = "openclient-llm.app"
-               BlueprintName = "openclient-llm"
+               BlueprintIdentifier = "808077392F7A66EF009BC8C4"
+               BuildableName = "OpenClient.app"
+               BlueprintName = "openclient-llm-macOS"
                ReferencedContainer = "container:openclient-llm.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -62,9 +62,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "805E798A2F79AC9B0070CBB3"
-            BuildableName = "openclient-llm.app"
-            BlueprintName = "openclient-llm"
+            BlueprintIdentifier = "808077392F7A66EF009BC8C4"
+            BuildableName = "OpenClient.app"
+            BlueprintName = "openclient-llm-macOS"
             ReferencedContainer = "container:openclient-llm.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -98,9 +98,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "805E798A2F79AC9B0070CBB3"
-            BuildableName = "openclient-llm.app"
-            BlueprintName = "openclient-llm"
+            BlueprintIdentifier = "808077392F7A66EF009BC8C4"
+            BuildableName = "OpenClient.app"
+            BlueprintName = "openclient-llm-macOS"
             ReferencedContainer = "container:openclient-llm.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

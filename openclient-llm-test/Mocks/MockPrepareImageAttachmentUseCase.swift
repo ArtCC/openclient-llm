@@ -17,6 +17,7 @@ final class MockPrepareImageAttachmentUseCase: PrepareImageAttachmentUseCaseProt
 
     // MARK: - Execute
 
+    @concurrent
     func execute(data: Data, fileName: String) async throws -> PreparedImageAttachment {
         if let result {
             return try result.get()

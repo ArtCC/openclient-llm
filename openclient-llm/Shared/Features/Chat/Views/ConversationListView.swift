@@ -31,9 +31,13 @@ struct ConversationListView: View {
 #if os(macOS)
     @State var isMacSearchExpanded = false
     @State var macSearchText = ""
+    @FocusState var isMacSearchFocused: Bool
 #endif
 
     var activeConversationId: UUID?
+#if os(macOS)
+    var macSearchRequestID = 0
+#endif
     let onConversationSelected: (Conversation?) -> Void
     let onPrivateChatSelected: () -> Void
 
@@ -45,6 +49,7 @@ struct ConversationListView: View {
             case .loading:
                 ProgressView()
                     .tint(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .loaded(let loadedState):
                 loadedView(loadedState)
             }
@@ -56,6 +61,12 @@ struct ConversationListView: View {
         }
         .focusedSceneValue(\.newPrivateChatAction) {
             viewModel.send(.newPrivateConversationTapped)
+        }
+        .task(id: macSearchRequestID) {
+            guard macSearchRequestID > 0 else { return }
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                isMacSearchExpanded = true
+            }
         }
 #endif
         .task {

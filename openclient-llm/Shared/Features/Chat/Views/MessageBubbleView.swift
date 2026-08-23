@@ -31,9 +31,10 @@ struct MessageBubbleView: View {
     var onRegenerateTapped: (() -> Void)?
     var onForkTapped: (() -> Void)?
     var onFavouriteTapped: (() -> Void)?
-    @State private var cursorVisible: Bool = false
+    var onLayoutChanged: (() -> Void)?
+    @State var cursorVisible: Bool = false
+    @State var renderedMarkdown = RenderedMarkdown.empty
     @State private var reasoningDisclosureState = ReasoningDisclosureState()
-    @State private var parsedBlocks: [MessageBlock] = []
 
     // MARK: - View
 
@@ -104,7 +105,13 @@ private extension MessageBubbleView {
                 if message.content.isEmpty && isStreaming && (message.reasoningContent ?? "").isEmpty {
                     thinkingIndicator
                 } else if !message.content.isEmpty {
-                    blocksView
+                    if isStreaming
+                        || renderedMarkdown.source != message.content
+                        || renderedMarkdown.blocks.isEmpty {
+                        unformattedMessageTextView
+                    } else {
+                        blocksView
+                    }
                 }
 
                 if !message.content.isEmpty || !message.attachments.isEmpty {
@@ -148,7 +155,6 @@ private extension MessageBubbleView {
             Spacer(minLength: 0)
         }
         .onAppear {
-            parsedBlocks = MarkdownParser.parse(message.content)
             reasoningDisclosureState.viewAppeared(
                 isStreaming: isStreaming,
                 hasReasoning: !(message.reasoningContent ?? "").isEmpty,
@@ -156,7 +162,6 @@ private extension MessageBubbleView {
             )
         }
         .onChange(of: message.content) {
-            parsedBlocks = MarkdownParser.parse(message.content)
             if !message.content.isEmpty {
                 reasoningDisclosureState.answerReceived(isStreaming: isStreaming)
             }
@@ -184,10 +189,19 @@ private extension MessageBubbleView {
                 hasReasoning: !(message.reasoningContent ?? "").isEmpty,
                 hasAnswer: !message.content.isEmpty
             )
+        }
+        .task(id: shouldBlinkStreamingIndicator) {
+            guard shouldBlinkStreamingIndicator else {
+                cursorVisible = false
+                return
+            }
             while !Task.isCancelled {
                 cursorVisible.toggle()
                 try? await Task.sleep(for: .milliseconds(500))
             }
+        }
+        .task(id: isStreaming ? nil : message.content) {
+            await renderMarkdownIfNeeded()
         }
     }
 
@@ -317,87 +331,10 @@ private extension MessageBubbleView {
 #endif
     }
 
-    // MARK: - Blocks
-
-    var blocksView: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ForEach(Array(parsedBlocks.enumerated()), id: \.offset) { index, block in
-                let isLastBlock = index == parsedBlocks.count - 1
-
-                switch block {
-                case .text(let content):
-                    textBlockView(content, isLast: isLastBlock)
-                case .heading(let text, let level):
-                    headingBlockView(text, level: level)
-                case .codeBlock(let code, let language):
-                    CodeBlockView(code: code, language: language)
-                case .blockquote(let content):
-                    BlockquoteView(content: content)
-                case .unorderedList(let items):
-                    BulletedListView(items: items)
-                case .orderedList(let items):
-                    NumberedListView(items: items)
-                case .horizontalRule:
-                    HorizontalRuleView()
-                case .table(let headers, let rows):
-                    MarkdownTableView(headers: headers, rows: rows)
-                case .taskList(let items):
-                    TaskListView(items: items)
-                case .image(let alt, let url):
-                    MarkdownImageView(alt: alt, urlString: url)
-                }
-            }
-        }
-    }
-
-    func textBlockView(_ content: String, isLast: Bool) -> some View {
-        let displayContent = isLast && isStreaming && cursorVisible
-            ? content + "█"
-            : content
-
-        let attributed: AttributedString = {
-            if let result = try? AttributedString(
-                markdown: displayContent,
-                options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-            ) {
-                return result
-            }
-            return AttributedString(displayContent)
-        }()
-
-        return Text(attributed)
-            .foregroundStyle(Color.primary)
-            .textSelection(.enabled)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    func headingBlockView(_ text: String, level: Int) -> some View {
-        let font: Font = {
-            switch level {
-            case 1: return .title
-            case 2: return .title2
-            case 3: return .title3
-            default: return .headline
-            }
-        }()
-
-        return Text(text)
-            .font(font)
-            .fontWeight(.semibold)
-            .foregroundStyle(Color.primary)
-            .textSelection(.enabled)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
     var thinkingIndicator: some View {
         Text(String(localized: "Thinking..."))
             .font(.caption)
             .foregroundStyle(.secondary)
-            .phaseAnimator([0.4, 1.0]) { content, phase in
-                content.opacity(phase)
-            } animation: { _ in
-                .easeInOut(duration: 0.8)
-            }
     }
 
     func thinkingDisclosureView(_ reasoning: String) -> some View {
@@ -422,7 +359,6 @@ private extension MessageBubbleView {
             .foregroundStyle(isActivelyReasoning ? AnyShapeStyle(Color.appAccent) : AnyShapeStyle(.secondary))
             .opacity(isActivelyReasoning ? (cursorVisible ? 1.0 : 0.5) : 0.7)
         }
-        .animation(.easeInOut(duration: 0.5), value: cursorVisible)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .glassEffect(.regular, in: .rect(cornerRadius: 12))
@@ -437,6 +373,10 @@ private extension MessageBubbleView {
 
     var isActivelyReasoning: Bool {
         reasoningDisclosureState.phase == .reasoning
+    }
+
+    var shouldBlinkStreamingIndicator: Bool {
+        isStreaming && (!message.content.isEmpty || !(message.reasoningContent ?? "").isEmpty)
     }
 
     func tokenUsageLabel(_ usage: TokenUsage) -> some View {

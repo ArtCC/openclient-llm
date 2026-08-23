@@ -16,15 +16,17 @@ extension ChatView {
     func modelSelector(using viewModel: ChatViewModel) -> some View {
         if case .loaded(let loadedState) = viewModel.state,
            !loadedState.availableModels.isEmpty {
+            let availableModels = loadedState.availableModels
+            let selectedModel = loadedState.selectedModel
             Menu {
-                ForEach(loadedState.availableModels) { model in
+                ForEach(availableModels) { model in
                     Button {
                         AppTips.modelSelector.invalidate(reason: .actionPerformed)
                         viewModel.send(.modelSelected(model))
                     } label: {
                         HStack {
                             Text(model.id)
-                            if model == loadedState.selectedModel {
+                            if model == selectedModel {
                                 Image(systemName: "checkmark")
                             }
                         }
@@ -33,7 +35,7 @@ extension ChatView {
             } label: {
                 HStack(spacing: 4) {
                     Text(
-                        loadedState.selectedModel?.id
+                        selectedModel?.id
                         ?? String(localized: "No Model")
                     )
                     .font(.poppins(.semiBold, size: 17, relativeTo: .headline))
@@ -48,7 +50,7 @@ extension ChatView {
 #endif
                 }
             }
-            .popoverTip(loadedState.availableModels.count > 1 ? AppTips.modelSelector : nil)
+            .popoverTip(availableModels.count > 1 ? AppTips.modelSelector : nil)
         }
     }
 }

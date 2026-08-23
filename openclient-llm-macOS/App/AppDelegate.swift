@@ -38,5 +38,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidBecomeActive(_ notification: Notification) {
         conversationCloudObserver.start()
+
+        if WidgetControlStore.consumePendingNewChat() {
+            ShortcutManager.shared.pendingAction = .newChat
+        }
     }
 }

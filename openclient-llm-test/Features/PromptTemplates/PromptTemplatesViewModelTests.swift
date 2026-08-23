@@ -122,6 +122,23 @@ final class PromptTemplatesViewModelTests: XCTestCase {
         XCTAssertEqual(mockLoadTemplates.executeCallCount, 1)
     }
 
+    func test_deinit_activeCloudObservation_releasesViewModel() async {
+        // Given
+        mockLoadTemplates.result = .success([])
+        weak let weakSUT = sut
+        notificationCenter.post(name: .promptTemplatesDidChangeExternally, object: nil)
+        await waitUntil {
+            self.mockLoadTemplates.executeCallCount == 1
+                && self.sut.state == .loaded(.init(builtInTemplates: [], customTemplates: []))
+        }
+
+        // When
+        sut = nil
+
+        // Then
+        XCTAssertNil(weakSUT)
+    }
+
     // MARK: - Tests — saveTapped (create)
 
     func test_send_saveTapped_newTemplate_savesAndReloads() async {

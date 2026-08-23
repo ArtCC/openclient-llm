@@ -75,7 +75,7 @@ private extension AttachmentImageView {
         if let image = UIImage(data: data) {
             Image(uiImage: image)
                 .resizable()
-                .aspectRatio(contentMode: .fill)
+                .scaledToFill()
                 .frame(width: thumbnailSize, height: thumbnailSize)
                 .clipShape(.rect(cornerRadius: 12))
                 .contentShape(.rect(cornerRadius: 12))
@@ -88,7 +88,7 @@ private extension AttachmentImageView {
         if let image = NSImage(data: data) {
             Image(nsImage: image)
                 .resizable()
-                .aspectRatio(contentMode: .fill)
+                .scaledToFill()
                 .frame(width: thumbnailSize, height: thumbnailSize)
                 .clipShape(.rect(cornerRadius: 12))
                 .contentShape(.rect(cornerRadius: 12))

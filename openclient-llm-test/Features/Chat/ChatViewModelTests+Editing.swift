@@ -32,6 +32,7 @@ extension ChatViewModelTests {
         }
         let userMsg = try XCTUnwrap(afterFirst.messages.first(where: { $0.role == .user }))
         let userMessageId = userMsg.id
+        let revisionBeforeEdit = afterFirst.responseRevision
         XCTAssertEqual(afterFirst.messages.count, 2)
 
         // When
@@ -48,6 +49,7 @@ extension ChatViewModelTests {
         XCTAssertEqual(loadedState.messages.count, 2)
         XCTAssertEqual(loadedState.messages.first?.content, "Edited question")
         XCTAssertEqual(loadedState.messages.last?.content, "New response")
+        XCTAssertEqual(loadedState.responseRevision, revisionBeforeEdit + 1)
     }
 
     func test_send_editMessage_withEmptyContent_doesNothing() async throws {

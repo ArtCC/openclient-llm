@@ -11,6 +11,30 @@ import XCTest
 
 @MainActor
 final class URLSchemeParserTests: XCTestCase {
+    // MARK: - Navigation
+
+    func test_parse_newChat_returnsAction() throws {
+        // Given
+        let url = try XCTUnwrap(URL(string: "openclient://new-chat"))
+
+        // When
+        let result = URLSchemeParser.parse(url)
+
+        // Then
+        XCTAssertEqual(result, .newChat)
+    }
+
+    func test_parse_search_returnsAction() throws {
+        // Given
+        let url = try XCTUnwrap(URL(string: "openclient://search"))
+
+        // When
+        let result = URLSchemeParser.parse(url)
+
+        // Then
+        XCTAssertEqual(result, .search)
+    }
+
     // MARK: - chat?text=
 
     func test_parse_chatText_returnsAction() throws {

@@ -76,12 +76,18 @@ struct AgentStreamUseCase: AgentStreamUseCaseProtocol {
     private static let maximumToolResultCharacters = 12_000
     private let repository: ChatRepositoryProtocol
     private let timeout: Duration
+    private let chunkDelay: Duration
 
     // MARK: - Init
 
-    init(repository: ChatRepositoryProtocol = ChatRepository(), timeout: Duration = .seconds(300)) {
+    init(
+        repository: ChatRepositoryProtocol = ChatRepository(),
+        timeout: Duration = .seconds(300),
+        chunkDelay: Duration = .milliseconds(10)
+    ) {
         self.repository = repository
         self.timeout = timeout
+        self.chunkDelay = chunkDelay
     }
 
     // MARK: - Execute
@@ -179,7 +185,7 @@ private extension AgentStreamUseCase {
                     toolCallCount: &toolCallCount,
                     context: AgentRoundContext(requestMessages: requestMessages, loop: context)
                 )
-            } else if handleFinalChoice(choice, continuation: context.continuation) {
+            } else if try await handleFinalChoice(choice, continuation: context.continuation) {
                 guard !forceFinalResponse else { throw AgentStreamError.invalidResponse }
                 forceFinalResponse = true
             } else {
@@ -402,15 +408,25 @@ private extension AgentStreamUseCase {
     func handleFinalChoice(
         _ choice: ChatCompletionResponse.Choice,
         continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
-    ) -> Bool {
+    ) async throws -> Bool {
         let content = choice.message.content ?? ""
         let reasoning = choice.message.reasoningContent
         if content.trimmingCharacters(in: .whitespacesAndNewlines) == "{}" { return true }
         if let reasoning, !reasoning.isEmpty {
-            yieldChunked(reasoning, as: { .reasoning($0) }, continuation: continuation)
+            try await yieldChunked(
+                reasoning,
+                as: { .reasoning($0) },
+                continuation: continuation,
+                delay: chunkDelay
+            )
         }
         if !content.isEmpty {
-            yieldChunked(content, as: { .token($0) }, continuation: continuation)
+            try await yieldChunked(
+                content,
+                as: { .token($0) },
+                continuation: continuation,
+                delay: chunkDelay
+            )
         }
         return content.isEmpty && (reasoning?.isEmpty ?? true)
     }
@@ -429,19 +445,6 @@ private extension AgentStreamUseCase {
         continuation.yield(.usage(updated))
         continuation.yield(.promptUsage(usage.promptTokens ?? 0))
         return updated
-    }
-
-    nonisolated func yieldChunked(
-        _ text: String,
-        as event: @Sendable (String) -> AgentEvent,
-        continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
-    ) {
-        var index = text.startIndex
-        while index < text.endIndex {
-            let end = text.index(index, offsetBy: min(2, text.distance(from: index, to: text.endIndex)))
-            continuation.yield(event(String(text[index..<end])))
-            index = end
-        }
     }
 
     func rebudgetedMessages(

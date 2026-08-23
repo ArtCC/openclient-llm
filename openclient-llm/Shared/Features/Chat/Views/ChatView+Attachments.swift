@@ -33,13 +33,13 @@ extension ChatView {
 
     @ViewBuilder
     func attachmentPreview(
-        _ loadedState: ChatViewModel.LoadedState,
+        _ attachments: [ChatMessage.Attachment],
         send: @escaping (ChatViewModel.Event) -> Void
     ) -> some View {
-        if !loadedState.pendingAttachments.isEmpty {
+        if !attachments.isEmpty {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(loadedState.pendingAttachments) { attachment in
+                    ForEach(attachments) { attachment in
                         attachmentThumbnail(attachment, onRemove: { send(.attachmentRemoved(attachment.id)) })
                     }
                 }

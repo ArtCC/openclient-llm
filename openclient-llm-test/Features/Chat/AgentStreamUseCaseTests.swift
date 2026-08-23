@@ -22,7 +22,7 @@ final class AgentStreamUseCaseTests: XCTestCase {
     override func setUp() async throws {
         try await super.setUp()
         mockRepository = MockChatRepository()
-        sut = AgentStreamUseCase(repository: mockRepository)
+        sut = AgentStreamUseCase(repository: mockRepository, chunkDelay: .zero)
         toolRegistry = ToolRegistry(tools: [])
     }
 
@@ -53,6 +53,51 @@ final class AgentStreamUseCaseTests: XCTestCase {
 
         // Then — content emitted as chunked tokens (simulated typewriter streaming)
         XCTAssertEqual(tokens.joined(), "Hello world")
+    }
+
+    func test_execute_longFinalResponse_emitsBoundedChunksWithoutLosingContent() async throws {
+        // Given
+        let content = String(repeating: "🙂", count: 65) + String(repeating: "a", count: 256)
+        mockRepository.agentCompletionResult = .success(makeStopResponse(content: content))
+
+        // When
+        var tokens: [String] = []
+        let stream = sut.execute(
+            messages: [ChatMessage(role: .user, content: "Hi")],
+            model: "gpt-4",
+            parameters: .default,
+            toolRegistry: toolRegistry
+        )
+        for try await event in stream {
+            if case .token(let text) = event { tokens.append(text) }
+        }
+
+        // Then
+        XCTAssertEqual(tokens.joined(), content)
+        XCTAssertEqual(tokens.count, 11)
+        XCTAssertTrue(tokens.allSatisfy { $0.count <= 32 })
+    }
+
+    func test_execute_veryLongFinalResponse_limitsAdaptiveChunkCount() async throws {
+        // Given
+        let content = String(repeating: "a", count: 10_000)
+        mockRepository.agentCompletionResult = .success(makeStopResponse(content: content))
+
+        // When
+        var tokens: [String] = []
+        let stream = sut.execute(
+            messages: [ChatMessage(role: .user, content: "Hi")],
+            model: "gpt-4",
+            parameters: .default,
+            toolRegistry: toolRegistry
+        )
+        for try await event in stream {
+            if case .token(let text) = event { tokens.append(text) }
+        }
+
+        // Then
+        XCTAssertEqual(tokens.joined(), content)
+        XCTAssertLessThanOrEqual(tokens.count, 100)
     }
 
     // MARK: - Tests — Tool call round
@@ -209,6 +254,7 @@ final class AgentStreamUseCaseTests: XCTestCase {
         )
         let toolCallResponse = makeToolCallResponse(toolCalls: [toolCall])
 
+        // Safety: Only used within serialized @MainActor test methods.
         final class InfiniteToolRepo: ChatRepositoryProtocol, @unchecked Sendable {
             var callCount = 0
             let toolCallResponse: ChatCompletionResponse
@@ -363,6 +409,7 @@ private extension AgentStreamUseCaseTests {
 
 // MARK: - SequentialMockRepo
 
+// Safety: Only used within serialized @MainActor test methods.
 final class SequentialMockRepo: ChatRepositoryProtocol, @unchecked Sendable {
     var responses: [ChatCompletionResponse]
     var callIndex = 0

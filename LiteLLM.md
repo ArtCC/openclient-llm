@@ -77,34 +77,52 @@ Create at `/opt/docker/litellm/config.yaml`:
 
 ```yaml
 model_list:
-  # Anthropic
-  - model_name: claude-sonnet-4-6
+  # Ollama — Google
+  - model_name: gemma4:12b
     litellm_params:
-      model: anthropic/claude-sonnet-4-6
-      api_key: os.environ/ANTHROPIC_API_KEY
-
-  # DeepSeek
-  - model_name: deepseek-chat
-    litellm_params:
-      model: deepseek/deepseek-chat
-      api_key: os.environ/DEEPSEEK_API_KEY
-
-  # Google
-  - model_name: gemini-2.5-pro
-    litellm_params:
-      model: gemini/gemini-2.5-pro
-      api_key: os.environ/GOOGLE_API_KEY
-
-  # Ollama
-  - model_name: gemma4:e4b
-    litellm_params:
-      model: ollama/gemma4:e4b
+      model: ollama_chat/gemma4:12b
       api_base: http://your_ollama_ip_server:11434
 
-  # OpenAI
-  - model_name: gpt-4o
+  # DeepSeek
+  - model_name: deepseek-v4-flash
     litellm_params:
-      model: openai/gpt-4o
+      model: deepseek/deepseek-v4-flash
+      api_key: os.environ/DEEPSEEK_API_KEY
+
+  - model_name: deepseek-v4-pro
+    litellm_params:
+      model: deepseek/deepseek-v4-pro
+      api_key: os.environ/DEEPSEEK_API_KEY
+
+  # OpenAI
+  - model_name: gpt-5.6-sol
+    litellm_params:
+      model: openai/gpt-5.6-sol
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-5.6-terra
+    litellm_params:
+      model: openai/gpt-5.6-terra
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-5.6-luna
+    litellm_params:
+      model: openai/gpt-5.6-luna
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: tts-1
+    litellm_params:
+      model: openai/tts-1
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-4o-mini-transcribe
+    litellm_params:
+      model: openai/gpt-4o-mini-transcribe
+      api_key: os.environ/OPENAI_API_KEY
+
+  - model_name: gpt-image-2
+    litellm_params:
+      model: openai/gpt-image-2
       api_key: os.environ/OPENAI_API_KEY
 
 search_tools:
@@ -118,14 +136,19 @@ search_tools:
       search_provider: firecrawl
       api_key: os.environ/FIRECRAWL_API_KEY
 
-  - search_tool_name: searxng-search
+  - search_tool_name: linkup-search
     litellm_params:
-      search_provider: searxng
-      api_base: https://serxng-deployment-production.up.railway.app
+      search_provider: linkup
+      api_key: os.environ/LINKUP_API_KEY
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   database_url: os.environ/DATABASE_URL
+
+litellm_settings:
+  drop_params: true
+  modify_params: true
+  route_all_chat_openai_to_responses: true
 ```
 
 ## Operational notes

@@ -22,6 +22,7 @@ struct HomeView: View {
 
 #if os(macOS)
     @State private var sidebarDestination: SidebarDestination = .chats
+    @State private var macSearchRequestID = 0
 #endif
 
 #if os(iOS)
@@ -81,7 +82,6 @@ struct HomeView: View {
             selectedConversation = conversation
             viewModel.send(.pendingConversationConsumed)
         }
-#if os(iOS)
         .task {
             guard let action = viewModel.pendingShortcutAction else { return }
             try? await Task.sleep(for: .milliseconds(300))
@@ -93,6 +93,7 @@ struct HomeView: View {
             handleShortcutAction(action)
             viewModel.send(.shortcutActionConsumed)
         }
+#if os(iOS)
         .task {
             guard viewModel.hasPendingShare else { return }
             try? await Task.sleep(for: .milliseconds(300))
@@ -102,6 +103,7 @@ struct HomeView: View {
             guard isPending else { return }
             viewModel.send(.shareItemReceived)
         }
+#endif
         .task {
             guard viewModel.pendingURLSchemeAction != nil else { return }
             try? await Task.sleep(for: .milliseconds(300))
@@ -111,8 +113,11 @@ struct HomeView: View {
             guard action != nil else { return }
             viewModel.send(.urlSchemeActionReceived)
         }
-#endif
+#if os(macOS)
+        .animation(nil, value: remoteBanner?.id)
+#else
         .animation(.smooth, value: remoteBanner?.id)
+#endif
     }
 }
 
@@ -198,6 +203,7 @@ private extension HomeView {
         case settings
         case search
     }
+#endif
 
     func handleShortcutAction(_ action: ShortcutAction) {
         switch action {
@@ -206,10 +212,15 @@ private extension HomeView {
         case .newPrivateChat:
             viewModel.send(.newPrivateChatShortcutTriggered)
         case .search:
+#if os(iOS)
             selectedTab = .search
+#else
+            selectedConversation = nil
+            sidebarDestination = .chats
+            macSearchRequestID += 1
+#endif
         }
     }
-#endif
 
 #if os(macOS)
     enum SidebarDestination: Hashable {
@@ -223,6 +234,7 @@ private extension HomeView {
             sidebar
         } detail: {
             detailContent
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .safeAreaInset(edge: .top, spacing: 0) {
                     remoteBannerInset
                 }
@@ -256,7 +268,10 @@ private extension HomeView {
         switch sidebarDestination {
         case .chats:
             NavigationStack {
-                ConversationListView(activeConversationId: selectedConversation?.id) { conversation in
+                ConversationListView(
+                    activeConversationId: selectedConversation?.id,
+                    macSearchRequestID: macSearchRequestID
+                ) { conversation in
                     selectedConversation = conversation
                 } onPrivateChatSelected: {
                     isPrivateChatActive = true

@@ -26,6 +26,10 @@ struct OpenClientApp: App {
         WindowGroup(id: "main") {
             LaunchView()
                 .frame(minWidth: 800, minHeight: 600)
+                .onOpenURL { url in
+                    guard let action = URLSchemeParser.parse(url) else { return }
+                    URLSchemeManager.shared.pendingAction = action
+                }
         }
         .defaultSize(width: 800, height: 600)
         .commands {
