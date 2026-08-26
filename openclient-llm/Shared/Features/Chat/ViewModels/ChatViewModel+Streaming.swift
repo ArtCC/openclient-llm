@@ -15,16 +15,10 @@ extension ChatViewModel {
         let assistantMessageId = sendContext.assistantId
         LogManager.debug("performStreaming model=\(sendContext.modelId) messages=\(sendContext.messages.count)")
         do {
-            let requestContext = try buildRequestContext(
-                messages: sendContext.messages,
+            let requestContext = try await prepareRequestContext(
+                for: sendContext,
                 systemPrompt: sendContext.systemPrompt,
-                configuration: RequestContextConfiguration(
-                    selectedModel: sendContext.selectedModel,
-                    contextWindowTokens: sendContext.contextWindowTokens,
-                    summary: sendContext.contextSummary,
-                    summaryCursorMessageId: sendContext.contextSummaryCursorMessageId,
-                    tools: []
-                )
+                tools: []
             )
             var allMessages = requestContext.messages
             if !requestContext.effectiveSystemPrompt.isEmpty {

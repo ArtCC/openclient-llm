@@ -24,7 +24,7 @@ extension ChatViewModel {
         let serverConfigurationScope = settingsManager.getMCPAuthorizationScope()
 
         do {
-            let allMessages = try agentRequestMessages(context: context, registry: registry)
+            let allMessages = try await agentRequestMessages(context: context, registry: registry)
             let stream = agentStreamUseCase.execute(
                 messages: allMessages,
                 model: context.modelId,
@@ -161,20 +161,14 @@ private extension ChatViewModel {
         return true
     }
 
-    func agentRequestMessages(context: SendMessageContext, registry: ToolRegistry) throws -> [ChatMessage] {
-        let requestContext = try buildRequestContext(
-            messages: context.messages,
+    func agentRequestMessages(context: SendMessageContext, registry: ToolRegistry) async throws -> [ChatMessage] {
+        let requestContext = try await prepareRequestContext(
+            for: context,
             systemPrompt: buildAgentSystemPrompt(
                 context.systemPrompt,
                 webSearchEnabled: context.webSearchEnabled
             ),
-            configuration: RequestContextConfiguration(
-                selectedModel: context.selectedModel,
-                contextWindowTokens: context.contextWindowTokens,
-                summary: context.contextSummary,
-                summaryCursorMessageId: context.contextSummaryCursorMessageId,
-                tools: registry.definitions
-            )
+            tools: registry.definitions
         )
         return [ChatMessage(role: .system, content: requestContext.effectiveSystemPrompt)] + requestContext.messages
     }

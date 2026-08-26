@@ -14,6 +14,7 @@ final class MockCompactConversationUseCase: CompactConversationUseCaseProtocol, 
     // MARK: - Properties
 
     var result: CompactedConversation?
+    var results: [CompactedConversation?] = []
     var error: Error?
     var shouldSuspend = false
     private(set) var callCount = 0
@@ -27,7 +28,9 @@ final class MockCompactConversationUseCase: CompactConversationUseCaseProtocol, 
     ) async throws -> CompactedConversation? {
         callCount += 1
         if let error { throw error }
-        guard shouldSuspend else { return result }
+        guard shouldSuspend else {
+            return results.isEmpty ? result : results.removeFirst()
+        }
         return try await withCheckedThrowingContinuation { continuation = $0 }
     }
 

@@ -10,12 +10,18 @@ import Foundation
 
 enum ChatContextError: LocalizedError {
     case latestTurnExceedsContextWindow
+    case automaticCompactionFailed
 
     var errorDescription: String? {
-        String(localized: """
-        The latest message and its attachments exceed this context window. \
-        Increase the context window or shorten the message.
-        """)
+        switch self {
+        case .latestTurnExceedsContextWindow:
+            String(localized: """
+            The latest message and its attachments exceed this context window. \
+            Increase the context window or shorten the message.
+            """)
+        case .automaticCompactionFailed:
+            String(localized: "The earlier conversation context could not be preserved. Please try again.")
+        }
     }
 }
 
@@ -376,67 +382,6 @@ extension ChatViewModel {
         )
         rebased.updatedAt = max(incoming.updatedAt, current.updatedAt)
         return rebased
-    }
-
-    func scheduleCompactionIfNeeded() {
-        guard !isPrivateChat,
-              case .loaded(let loadedState) = state,
-              let conversation = loadedState.conversation,
-              let model = loadedState.selectedModel else { return }
-        let messageIds = loadedState.messages.map(\.id)
-        let expectedSummary = conversation.contextSummary
-        let expectedCursor = conversation.contextSummaryCursorMessageId
-        let configuration = compactionConfiguration(for: loadedState, conversation: conversation, model: model)
-        cancelCompaction()
-        compactionTask = Task {
-            do {
-                let compacted = try await compactConversationUseCase.execute(
-                    messages: loadedState.messages,
-                    configuration: configuration
-                )
-                try Task.checkCancellation()
-                guard let compacted,
-                      case .loaded(var currentState) = state,
-                      currentState.conversation?.id == conversation.id,
-                      currentState.selectedModel?.id == model.id,
-                      currentState.contextWindowTokens == loadedState.contextWindowTokens,
-                      currentState.messages.map(\.id) == messageIds,
-                      currentState.conversation?.contextSummary == expectedSummary,
-                      currentState.conversation?.contextSummaryCursorMessageId == expectedCursor else { return }
-                currentState.conversation?.contextSummary = compacted.summary
-                currentState.conversation?.contextSummaryCursorMessageId = compacted.cursorMessageId
-                refreshContextUsage(in: &currentState)
-                state = .loaded(currentState)
-                let didPersist = await persistConversation()
-                compactionTask = nil
-                if didPersist { scheduleCompactionIfNeeded() }
-            } catch is CancellationError {
-                return
-            } catch {
-                LogManager.warning("compactConversation failed: \(error)")
-            }
-        }
-    }
-
-    func compactionConfiguration(
-        for state: LoadedState,
-        conversation: Conversation,
-        model: LLMModel
-    ) -> CompactionConfiguration {
-        let systemPrompt = buildEffectiveSystemPrompt(
-            profileContext: getUserProfileContextUseCase?.execute() ?? "",
-            memoryContext: getMemoryContextUseCase?.execute() ?? "",
-            conversationSystemPrompt: state.systemPrompt
-        )
-        return CompactionConfiguration(
-            existingSummary: conversation.contextSummary,
-            summaryCursorMessageId: conversation.contextSummaryCursorMessageId,
-            model: model.id,
-            contextWindowTokens: state.contextWindowTokens ?? model.maxInputTokens,
-            maxOutputTokens: model.maxOutputTokens,
-            systemPrompt: systemPrompt,
-            tools: contextTools(for: state)
-        )
     }
 
     func modelWithContextWindow(_ model: LLMModel?, override contextWindowTokens: Int?) -> LLMModel? {
