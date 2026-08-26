@@ -9,6 +9,10 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 
 ## [1.6.35-build-86] - 2026-08-26
 
+### Added
+
+- App icon selector in Settings with 20 designs on iOS and iPadOS
+
 ### Fixed
 
 - Chat context usage now retains LiteLLM's reported prompt-token count and estimates only the newly generated response, falling back to local estimation when usage is unavailable

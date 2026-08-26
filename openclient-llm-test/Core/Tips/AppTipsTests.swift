@@ -14,13 +14,25 @@ import XCTest
 final class AppTipsTests: XCTestCase {
     func test_allTips_containsEveryFeatureTip() {
         // Given
-        let expectedCount = 10
+        let expectedIdentifiers = Set([
+            AppTips.modelSelector.id,
+            AppTips.chatAttachments.id,
+            AppTips.messageActions.id,
+            AppTips.webSearch.id,
+            AppTips.chatOptions.id,
+            AppTips.privateChat.id,
+            AppTips.contextUsage.id,
+            AppTips.memory.id,
+            AppTips.conversationOrganization.id,
+            AppTips.mcpServers.id,
+            AppTips.appIconSelection.id
+        ])
 
         // When
-        let tips = AppTips.allTips
+        let identifiers = Set(AppTips.allTips.map(\.id))
 
         // Then
-        XCTAssertEqual(tips.count, expectedCount)
+        XCTAssertEqual(identifiers, expectedIdentifiers)
     }
 
     func test_allTips_haveUniqueIdentifiers() {

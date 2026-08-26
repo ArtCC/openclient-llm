@@ -107,3 +107,11 @@ struct MCPServersTip: Tip {
             """))
     }
 }
+
+struct AppIconSelectionTip: Tip {
+    var title: Text { Text(String(localized: "Choose your app icon")) }
+
+    var message: Text? {
+        Text(String(localized: "Pick an OpenClient icon that matches your style."))
+    }
+}
