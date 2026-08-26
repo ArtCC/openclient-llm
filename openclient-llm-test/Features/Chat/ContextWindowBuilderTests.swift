@@ -112,6 +112,22 @@ final class ContextWindowBuilderTests: XCTestCase {
         XCTAssertEqual(usage?.estimatedInputTokens, 72)
     }
 
+    func test_usage_withoutModelCapacity_evenWithPromptUsage_returnsNil() {
+        // Given
+        let sut = ContextWindowBuilder()
+
+        // When
+        let usage = sut.usage(
+            messages: [ChatMessage(role: .user, content: "Hello")],
+            systemPrompt: "",
+            model: LLMModel(id: "test"),
+            calibratedPromptTokens: 100
+        )
+
+        // Then
+        XCTAssertNil(usage)
+    }
+
     func test_messagesWithinBudget_middleTurnDoesNotFit_doesNotIncludeOlderTurn() {
         // Given
         let sut = ContextWindowBuilder()

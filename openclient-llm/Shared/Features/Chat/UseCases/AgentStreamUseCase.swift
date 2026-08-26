@@ -17,7 +17,7 @@ enum AgentEvent: Sendable {
     case toolCallCompleted(toolCallId: String, result: String, searchResults: [LiteLLMSearchResult]?)
     case transcriptAppended([ChatMessage])
     case usage(TokenUsage)
-    case promptUsage(Int)
+    case promptUsage(Int?)
     case image(Data)
     case completed
 }
@@ -436,14 +436,17 @@ private extension AgentStreamUseCase {
         aggregate: TokenUsage,
         continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
     ) -> TokenUsage {
-        guard let usage else { return aggregate }
+        guard let usage else {
+            continuation.yield(.promptUsage(nil))
+            return aggregate
+        }
         let updated = TokenUsage(
             promptTokens: aggregate.promptTokens + (usage.promptTokens ?? 0),
             completionTokens: aggregate.completionTokens + (usage.completionTokens ?? 0),
             totalTokens: aggregate.totalTokens + (usage.totalTokens ?? 0)
         )
         continuation.yield(.usage(updated))
-        continuation.yield(.promptUsage(usage.promptTokens ?? 0))
+        continuation.yield(.promptUsage(usage.promptTokens.flatMap { $0 > 0 ? $0 : nil }))
         return updated
     }
 

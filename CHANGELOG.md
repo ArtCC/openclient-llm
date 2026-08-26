@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.35-build-86] - 2026-08-26
+
+### Fixed
+
+- Chat context usage now retains LiteLLM's reported prompt-token count and estimates only the newly generated response, falling back to local estimation when usage is unavailable
+
 ## [1.6.30-build-85] - 2026-08-23
 
 ### Added

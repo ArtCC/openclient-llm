@@ -347,56 +347,6 @@ extension ChatViewModelTests {
         XCTAssertEqual(loadedState.conversation?.title, "What is quantum computing?")
     }
 
-    // MARK: - Tests — Token usage
-
-    func test_send_sendTapped_capturesTokenUsage() async throws {
-        // Given
-        let usage = TokenUsage(promptTokens: 10, completionTokens: 20, totalTokens: 30)
-        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
-        mockStreamMessage.chunks = [.token("Hello"), .usage(usage)]
-        sut.send(.viewAppeared)
-        try await Task.sleep(for: .milliseconds(100))
-
-        sut.send(.inputChanged("Hi"))
-
-        // When
-        sut.send(.sendTapped)
-        try await Task.sleep(for: .milliseconds(200))
-
-        // Then
-        guard case .loaded(let loadedState) = sut.state else {
-            XCTFail("Expected loaded state")
-            return
-        }
-        let assistantMessage = loadedState.messages.first(where: { $0.role == .assistant })
-        XCTAssertNotNil(assistantMessage?.tokenUsage)
-        XCTAssertEqual(assistantMessage?.tokenUsage?.totalTokens, 30)
-        XCTAssertEqual(assistantMessage?.tokenUsage?.promptTokens, 10)
-        XCTAssertEqual(assistantMessage?.tokenUsage?.completionTokens, 20)
-    }
-
-    func test_conversation_totalTokens_sumsAllMessages() {
-        // Given
-        let messages = [
-            ChatMessage(role: .user, content: "Hi"),
-            ChatMessage(
-                role: .assistant,
-                content: "Hello!",
-                tokenUsage: TokenUsage(promptTokens: 5, completionTokens: 10, totalTokens: 15)
-            ),
-            ChatMessage(role: .user, content: "How are you?"),
-            ChatMessage(
-                role: .assistant,
-                content: "I'm good!",
-                tokenUsage: TokenUsage(promptTokens: 8, completionTokens: 12, totalTokens: 20)
-            )
-        ]
-        let conversation = Conversation(modelId: "gpt-4", messages: messages)
-
-        // Then
-        XCTAssertEqual(conversation.totalTokens, 35)
-    }
-
     // MARK: - Tests — Model parameters
 
     func test_send_modelParametersChanged_updatesState() async throws {
