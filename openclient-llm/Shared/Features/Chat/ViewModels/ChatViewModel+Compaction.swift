@@ -8,6 +8,14 @@
 
 import Foundation
 
+struct PendingPreflightCompaction {
+    let assistantMessageId: UUID
+    let previousSummary: String?
+    let previousCursorMessageId: UUID?
+    let attemptedSummary: String
+    let attemptedCursorMessageId: UUID
+}
+
 // MARK: - Compaction
 
 extension ChatViewModel {
@@ -51,44 +59,10 @@ extension ChatViewModel {
         return requestContext
     }
 
-    func scheduleCompactionIfNeeded() {
-        guard !isPrivateChat,
-              case .loaded(let loadedState) = state,
-              let conversation = loadedState.conversation,
-              let model = loadedState.selectedModel else { return }
-        let messageIds = loadedState.messages.map(\.id)
-        let expectedSummary = conversation.contextSummary
-        let expectedCursor = conversation.contextSummaryCursorMessageId
-        let configuration = compactionConfiguration(for: loadedState, conversation: conversation, model: model)
-        cancelCompaction()
-        compactionTask = Task {
-            do {
-                let compacted = try await compactConversationUseCase.execute(
-                    messages: loadedState.messages,
-                    configuration: configuration
-                )
-                try Task.checkCancellation()
-                guard let compacted,
-                      case .loaded(var currentState) = state,
-                      currentState.conversation?.id == conversation.id,
-                      currentState.selectedModel?.id == model.id,
-                      currentState.contextWindowTokens == loadedState.contextWindowTokens,
-                      currentState.messages.map(\.id) == messageIds,
-                      currentState.conversation?.contextSummary == expectedSummary,
-                      currentState.conversation?.contextSummaryCursorMessageId == expectedCursor else { return }
-                currentState.conversation?.contextSummary = compacted.summary
-                currentState.conversation?.contextSummaryCursorMessageId = compacted.cursorMessageId
-                refreshContextUsage(in: &currentState)
-                state = .loaded(currentState)
-                let didPersist = await persistConversation()
-                compactionTask = nil
-                if didPersist { scheduleCompactionIfNeeded() }
-            } catch is CancellationError {
-                return
-            } catch {
-                LogManager.warning("compactConversation failed: \(error)")
-            }
-        }
+    func rollbackPendingPreflightCompaction(for assistantMessageId: UUID) {
+        guard let pending = pendingPreflightCompaction,
+              pending.assistantMessageId == assistantMessageId else { return }
+        rollbackPreflightCompaction(pending)
     }
 }
 
@@ -151,20 +125,6 @@ private extension ChatViewModel {
         return compacted
     }
 
-    func compactionConfiguration(
-        for state: LoadedState,
-        conversation: Conversation,
-        model: LLMModel
-    ) -> CompactionConfiguration {
-        makeCompactionConfiguration(
-            summary: (conversation.contextSummary, conversation.contextSummaryCursorMessageId),
-            model: model,
-            contextWindowTokens: state.contextWindowTokens,
-            systemPrompt: state.systemPrompt,
-            tools: contextTools(for: state)
-        )
-    }
-
     func makeCompactionConfiguration(
         summary: (text: String?, cursorMessageId: UUID?),
         model: LLMModel,
@@ -214,15 +174,55 @@ private extension ChatViewModel {
               hasSameRequestMessages(currentState.messages, as: sendContext) else {
             throw CancellationError()
         }
+        let pending = PendingPreflightCompaction(
+            assistantMessageId: sendContext.assistantId,
+            previousSummary: expectedSummary,
+            previousCursorMessageId: expectedCursorMessageId,
+            attemptedSummary: compacted.summary,
+            attemptedCursorMessageId: compacted.cursorMessageId
+        )
+        pendingPreflightCompaction = pending
         currentState.conversation?.contextSummary = compacted.summary
         currentState.conversation?.contextSummaryCursorMessageId = compacted.cursorMessageId
         refreshContextUsage(in: &currentState)
         state = .loaded(currentState)
         let didPersist = await persistConversation()
-        try Task.checkCancellation()
-        guard didPersist, isActiveStream(sendContext.assistantId) else {
+        if !didPersist {
+            rollbackPreflightCompaction(pending)
+            try Task.checkCancellation()
             throw ChatContextError.automaticCompactionFailed
         }
+        clearPendingPreflightCompaction(pending)
+        try Task.checkCancellation()
+        guard case .loaded(let persistedState) = state,
+              isActiveStream(sendContext.assistantId),
+              persistedState.selectedModel?.id == sendContext.modelId,
+              persistedState.contextWindowTokens == sendContext.contextWindowTokens,
+              persistedState.conversation?.contextSummary == compacted.summary,
+              persistedState.conversation?.contextSummaryCursorMessageId == compacted.cursorMessageId,
+              hasSameRequestMessages(persistedState.messages, as: sendContext) else {
+            throw CancellationError()
+        }
+    }
+
+    func rollbackPreflightCompaction(_ pending: PendingPreflightCompaction) {
+        guard case .loaded(var currentState) = state,
+              currentState.conversation?.contextSummary == pending.attemptedSummary,
+              currentState.conversation?.contextSummaryCursorMessageId == pending.attemptedCursorMessageId else {
+            clearPendingPreflightCompaction(pending)
+            return
+        }
+        currentState.conversation?.contextSummary = pending.previousSummary
+        currentState.conversation?.contextSummaryCursorMessageId = pending.previousCursorMessageId
+        refreshContextUsage(in: &currentState)
+        state = .loaded(currentState)
+        clearPendingPreflightCompaction(pending)
+    }
+
+    func clearPendingPreflightCompaction(_ pending: PendingPreflightCompaction) {
+        guard pendingPreflightCompaction?.assistantMessageId == pending.assistantMessageId,
+              pendingPreflightCompaction?.attemptedCursorMessageId == pending.attemptedCursorMessageId else { return }
+        pendingPreflightCompaction = nil
     }
 
     func hasSameRequestMessages(_ messages: [ChatMessage], as sendContext: SendMessageContext) -> Bool {

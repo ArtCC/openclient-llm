@@ -52,7 +52,7 @@ extension ChatViewModel {
             return
         }
 
-        if loadedState.isStreaming {
+        if activeAssistantMessageId != nil {
             cancelActiveStreaming()
             guard case .loaded(var loadedState) = state else { return }
             let followUpText = loadedState.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -105,7 +105,6 @@ extension ChatViewModel {
         let contextSummary = loadedState.conversation?.contextSummary
         let contextSummaryCursorMessageId = loadedState.conversation?.contextSummaryCursorMessageId
 
-        cancelCompaction()
         streamTask?.cancel()
         activeAssistantMessageId = assistantId
         beginStreamingBackground(for: assistantId)

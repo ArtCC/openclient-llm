@@ -50,7 +50,6 @@ extension ChatViewModel {
 
     func updateContextWindow(_ tokens: Int?) {
         guard case .loaded(var loadedState) = state else { return }
-        cancelCompaction()
         let normalizedTokens = tokens.flatMap { $0 > 0 ? $0 : nil }
         loadedState.contextWindowTokens = normalizedTokens
         loadedState.conversation?.contextWindowTokens = normalizedTokens
@@ -68,11 +67,6 @@ extension ChatViewModel {
         resetStreamingTextUpdates()
         activeAssistantMessageId = nil
         streamTask = nil
-    }
-
-    func cancelCompaction() {
-        compactionTask?.cancel()
-        compactionTask = nil
     }
 
     func buildEffectiveSystemPrompt(
@@ -114,10 +108,15 @@ extension ChatViewModel {
     func refreshContextUsage(in loadedState: inout LoadedState, calibratedPromptTokens: Int? = nil) {
         let profileContext = isPrivateChat ? "" : getUserProfileContextUseCase?.execute() ?? ""
         let memoryContext = isPrivateChat ? "" : getMemoryContextUseCase?.execute() ?? ""
+        let requestPrompt = requestSystemPrompt(
+            loadedState.systemPrompt,
+            modelCapabilities: loadedState.selectedModel?.capabilities ?? [],
+            webSearchEnabled: loadedState.isWebSearchEnabled
+        )
         let systemPrompt = buildEffectiveSystemPrompt(
             profileContext: profileContext,
             memoryContext: memoryContext,
-            conversationSystemPrompt: loadedState.systemPrompt
+            conversationSystemPrompt: requestPrompt
         )
         let partition = contextPartition(
             messages: loadedState.messages,

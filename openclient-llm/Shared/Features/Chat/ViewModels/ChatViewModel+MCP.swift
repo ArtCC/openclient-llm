@@ -221,7 +221,6 @@ extension ChatViewModel {
         guard case .loaded(var loadedState) = state else { return }
         let configurableIds = configurableMCPTools(toolIds: toolIds, state: loadedState).map(\.id)
         guard !configurableIds.isEmpty else { return }
-        cancelCompaction()
         if enabled {
             loadedState.enabledMCPToolIds.formUnion(configurableIds)
         } else {

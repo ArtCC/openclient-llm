@@ -19,6 +19,15 @@ extension ChatViewModel {
         ).definitions
     }
 
+    func requestSystemPrompt(
+        _ conversationSystemPrompt: String,
+        modelCapabilities: [LLMModel.Capability],
+        webSearchEnabled: Bool
+    ) -> String {
+        guard modelCapabilities.contains(.functionCalling) else { return conversationSystemPrompt }
+        return buildAgentSystemPrompt(conversationSystemPrompt, webSearchEnabled: webSearchEnabled)
+    }
+
     func performAgentStreaming(_ context: SendMessageContext) async {
         let registry = makeToolRegistry(webSearchEnabled: context.webSearchEnabled)
         let serverConfigurationScope = settingsManager.getMCPAuthorizationScope()
@@ -57,6 +66,8 @@ extension ChatViewModel {
                 modelId: context.modelId,
                 reportedPromptTokens: didRequestMemoryMutation ? nil : reportedPromptTokens
             )
+        } catch is CancellationError {
+            if isActiveStream(context.assistantId) { cancelActiveStreaming() }
         } catch {
             await handleAgentStreamFailure(error, assistantMessageId: context.assistantId, modelId: context.modelId)
         }
@@ -135,6 +146,7 @@ private extension ChatViewModel {
         state = .loaded(currentState)
         scheduleErrorDismiss()
         await persistConversation()
+        guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
         streamingBackgroundUseCase.end()
         completeActiveStream(assistantMessageId)
     }
@@ -164,8 +176,9 @@ private extension ChatViewModel {
     func agentRequestMessages(context: SendMessageContext, registry: ToolRegistry) async throws -> [ChatMessage] {
         let requestContext = try await prepareRequestContext(
             for: context,
-            systemPrompt: buildAgentSystemPrompt(
+            systemPrompt: requestSystemPrompt(
                 context.systemPrompt,
+                modelCapabilities: context.modelCapabilities,
                 webSearchEnabled: context.webSearchEnabled
             ),
             tools: registry.definitions
@@ -334,11 +347,10 @@ private extension ChatViewModel {
         )
         state = .loaded(finalState)
         LogManager.success("performAgentStreaming completed model=\(modelId)")
-        let didPersist = await persistConversation()
+        await persistConversation()
         guard !Task.isCancelled, isActiveStream(assistantId) else { return }
         streamingBackgroundUseCase.end()
         completeActiveStream(assistantId)
-        if didPersist { scheduleCompactionIfNeeded() }
         await notifyStreamingCompletedUseCase.execute()
     }
 }
