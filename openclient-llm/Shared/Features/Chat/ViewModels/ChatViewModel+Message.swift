@@ -75,6 +75,7 @@ extension ChatViewModel {
         let userMessage = ChatMessage(role: .user, content: text, attachments: loadedState.pendingAttachments)
         loadedState.messages.append(userMessage)
         loadedState.inputText = ""
+        loadedState.inputRevision += 1
         loadedState.pendingAttachments = []
         loadedState.isStreaming = true
         loadedState.errorMessage = nil

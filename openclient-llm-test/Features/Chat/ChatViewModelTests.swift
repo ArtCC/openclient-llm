@@ -175,6 +175,26 @@ final class ChatViewModelTests: XCTestCase {
             return
         }
         XCTAssertEqual(loadedState.inputText, "Hello")
+        XCTAssertEqual(loadedState.inputRevision, 1)
+    }
+
+    func test_send_inputChanged_repeatedText_advancesInputRevision() async throws {
+        // Given
+        mockFetchModels.result = .success([LLMModel(id: "gpt-4")])
+        sut.send(.viewAppeared)
+        try await Task.sleep(for: .milliseconds(100))
+        sut.send(.inputChanged("Hello"))
+
+        // When
+        sut.send(.inputChanged("Hello"))
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.inputText, "Hello")
+        XCTAssertEqual(loadedState.inputRevision, 2)
     }
 
     // MARK: - Tests — modelSelected
@@ -244,6 +264,7 @@ final class ChatViewModelTests: XCTestCase {
             return
         }
         XCTAssertTrue(loadedState.inputText.isEmpty)
+        XCTAssertEqual(loadedState.inputRevision, 2)
     }
 
     func test_send_sendTapped_withEmptyInput_doesNothing() async throws {
@@ -374,7 +395,9 @@ final class ChatViewModelTests: XCTestCase {
         }
         XCTAssertEqual(loadedState.selectedModel?.id, "gpt-4")
     }
+}
 
+extension ChatViewModelTests {
     // MARK: - Tests — stopStreamingTapped
 
     func test_send_stopStreamingTapped_stopsStreaming() async throws {

@@ -13,7 +13,6 @@ struct ChatView: View {
     // MARK: - Properties
 
     @State var viewModel: ChatViewModel
-    @State private var inputText: String = ""
     @State var scrollState = ChatScrollState()
     @State var renderedMessageRevision = 0
     @State var visibleMessageIds: [UUID] = []
@@ -320,12 +319,10 @@ private extension ChatView {
                     errorBanner(errorMessage)
                     attachmentPreview(pendingAttachments, send: { viewModel.send($0) })
                     ChatInputBarView(
-                        inputText: $inputText,
                         showImagePicker: $showImagePicker,
                         showDocumentPicker: $showDocumentPicker,
                         showCameraPicker: $showCameraPicker,
                         state: inputBarState,
-                        onInputChanged: { viewModel.send(.inputChanged($0)) },
                         onSend: handleSend,
                         onStopStreaming: { viewModel.send(.stopStreamingTapped) },
                         onStartRecording: { viewModel.send(.startRecordingTapped) },

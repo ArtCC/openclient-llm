@@ -59,6 +59,7 @@ final class ChatViewModel {
         var conversation: Conversation?
         var messages: [ChatMessage] = []
         var inputText: String = ""
+        var inputRevision = 0
         var isStreaming: Bool = false
         var responseRevision = 0
         var streamingRevision = 0
@@ -392,6 +393,7 @@ private extension ChatViewModel {
         loadedState.selectedModel = selectedModel
         loadedState.pendingAttachments = []
         loadedState.inputText = ""
+        loadedState.inputRevision += 1
         loadedState.errorMessage = nil
         refreshContextUsage(in: &loadedState)
         state = .loaded(loadedState)

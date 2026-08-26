@@ -101,6 +101,7 @@ extension ChatViewModelTests {
         XCTAssertEqual(loadedState.messages.count, 2)
         XCTAssertEqual(loadedState.systemPrompt, "Be helpful")
         XCTAssertNotNil(loadedState.conversation)
+        XCTAssertEqual(loadedState.inputRevision, 1)
     }
 
     func test_send_conversationLoaded_duringStreaming_preservesPreviousConversation() async throws {

@@ -10,6 +10,7 @@ import Foundation
 
 struct ChatInputBarState: Equatable {
     let inputText: String
+    let inputRevision: Int
     let selectedModel: LLMModel?
     let contextUsage: ContextUsage?
     let isStreaming: Bool
@@ -30,6 +31,7 @@ struct ChatInputBarState: Equatable {
 
     init(loadedState: ChatViewModel.LoadedState) {
         inputText = loadedState.inputText
+        inputRevision = loadedState.inputRevision
         selectedModel = loadedState.selectedModel
         contextUsage = loadedState.contextUsage
         isStreaming = loadedState.isStreaming

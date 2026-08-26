@@ -33,6 +33,7 @@ extension ChatViewModel {
     func updateInput(_ text: String) {
         guard case .loaded(var loadedState) = state else { return }
         loadedState.inputText = text
+        loadedState.inputRevision += 1
         state = .loaded(loadedState)
     }
 

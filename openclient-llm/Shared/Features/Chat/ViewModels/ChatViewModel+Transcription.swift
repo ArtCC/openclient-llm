@@ -82,6 +82,7 @@ extension ChatViewModel {
             )
             guard case .loaded(var currentState) = state else { return }
             currentState.inputText = text
+            currentState.inputRevision += 1
             currentState.isTranscribing = false
             state = .loaded(currentState)
             triggerHapticFeedbackUseCase.lightImpact()
