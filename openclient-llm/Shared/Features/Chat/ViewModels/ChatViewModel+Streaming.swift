@@ -37,31 +37,23 @@ extension ChatViewModel {
                     sendContext.parameters, model: sendContext.selectedModel
                 )
             )
+            var reportedPromptTokens: Int?
             for try await chunk in stream {
+                if case .usage(let usage) = chunk, usage.promptTokens > 0 {
+                    reportedPromptTokens = usage.promptTokens
+                }
                 guard !Task.isCancelled,
                       isActiveStream(assistantMessageId),
                       await processStreamingChunk(chunk, assistantMessageId: assistantMessageId) else { return }
             }
 
-            await finishStreaming(assistantMessageId, model: sendContext.modelId)
+            await finishStreaming(
+                assistantMessageId,
+                model: sendContext.modelId,
+                reportedPromptTokens: reportedPromptTokens
+            )
         } catch {
-            guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
-            flushStreamingTextUpdates(for: assistantMessageId)
-            guard case .loaded(var currentState) = state else { return }
-            LogManager.error("performStreaming error model=\(sendContext.modelId): \(error)")
-            if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }),
-               currentState.messages[index].content.isEmpty,
-               (currentState.messages[index].reasoningContent ?? "").isEmpty,
-               currentState.messages[index].attachments.isEmpty {
-                currentState.messages.remove(at: index)
-            }
-            currentState.isStreaming = false
-            currentState.errorMessage = error.localizedDescription
-            state = .loaded(currentState)
-            scheduleErrorDismiss()
-            await persistConversation()
-            streamingBackgroundUseCase.end()
-            completeActiveStream(assistantMessageId)
+            await handleStreamingFailure(error, assistantMessageId: assistantMessageId, model: sendContext.modelId)
         }
     }
 
@@ -79,7 +71,9 @@ extension ChatViewModel {
             if let index = state.messages.firstIndex(where: { $0.id == assistantMessageId }) {
                 state.messages[index].tokenUsage = usage
             }
-            refreshContextUsage(in: &state, calibratedPromptTokens: usage.promptTokens)
+            if usage.promptTokens > 0 {
+                refreshContextUsage(in: &state, calibratedPromptTokens: usage.promptTokens)
+            }
         case .image(let imageData):
             appendGeneratedImage(imageData, to: &state, assistantMessageId: assistantMessageId)
         }
@@ -90,6 +84,27 @@ extension ChatViewModel {
 // MARK: - Private
 
 private extension ChatViewModel {
+    func handleStreamingFailure(_ error: Error, assistantMessageId: UUID, model: String) async {
+        guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
+        flushStreamingTextUpdates(for: assistantMessageId)
+        guard case .loaded(var currentState) = state else { return }
+        LogManager.error("performStreaming error model=\(model): \(error)")
+        if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }),
+           currentState.messages[index].content.isEmpty,
+           (currentState.messages[index].reasoningContent ?? "").isEmpty,
+           currentState.messages[index].attachments.isEmpty {
+            currentState.messages.remove(at: index)
+        }
+        currentState.isStreaming = false
+        currentState.errorMessage = error.localizedDescription
+        refreshContextUsage(in: &currentState)
+        state = .loaded(currentState)
+        scheduleErrorDismiss()
+        await persistConversation()
+        streamingBackgroundUseCase.end()
+        completeActiveStream(assistantMessageId)
+    }
+
     func processStreamingChunk(_ chunk: StreamChunk, assistantMessageId: UUID) async -> Bool {
         switch chunk {
         case .token(let text):
@@ -110,13 +125,24 @@ private extension ChatViewModel {
         return true
     }
 
-    func finishStreaming(_ assistantMessageId: UUID, model: String) async {
+    func finishStreaming(
+        _ assistantMessageId: UUID,
+        model: String,
+        reportedPromptTokens: Int?
+    ) async {
         guard isActiveStream(assistantMessageId), case .loaded(var currentState) = state else { return }
         let updates = takeStreamingTextUpdates(for: assistantMessageId)
         applyStreamingTextUpdates(updates, to: &currentState, assistantMessageId: assistantMessageId)
         currentState.isStreaming = false
         removeEmptyAssistantMessage(assistantMessageId, from: &currentState)
-        refreshContextUsage(in: &currentState)
+        refreshContextUsage(
+            in: &currentState,
+            calibratedPromptTokens: contextTokensAfterResponse(
+                promptTokens: reportedPromptTokens,
+                assistantMessageId: assistantMessageId,
+                state: currentState
+            )
+        )
         state = .loaded(currentState)
         LogManager.success("performStreaming completed model=\(model)")
         let didPersist = await persistConversation()

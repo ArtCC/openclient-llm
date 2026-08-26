@@ -41,6 +41,7 @@ final class SettingsViewModel {
         case mcpToolsToggled(toolIds: [String], enabled: Bool)
         case mcpToolPermissionChanged(toolId: String, permission: MCPToolPermission)
         case mcpToolsPermissionChanged(toolIds: [String], permission: MCPToolPermission)
+        case appIconSelected(AppIcon)
     }
 
     enum State: Equatable {
@@ -79,6 +80,10 @@ final class SettingsViewModel {
         var mcpDiscoveryRevision: Int = 0
         var isLoadingMCPTools: Bool = false
         var mcpToolsError: String?
+        var selectedAppIcon: AppIcon = .defaultIcon
+        var canChangeAppIcon: Bool = false
+        var isChangingAppIcon: Bool = false
+        var appIconError: String?
     }
 
     enum ConnectionStatus: Equatable {
@@ -113,6 +118,7 @@ final class SettingsViewModel {
     private let resetAppUseCase: ResetAppDataUseCaseProtocol
     private let checkNotificationPermissionUseCase: NotificationStatusCheckProtocol
     let notificationPermissionUseCase: NotificationPermissionUseCaseProtocol
+    let appIconManager: AppIconManagerProtocol
     private let remoteConfigManager: RemoteConfigManagerProtocol
     var synchronizationTask: Task<Void, Never>?
     var cloudEnableTask: Task<Void, Never>?
@@ -141,6 +147,7 @@ final class SettingsViewModel {
         resetAppUseCase: ResetAppDataUseCaseProtocol = ResetAppDataUseCase(),
         checkNotificationPermissionUseCase: NotificationStatusCheckProtocol = CheckNotificationPermissionUseCase(),
         notificationPermissionUseCase: NotificationPermissionUseCaseProtocol = NotificationPermissionUseCase(),
+        appIconManager: AppIconManagerProtocol = AppIconManager(),
         remoteConfigManager: RemoteConfigManagerProtocol = RemoteConfigManager.shared
     ) {
         self.state = state
@@ -160,6 +167,7 @@ final class SettingsViewModel {
         self.resetAppUseCase = resetAppUseCase
         self.checkNotificationPermissionUseCase = checkNotificationPermissionUseCase
         self.notificationPermissionUseCase = notificationPermissionUseCase
+        self.appIconManager = appIconManager
         self.remoteConfigManager = remoteConfigManager
         observeMCPToolSettingsChanges()
     }
@@ -190,7 +198,9 @@ extension SettingsViewModel {
             availableSearchTools: settingsManager.getAvailableSearchTools(),
             isPrivacyScreenEnabled: settingsManager.getIsPrivacyScreenEnabled(),
             isTipJarEnabled: remoteConfigManager.currentConfig?.isTipJarEnabled ?? true,
-            enabledMCPToolIds: Set(settingsManager.getEnabledMCPToolIds())
+            enabledMCPToolIds: Set(settingsManager.getEnabledMCPToolIds()),
+            selectedAppIcon: appIconManager.selectedIcon,
+            canChangeAppIcon: appIconManager.supportsAlternateIcons
         )
         state = .loaded(loadedState)
         if loadedState.isCloudSyncEnabled {

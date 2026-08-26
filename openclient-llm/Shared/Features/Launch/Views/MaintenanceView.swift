@@ -18,8 +18,7 @@ struct MaintenanceView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 24) {
-                Image("logo")
-                    .resizable()
+                CurrentAppIconImage()
                     .scaledToFit()
                     .frame(width: 125, height: 125)
                     .shadow(color: .cyan.opacity(0.4), radius: 24, x: 0, y: 8)

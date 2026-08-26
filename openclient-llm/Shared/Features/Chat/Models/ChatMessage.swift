@@ -61,6 +61,22 @@ nonisolated struct ChatMessage: Identifiable, Equatable, Sendable, Codable {
         self.isFavourite = isFavourite
     }
 
+    func hasSameRequestContent(as other: ChatMessage) -> Bool {
+        let hasSameAttachments = attachments.elementsEqual(other.attachments) { lhs, rhs in
+            lhs.id == rhs.id
+                && lhs.type == rhs.type
+                && lhs.fileName == rhs.fileName
+                && lhs.mimeType == rhs.mimeType
+        }
+        return id == other.id
+            && role == other.role
+            && content == other.content
+            && hasSameAttachments
+            && toolCalls == other.toolCalls
+            && toolCallId == other.toolCallId
+            && toolName == other.toolName
+    }
+
     // MARK: - Decodable
 
     init(from decoder: Decoder) throws {

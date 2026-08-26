@@ -132,6 +132,17 @@ extension ChatViewModel {
         )
     }
 
+    func contextTokensAfterResponse(
+        promptTokens: Int?,
+        assistantMessageId: UUID,
+        state: LoadedState
+    ) -> Int? {
+        guard let promptTokens else { return nil }
+        guard let assistant = state.messages.first(where: { $0.id == assistantMessageId }) else { return promptTokens }
+        let responseTokens = ContextWindowBuilder().estimatedInputTokens(messages: [assistant], systemPrompt: "")
+        return promptTokens + responseTokens
+    }
+
     func buildRequestContext(
         messages: [ChatMessage],
         systemPrompt: String,
@@ -306,6 +317,17 @@ extension ChatViewModel {
             return
         }
         mergedConversation.updatedAt = max(desiredConversation.updatedAt, persistedConversation.updatedAt)
+        let hasSameRequestMessages = mergedConversation.messages.elementsEqual(loadedState.messages) {
+            $0.hasSameRequestContent(as: $1)
+        }
+        let retainsContextUsage = hasSameRequestMessages
+            && mergedConversation.systemPrompt == loadedState.systemPrompt
+            && mergedConversation.contextWindowTokens == loadedState.contextWindowTokens
+            && mergedConversation.modelId == loadedState.selectedModel?.id
+            && mergedConversation.contextSummary == loadedState.conversation?.contextSummary
+            && mergedConversation.contextSummaryCursorMessageId
+                == loadedState.conversation?.contextSummaryCursorMessageId
+        let contextUsage = loadedState.contextUsage
         loadedState.conversation = mergedConversation
         loadedState.messages = mergedConversation.messages
         loadedState.systemPrompt = mergedConversation.systemPrompt
@@ -314,7 +336,11 @@ extension ChatViewModel {
         if let model = loadedState.availableModels.first(where: { $0.id == mergedConversation.modelId }) {
             loadedState.selectedModel = model
         }
-        refreshContextUsage(in: &loadedState)
+        if retainsContextUsage {
+            loadedState.contextUsage = contextUsage
+        } else {
+            refreshContextUsage(in: &loadedState)
+        }
         state = .loaded(loadedState)
     }
 

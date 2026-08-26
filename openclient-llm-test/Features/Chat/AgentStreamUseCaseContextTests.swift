@@ -49,6 +49,7 @@ final class AgentStreamUseCaseContextTests: XCTestCase {
 
         // When
         var usages: [TokenUsage] = []
+        var promptUsages: [Int?] = []
         for try await event in sut.execute(
             messages: [ChatMessage(role: .user, content: "Time")],
             model: "test",
@@ -56,10 +57,36 @@ final class AgentStreamUseCaseContextTests: XCTestCase {
             toolRegistry: ToolRegistry(tools: [GetCurrentDatetimeTool()])
         ) {
             if case .usage(let usage) = event { usages.append(usage) }
+            if case .promptUsage(let promptTokens) = event { promptUsages.append(promptTokens) }
         }
 
         // Then
         XCTAssertEqual(usages.last, TokenUsage(promptTokens: 30, completionTokens: 5, totalTokens: 35))
+        XCTAssertEqual(promptUsages, [10, 20])
+    }
+
+    func test_execute_finalResponseWithoutUsage_emitsMissingPromptUsage() async throws {
+        // Given
+        let firstUsage = TokenUsage(promptTokens: 10, completionTokens: 2, totalTokens: 12)
+        let first = response(makeToolCallResponse(makeToolCall(id: "call_1")), usage: firstUsage)
+        let repository = RecordingAgentRepository(responses: [first, makeStopResponse(content: "Done")])
+        let sut = AgentStreamUseCase(repository: repository)
+
+        // When
+        var promptUsages: [Int?] = []
+        for try await event in sut.execute(
+            messages: [ChatMessage(role: .user, content: "Time")],
+            model: "test",
+            parameters: .default,
+            toolRegistry: ToolRegistry(tools: [GetCurrentDatetimeTool()])
+        ) {
+            if case .promptUsage(let promptTokens) = event { promptUsages.append(promptTokens) }
+        }
+
+        // Then
+        XCTAssertEqual(promptUsages.count, 2)
+        XCTAssertEqual(promptUsages[0], 10)
+        XCTAssertNil(promptUsages[1])
     }
 
     func test_execute_timeout_finishesEvenWhenRequestIsStillRunning() async throws {

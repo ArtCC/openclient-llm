@@ -7,18 +7,8 @@
     {
       "layers" : [
         {
-          "blend-mode" : "normal",
-          "fill" : "automatic",
-          "hidden" : false,
-          "image-name" : "logo.png",
-          "name" : "logo",
-          "position" : {
-            "scale" : 1,
-            "translation-in-points" : [
-              0,
-              0
-            ]
-          }
+          "image-name" : "Default.png",
+          "name" : "Default"
         }
       ],
       "name" : "Image",

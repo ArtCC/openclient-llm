@@ -19,6 +19,8 @@ extension SettingsViewModel {
             handleCloudSyncEvent(event)
         case .showTokenUsageToggled, .privacyScreenToggled:
             handlePreferenceToggleEvent(event)
+        case .appIconSelected(let icon):
+            changeAppIcon(to: icon)
         case .webSearchToolNameChanged, .webSearchMaxResultsChanged, .fetchSearchToolsTapped,
              .fetchMCPToolsTapped, .mcpToolToggled, .mcpToolsToggled,
              .mcpToolPermissionChanged, .mcpToolsPermissionChanged:
@@ -95,5 +97,32 @@ extension SettingsViewModel {
 
     func enabledMCPToolIds(savedIds: [String], tools: [MCPToolInfo]) -> Set<String> {
         MCPToolInfo.migratedEnabledToolIds(savedIds: savedIds, tools: tools)
+    }
+
+    private func changeAppIcon(to icon: AppIcon) {
+        guard case .loaded(var loadedState) = state,
+              loadedState.canChangeAppIcon,
+              !loadedState.isChangingAppIcon,
+              loadedState.selectedAppIcon != icon else { return }
+
+        loadedState.isChangingAppIcon = true
+        loadedState.appIconError = nil
+        state = .loaded(loadedState)
+
+        Task {
+            do {
+                try await appIconManager.setIcon(icon)
+                guard case .loaded(var currentState) = state else { return }
+                currentState.selectedAppIcon = icon
+                currentState.isChangingAppIcon = false
+                state = .loaded(currentState)
+            } catch {
+                LogManager.error("Unable to change app icon: \(error.localizedDescription)")
+                guard case .loaded(var currentState) = state else { return }
+                currentState.isChangingAppIcon = false
+                currentState.appIconError = String(localized: "The app icon could not be changed. Please try again.")
+                state = .loaded(currentState)
+            }
+        }
     }
 }
