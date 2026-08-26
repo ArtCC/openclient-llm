@@ -16,6 +16,12 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 ### Fixed
 
 - Chat context usage now retains LiteLLM's reported prompt-token count and estimates only the newly generated response, falling back to local estimation when usage is unavailable
+- Automatic chat context compaction now persists summaries before the first overflowing request and rolls back pending summaries when saving, cancellation, or background expiration interrupts the operation
+- Agent-mode context estimates now include the actual agent system instructions
+
+### Security
+
+- Compacted conversation summaries are now size-bounded and isolated as untrusted data before being reused in model prompts
 
 ## [1.6.30-build-85] - 2026-08-23
 
