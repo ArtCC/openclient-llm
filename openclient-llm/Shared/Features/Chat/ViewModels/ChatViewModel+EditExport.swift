@@ -61,7 +61,6 @@ extension ChatViewModel {
         let modelCapabilities = model.capabilities
 
         LogManager.info("regenerateLastResponse model=\(model.id) messages=\(currentMessages.count)")
-        cancelCompaction()
         streamTask?.cancel()
         activeAssistantMessageId = assistantMessageId
         beginStreamingBackground(for: assistantMessageId)
@@ -117,7 +116,6 @@ extension ChatViewModel {
         let modelCapabilities = model.capabilities
 
         LogManager.info("editAndResend id=\(id) model=\(model.id)")
-        cancelCompaction()
         streamTask?.cancel()
         activeAssistantMessageId = assistantMessageId
         beginStreamingBackground(for: assistantMessageId)

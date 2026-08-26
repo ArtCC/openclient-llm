@@ -13,6 +13,7 @@ extension ChatViewModel {
         mcpAuthorizationCoordinator.cancelPending()
         if let activeAssistantMessageId {
             flushStreamingTextUpdates(for: activeAssistantMessageId)
+            rollbackPendingPreflightCompaction(for: activeAssistantMessageId)
         }
         resetStreamingTextUpdates()
         streamTask?.cancel()
@@ -46,6 +47,7 @@ extension ChatViewModel {
             self.resetStreamingTextUpdates()
             self.streamTask?.cancel()
             self.streamTask = nil
+            self.rollbackPendingPreflightCompaction(for: assistantMessageId)
             self.activeAssistantMessageId = nil
             guard case .loaded(var currentState) = self.state else { return }
             currentState.isStreaming = false

@@ -66,7 +66,8 @@ extension ChatView {
         return !isEmptyAssistant || isStreaming
     }
 
-    func handleSend() {
+    func handleSend(_ text: String) {
+        viewModel.send(.inputChanged(text))
         viewModel.send(.sendTapped)
         showActions = false
     }

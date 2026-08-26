@@ -15,7 +15,6 @@ extension ChatViewModel {
         guard case .loaded(var loadedState) = state,
               loadedState.selectedModel?.capabilities.contains(.functionCalling) == true,
               loadedState.isWebSearchToolConfigured else { return }
-        cancelCompaction()
         let newValue = !loadedState.isWebSearchEnabled
         setWebSearchEnabledUseCase.execute(newValue)
         loadedState.isWebSearchEnabled = newValue

@@ -15,16 +15,10 @@ extension ChatViewModel {
         let assistantMessageId = sendContext.assistantId
         LogManager.debug("performStreaming model=\(sendContext.modelId) messages=\(sendContext.messages.count)")
         do {
-            let requestContext = try buildRequestContext(
-                messages: sendContext.messages,
+            let requestContext = try await prepareRequestContext(
+                for: sendContext,
                 systemPrompt: sendContext.systemPrompt,
-                configuration: RequestContextConfiguration(
-                    selectedModel: sendContext.selectedModel,
-                    contextWindowTokens: sendContext.contextWindowTokens,
-                    summary: sendContext.contextSummary,
-                    summaryCursorMessageId: sendContext.contextSummaryCursorMessageId,
-                    tools: []
-                )
+                tools: []
             )
             var allMessages = requestContext.messages
             if !requestContext.effectiveSystemPrompt.isEmpty {
@@ -52,6 +46,8 @@ extension ChatViewModel {
                 model: sendContext.modelId,
                 reportedPromptTokens: reportedPromptTokens
             )
+        } catch is CancellationError {
+            if isActiveStream(assistantMessageId) { cancelActiveStreaming() }
         } catch {
             await handleStreamingFailure(error, assistantMessageId: assistantMessageId, model: sendContext.modelId)
         }
@@ -101,6 +97,7 @@ private extension ChatViewModel {
         state = .loaded(currentState)
         scheduleErrorDismiss()
         await persistConversation()
+        guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
         streamingBackgroundUseCase.end()
         completeActiveStream(assistantMessageId)
     }
@@ -145,11 +142,10 @@ private extension ChatViewModel {
         )
         state = .loaded(currentState)
         LogManager.success("performStreaming completed model=\(model)")
-        let didPersist = await persistConversation()
+        await persistConversation()
         guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
         streamingBackgroundUseCase.end()
         completeActiveStream(assistantMessageId)
-        if didPersist { scheduleCompactionIfNeeded() }
         await notifyStreamingCompletedUseCase.execute()
     }
 

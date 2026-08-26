@@ -3,6 +3,7 @@ Hi there! We've got some great new features for you in this update.
 ***1.6.35:
 
 • Choose from 20 app icons in Settings on iPhone and iPad.
+• Long chats now preserve earlier context before the next model response, with safer handling when requests are cancelled or interrupted.
 • Minor bug fixes and improvements for a smoother experience.
 
 ***Recent Updates:

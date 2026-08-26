@@ -14,10 +14,11 @@ final class MockCompactConversationUseCase: CompactConversationUseCaseProtocol, 
     // MARK: - Properties
 
     var result: CompactedConversation?
+    var results: [CompactedConversation?] = []
     var error: Error?
-    var shouldSuspend = false
+    var onExecute: ((Int, CompactionConfiguration) -> Void)?
     private(set) var callCount = 0
-    private var continuation: CheckedContinuation<CompactedConversation?, Error>?
+    private(set) var receivedConfigurations: [CompactionConfiguration] = []
 
     // MARK: - Execute
 
@@ -26,13 +27,9 @@ final class MockCompactConversationUseCase: CompactConversationUseCaseProtocol, 
         configuration: CompactionConfiguration
     ) async throws -> CompactedConversation? {
         callCount += 1
+        receivedConfigurations.append(configuration)
+        onExecute?(callCount, configuration)
         if let error { throw error }
-        guard shouldSuspend else { return result }
-        return try await withCheckedThrowingContinuation { continuation = $0 }
-    }
-
-    func resume() {
-        continuation?.resume(returning: result)
-        continuation = nil
+        return results.isEmpty ? result : results.removeFirst()
     }
 }
