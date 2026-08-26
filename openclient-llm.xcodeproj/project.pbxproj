@@ -979,7 +979,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8089F4102F7D000500465D6C /* Secrets.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Default;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "openclient-llm/Resources/openclient-llm.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -1027,7 +1027,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8089F4102F7D000500465D6C /* Secrets.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Default;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "openclient-llm/Resources/openclient-llm.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -1075,7 +1075,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8089F4102F7D000500465D6C /* Secrets.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Default;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "openclient-llm-macOS/Resources/openclient-llm-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -1131,7 +1131,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8089F4102F7D000500465D6C /* Secrets.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Default;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "openclient-llm-macOS/Resources/openclient-llm-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
