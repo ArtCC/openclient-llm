@@ -29,7 +29,7 @@ struct AppIconSelectionView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 28) {
+                VStack(alignment: .leading, spacing: 28) {
                     selectedIconHeader
                     statusView
                     iconCatalog
