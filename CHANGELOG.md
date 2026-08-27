@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-## [1.6.35-build-86] - 2026-08-26
+## [1.6.35-build-86] - 2026-08-27
 
 ### Added
 
@@ -18,6 +18,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - Chat context usage now retains LiteLLM's reported prompt-token count and estimates only the newly generated response, falling back to local estimation when usage is unavailable
 - Automatic chat context compaction now persists summaries before the first overflowing request and rolls back pending summaries when saving, cancellation, or background expiration interrupts the operation
 - Agent-mode context estimates now include the actual agent system instructions
+- Long-chat scrolling no longer refreshes the full chat scene as visible messages change, improving manual navigation responsiveness
 
 ### Security
 

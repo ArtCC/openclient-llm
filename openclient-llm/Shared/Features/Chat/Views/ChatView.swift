@@ -15,7 +15,6 @@ struct ChatView: View {
     @State var viewModel: ChatViewModel
     @State var scrollState = ChatScrollState()
     @State var renderedMessageRevision = 0
-    @State var visibleMessageIds: [UUID] = []
     @State private var showSystemPromptSheet: Bool = false
     @State private var showModelParametersSheet: Bool = false
     @State private var showFavouritesSheet: Bool = false

@@ -89,35 +89,4 @@ extension ChatView {
         .transition(.scale(scale: 0.8).combined(with: .opacity))
     }
 
-    func visibleMessageDate(
-        in messages: [ChatMessage],
-        visibleMessageIds: [UUID]
-    ) -> Date? {
-        let visibleIds = Set(visibleMessageIds)
-        return messages.first { visibleIds.contains($0.id) }?.timestamp
-    }
-
-    func floatingDateLabel(_ date: Date) -> some View {
-        Text(floatingDateText(date))
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.primary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .glassEffect(.regular, in: .capsule)
-    }
-
-    func floatingDateText(_ date: Date) -> String {
-        let calendar = Calendar.autoupdatingCurrent
-        if calendar.isDateInToday(date) {
-            return String(localized: "Today")
-        }
-        if calendar.isDateInYesterday(date) {
-            return String(localized: "Yesterday")
-        }
-        if calendar.component(.year, from: date) == calendar.component(.year, from: Date()) {
-            return date.formatted(.dateTime.weekday(.wide).day().month(.wide))
-        }
-        return date.formatted(.dateTime.day().month(.wide).year())
-    }
-
 }
