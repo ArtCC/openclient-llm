@@ -64,6 +64,7 @@ extension ChatViewModel {
 
     func completeActiveStream(_ assistantMessageId: UUID) {
         guard isActiveStream(assistantMessageId) else { return }
+        stopBackgroundPersistenceCheckpoints()
         resetStreamingTextUpdates()
         activeAssistantMessageId = nil
         streamTask = nil
@@ -197,9 +198,10 @@ extension ChatViewModel {
         return await enqueuePersistence(of: snapshot).value.didPersist
     }
 
-    func scheduleConversationPersistence() {
-        guard let snapshot = conversationForPersistence() else { return }
-        enqueuePersistence(of: snapshot)
+    @discardableResult
+    func scheduleConversationPersistence() -> Task<PersistenceResult, Never>? {
+        guard let snapshot = conversationForPersistence() else { return nil }
+        return enqueuePersistence(of: snapshot)
     }
 
     private func conversationForPersistence() -> (conversation: Conversation, expectedBase: Conversation?)? {

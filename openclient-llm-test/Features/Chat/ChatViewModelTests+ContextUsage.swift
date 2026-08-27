@@ -201,7 +201,9 @@ private extension ChatViewModelTests {
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
             fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
-            getConversationStartersUseCase: mockGetConversationStarters
+            getConversationStartersUseCase: mockGetConversationStarters,
+            streamingBackgroundUseCase: MockStreamingBackgroundUseCase(),
+            notifyStreamingCompletedUseCase: MockNotifyStreamingCompletedUseCase()
         )
     }
 }

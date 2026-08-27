@@ -13,6 +13,7 @@ import Foundation
 extension ChatViewModel {
     func performImageGeneration(_ context: SendMessageContext) async {
         let assistantMessageId = context.assistantId
+        streamingBackgroundUseCase.update(.generatingImage)
         do {
             let generatedImage = try await generateImageUseCase.execute(
                 prompt: context.text,
@@ -32,10 +33,13 @@ extension ChatViewModel {
             currentState.isStreaming = false
             state = .loaded(currentState)
             LogManager.success("performImageGeneration completed model=\(context.modelId)")
-            await persistConversation()
-            streamingBackgroundUseCase.end()
+            streamingBackgroundUseCase.update(.saving)
+            let didPersist = await persistConversation()
+            guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
+            let didComplete = isPrivateChat || didPersist
+            if didComplete { notifyStreamingCompletedUseCase.execute() } else { scheduleConversationPersistence() }
+            streamingBackgroundUseCase.end(success: didComplete)
             completeActiveStream(assistantMessageId)
-            await notifyStreamingCompletedUseCase.execute()
         } catch is CancellationError {
             return
         } catch {
@@ -50,8 +54,10 @@ extension ChatViewModel {
             currentState.errorMessage = error.localizedDescription
             state = .loaded(currentState)
             scheduleErrorDismiss()
+            streamingBackgroundUseCase.update(.saving)
             await persistConversation()
-            streamingBackgroundUseCase.end()
+            guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
+            streamingBackgroundUseCase.end(success: false)
             completeActiveStream(assistantMessageId)
         }
     }

@@ -13,6 +13,7 @@ import Foundation
 extension ChatViewModel {
     func performStreaming(_ sendContext: SendMessageContext) async {
         let assistantMessageId = sendContext.assistantId
+        streamingBackgroundUseCase.update(.thinking)
         LogManager.debug("performStreaming model=\(sendContext.modelId) messages=\(sendContext.messages.count)")
         do {
             let requestContext = try await prepareRequestContext(
@@ -96,18 +97,21 @@ private extension ChatViewModel {
         refreshContextUsage(in: &currentState)
         state = .loaded(currentState)
         scheduleErrorDismiss()
+        streamingBackgroundUseCase.update(.saving)
         await persistConversation()
         guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
-        streamingBackgroundUseCase.end()
+        streamingBackgroundUseCase.end(success: false)
         completeActiveStream(assistantMessageId)
     }
 
     func processStreamingChunk(_ chunk: StreamChunk, assistantMessageId: UUID) async -> Bool {
         switch chunk {
         case .token(let text):
+            streamingBackgroundUseCase.update(.responding)
             let didPublish = enqueueStreamingTextUpdate(.token(text), assistantMessageId: assistantMessageId)
             if didPublish { await Task.yield() }
         case .reasoning(let text):
+            streamingBackgroundUseCase.update(.thinking)
             let didPublish = enqueueStreamingTextUpdate(.reasoning(text), assistantMessageId: assistantMessageId)
             if didPublish { await Task.yield() }
         default:
@@ -142,11 +146,17 @@ private extension ChatViewModel {
         )
         state = .loaded(currentState)
         LogManager.success("performStreaming completed model=\(model)")
-        await persistConversation()
+        streamingBackgroundUseCase.update(.saving)
+        let didPersist = await persistConversation()
         guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
-        streamingBackgroundUseCase.end()
+        let didComplete = isPrivateChat || didPersist
+        if didComplete {
+            notifyStreamingCompletedUseCase.execute()
+        } else {
+            scheduleConversationPersistence()
+        }
+        streamingBackgroundUseCase.end(success: didComplete)
         completeActiveStream(assistantMessageId)
-        await notifyStreamingCompletedUseCase.execute()
     }
 
     func removeEmptyAssistantMessage(_ assistantMessageId: UUID, from state: inout LoadedState) {

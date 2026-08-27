@@ -16,7 +16,19 @@ extension ChatViewModelTests {
     func test_sendMessage_withFunctionCallingModel_andWebSearch_usesAgentUseCase() async throws {
         // Given
         let mockAgent = MockAgentStreamUseCase()
-        mockAgent.events = [.token("Agent"), .token(" answer")]
+        let toolCall = ToolCall(
+            id: "tool-1",
+            type: "function",
+            function: ToolCallFunction(name: "web_search", arguments: "{}")
+        )
+        mockAgent.events = [
+            .toolCallStarted(toolCall),
+            .toolCallCompleted(toolCallId: toolCall.id, result: "Result", searchResults: nil),
+            .token("Agent"),
+            .token(" answer")
+        ]
+        let background = MockStreamingBackgroundUseCase()
+        let notification = MockNotifyStreamingCompletedUseCase()
         let modelWithFunctionCalling = LLMModel(id: "gpt-4", capabilities: [.functionCalling])
         mockFetchModels.result = .success([modelWithFunctionCalling])
 
@@ -30,19 +42,26 @@ extension ChatViewModelTests {
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
             fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
-            getConversationStartersUseCase: mockGetConversationStarters
+            getConversationStartersUseCase: mockGetConversationStarters,
+            streamingBackgroundUseCase: background,
+            notifyStreamingCompletedUseCase: notification
         )
 
         sutWithAgent.send(.viewAppeared)
-        try await Task.sleep(for: .milliseconds(100))
+        await waitUntil {
+            if case .loaded = sutWithAgent.state { return true }
+            return false
+        }
 
         // Enable web search
         sutWithAgent.send(.webSearchToggled)
         sutWithAgent.send(.inputChanged("search something"))
+        let completed = expectation(description: "Background task completed")
+        background.onEnd = { _ in completed.fulfill() }
 
         // When
         sutWithAgent.send(.sendTapped)
-        try await Task.sleep(for: .milliseconds(200))
+        await fulfillment(of: [completed], timeout: 1)
 
         // Then
         guard case .loaded(let loadedState) = sutWithAgent.state else {
@@ -50,9 +69,10 @@ extension ChatViewModelTests {
             return
         }
         let assistantMessages = loadedState.messages.filter { $0.role == .assistant }
-        XCTAssertFalse(assistantMessages.isEmpty)
-        let lastAssistant = assistantMessages.last
-        XCTAssertEqual(lastAssistant?.content, "Agent answer")
+        XCTAssertEqual(assistantMessages.last?.content, "Agent answer")
+        XCTAssertTrue(background.phases.contains(.usingTools))
+        XCTAssertEqual(background.completionResults, [true])
+        XCTAssertEqual(notification.completionCallCount, 1)
     }
 
     func test_sendMessage_withFunctionCallingModel_webSearchDisabled_usesAgentStreaming() async throws {
@@ -73,11 +93,16 @@ extension ChatViewModelTests {
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
             fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
-            getConversationStartersUseCase: mockGetConversationStarters
+            getConversationStartersUseCase: mockGetConversationStarters,
+            streamingBackgroundUseCase: MockStreamingBackgroundUseCase(),
+            notifyStreamingCompletedUseCase: MockNotifyStreamingCompletedUseCase()
         )
 
         sutWithAgent.send(.viewAppeared)
-        try await Task.sleep(for: .milliseconds(100))
+        await waitUntil {
+            if case .loaded = sutWithAgent.state { return true }
+            return false
+        }
 
         // Web search NOT enabled
         sutWithAgent.send(.inputChanged("regular message"))
@@ -115,7 +140,9 @@ extension ChatViewModelTests {
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
             fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
-            getConversationStartersUseCase: mockGetConversationStarters
+            getConversationStartersUseCase: mockGetConversationStarters,
+            streamingBackgroundUseCase: MockStreamingBackgroundUseCase(),
+            notifyStreamingCompletedUseCase: MockNotifyStreamingCompletedUseCase()
         )
 
         sutWithAgent.send(.viewAppeared)
@@ -162,7 +189,9 @@ extension ChatViewModelTests {
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
             fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
-            getConversationStartersUseCase: mockGetConversationStarters
+            getConversationStartersUseCase: mockGetConversationStarters,
+            streamingBackgroundUseCase: MockStreamingBackgroundUseCase(),
+            notifyStreamingCompletedUseCase: MockNotifyStreamingCompletedUseCase()
         )
         viewModel.applyAgentEvent(.token("Hello "), to: &loadedState, assistantMessageId: assistantId)
         viewModel.applyAgentEvent(.token("world"), to: &loadedState, assistantMessageId: assistantId)
@@ -190,7 +219,9 @@ extension ChatViewModelTests {
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
             fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
-            getConversationStartersUseCase: mockGetConversationStarters
+            getConversationStartersUseCase: mockGetConversationStarters,
+            streamingBackgroundUseCase: MockStreamingBackgroundUseCase(),
+            notifyStreamingCompletedUseCase: MockNotifyStreamingCompletedUseCase()
         )
 
         // When
@@ -214,7 +245,9 @@ extension ChatViewModelTests {
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
             fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
-            getConversationStartersUseCase: mockGetConversationStarters
+            getConversationStartersUseCase: mockGetConversationStarters,
+            streamingBackgroundUseCase: MockStreamingBackgroundUseCase(),
+            notifyStreamingCompletedUseCase: MockNotifyStreamingCompletedUseCase()
         )
 
         // When
@@ -251,6 +284,8 @@ extension ChatViewModelTests {
         // Given
         let mockAgent = MockAgentStreamUseCase()
         mockAgent.error = APIError.networkError("Timeout")
+        let background = MockStreamingBackgroundUseCase()
+        let notification = MockNotifyStreamingCompletedUseCase()
         let modelWithFC = LLMModel(id: "gpt-4", capabilities: [.functionCalling])
         mockFetchModels.result = .success([modelWithFC])
 
@@ -264,17 +299,21 @@ extension ChatViewModelTests {
             branchConversationUseCase: mockBranchConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
             fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
-            getConversationStartersUseCase: mockGetConversationStarters
+            getConversationStartersUseCase: mockGetConversationStarters,
+            streamingBackgroundUseCase: background,
+            notifyStreamingCompletedUseCase: notification
         )
 
         sutWithAgent.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
         sutWithAgent.send(.webSearchToggled)
         sutWithAgent.send(.inputChanged("search something"))
+        let completed = expectation(description: "Background task completed")
+        background.onEnd = { _ in completed.fulfill() }
 
         // When
         sutWithAgent.send(.sendTapped)
-        try await Task.sleep(for: .milliseconds(200))
+        await fulfillment(of: [completed], timeout: 1)
 
         // Then
         guard case .loaded(let loadedState) = sutWithAgent.state else {
@@ -283,5 +322,7 @@ extension ChatViewModelTests {
         }
         XCTAssertNotNil(loadedState.errorMessage)
         XCTAssertFalse(loadedState.isStreaming)
+        XCTAssertEqual(background.completionResults, [false])
+        XCTAssertEqual(notification.completionCallCount, 0)
     }
 }

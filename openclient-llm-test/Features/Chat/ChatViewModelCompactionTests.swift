@@ -203,6 +203,8 @@ private extension ChatViewModelCompactionTests {
             fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
             getUserProfileContextUseCase: MockGetUserProfileContextUseCase(),
             getMemoryContextUseCase: MockGetMemoryContextUseCase(),
+            streamingBackgroundUseCase: MockStreamingBackgroundUseCase(),
+            notifyStreamingCompletedUseCase: MockNotifyStreamingCompletedUseCase(),
             compactConversationUseCase: compactConversationUseCase
         )
     }

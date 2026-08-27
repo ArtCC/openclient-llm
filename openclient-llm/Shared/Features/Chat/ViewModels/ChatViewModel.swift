@@ -143,6 +143,7 @@ final class ChatViewModel {
     let compactConversationUseCase: CompactConversationUseCaseProtocol
     var streamTask: Task<Void, Never>?
     @ObservationIgnored var streamingUpdateBuffer = StreamingUpdateBuffer()
+    @ObservationIgnored var backgroundPersistenceObserver: NSObjectProtocol?
     var pendingPreflightCompaction: PendingPreflightCompaction?
     var persistenceTask: Task<PersistenceResult, Never>?
     var persistenceBase: Conversation?
@@ -151,6 +152,8 @@ final class ChatViewModel {
     var persistenceResetGeneration = 0
     private var loadTask: Task<Void, Never>?
     var activeAssistantMessageId: UUID?
+    var backgroundPersistenceCheckpointTask: Task<Void, Never>?
+    var backgroundPersistenceFingerprint: Int?
     var errorDismissTask: Task<Void, Never>?
     var durationTrackingTask: Task<Void, Never>?
     var mcpSettingsObservationTask: Task<Void, Never>?
@@ -245,6 +248,10 @@ final class ChatViewModel {
 
     isolated deinit {
         streamingUpdateBuffer.flushTask?.cancel()
+        backgroundPersistenceCheckpointTask?.cancel()
+        if let backgroundPersistenceObserver {
+            NotificationCenter.default.removeObserver(backgroundPersistenceObserver)
+        }
         mcpSettingsObservationTask?.cancel()
         mcpDiscoveryTask?.cancel()
     }
