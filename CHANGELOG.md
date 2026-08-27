@@ -19,6 +19,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 - Automatic chat context compaction now persists summaries before the first overflowing request and rolls back pending summaries when saving, cancellation, or background expiration interrupts the operation
 - Agent-mode context estimates now include the actual agent system instructions
 - Long-chat scrolling no longer refreshes the full chat scene as visible messages change, improving manual navigation responsiveness
+- Manual scrolling during response streaming now keeps message presentation stable until scrolling ends, then displays buffered updates together
 
 ### Security
 

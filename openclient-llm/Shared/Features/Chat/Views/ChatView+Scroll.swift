@@ -10,10 +10,11 @@ import SwiftUI
 
 extension ChatView {
     func messagesScrollView(_ messageListState: ChatMessageListState) -> some View {
-        ScrollViewReader { proxy in
-            scrollViewContent(messageListState)
+        let presentedState = presentedMessageListState(for: messageListState)
+        return ScrollViewReader { proxy in
+            scrollViewContent(presentedState)
                 .onScrollPhaseChange { _, newPhase in
-                    handleScrollPhaseChange(newPhase)
+                    handleScrollPhaseChange(newPhase, messageListState: messageListState)
                 }
                 .modifier(ScrollTriggerModifier(
                     scrollToMessageId: $scrollToMessageId,
@@ -23,13 +24,13 @@ extension ChatView {
                     renderedMessageRevision: renderedMessageRevision
                 ))
                 .modifier(ChatScrollDateModifier(
-                    messages: messageListState.messages,
+                    messages: presentedState.messages,
                     isUserScrolling: scrollState.isUserScrolling
                 ))
                 .overlay(alignment: .topTrailing) {
                     if !scrollState.isFollowingBottom,
                        !scrollState.isUserScrolling,
-                       !messageListState.messages.isEmpty {
+                       !presentedState.messages.isEmpty {
                         scrollAnchorButton(isTop: true) {
                             scrollState.detach()
                             withAnimation(.easeInOut(duration: 0.35)) {
@@ -41,7 +42,7 @@ extension ChatView {
                 .overlay(alignment: .bottomTrailing) {
                     if !scrollState.isFollowingBottom,
                        !scrollState.isUserScrolling,
-                       !messageListState.messages.isEmpty {
+                       !presentedState.messages.isEmpty {
                         scrollAnchorButton(isTop: false) {
                             scrollState.followBottom()
                             withAnimation(.easeInOut(duration: 0.35)) {
@@ -51,15 +52,48 @@ extension ChatView {
                     }
                 }
         }
+        .onChange(of: messageListState.scrollSnapshot.sessionId) {
+            clearFrozenMessageListState()
+        }
+        .onChange(of: messageListState.scrollSnapshot.responseRevision) {
+            clearFrozenMessageListState()
+        }
     }
 }
 
 private extension ChatView {
-    func handleScrollPhaseChange(_ phase: ScrollPhase) {
+    func presentedMessageListState(for liveState: ChatMessageListState) -> ChatMessageListState {
+        guard scrollState.isUserScrolling,
+              let frozenState = frozenMessageListState,
+              frozenState.scrollSnapshot.sessionId == liveState.scrollSnapshot.sessionId,
+              frozenState.scrollSnapshot.responseRevision == liveState.scrollSnapshot.responseRevision else {
+            return liveState
+        }
+        return frozenState
+    }
+
+    func handleScrollPhaseChange(_ phase: ScrollPhase, messageListState: ChatMessageListState) {
         if phase == .interacting {
+            if !scrollState.isUserScrolling {
+                frozenMessageListState = messageListState.isStreaming ? messageListState : nil
+            }
             scrollState.userScrollBegan()
         } else if phase == .idle, scrollState.isUserScrolling {
-            scrollState.userScrollEnded()
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) {
+                scrollState.userScrollEnded()
+                frozenMessageListState = nil
+            }
+        }
+    }
+
+    func clearFrozenMessageListState() {
+        guard frozenMessageListState != nil else { return }
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            frozenMessageListState = nil
         }
     }
 

@@ -5,6 +5,7 @@ Hi there! We've got some great new features for you in this update.
 • Choose from 20 app icons in Settings on iPhone and iPad.
 • Long chats now preserve earlier context before the next model response, with safer handling when requests are cancelled or interrupted.
 • Scroll through long conversations and verify that scrolling remains smooth while the floating date indicator updates.
+• While a model is responding, scroll through the conversation and verify that the visible history stays stable, then catches up when scrolling stops.
 • Minor bug fixes and improvements for a smoother experience.
 
 ***Recent Updates:
