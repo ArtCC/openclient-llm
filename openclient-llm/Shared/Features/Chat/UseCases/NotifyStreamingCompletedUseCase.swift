@@ -9,46 +9,58 @@
 import Foundation
 
 #if os(iOS)
-import SwiftUI
+import UIKit
 #endif
 
 // MARK: - NotifyStreamingCompletedUseCaseProtocol
 
-protocol NotifyStreamingCompletedUseCaseProtocol: Sendable {
+@MainActor
+protocol NotifyStreamingCompletedUseCaseProtocol {
     /// Sends a "response ready" notification only if the app is currently in background.
-    func execute() async
+    func execute()
     /// Sends an "interrupted" notification unconditionally (called when background time expired).
-    func executeExpired() async
+    func executeExpired()
 }
 
 // MARK: - NotifyStreamingCompletedUseCase
 
-/// @unchecked Sendable — LocalNotificationManager has no mutable state;
-/// UNUserNotificationCenter is internally thread-safe.
-struct NotifyStreamingCompletedUseCase: NotifyStreamingCompletedUseCaseProtocol, @unchecked Sendable {
+@MainActor
+struct NotifyStreamingCompletedUseCase: NotifyStreamingCompletedUseCaseProtocol {
     // MARK: - Properties
 
-    private let localNotificationManager: LocalNotificationManager
+    private let localNotificationManager: LocalNotificationManagerProtocol
+    private let isApplicationInBackground: () -> Bool
 
     // MARK: - Init
 
-    init(localNotificationManager: LocalNotificationManager = LocalNotificationManager()) {
+    init(
+        localNotificationManager: LocalNotificationManagerProtocol = LocalNotificationManager(),
+        isApplicationInBackground: (() -> Bool)? = nil
+    ) {
         self.localNotificationManager = localNotificationManager
+        self.isApplicationInBackground = isApplicationInBackground ?? Self.applicationIsInBackground
     }
 
     // MARK: - Execute
 
-    func execute() async {
+    func execute() {
         #if os(iOS)
-        let isBackground = await MainActor.run {
-            UIApplication.shared.applicationState == .background
-        }
-        guard isBackground else { return }
+        guard isApplicationInBackground() else { return }
         localNotificationManager.sendCompletionNotification()
         #endif
     }
 
-    func executeExpired() async {
+    func executeExpired() {
         localNotificationManager.sendExpiredNotification()
+    }
+
+    // MARK: - Private
+
+    private static func applicationIsInBackground() -> Bool {
+        #if os(iOS)
+        UIApplication.shared.applicationState == .background
+        #else
+        false
+        #endif
     }
 }

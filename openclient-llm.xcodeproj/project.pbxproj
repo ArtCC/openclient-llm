@@ -545,6 +545,11 @@
 					};
 					805E798A2F79AC9B0070CBB3 = {
 						CreatedOnToolsVersion = 26.4;
+						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
+						};
 					};
 					808077392F7A66EF009BC8C4 = {
 						CreatedOnToolsVersion = 26.4;

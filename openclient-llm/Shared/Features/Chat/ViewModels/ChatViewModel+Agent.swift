@@ -31,6 +31,7 @@ extension ChatViewModel {
     func performAgentStreaming(_ context: SendMessageContext) async {
         let registry = makeToolRegistry(webSearchEnabled: context.webSearchEnabled)
         let serverConfigurationScope = settingsManager.getMCPAuthorizationScope()
+        streamingBackgroundUseCase.update(.thinking)
 
         do {
             let allMessages = try await agentRequestMessages(context: context, registry: registry)
@@ -145,13 +146,17 @@ private extension ChatViewModel {
         refreshContextUsage(in: &currentState)
         state = .loaded(currentState)
         scheduleErrorDismiss()
+        streamingBackgroundUseCase.update(.saving)
         await persistConversation()
         guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
-        streamingBackgroundUseCase.end()
+        streamingBackgroundUseCase.end(success: false)
         completeActiveStream(assistantMessageId)
     }
 
     func processAgentStreamEvent(_ event: AgentEvent, assistantMessageId: UUID) async -> Bool {
+        if let phase = streamingBackgroundPhase(for: event) {
+            streamingBackgroundUseCase.update(phase)
+        }
         switch event {
         case .token(let text):
             let didPublish = enqueueStreamingTextUpdate(.token(text), assistantMessageId: assistantMessageId)
@@ -171,6 +176,19 @@ private extension ChatViewModel {
             state = .loaded(currentState)
         }
         return true
+    }
+
+    private func streamingBackgroundPhase(for event: AgentEvent) -> StreamingBackgroundPhase? {
+        switch event {
+        case .token:
+            .responding
+        case .reasoning, .transcriptAppended:
+            .thinking
+        case .toolCallStarted, .toolCallCompleted:
+            .usingTools
+        default:
+            nil
+        }
     }
 
     func agentRequestMessages(context: SendMessageContext, registry: ToolRegistry) async throws -> [ChatMessage] {
@@ -347,10 +365,16 @@ private extension ChatViewModel {
         )
         state = .loaded(finalState)
         LogManager.success("performAgentStreaming completed model=\(modelId)")
-        await persistConversation()
+        streamingBackgroundUseCase.update(.saving)
+        let didPersist = await persistConversation()
         guard !Task.isCancelled, isActiveStream(assistantId) else { return }
-        streamingBackgroundUseCase.end()
+        let didComplete = isPrivateChat || didPersist
+        if didComplete {
+            notifyStreamingCompletedUseCase.execute()
+        } else {
+            scheduleConversationPersistence()
+        }
+        streamingBackgroundUseCase.end(success: didComplete)
         completeActiveStream(assistantId)
-        await notifyStreamingCompletedUseCase.execute()
     }
 }

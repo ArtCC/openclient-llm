@@ -31,6 +31,8 @@ final class ChatViewModelTests: XCTestCase {
     var mockAttachmentRepository: MockAttachmentRepository!
     var mockCompactConversation: MockCompactConversationUseCase!
     var mockFetchMCPTools: MockFetchMCPToolsUseCase!
+    var mockStreamingBackground: MockStreamingBackgroundUseCase!
+    var mockNotifyStreamingCompleted: MockNotifyStreamingCompletedUseCase!
 
     // MARK: - Setup
 
@@ -54,6 +56,8 @@ final class ChatViewModelTests: XCTestCase {
         mockAttachmentRepository = MockAttachmentRepository()
         mockCompactConversation = MockCompactConversationUseCase()
         mockFetchMCPTools = MockFetchMCPToolsUseCase()
+        mockStreamingBackground = MockStreamingBackgroundUseCase()
+        mockNotifyStreamingCompleted = MockNotifyStreamingCompletedUseCase()
         sut = ChatViewModel(
             fetchModelsUseCase: mockFetchModels,
             prepareImageAttachmentUseCase: mockPrepareImageAttachment,
@@ -71,6 +75,8 @@ final class ChatViewModelTests: XCTestCase {
             resolveAudioModelIdsUseCase: mockResolveAudioModelIds,
             getUserProfileContextUseCase: mockGetUserProfileContext,
             getConversationStartersUseCase: mockGetConversationStarters,
+            streamingBackgroundUseCase: mockStreamingBackground,
+            notifyStreamingCompletedUseCase: mockNotifyStreamingCompleted,
             compactConversationUseCase: mockCompactConversation
         )
     }
@@ -94,6 +100,8 @@ final class ChatViewModelTests: XCTestCase {
         mockAttachmentRepository = nil
         mockCompactConversation = nil
         mockFetchMCPTools = nil
+        mockStreamingBackground = nil
+        mockNotifyStreamingCompleted = nil
 
         try await super.tearDown()
     }

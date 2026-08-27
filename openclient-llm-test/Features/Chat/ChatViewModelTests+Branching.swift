@@ -72,7 +72,9 @@ extension ChatViewModelTests {
                 saveConversationUseCase: mockSaveConversation
             ),
             getChatPreferencesUseCase: mockGetChatPreferences,
-            getConversationStartersUseCase: mockGetConversationStarters
+            getConversationStartersUseCase: mockGetConversationStarters,
+            streamingBackgroundUseCase: mockStreamingBackground,
+            notifyStreamingCompletedUseCase: mockNotifyStreamingCompleted
         )
         sut.send(.viewAppeared)
         try await Task.sleep(for: .milliseconds(100))
