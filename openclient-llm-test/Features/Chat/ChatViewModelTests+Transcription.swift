@@ -113,6 +113,7 @@ extension ChatViewModelTests {
         }
         XCTAssertFalse(loadedState.isRecording)
         XCTAssertEqual(loadedState.inputText, "Hello world")
+        XCTAssertEqual(loadedState.inputRevision, 1)
     }
 
     func test_send_stopRecordingTapped_withNoData_doesNotTranscribe() async throws {

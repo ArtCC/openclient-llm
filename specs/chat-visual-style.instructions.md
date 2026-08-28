@@ -136,8 +136,10 @@ Modern, clean conversational interface inspired by leading AI chat applications.
 ### Progressive Rendering
 
 - Tokens appear immediately as they arrive from the stream
-- After the first fragment, coalesce routine text mutations on a 50 ms cadence; payload size must not force additional
-  same-frame publications, while lifecycle and non-text events may flush once to preserve content and event order
+- After the first server-streamed fragment, coalesce routine text mutations on a 50 ms cadence; payload size must not force
+  additional same-frame publications, while lifecycle and non-text events may flush once to preserve content and event order
+- Locally simulated agent final content already arrives in bounded, 20 ms paced chunks and must bypass the server-streaming
+  coalescer to avoid combining both presentation layers
 - Use `ScrollViewReader` with explicit top and bottom sentinels; never bind `ScrollPosition` to the chat scroll view
 - Keep message rows in an eager `VStack`. `LazyVStack` can enter a non-converging layout pass when upward user scrolling
   overlaps live message updates, freezing both iOS and macOS

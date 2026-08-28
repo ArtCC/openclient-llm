@@ -38,7 +38,9 @@ final class ChatViewModelUserProfileTests: XCTestCase {
             saveConversationUseCase: mockSaveConversation,
             getChatPreferencesUseCase: mockGetChatPreferences,
             getUserProfileContextUseCase: mockGetUserProfileContext,
-            getConversationStartersUseCase: mockGetConversationStarters
+            getConversationStartersUseCase: mockGetConversationStarters,
+            streamingBackgroundUseCase: MockStreamingBackgroundUseCase(),
+            notifyStreamingCompletedUseCase: MockNotifyStreamingCompletedUseCase()
         )
     }
 

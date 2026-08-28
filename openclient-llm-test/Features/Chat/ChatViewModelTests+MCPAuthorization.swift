@@ -244,7 +244,9 @@ extension ChatViewModelTests {
             agentStreamUseCase: agentStream,
             saveConversationUseCase: mockSaveConversation,
             fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
-            settingsManager: settings
+            settingsManager: settings,
+            streamingBackgroundUseCase: MockStreamingBackgroundUseCase(),
+            notifyStreamingCompletedUseCase: MockNotifyStreamingCompletedUseCase()
         )
         viewModel.send(.sendTapped)
         await waitUntil { agentStream.executeCallCount == 1 }

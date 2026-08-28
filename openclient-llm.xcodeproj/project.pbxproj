@@ -545,6 +545,11 @@
 					};
 					805E798A2F79AC9B0070CBB3 = {
 						CreatedOnToolsVersion = 26.4;
+						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
+						};
 					};
 					808077392F7A66EF009BC8C4 = {
 						CreatedOnToolsVersion = 26.4;
@@ -786,7 +791,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.6.30;
+				MARKETING_VERSION = 1.6.35;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.macos-widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -832,7 +837,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.6.30;
+				MARKETING_VERSION = 1.6.35;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.macos-widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -979,7 +984,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8089F4102F7D000500465D6C /* Secrets.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "Arctic Aurora Berry Blueprint Copper Holo Honeydew Lavender Mars Midnight Mono Ocean Retro Sakura Solar Sunset Terminal Ultraviolet Violet";
+				ASSETCATALOG_COMPILER_APPICON_NAME = Default;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "openclient-llm/Resources/openclient-llm.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -1007,7 +1013,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.30;
+				MARKETING_VERSION = 1.6.35;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -1027,7 +1033,8 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8089F4102F7D000500465D6C /* Secrets.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "Arctic Aurora Berry Blueprint Copper Holo Honeydew Lavender Mars Midnight Mono Ocean Retro Sakura Solar Sunset Terminal Ultraviolet Violet";
+				ASSETCATALOG_COMPILER_APPICON_NAME = Default;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "openclient-llm/Resources/openclient-llm.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -1055,7 +1062,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.6.30;
+				MARKETING_VERSION = 1.6.35;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -1075,7 +1082,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8089F4102F7D000500465D6C /* Secrets.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Default;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "openclient-llm-macOS/Resources/openclient-llm-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -1113,7 +1120,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.6.30;
+				MARKETING_VERSION = 1.6.35;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = OpenClient;
 				REGISTER_APP_GROUPS = YES;
@@ -1131,7 +1138,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 8089F4102F7D000500465D6C /* Secrets.xcconfig */;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = Icon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = Default;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "openclient-llm-macOS/Resources/openclient-llm-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
@@ -1169,7 +1176,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.6.30;
+				MARKETING_VERSION = 1.6.35;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm";
 				PRODUCT_NAME = OpenClient;
 				REGISTER_APP_GROUPS = YES;
@@ -1247,7 +1254,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.6.30;
+				MARKETING_VERSION = 1.6.35;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1278,7 +1285,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.6.30;
+				MARKETING_VERSION = 1.6.35;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.ShareExtension";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1311,7 +1318,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.6.30;
+				MARKETING_VERSION = 1.6.35;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -1344,7 +1351,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.6.30;
+				MARKETING_VERSION = 1.6.35;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.artcc.openclient-llm.widgets";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

@@ -44,7 +44,9 @@ extension ChatViewModelTests {
             isPrivateChat: true,
             state: .loaded(.init(selectedModel: model)),
             streamMessageUseCase: mockStreamMessage,
-            saveConversationUseCase: mockSaveConversation
+            saveConversationUseCase: mockSaveConversation,
+            streamingBackgroundUseCase: mockStreamingBackground,
+            notifyStreamingCompletedUseCase: mockNotifyStreamingCompleted
         )
         sut.send(.inputChanged("Keep this private"))
 

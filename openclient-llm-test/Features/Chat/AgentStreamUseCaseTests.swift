@@ -53,11 +53,12 @@ final class AgentStreamUseCaseTests: XCTestCase {
 
         // Then — content emitted as chunked tokens (simulated typewriter streaming)
         XCTAssertEqual(tokens.joined(), "Hello world")
+        XCTAssertEqual(tokens, ["Hell", "o wo", "rld"])
     }
 
     func test_execute_longFinalResponse_emitsBoundedChunksWithoutLosingContent() async throws {
         // Given
-        let content = String(repeating: "🙂", count: 65) + String(repeating: "a", count: 256)
+        let content = String(repeating: "👨‍👩‍👧‍👦", count: 65) + String(repeating: "e\u{301}", count: 256)
         mockRepository.agentCompletionResult = .success(makeStopResponse(content: content))
 
         // When
@@ -74,11 +75,11 @@ final class AgentStreamUseCaseTests: XCTestCase {
 
         // Then
         XCTAssertEqual(tokens.joined(), content)
-        XCTAssertEqual(tokens.count, 11)
-        XCTAssertTrue(tokens.allSatisfy { $0.count <= 32 })
+        XCTAssertEqual(tokens.count, 81)
+        XCTAssertTrue(tokens.allSatisfy { $0.count <= 4 })
     }
 
-    func test_execute_veryLongFinalResponse_limitsAdaptiveChunkCount() async throws {
+    func test_execute_veryLongFinalResponse_capsAdaptiveChunkSize() async throws {
         // Given
         let content = String(repeating: "a", count: 10_000)
         mockRepository.agentCompletionResult = .success(makeStopResponse(content: content))
@@ -97,7 +98,8 @@ final class AgentStreamUseCaseTests: XCTestCase {
 
         // Then
         XCTAssertEqual(tokens.joined(), content)
-        XCTAssertLessThanOrEqual(tokens.count, 100)
+        XCTAssertEqual(tokens.count, 209)
+        XCTAssertTrue(tokens.allSatisfy { $0.count <= 48 })
     }
 
     // MARK: - Tests — Tool call round
@@ -150,7 +152,7 @@ final class AgentStreamUseCaseTests: XCTestCase {
         // without tools, which forces the model to give a natural response.
         let firstResponse = makeStopResponse(content: "{}")
         let secondResponse = makeStopResponse(content: "Hola! Estoy bien, gracias.")
-        let seqRepo = makeSequentialRepo(responses: [firstResponse, secondResponse])
+        let seqRepo = RecordingAgentRepository(responses: [firstResponse, secondResponse])
         let seqSut = AgentStreamUseCase(repository: seqRepo)
 
         var tokens: [String] = []
@@ -158,7 +160,7 @@ final class AgentStreamUseCaseTests: XCTestCase {
             messages: [ChatMessage(role: .user, content: "Hola! Que tal?")],
             model: "ollama/qwen3:14b",
             parameters: .default,
-            toolRegistry: ToolRegistry(tools: [])
+            toolRegistry: ToolRegistry(tools: [GetCurrentDatetimeTool()])
         )
         for try await event in stream {
             if case .token(let text) = event { tokens.append(text) }
@@ -166,7 +168,9 @@ final class AgentStreamUseCaseTests: XCTestCase {
 
         XCTAssertFalse(tokens.contains("{}"), "Raw '{}' must never reach the UI")
         XCTAssertEqual(tokens.joined(), "Hola! Estoy bien, gracias.")
-        XCTAssertEqual(seqRepo.callIndex, 2, "Should have made a second request without tools")
+        XCTAssertEqual(seqRepo.requests.count, 2, "Should have made a second request without tools")
+        XCTAssertFalse(seqRepo.toolRequests[0]?.isEmpty ?? true)
+        XCTAssertNil(seqRepo.toolRequests[1])
     }
 
     func test_execute_toolCallsWithStopFinishReason_executesToolsInsteadOfEmittingContent() async throws {
@@ -364,9 +368,9 @@ final class AgentStreamUseCaseTests: XCTestCase {
 // MARK: - Helpers
 
 private extension AgentStreamUseCaseTests {
-    func makeStopResponse(content: String) -> ChatCompletionResponse {
+    func makeStopResponse(content: String, reasoning: String? = nil) -> ChatCompletionResponse {
         let message = ChatCompletionResponse.Message(
-            role: "assistant", content: content, reasoningContent: nil, images: nil, toolCalls: nil
+            role: "assistant", content: content, reasoningContent: reasoning, images: nil, toolCalls: nil
         )
         return ChatCompletionResponse(
             id: "resp-stop",

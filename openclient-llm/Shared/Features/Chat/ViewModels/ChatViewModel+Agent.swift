@@ -19,12 +19,22 @@ extension ChatViewModel {
         ).definitions
     }
 
+    func requestSystemPrompt(
+        _ conversationSystemPrompt: String,
+        modelCapabilities: [LLMModel.Capability],
+        webSearchEnabled: Bool
+    ) -> String {
+        guard modelCapabilities.contains(.functionCalling) else { return conversationSystemPrompt }
+        return buildAgentSystemPrompt(conversationSystemPrompt, webSearchEnabled: webSearchEnabled)
+    }
+
     func performAgentStreaming(_ context: SendMessageContext) async {
         let registry = makeToolRegistry(webSearchEnabled: context.webSearchEnabled)
         let serverConfigurationScope = settingsManager.getMCPAuthorizationScope()
+        streamingBackgroundUseCase.update(.thinking)
 
         do {
-            let allMessages = try agentRequestMessages(context: context, registry: registry)
+            let allMessages = try await agentRequestMessages(context: context, registry: registry)
             let stream = agentStreamUseCase.execute(
                 messages: allMessages,
                 model: context.modelId,
@@ -38,35 +48,29 @@ extension ChatViewModel {
                 )
             )
 
+            var reportedPromptTokens: Int?
+            var didRequestMemoryMutation = false
             for try await event in stream {
+                if case .promptUsage(let promptTokens) = event { reportedPromptTokens = promptTokens }
+                if case .toolCallStarted(let toolCall) = event,
+                   ["save_memory", "delete_memory"].contains(toolCall.function.name) {
+                    didRequestMemoryMutation = true
+                }
                 guard !Task.isCancelled,
                       isActiveStream(context.assistantId),
                       await processAgentStreamEvent(event, assistantMessageId: context.assistantId) else { return }
                 if case .transcriptAppended = event { await persistConversation() }
             }
 
-            await handleAgentStreamSuccess(context.assistantId, modelId: context.modelId)
+            await handleAgentStreamSuccess(
+                context.assistantId,
+                modelId: context.modelId,
+                reportedPromptTokens: didRequestMemoryMutation ? nil : reportedPromptTokens
+            )
+        } catch is CancellationError {
+            if isActiveStream(context.assistantId) { cancelActiveStreaming() }
         } catch {
-            guard !Task.isCancelled, isActiveStream(context.assistantId) else { return }
-            flushStreamingTextUpdates(for: context.assistantId)
-            guard case .loaded(var currentState) = state else { return }
-            LogManager.error("performAgentStreaming error model=\(context.modelId): \(error)")
-            if let index = currentState.messages.firstIndex(where: { $0.id == context.assistantId }),
-               currentState.messages[index].content.isEmpty,
-               (currentState.messages[index].reasoningContent ?? "").isEmpty,
-               currentState.messages[index].attachments.isEmpty {
-                currentState.messages.remove(at: index)
-            }
-            currentState.isStreaming = false
-            currentState.isSearchingWeb = false
-            currentState.activeToolCallIds = []
-            currentState.activeToolNamesById = [:]
-            currentState.errorMessage = error.localizedDescription
-            state = .loaded(currentState)
-            scheduleErrorDismiss()
-            await persistConversation()
-            streamingBackgroundUseCase.end()
-            completeActiveStream(context.assistantId)
+            await handleAgentStreamFailure(error, assistantMessageId: context.assistantId, modelId: context.modelId)
         }
     }
 
@@ -123,42 +127,82 @@ extension ChatViewModel {
 // MARK: - Private
 
 private extension ChatViewModel {
+    func handleAgentStreamFailure(_ error: Error, assistantMessageId: UUID, modelId: String) async {
+        guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
+        guard case .loaded(var currentState) = state else { return }
+        LogManager.error("performAgentStreaming error model=\(modelId): \(error)")
+        if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }),
+           currentState.messages[index].content.isEmpty,
+           (currentState.messages[index].reasoningContent ?? "").isEmpty,
+           currentState.messages[index].attachments.isEmpty {
+            currentState.messages.remove(at: index)
+        }
+        currentState.isStreaming = false
+        currentState.isSearchingWeb = false
+        currentState.activeToolCallIds = []
+        currentState.activeToolNamesById = [:]
+        currentState.errorMessage = error.localizedDescription
+        refreshContextUsage(in: &currentState)
+        state = .loaded(currentState)
+        scheduleErrorDismiss()
+        streamingBackgroundUseCase.update(.saving)
+        await persistConversation()
+        guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
+        streamingBackgroundUseCase.end(success: false)
+        completeActiveStream(assistantMessageId)
+    }
+
     func processAgentStreamEvent(_ event: AgentEvent, assistantMessageId: UUID) async -> Bool {
+        if let phase = streamingBackgroundPhase(for: event) {
+            streamingBackgroundUseCase.update(phase)
+        }
         switch event {
         case .token(let text):
-            let didPublish = enqueueStreamingTextUpdate(.token(text), assistantMessageId: assistantMessageId)
-            if didPublish { await Task.yield() }
+            guard !text.isEmpty else { return true }
+            return await publishAgentTextUpdate(.token(text), assistantMessageId: assistantMessageId)
         case .reasoning(let text):
-            let didPublish = enqueueStreamingTextUpdate(.reasoning(text), assistantMessageId: assistantMessageId)
-            if didPublish { await Task.yield() }
+            guard !text.isEmpty else { return true }
+            return await publishAgentTextUpdate(.reasoning(text), assistantMessageId: assistantMessageId)
         case .completed:
             break
         default:
             guard case .loaded(var currentState) = state else { return false }
-            if !streamingUpdateBuffer.updates.isEmpty {
-                let updates = takeStreamingTextUpdates(for: assistantMessageId)
-                applyStreamingTextUpdates(updates, to: &currentState, assistantMessageId: assistantMessageId)
-            }
             applyAgentEvent(event, to: &currentState, assistantMessageId: assistantMessageId)
             state = .loaded(currentState)
         }
         return true
     }
 
-    func agentRequestMessages(context: SendMessageContext, registry: ToolRegistry) throws -> [ChatMessage] {
-        let requestContext = try buildRequestContext(
-            messages: context.messages,
-            systemPrompt: buildAgentSystemPrompt(
+    func publishAgentTextUpdate(_ update: StreamingTextUpdate, assistantMessageId: UUID) async -> Bool {
+        guard case .loaded(var currentState) = state else { return false }
+        applyStreamingTextUpdates([update], to: &currentState, assistantMessageId: assistantMessageId)
+        state = .loaded(currentState)
+        await Task.yield()
+        return true
+    }
+
+    private func streamingBackgroundPhase(for event: AgentEvent) -> StreamingBackgroundPhase? {
+        switch event {
+        case .token:
+            .responding
+        case .reasoning, .transcriptAppended:
+            .thinking
+        case .toolCallStarted, .toolCallCompleted:
+            .usingTools
+        default:
+            nil
+        }
+    }
+
+    func agentRequestMessages(context: SendMessageContext, registry: ToolRegistry) async throws -> [ChatMessage] {
+        let requestContext = try await prepareRequestContext(
+            for: context,
+            systemPrompt: requestSystemPrompt(
                 context.systemPrompt,
+                modelCapabilities: context.modelCapabilities,
                 webSearchEnabled: context.webSearchEnabled
             ),
-            configuration: RequestContextConfiguration(
-                selectedModel: context.selectedModel,
-                contextWindowTokens: context.contextWindowTokens,
-                summary: context.contextSummary,
-                summaryCursorMessageId: context.contextSummaryCursorMessageId,
-                tools: registry.definitions
-            )
+            tools: registry.definitions
         )
         return [ChatMessage(role: .system, content: requestContext.effectiveSystemPrompt)] + requestContext.messages
     }
@@ -293,10 +337,12 @@ private extension ChatViewModel {
         state.messages[index].webSearchResults = merged
     }
 
-    func handleAgentStreamSuccess(_ assistantId: UUID, modelId: String) async {
+    func handleAgentStreamSuccess(
+        _ assistantId: UUID,
+        modelId: String,
+        reportedPromptTokens: Int?
+    ) async {
         guard isActiveStream(assistantId), case .loaded(var finalState) = state else { return }
-        let updates = takeStreamingTextUpdates(for: assistantId)
-        applyStreamingTextUpdates(updates, to: &finalState, assistantMessageId: assistantId)
         finalState.isStreaming = false
         finalState.isSearchingWeb = false
         finalState.activeToolCallIds = []
@@ -310,14 +356,26 @@ private extension ChatViewModel {
             finalState.errorMessage = String(localized: "The model returned an empty response. Please try again.")
         }
 
-        refreshContextUsage(in: &finalState)
+        refreshContextUsage(
+            in: &finalState,
+            calibratedPromptTokens: contextTokensAfterResponse(
+                promptTokens: reportedPromptTokens,
+                assistantMessageId: assistantId,
+                state: finalState
+            )
+        )
         state = .loaded(finalState)
         LogManager.success("performAgentStreaming completed model=\(modelId)")
+        streamingBackgroundUseCase.update(.saving)
         let didPersist = await persistConversation()
         guard !Task.isCancelled, isActiveStream(assistantId) else { return }
-        streamingBackgroundUseCase.end()
+        let didComplete = isPrivateChat || didPersist
+        if didComplete {
+            notifyStreamingCompletedUseCase.execute()
+        } else {
+            scheduleConversationPersistence()
+        }
+        streamingBackgroundUseCase.end(success: didComplete)
         completeActiveStream(assistantId)
-        if didPersist { scheduleCompactionIfNeeded() }
-        await notifyStreamingCompletedUseCase.execute()
     }
 }

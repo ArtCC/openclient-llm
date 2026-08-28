@@ -166,8 +166,7 @@ private extension TipJarView {
 
     func headerSection() -> some View {
         VStack(spacing: headerMetrics.spacing) {
-            Image("logo")
-                .resizable()
+            CurrentAppIconImage()
                 .scaledToFit()
                 .frame(width: headerMetrics.logoSize, height: headerMetrics.logoSize)
                 .cornerRadius(25)

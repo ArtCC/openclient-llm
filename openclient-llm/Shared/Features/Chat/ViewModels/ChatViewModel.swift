@@ -59,6 +59,7 @@ final class ChatViewModel {
         var conversation: Conversation?
         var messages: [ChatMessage] = []
         var inputText: String = ""
+        var inputRevision = 0
         var isStreaming: Bool = false
         var responseRevision = 0
         var streamingRevision = 0
@@ -142,7 +143,8 @@ final class ChatViewModel {
     let compactConversationUseCase: CompactConversationUseCaseProtocol
     var streamTask: Task<Void, Never>?
     @ObservationIgnored var streamingUpdateBuffer = StreamingUpdateBuffer()
-    var compactionTask: Task<Void, Never>?
+    @ObservationIgnored var backgroundPersistenceObserver: NSObjectProtocol?
+    var pendingPreflightCompaction: PendingPreflightCompaction?
     var persistenceTask: Task<PersistenceResult, Never>?
     var persistenceBase: Conversation?
     var queuedPersistenceConversation: Conversation?
@@ -150,6 +152,8 @@ final class ChatViewModel {
     var persistenceResetGeneration = 0
     private var loadTask: Task<Void, Never>?
     var activeAssistantMessageId: UUID?
+    var backgroundPersistenceCheckpointTask: Task<Void, Never>?
+    var backgroundPersistenceFingerprint: Int?
     var errorDismissTask: Task<Void, Never>?
     var durationTrackingTask: Task<Void, Never>?
     var mcpSettingsObservationTask: Task<Void, Never>?
@@ -244,6 +248,10 @@ final class ChatViewModel {
 
     isolated deinit {
         streamingUpdateBuffer.flushTask?.cancel()
+        backgroundPersistenceCheckpointTask?.cancel()
+        if let backgroundPersistenceObserver {
+            NotificationCenter.default.removeObserver(backgroundPersistenceObserver)
+        }
         mcpSettingsObservationTask?.cancel()
         mcpDiscoveryTask?.cancel()
     }
@@ -253,7 +261,6 @@ final class ChatViewModel {
     func send(_ event: Event) {
         if case .viewDisappeared = event {
             stopStreaming()
-            cancelCompaction()
             loadTask?.cancel()
             loadTask = nil
             return
@@ -326,7 +333,6 @@ private extension ChatViewModel {
 
     func loadInitialData() {
         cancelActiveStreaming()
-        cancelCompaction()
         loadTask?.cancel()
         state = .loading
         loadTask = Task { await fetchAndBuildInitialState() }
@@ -376,7 +382,6 @@ private extension ChatViewModel {
 
     func loadConversation(_ conversation: Conversation) {
         cancelActiveStreaming()
-        cancelCompaction()
         guard case .loaded(var loadedState) = state else {
             pendingConversation = conversation
             return
@@ -392,6 +397,7 @@ private extension ChatViewModel {
         loadedState.selectedModel = selectedModel
         loadedState.pendingAttachments = []
         loadedState.inputText = ""
+        loadedState.inputRevision += 1
         loadedState.errorMessage = nil
         refreshContextUsage(in: &loadedState)
         state = .loaded(loadedState)
@@ -399,7 +405,6 @@ private extension ChatViewModel {
 
     func selectModel(_ model: LLMModel) {
         guard case .loaded(var loadedState) = state else { return }
-        cancelCompaction()
         LogManager.info("selectModel id=\(model.id)")
         loadedState.selectedModel = model
         refreshContextUsage(in: &loadedState)
@@ -414,7 +419,6 @@ private extension ChatViewModel {
 
     func updateSystemPrompt(_ prompt: String) {
         guard case .loaded(var loadedState) = state else { return }
-        cancelCompaction()
         loadedState.systemPrompt = prompt
         if loadedState.conversation != nil {
             loadedState.conversation?.systemPrompt = prompt
@@ -426,7 +430,6 @@ private extension ChatViewModel {
 
     func updateModelParameters(_ parameters: ModelParameters) {
         guard case .loaded(var loadedState) = state else { return }
-        cancelCompaction()
         loadedState.modelParameters = parameters
         if loadedState.conversation != nil {
             loadedState.conversation?.modelParameters = parameters

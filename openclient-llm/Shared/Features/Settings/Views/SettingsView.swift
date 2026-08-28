@@ -243,6 +243,7 @@ private extension SettingsView {
     func loadedView(_ loadedState: SettingsViewModel.LoadedState) -> some View {
         VStack(spacing: 0) {
             Form {
+                appIconSection(loadedState)
                 serverSection(loadedState)
                 cloudSyncSection(loadedState)
                 personalizationSection()

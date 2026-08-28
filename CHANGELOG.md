@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.35-build-90] - 2026-08-28
+
+### Added
+
+- App icon selector in Settings with 20 designs on iOS and iPadOS
+- Native continued-processing Live Activity for model responses on iOS and iPadOS, with progress for reasoning, tool use, image generation, and saving
+
+### Fixed
+
+- Chat context usage now retains LiteLLM's reported prompt-token count and estimates only the newly generated response, falling back to local estimation when usage is unavailable
+- Automatic chat context compaction now persists summaries before the first overflowing request and rolls back pending summaries when saving, cancellation, or background expiration interrupts the operation
+- Agent-mode context estimates now include the actual agent system instructions
+- Long-chat scrolling no longer refreshes the full chat scene as visible messages change, improving manual navigation responsiveness
+- Manual scrolling during response streaming now keeps message presentation stable until scrolling ends, then displays buffered updates together
+
+### Security
+
+- Compacted conversation summaries are now size-bounded and isolated as untrusted data before being reused in model prompts
+
 ## [1.6.30-build-85] - 2026-08-23
 
 ### Added

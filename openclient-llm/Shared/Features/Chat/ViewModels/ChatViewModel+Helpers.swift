@@ -10,12 +10,18 @@ import Foundation
 
 enum ChatContextError: LocalizedError {
     case latestTurnExceedsContextWindow
+    case automaticCompactionFailed
 
     var errorDescription: String? {
-        String(localized: """
-        The latest message and its attachments exceed this context window. \
-        Increase the context window or shorten the message.
-        """)
+        switch self {
+        case .latestTurnExceedsContextWindow:
+            String(localized: """
+            The latest message and its attachments exceed this context window. \
+            Increase the context window or shorten the message.
+            """)
+        case .automaticCompactionFailed:
+            String(localized: "The earlier conversation context could not be preserved. Please try again.")
+        }
     }
 }
 
@@ -33,6 +39,7 @@ extension ChatViewModel {
     func updateInput(_ text: String) {
         guard case .loaded(var loadedState) = state else { return }
         loadedState.inputText = text
+        loadedState.inputRevision += 1
         state = .loaded(loadedState)
     }
 
@@ -43,7 +50,6 @@ extension ChatViewModel {
 
     func updateContextWindow(_ tokens: Int?) {
         guard case .loaded(var loadedState) = state else { return }
-        cancelCompaction()
         let normalizedTokens = tokens.flatMap { $0 > 0 ? $0 : nil }
         loadedState.contextWindowTokens = normalizedTokens
         loadedState.conversation?.contextWindowTokens = normalizedTokens
@@ -58,14 +64,10 @@ extension ChatViewModel {
 
     func completeActiveStream(_ assistantMessageId: UUID) {
         guard isActiveStream(assistantMessageId) else { return }
+        stopBackgroundPersistenceCheckpoints()
         resetStreamingTextUpdates()
         activeAssistantMessageId = nil
         streamTask = nil
-    }
-
-    func cancelCompaction() {
-        compactionTask?.cancel()
-        compactionTask = nil
     }
 
     func buildEffectiveSystemPrompt(
@@ -107,10 +109,15 @@ extension ChatViewModel {
     func refreshContextUsage(in loadedState: inout LoadedState, calibratedPromptTokens: Int? = nil) {
         let profileContext = isPrivateChat ? "" : getUserProfileContextUseCase?.execute() ?? ""
         let memoryContext = isPrivateChat ? "" : getMemoryContextUseCase?.execute() ?? ""
+        let requestPrompt = requestSystemPrompt(
+            loadedState.systemPrompt,
+            modelCapabilities: loadedState.selectedModel?.capabilities ?? [],
+            webSearchEnabled: loadedState.isWebSearchEnabled
+        )
         let systemPrompt = buildEffectiveSystemPrompt(
             profileContext: profileContext,
             memoryContext: memoryContext,
-            conversationSystemPrompt: loadedState.systemPrompt
+            conversationSystemPrompt: requestPrompt
         )
         let partition = contextPartition(
             messages: loadedState.messages,
@@ -130,6 +137,17 @@ extension ChatViewModel {
             compactedMessageCount: partition.compactedCount,
             calibratedPromptTokens: calibratedPromptTokens
         )
+    }
+
+    func contextTokensAfterResponse(
+        promptTokens: Int?,
+        assistantMessageId: UUID,
+        state: LoadedState
+    ) -> Int? {
+        guard let promptTokens else { return nil }
+        guard let assistant = state.messages.first(where: { $0.id == assistantMessageId }) else { return promptTokens }
+        let responseTokens = ContextWindowBuilder().estimatedInputTokens(messages: [assistant], systemPrompt: "")
+        return promptTokens + responseTokens
     }
 
     func buildRequestContext(
@@ -180,9 +198,10 @@ extension ChatViewModel {
         return await enqueuePersistence(of: snapshot).value.didPersist
     }
 
-    func scheduleConversationPersistence() {
-        guard let snapshot = conversationForPersistence() else { return }
-        enqueuePersistence(of: snapshot)
+    @discardableResult
+    func scheduleConversationPersistence() -> Task<PersistenceResult, Never>? {
+        guard let snapshot = conversationForPersistence() else { return nil }
+        return enqueuePersistence(of: snapshot)
     }
 
     private func conversationForPersistence() -> (conversation: Conversation, expectedBase: Conversation?)? {
@@ -306,6 +325,17 @@ extension ChatViewModel {
             return
         }
         mergedConversation.updatedAt = max(desiredConversation.updatedAt, persistedConversation.updatedAt)
+        let hasSameRequestMessages = mergedConversation.messages.elementsEqual(loadedState.messages) {
+            $0.hasSameRequestContent(as: $1)
+        }
+        let retainsContextUsage = hasSameRequestMessages
+            && mergedConversation.systemPrompt == loadedState.systemPrompt
+            && mergedConversation.contextWindowTokens == loadedState.contextWindowTokens
+            && mergedConversation.modelId == loadedState.selectedModel?.id
+            && mergedConversation.contextSummary == loadedState.conversation?.contextSummary
+            && mergedConversation.contextSummaryCursorMessageId
+                == loadedState.conversation?.contextSummaryCursorMessageId
+        let contextUsage = loadedState.contextUsage
         loadedState.conversation = mergedConversation
         loadedState.messages = mergedConversation.messages
         loadedState.systemPrompt = mergedConversation.systemPrompt
@@ -314,7 +344,11 @@ extension ChatViewModel {
         if let model = loadedState.availableModels.first(where: { $0.id == mergedConversation.modelId }) {
             loadedState.selectedModel = model
         }
-        refreshContextUsage(in: &loadedState)
+        if retainsContextUsage {
+            loadedState.contextUsage = contextUsage
+        } else {
+            refreshContextUsage(in: &loadedState)
+        }
         state = .loaded(loadedState)
     }
 
@@ -349,67 +383,6 @@ extension ChatViewModel {
         )
         rebased.updatedAt = max(incoming.updatedAt, current.updatedAt)
         return rebased
-    }
-
-    func scheduleCompactionIfNeeded() {
-        guard !isPrivateChat,
-              case .loaded(let loadedState) = state,
-              let conversation = loadedState.conversation,
-              let model = loadedState.selectedModel else { return }
-        let messageIds = loadedState.messages.map(\.id)
-        let expectedSummary = conversation.contextSummary
-        let expectedCursor = conversation.contextSummaryCursorMessageId
-        let configuration = compactionConfiguration(for: loadedState, conversation: conversation, model: model)
-        cancelCompaction()
-        compactionTask = Task {
-            do {
-                let compacted = try await compactConversationUseCase.execute(
-                    messages: loadedState.messages,
-                    configuration: configuration
-                )
-                try Task.checkCancellation()
-                guard let compacted,
-                      case .loaded(var currentState) = state,
-                      currentState.conversation?.id == conversation.id,
-                      currentState.selectedModel?.id == model.id,
-                      currentState.contextWindowTokens == loadedState.contextWindowTokens,
-                      currentState.messages.map(\.id) == messageIds,
-                      currentState.conversation?.contextSummary == expectedSummary,
-                      currentState.conversation?.contextSummaryCursorMessageId == expectedCursor else { return }
-                currentState.conversation?.contextSummary = compacted.summary
-                currentState.conversation?.contextSummaryCursorMessageId = compacted.cursorMessageId
-                refreshContextUsage(in: &currentState)
-                state = .loaded(currentState)
-                let didPersist = await persistConversation()
-                compactionTask = nil
-                if didPersist { scheduleCompactionIfNeeded() }
-            } catch is CancellationError {
-                return
-            } catch {
-                LogManager.warning("compactConversation failed: \(error)")
-            }
-        }
-    }
-
-    func compactionConfiguration(
-        for state: LoadedState,
-        conversation: Conversation,
-        model: LLMModel
-    ) -> CompactionConfiguration {
-        let systemPrompt = buildEffectiveSystemPrompt(
-            profileContext: getUserProfileContextUseCase?.execute() ?? "",
-            memoryContext: getMemoryContextUseCase?.execute() ?? "",
-            conversationSystemPrompt: state.systemPrompt
-        )
-        return CompactionConfiguration(
-            existingSummary: conversation.contextSummary,
-            summaryCursorMessageId: conversation.contextSummaryCursorMessageId,
-            model: model.id,
-            contextWindowTokens: state.contextWindowTokens ?? model.maxInputTokens,
-            maxOutputTokens: model.maxOutputTokens,
-            systemPrompt: systemPrompt,
-            tools: contextTools(for: state)
-        )
     }
 
     func modelWithContextWindow(_ model: LLMModel?, override contextWindowTokens: Int?) -> LLMModel? {

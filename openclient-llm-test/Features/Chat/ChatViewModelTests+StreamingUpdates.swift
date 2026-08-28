@@ -94,6 +94,7 @@ extension ChatViewModelTests {
     func test_cancelActiveStreaming_withBufferedText_flushesPartialResponse() {
         // Given
         let assistantId = prepareActiveStream()
+        sut.beginStreamingBackground(for: assistantId)
         sut.enqueueStreamingTextUpdate(.token("First"), assistantMessageId: assistantId)
         sut.enqueueStreamingTextUpdate(.token(" second"), assistantMessageId: assistantId)
 
@@ -108,6 +109,9 @@ extension ChatViewModelTests {
         XCTAssertEqual(loadedState.messages.first?.content, "First second")
         XCTAssertFalse(loadedState.isStreaming)
         XCTAssertNil(sut.streamingUpdateBuffer.assistantMessageId)
+        XCTAssertEqual(mockStreamingBackground.completionResults, [false])
+        XCTAssertNil(sut.backgroundPersistenceCheckpointTask)
+        XCTAssertNil(sut.backgroundPersistenceObserver)
     }
 
     func test_enqueueStreamingTextUpdate_staleAssistant_doesNotMutateCurrentStream() {
@@ -125,6 +129,76 @@ extension ChatViewModelTests {
         XCTAssertEqual(loadedState.messages.first?.id, assistantId)
         XCTAssertEqual(loadedState.messages.first?.content, "")
         XCTAssertNil(sut.streamingUpdateBuffer.assistantMessageId)
+    }
+
+    func test_send_sendTapped_streamCompletes_tracksBackgroundLifecycle() async {
+        // Given
+        let model = LLMModel(id: "gpt-4")
+        sut.state = .loaded(sut.makeLoadedState(models: [model], pending: nil))
+        mockStreamMessage.chunks = [.reasoning("Working"), .token("Answer")]
+        let completed = expectation(description: "Background task completed")
+        mockStreamingBackground.onEnd = { _ in completed.fulfill() }
+        sut.send(.inputChanged("Question"))
+
+        // When
+        sut.send(.sendTapped)
+        await fulfillment(of: [completed], timeout: 1)
+
+        // Then
+        XCTAssertEqual(mockStreamingBackground.beginCallCount, 1)
+        XCTAssertTrue(mockStreamingBackground.phases.contains(.thinking))
+        XCTAssertTrue(mockStreamingBackground.phases.contains(.responding))
+        XCTAssertEqual(mockStreamingBackground.phases.last, .saving)
+        XCTAssertEqual(mockStreamingBackground.completionResults, [true])
+        XCTAssertEqual(mockNotifyStreamingCompleted.completionCallCount, 1)
+        XCTAssertNil(sut.backgroundPersistenceCheckpointTask)
+        XCTAssertNil(sut.backgroundPersistenceObserver)
+        XCTAssertNil(sut.activeAssistantMessageId)
+        XCTAssertNil(sut.streamTask)
+    }
+
+    func test_send_sendTapped_persistenceFails_completesBackgroundTaskAsFailure() async {
+        // Given
+        let model = LLMModel(id: "gpt-4")
+        sut.state = .loaded(sut.makeLoadedState(models: [model], pending: nil))
+        mockStreamMessage.chunks = [.token("Answer")]
+        mockSaveConversation.error = NSError(domain: "test", code: 1)
+        let completed = expectation(description: "Background task completed")
+        mockStreamingBackground.onEnd = { _ in completed.fulfill() }
+        sut.send(.inputChanged("Question"))
+
+        // When
+        sut.send(.sendTapped)
+        await fulfillment(of: [completed], timeout: 1)
+
+        // Then
+        XCTAssertGreaterThanOrEqual(mockSaveConversation.executeCallCount, 1)
+        XCTAssertEqual(mockStreamingBackground.completionResults, [false])
+        XCTAssertEqual(mockNotifyStreamingCompleted.completionCallCount, 0)
+        XCTAssertNil(sut.activeAssistantMessageId)
+        XCTAssertNil(sut.streamTask)
+        XCTAssertNil(sut.backgroundPersistenceCheckpointTask)
+        XCTAssertNil(sut.backgroundPersistenceObserver)
+    }
+
+    func test_beginStreamingBackground_expiration_stopsActiveResponse() async {
+        // Given
+        let assistantId = prepareActiveStream()
+        sut.beginStreamingBackground(for: assistantId)
+
+        // When
+        mockStreamingBackground.expire()
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertFalse(loadedState.isStreaming)
+        XCTAssertNil(sut.activeAssistantMessageId)
+        XCTAssertEqual(mockNotifyStreamingCompleted.expirationCallCount, 1)
+        XCTAssertNil(sut.backgroundPersistenceCheckpointTask)
+        XCTAssertNil(sut.backgroundPersistenceObserver)
     }
 
     private func prepareActiveStream() -> UUID {

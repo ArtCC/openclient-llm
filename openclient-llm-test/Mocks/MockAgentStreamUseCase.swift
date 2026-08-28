@@ -15,6 +15,7 @@ final class MockAgentStreamUseCase: AgentStreamUseCaseProtocol, @unchecked Senda
 
     var events: [AgentEvent] = []
     var error: Error?
+    var receivedMessages: [[ChatMessage]] = []
     var receivedToolNames: [String] = []
     var onExecute: (() -> Void)?
     var waitsForCancellation = false
@@ -33,12 +34,16 @@ final class MockAgentStreamUseCase: AgentStreamUseCaseProtocol, @unchecked Senda
     ) -> AsyncThrowingStream<AgentEvent, Error> {
         _ = toolContext.isConfigurationCurrent
         executeCallCount += 1
+        receivedMessages.append(messages)
         receivedToolNames = toolContext.toolRegistry.definitions.map(\.function.name)
         onExecute?()
         let events = events
         let error = error
         return AsyncThrowingStream { continuation in
             if waitsForCancellation {
+                for event in events {
+                    continuation.yield(event)
+                }
                 activeContinuation = continuation
                 continuation.onTermination = { [weak self] _ in
                     Task { @MainActor in

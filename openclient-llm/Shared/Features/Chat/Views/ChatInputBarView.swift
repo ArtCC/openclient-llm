@@ -12,14 +12,12 @@ import TipKit
 struct ChatInputBarView: View {
     // MARK: - Properties
 
-    @Binding var inputText: String
     @Binding var showImagePicker: Bool
     @Binding var showDocumentPicker: Bool
     @Binding var showCameraPicker: Bool
 
     let state: ChatInputBarState
-    let onInputChanged: (String) -> Void
-    let onSend: () -> Void
+    let onSend: (String) -> Void
     let onStopStreaming: () -> Void
     let onStartRecording: () -> Void
     let onStopRecording: () -> Void
@@ -27,6 +25,7 @@ struct ChatInputBarView: View {
     let onWebSearchToggled: () -> Void
     let onMCPButtonTapped: () -> Void
 
+    @State private var inputText = ""
     @State private var isPulsing = false
     @Binding var showActions: Bool
     @Binding var showImageFilePicker: Bool
@@ -96,6 +95,9 @@ struct ChatInputBarView: View {
         .animation(.spring(duration: 0.35), value: state.isTranscribing)
         .animation(.easeInOut(duration: 0.2), value: state.isSearchingWeb)
         .animation(.easeInOut(duration: 0.2), value: state.activeToolCallIds)
+        .onChange(of: state.inputRevision, initial: true) {
+            inputText = state.inputText
+        }
     }
 }
 
@@ -164,25 +166,9 @@ private extension ChatInputBarView {
 #if os(iOS)
             .submitLabel(.send)
 #endif
-            .onSubmit {
-                inputText = ""
-                onSend()
-            }
-            .onChange(of: inputText) { _, newValue in
-                onInputChanged(newValue)
-            }
-            .onChange(of: state.inputText) { _, newValue in
-                if newValue != inputText {
-                    inputText = newValue
-                }
-            }
+            .onSubmit(sendInput)
 
             actionButton
-        }
-        .onAppear {
-            if state.inputText != inputText {
-                inputText = state.inputText
-            }
         }
     }
 
@@ -365,7 +351,7 @@ private extension ChatInputBarView {
 
     @ViewBuilder
     var actionButton: some View {
-        let hasText = !state.inputText
+        let hasText = !inputText
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .isEmpty
         let hasModel = state.selectedModel != nil
@@ -402,7 +388,7 @@ private extension ChatInputBarView {
     }
 
     var sendButton: some View {
-        Button { inputText = ""; onSend() } label: {
+        Button(action: sendInput) {
             Image(systemName: "arrow.up.circle.fill").font(.title2).foregroundStyle(Color.appAccent)
                 .frame(minWidth: 44, minHeight: 44).contentShape(Circle())
         }
@@ -422,6 +408,12 @@ private extension ChatInputBarView {
     }
 
     // MARK: Actions
+
+    func sendInput() {
+        let text = inputText
+        inputText = ""
+        onSend(text)
+    }
 
     func startPulse() {
         isPulsing = false

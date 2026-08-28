@@ -1,14 +1,19 @@
 Hi there! We've got some great new features for you in this update.
 
-***1.6.30:
+***1.6.35:
 
-• Fixed an issue that could cause the app to freeze when manually scrolling while a model was responding, or after several responses.
-• On macOS, add OpenClient widgets to the desktop or Notification Center and test New Chat, Search, Quick Actions, Continue Chat, Recent, Pinned, and Tagged Conversations.
-• On macOS, add the New Chat control and verify that it opens the app directly in a new conversation.
+• Choose from 20 app icons in Settings on iPhone and iPad.
+• Long chats now preserve earlier context before the next model response, with safer handling when requests are cancelled or interrupted.
+• Scroll through long conversations and verify that scrolling remains smooth while the floating date indicator updates.
+• While a model is responding, scroll through the conversation and verify that the visible history stays stable, then catches up when scrolling stops.
+• Start a model response, leave OpenClient, and verify that its Live Activity shows progress through reasoning, tool use, image generation, and saving.
 • Minor bug fixes and improvements for a smoother experience.
 
 ***Recent Updates:
 
+• Fixed an issue that could cause the app to freeze when manually scrolling while a model was responding, or after several responses.
+• On macOS, add OpenClient widgets to the desktop or Notification Center and test New Chat, Search, Quick Actions, Continue Chat, Recent, Pinned, and Tagged Conversations.
+• On macOS, add the New Chat control and verify that it opens the app directly in a new conversation.
 • Chat messages now show their time, with a floating date indicator when scrolling through conversation history.
 • Test the new per-tool MCP permissions and approval flow: set tools to Always Allow, Ask, or Deny, then review requested MCP calls before execution.
 • You can now support OpenClient with optional monthly or annual subscriptions, alongside one-time coffee purchases. No features are locked.
