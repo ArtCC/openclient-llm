@@ -9,14 +9,53 @@
 import Foundation
 
 nonisolated extension AgentStreamUseCase {
+    func handleFinalChoice(
+        _ choice: ChatCompletionResponse.Choice,
+        continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation,
+        delay: Duration
+    ) async throws -> Bool {
+        let content = choice.message.content ?? ""
+        let reasoning = choice.message.reasoningContent
+        guard hasPresentableFinalContent(choice) else { return true }
+        if let reasoning, !reasoning.isEmpty {
+            try await yieldChunked(
+                reasoning,
+                as: { .reasoning($0) },
+                continuation: continuation,
+                delay: delay
+            )
+        }
+        if !content.isEmpty {
+            try await yieldChunked(
+                content,
+                as: { .token($0) },
+                continuation: continuation,
+                delay: delay
+            )
+        }
+        return false
+    }
+
+    func hasPresentableFinalContent(_ choice: ChatCompletionResponse.Choice) -> Bool {
+        let content = choice.message.content?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let reasoning = choice.message.reasoningContent?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return content != "{}" && (!content.isEmpty || !reasoning.isEmpty)
+    }
+
     func yieldChunked(
         _ text: String,
         as event: @Sendable (String) -> AgentEvent,
         continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation,
         delay: Duration
     ) async throws {
-        let maximumChunkCount = 100
-        let chunkSize = max(32, (text.count + maximumChunkCount - 1) / maximumChunkCount)
+        let targetChunkCount = 100
+        let maximumChunkCount = 300
+        let minimumChunkSize = 4
+        let preferredMaximumChunkSize = 48
+        let adaptiveChunkSize = text.count / targetChunkCount + (text.count % targetChunkCount == 0 ? 0 : 1)
+        let preferredChunkSize = min(preferredMaximumChunkSize, max(minimumChunkSize, adaptiveChunkSize))
+        let minimumSizeForChunkLimit = text.count / maximumChunkCount + (text.count % maximumChunkCount == 0 ? 0 : 1)
+        let chunkSize = max(preferredChunkSize, minimumSizeForChunkLimit)
         var index = text.startIndex
         while index < text.endIndex {
             try Task.checkCancellation()

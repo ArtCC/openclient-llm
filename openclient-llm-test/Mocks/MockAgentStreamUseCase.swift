@@ -41,6 +41,9 @@ final class MockAgentStreamUseCase: AgentStreamUseCaseProtocol, @unchecked Senda
         let error = error
         return AsyncThrowingStream { continuation in
             if waitsForCancellation {
+                for event in events {
+                    continuation.yield(event)
+                }
                 activeContinuation = continuation
                 continuation.onTermination = { [weak self] _ in
                     Task { @MainActor in
