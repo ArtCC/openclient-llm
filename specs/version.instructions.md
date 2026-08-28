@@ -116,7 +116,7 @@ When the user chooses a new banner, ask for any information not already supplied
 - Which locales to include or whether to adapt the copy for every locale already present in the file.
 
 Generate a new `dismiss_banner_key` from the release version and a concise stable slug unless the user supplies one, for
-example `release-1.6.35-chat-streaming`. A new key makes the banner visible again to users who dismissed an older banner;
+example `release-1.0.0-chat-streaming`. A new key makes the banner visible again to users who dismissed an older banner;
 never change it merely to re-show unchanged content.
 
 ### Valid banner actions
