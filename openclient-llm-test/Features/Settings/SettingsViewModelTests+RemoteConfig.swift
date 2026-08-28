@@ -42,4 +42,36 @@ extension SettingsViewModelTests {
         }
         XCTAssertTrue(loadedState.isTipJarEnabled)
     }
+
+    func test_send_viewAppeared_iconPacksConfigured_setsVisibleCategories() {
+        // Given
+        mockRemoteConfigManager.currentConfig = .stub(
+            showIconPacks: ["special", "halloween", "unknown"]
+        )
+
+        // When
+        sut.send(.viewAppeared)
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.visibleAppIconCategories, [.openClient, .special, .halloween])
+    }
+
+    func test_send_viewAppeared_iconPacksMissing_setsAllCategoriesVisible() {
+        // Given
+        mockRemoteConfigManager.currentConfig = .stub(showIconPacks: nil)
+
+        // When
+        sut.send(.viewAppeared)
+
+        // Then
+        guard case .loaded(let loadedState) = sut.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.visibleAppIconCategories, AppIcon.Category.allCases)
+    }
 }

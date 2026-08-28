@@ -16,6 +16,7 @@ struct AppIconSelectionView: View {
     let canChangeIcon: Bool
     let isChangingIcon: Bool
     let errorMessage: String?
+    let categories: [AppIcon.Category]
     let onSelect: (AppIcon) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -92,7 +93,7 @@ private extension AppIconSelectionView {
     }
 
     var iconCatalog: some View {
-        ForEach(AppIcon.Category.allCases) { category in
+        ForEach(categories) { category in
             VStack(alignment: .leading, spacing: 14) {
                 Text(category.localizedName)
                     .font(.headline)
@@ -159,6 +160,7 @@ private extension AppIconSelectionView {
         canChangeIcon: true,
         isChangingIcon: false,
         errorMessage: nil,
+        categories: AppIcon.Category.allCases,
         onSelect: { _ in }
     )
 }

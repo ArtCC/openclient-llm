@@ -12,12 +12,12 @@ import XCTest
 
 @MainActor
 final class AppIconTests: XCTestCase {
-    func test_allCases_containsTwentyIcons() {
+    func test_allCases_containsThirtyIcons() {
         // When
         let icons = AppIcon.allCases
 
         // Then
-        XCTAssertEqual(icons.count, 20)
+        XCTAssertEqual(icons.count, 30)
     }
 
     func test_icons_eachCategory_containsFiveIcons() {
@@ -25,7 +25,7 @@ final class AppIconTests: XCTestCase {
         let categoryCounts = AppIcon.Category.allCases.map { AppIcon.icons(in: $0).count }
 
         // Then
-        XCTAssertEqual(categoryCounts, [5, 5, 5, 5])
+        XCTAssertEqual(categoryCounts, [5, 5, 5, 5, 5, 5])
     }
 
     func test_alternateIconName_defaultIcon_returnsNil() {
@@ -42,6 +42,32 @@ final class AppIconTests: XCTestCase {
 
         // Then
         XCTAssertEqual(icon, .defaultIcon)
+    }
+
+    func test_visibleCategories_missingConfiguration_returnsAllCategories() {
+        // When
+        let categories = AppIcon.Category.visibleCategories(showIconPacks: nil)
+
+        // Then
+        XCTAssertEqual(categories, AppIcon.Category.allCases)
+    }
+
+    func test_visibleCategories_configured_returnsOpenClientAndKnownPacks() {
+        // When
+        let categories = AppIcon.Category.visibleCategories(
+            showIconPacks: ["christmas", "colors", "unknown"]
+        )
+
+        // Then
+        XCTAssertEqual(categories, [.openClient, .colors, .christmas])
+    }
+
+    func test_visibleCategories_emptyConfiguration_returnsOpenClient() {
+        // When
+        let categories = AppIcon.Category.visibleCategories(showIconPacks: [])
+
+        // Then
+        XCTAssertEqual(categories, [.openClient])
     }
 
     func test_previewImage_allIcons_loadFromMainBundle() {

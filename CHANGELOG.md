@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.40-build-91] - [Unreleased]
+
+### Added
+
+- Ten new themed app icons for Halloween and Christmas on iOS and iPadOS
+
 ## [1.6.35-build-90] - 2026-08-28
 
 ### Added
