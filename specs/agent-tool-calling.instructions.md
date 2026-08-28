@@ -298,7 +298,7 @@ protocol AgentStreamUseCaseProtocol: Sendable {
         model: String,
         parameters: ModelParameters,
         contextWindowTokens: Int?,
-        toolRegistry: ToolRegistry
+        toolContext: AgentToolContext
     ) -> AsyncThrowingStream<AgentEvent, Error>
 }
 
@@ -309,15 +309,16 @@ enum AgentEvent: Sendable {
     case toolCallCompleted(toolCallId: String, result: String, searchResults: [LiteLLMSearchResult]?)
     case transcriptAppended([ChatMessage])
     case usage(TokenUsage)
-    case promptUsage(Int)
+    case promptUsage(Int?)
     case image(Data)
     case completed
 }
 ```
 
 The use case manages non-streaming completion requests for the full loop, then emits final content and reasoning in locally
-paced, adaptively sized chunks for the existing streaming UI. Chunk count is bounded so presentation adds no more than one
-second per reasoning or answer field. Failures terminate the `AsyncThrowingStream`; there is no `.error` event. Assistant
+paced, adaptively sized chunks for the existing streaming UI. Chunk count bounds requested pacing sleeps to approximately six
+seconds per reasoning or answer field, and the request timeout pauses once valid final content has arrived. Failures terminate
+the `AsyncThrowingStream`; there is no `.error` event. Assistant
 tool-call messages and matching tool messages are emitted through `.transcriptAppended` and persisted before the next round.
 
 Agent transcript messages remain in `ChatViewModel` for context and persistence, but presentation snapshots must exclude

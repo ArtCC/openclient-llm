@@ -83,7 +83,7 @@ struct AgentStreamUseCase: AgentStreamUseCaseProtocol {
     init(
         repository: ChatRepositoryProtocol = ChatRepository(),
         timeout: Duration = .seconds(300),
-        chunkDelay: Duration = .milliseconds(10)
+        chunkDelay: Duration = .milliseconds(20)
     ) {
         self.repository = repository
         self.timeout = timeout
@@ -175,8 +175,12 @@ private extension AgentStreamUseCase {
             let response = try await request(context: context, messages: requestMessages, tools: tools)
             aggregateUsage = emitUsage(response.usage, aggregate: aggregateUsage, continuation: context.continuation)
             guard let choice = response.choices.first else { throw AgentStreamError.invalidResponse }
+            let toolCalls = choice.message.toolCalls ?? []
+            if toolCalls.isEmpty, hasPresentableFinalContent(choice) {
+                await context.timeoutController.pause()
+            }
 
-            if let toolCalls = choice.message.toolCalls, !toolCalls.isEmpty {
+            if !toolCalls.isEmpty {
                 guard !forceFinalResponse else { throw AgentStreamError.iterationLimitReached }
                 forceFinalResponse = try await completeToolRound(
                     choice: choice,
@@ -185,7 +189,11 @@ private extension AgentStreamUseCase {
                     toolCallCount: &toolCallCount,
                     context: AgentRoundContext(requestMessages: requestMessages, loop: context)
                 )
-            } else if try await handleFinalChoice(choice, continuation: context.continuation) {
+            } else if try await handleFinalChoice(
+                choice,
+                continuation: context.continuation,
+                delay: chunkDelay
+            ) {
                 guard !forceFinalResponse else { throw AgentStreamError.invalidResponse }
                 forceFinalResponse = true
             } else {
@@ -403,32 +411,6 @@ private extension AgentStreamUseCase {
             toolCallId: result.toolCallId,
             toolName: result.toolName
         )
-    }
-
-    func handleFinalChoice(
-        _ choice: ChatCompletionResponse.Choice,
-        continuation: AsyncThrowingStream<AgentEvent, Error>.Continuation
-    ) async throws -> Bool {
-        let content = choice.message.content ?? ""
-        let reasoning = choice.message.reasoningContent
-        if content.trimmingCharacters(in: .whitespacesAndNewlines) == "{}" { return true }
-        if let reasoning, !reasoning.isEmpty {
-            try await yieldChunked(
-                reasoning,
-                as: { .reasoning($0) },
-                continuation: continuation,
-                delay: chunkDelay
-            )
-        }
-        if !content.isEmpty {
-            try await yieldChunked(
-                content,
-                as: { .token($0) },
-                continuation: continuation,
-                delay: chunkDelay
-            )
-        }
-        return content.isEmpty && (reasoning?.isEmpty ?? true)
     }
 
     func emitUsage(

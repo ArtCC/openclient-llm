@@ -122,6 +122,52 @@ extension ChatViewModelTests {
         XCTAssertEqual(lastAssistant?.content, "Agent answer")
     }
 
+    func test_sendMessage_agentToken_publishesDirectlyWithoutServerStreamingBuffer() async throws {
+        // Given
+        let mockAgent = MockAgentStreamUseCase()
+        mockAgent.events = [.token("Agent")]
+        mockAgent.waitsForCancellation = true
+        let modelWithFunctionCalling = LLMModel(id: "gpt-4", capabilities: [.functionCalling])
+        mockFetchModels.result = .success([modelWithFunctionCalling])
+        let sutWithAgent = ChatViewModel(
+            fetchModelsUseCase: mockFetchModels,
+            streamMessageUseCase: mockStreamMessage,
+            agentStreamUseCase: mockAgent,
+            webSearchUseCase: mockWebSearch,
+            saveConversationUseCase: mockSaveConversation,
+            exportConversationUseCase: mockExportConversation,
+            branchConversationUseCase: mockBranchConversation,
+            getChatPreferencesUseCase: mockGetChatPreferences,
+            fetchMCPToolsUseCase: MockFetchMCPToolsUseCase(),
+            getConversationStartersUseCase: mockGetConversationStarters,
+            streamingBackgroundUseCase: MockStreamingBackgroundUseCase(),
+            notifyStreamingCompletedUseCase: MockNotifyStreamingCompletedUseCase()
+        )
+        sutWithAgent.send(.viewAppeared)
+        await waitUntil {
+            if case .loaded = sutWithAgent.state { return true }
+            return false
+        }
+
+        // When
+        sutWithAgent.send(.inputChanged("Tell me a story"))
+        sutWithAgent.send(.sendTapped)
+        await waitUntil {
+            guard case .loaded(let loadedState) = sutWithAgent.state else { return false }
+            return loadedState.messages.last?.content == "Agent"
+        }
+
+        // Then
+        guard case .loaded(let loadedState) = sutWithAgent.state else {
+            XCTFail("Expected loaded state")
+            return
+        }
+        XCTAssertEqual(loadedState.streamingRevision, 1)
+        XCTAssertTrue(sutWithAgent.streamingUpdateBuffer.updates.isEmpty)
+        XCTAssertNil(sutWithAgent.streamingUpdateBuffer.flushTask)
+        sutWithAgent.send(.stopStreamingTapped)
+    }
+
     func test_sendMessage_noCapabilitiesModel_andWebSearch_usesRegularStreaming() async throws {
         // Given — model without any capabilities (no functionCalling)
         let mockAgent = MockAgentStreamUseCase()

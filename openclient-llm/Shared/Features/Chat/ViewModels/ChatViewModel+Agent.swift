@@ -129,7 +129,6 @@ extension ChatViewModel {
 private extension ChatViewModel {
     func handleAgentStreamFailure(_ error: Error, assistantMessageId: UUID, modelId: String) async {
         guard !Task.isCancelled, isActiveStream(assistantMessageId) else { return }
-        flushStreamingTextUpdates(for: assistantMessageId)
         guard case .loaded(var currentState) = state else { return }
         LogManager.error("performAgentStreaming error model=\(modelId): \(error)")
         if let index = currentState.messages.firstIndex(where: { $0.id == assistantMessageId }),
@@ -159,22 +158,26 @@ private extension ChatViewModel {
         }
         switch event {
         case .token(let text):
-            let didPublish = enqueueStreamingTextUpdate(.token(text), assistantMessageId: assistantMessageId)
-            if didPublish { await Task.yield() }
+            guard !text.isEmpty else { return true }
+            return await publishAgentTextUpdate(.token(text), assistantMessageId: assistantMessageId)
         case .reasoning(let text):
-            let didPublish = enqueueStreamingTextUpdate(.reasoning(text), assistantMessageId: assistantMessageId)
-            if didPublish { await Task.yield() }
+            guard !text.isEmpty else { return true }
+            return await publishAgentTextUpdate(.reasoning(text), assistantMessageId: assistantMessageId)
         case .completed:
             break
         default:
             guard case .loaded(var currentState) = state else { return false }
-            if !streamingUpdateBuffer.updates.isEmpty {
-                let updates = takeStreamingTextUpdates(for: assistantMessageId)
-                applyStreamingTextUpdates(updates, to: &currentState, assistantMessageId: assistantMessageId)
-            }
             applyAgentEvent(event, to: &currentState, assistantMessageId: assistantMessageId)
             state = .loaded(currentState)
         }
+        return true
+    }
+
+    func publishAgentTextUpdate(_ update: StreamingTextUpdate, assistantMessageId: UUID) async -> Bool {
+        guard case .loaded(var currentState) = state else { return false }
+        applyStreamingTextUpdates([update], to: &currentState, assistantMessageId: assistantMessageId)
+        state = .loaded(currentState)
+        await Task.yield()
         return true
     }
 
@@ -340,8 +343,6 @@ private extension ChatViewModel {
         reportedPromptTokens: Int?
     ) async {
         guard isActiveStream(assistantId), case .loaded(var finalState) = state else { return }
-        let updates = takeStreamingTextUpdates(for: assistantId)
-        applyStreamingTextUpdates(updates, to: &finalState, assistantMessageId: assistantId)
         finalState.isStreaming = false
         finalState.isSearchingWeb = false
         finalState.activeToolCallIds = []
