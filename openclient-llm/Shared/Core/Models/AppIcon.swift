@@ -66,6 +66,32 @@ enum AppIcon: String, CaseIterable, Identifiable {
                 String(localized: "Christmas")
             }
         }
+
+        var remoteIdentifier: String? {
+            switch self {
+            case .openClient:
+                nil
+            case .colors:
+                "colors"
+            case .bright:
+                "bright"
+            case .special:
+                "special"
+            case .halloween:
+                "halloween"
+            case .christmas:
+                "christmas"
+            }
+        }
+
+        static func visibleCategories(showIconPacks: [String]?) -> [Category] {
+            guard let showIconPacks else { return allCases }
+            let visibleIdentifiers = Set(showIconPacks)
+            return allCases.filter { category in
+                guard let remoteIdentifier = category.remoteIdentifier else { return true }
+                return visibleIdentifiers.contains(remoteIdentifier)
+            }
+        }
     }
 
     var id: Self { self }

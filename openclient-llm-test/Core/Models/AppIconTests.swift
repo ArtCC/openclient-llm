@@ -44,6 +44,32 @@ final class AppIconTests: XCTestCase {
         XCTAssertEqual(icon, .defaultIcon)
     }
 
+    func test_visibleCategories_missingConfiguration_returnsAllCategories() {
+        // When
+        let categories = AppIcon.Category.visibleCategories(showIconPacks: nil)
+
+        // Then
+        XCTAssertEqual(categories, AppIcon.Category.allCases)
+    }
+
+    func test_visibleCategories_configured_returnsOpenClientAndKnownPacks() {
+        // When
+        let categories = AppIcon.Category.visibleCategories(
+            showIconPacks: ["christmas", "colors", "unknown"]
+        )
+
+        // Then
+        XCTAssertEqual(categories, [.openClient, .colors, .christmas])
+    }
+
+    func test_visibleCategories_emptyConfiguration_returnsOpenClient() {
+        // When
+        let categories = AppIcon.Category.visibleCategories(showIconPacks: [])
+
+        // Then
+        XCTAssertEqual(categories, [.openClient])
+    }
+
     func test_previewImage_allIcons_loadFromMainBundle() {
         // When
         let missingIcons = AppIcon.allCases.filter { icon in

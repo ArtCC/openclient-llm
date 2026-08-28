@@ -28,7 +28,8 @@ extension RemoteConfig {
         isForceUpdate: Bool = false,
         latestVersion: String = "1.0.0",
         banner: Banner? = nil,
-        isTipJarEnabled: Bool? = true
+        isTipJarEnabled: Bool? = true,
+        showIconPacks: [String]? = nil
     ) -> RemoteConfig {
         let update = PlatformUpdate(
             enabled: isUpdateEnabled,
@@ -41,7 +42,21 @@ extension RemoteConfig {
             maintenanceMode: .init(enabled: isMaintenanceEnabled),
             appUpdate: .init(ios: update, macos: update),
             banner: banner ?? .init(active: false, dismissBannerKey: "test", platforms: [], items: [:]),
-            settingsSection: isTipJarEnabled.map { .init(tipOption: $0) }
+            settingsSection: makeSettingsSection(
+                isTipJarEnabled: isTipJarEnabled,
+                showIconPacks: showIconPacks
+            )
+        )
+    }
+
+    private static func makeSettingsSection(
+        isTipJarEnabled: Bool?,
+        showIconPacks: [String]?
+    ) -> SettingsSection? {
+        guard isTipJarEnabled != nil || showIconPacks != nil else { return nil }
+        return SettingsSection(
+            tipOption: isTipJarEnabled ?? true,
+            showIconPacks: showIconPacks
         )
     }
 }

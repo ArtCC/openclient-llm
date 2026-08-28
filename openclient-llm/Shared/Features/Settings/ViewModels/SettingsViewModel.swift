@@ -84,6 +84,7 @@ final class SettingsViewModel {
         var canChangeAppIcon: Bool = false
         var isChangingAppIcon: Bool = false
         var appIconError: String?
+        var visibleAppIconCategories: [AppIcon.Category] = AppIcon.Category.allCases
     }
 
     enum ConnectionStatus: Equatable {
@@ -200,7 +201,10 @@ extension SettingsViewModel {
             isTipJarEnabled: remoteConfigManager.currentConfig?.isTipJarEnabled ?? true,
             enabledMCPToolIds: Set(settingsManager.getEnabledMCPToolIds()),
             selectedAppIcon: appIconManager.selectedIcon,
-            canChangeAppIcon: appIconManager.supportsAlternateIcons
+            canChangeAppIcon: appIconManager.supportsAlternateIcons,
+            visibleAppIconCategories: AppIcon.Category.visibleCategories(
+                showIconPacks: remoteConfigManager.currentConfig?.showIconPacks
+            )
         )
         state = .loaded(loadedState)
         if loadedState.isCloudSyncEnabled {
