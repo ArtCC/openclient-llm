@@ -113,7 +113,6 @@ private extension ModelsView {
             )
         }
         .formStyle(.grouped)
-        .frame(maxWidth: 820)
         .frame(maxWidth: .infinity)
 #endif
     }
