@@ -23,6 +23,7 @@ final class HomeViewModelTests: XCTestCase {
         try await super.setUp()
         ShortcutManager.shared.pendingAction = nil
         URLSchemeManager.shared.pendingAction = nil
+        URLSchemeManager.shared.pendingResolvedConversation = nil
         mockGetSelectedModel = MockGetSelectedModelUseCase()
         mockLoadConversations = MockLoadConversationsUseCase()
         sut = HomeViewModel(
@@ -34,6 +35,7 @@ final class HomeViewModelTests: XCTestCase {
     override func tearDown() async throws {
         ShortcutManager.shared.pendingAction = nil
         URLSchemeManager.shared.pendingAction = nil
+        URLSchemeManager.shared.pendingResolvedConversation = nil
         sut = nil
         mockGetSelectedModel = nil
         mockLoadConversations = nil
@@ -141,6 +143,21 @@ final class HomeViewModelTests: XCTestCase {
         // Then
         XCTAssertEqual(sut.pendingShortcutAction, .search)
         XCTAssertNil(sut.pendingURLSchemeAction)
+    }
+
+    func test_send_urlSchemeActionReceived_withResolvedConversation_usesConversationWithoutReloading() {
+        // Given
+        let conversation = Conversation(modelId: "gpt-4o")
+        URLSchemeManager.shared.pendingResolvedConversation = conversation
+        URLSchemeManager.shared.pendingAction = .conversation(id: conversation.id)
+
+        // When
+        sut.send(.urlSchemeActionReceived)
+
+        // Then
+        XCTAssertEqual(sut.pendingConversation, conversation)
+        XCTAssertNil(URLSchemeManager.shared.pendingResolvedConversation)
+        XCTAssertEqual(mockLoadConversations.executeCallCount, 0)
     }
 
     // MARK: - spotlightConversationRequested

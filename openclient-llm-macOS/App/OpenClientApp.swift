@@ -23,17 +23,34 @@ struct OpenClientApp: App {
     // MARK: - View
 
     var body: some Scene {
-        WindowGroup(id: "main") {
-            LaunchView()
-                .frame(minWidth: 800, minHeight: 600)
-                .onOpenURL { url in
-                    guard let action = URLSchemeParser.parse(url) else { return }
-                    URLSchemeManager.shared.pendingAction = action
-                }
+        Window(String(localized: "OpenClient"), id: "main") {
+            MainWindowContent(appDelegate: appDelegate)
         }
         .defaultSize(width: 800, height: 600)
         .commands {
             AppCommands()
         }
+    }
+}
+
+// MARK: - MainWindowContent
+
+private struct MainWindowContent: View {
+    @Environment(\.openWindow) private var openWindow
+
+    let appDelegate: AppDelegate
+
+    var body: some View {
+        LaunchView()
+            .frame(minWidth: 800, minHeight: 600)
+            .onAppear {
+                appDelegate.setOpenMainWindowAction {
+                    openWindow(id: "main")
+                }
+            }
+            .onOpenURL { url in
+                guard let action = URLSchemeParser.parse(url) else { return }
+                URLSchemeManager.shared.pendingAction = action
+            }
     }
 }

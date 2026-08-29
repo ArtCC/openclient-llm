@@ -14,12 +14,14 @@ final class MockLoadConversationsUseCase: LoadConversationsUseCaseProtocol, @unc
     // MARK: - Properties
 
     var result: Result<[Conversation], Error> = .success([])
+    var executeCallCount = 0
     var executeLocallyCallCount = 0
 
     // MARK: - Execute
 
     func execute() async throws -> [Conversation] {
-        try result.get()
+        executeCallCount += 1
+        return try result.get()
     }
 
     func executeLocally() async throws -> [Conversation] {
