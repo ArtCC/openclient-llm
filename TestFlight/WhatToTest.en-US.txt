@@ -3,6 +3,7 @@ Hi there! We've got some great new features for you in this update.
 ***1.6.40:
 
 • 10 new themed app icons for Halloween and Christmas.
+• On macOS, the improved menu bar chat now appears only after server setup and opens your current conversation directly in the main app window.
 • Minor bug fixes and improvements for a smoother experience.
 
 ***Recent Updates:

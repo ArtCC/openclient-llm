@@ -19,6 +19,9 @@ extension Notification.Name {
         "openclient.promptTemplatesDidChangeExternally"
     )
     nonisolated static let cloudSyncIntentDidChange = Notification.Name("openclient.cloudSyncIntentDidChange")
+    nonisolated static let serverConfigurationDidChange = Notification.Name(
+        "openclient.serverConfigurationDidChange"
+    )
     nonisolated static let mcpToolSettingsDidChange = Notification.Name(
         "openclient.mcpToolSettingsDidChange"
     )

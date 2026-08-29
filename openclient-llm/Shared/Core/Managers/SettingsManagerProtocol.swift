@@ -69,3 +69,16 @@ protocol SettingsManagerProtocol: Sendable {
     func setDismissedRemoteBannerKey(_ value: String?)
     func deleteAll()
 }
+
+extension SettingsManagerProtocol {
+    func hasValidServerConfiguration() -> Bool {
+        let serverURL = getServerBaseURL().trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let components = URLComponents(string: serverURL),
+              let scheme = components.scheme?.lowercased(),
+              ["http", "https"].contains(scheme),
+              components.host?.isEmpty == false else {
+            return false
+        }
+        return true
+    }
+}
