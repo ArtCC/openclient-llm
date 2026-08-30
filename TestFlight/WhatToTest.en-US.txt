@@ -18,19 +18,6 @@ Hi there! We've got some great new features for you in this update.
 • On macOS, add the New Chat control and verify that it opens the app directly in a new conversation.
 • Chat messages now show their time, with a floating date indicator when scrolling through conversation history.
 • Test the new per-tool MCP permissions and approval flow: set tools to Always Allow, Ask, or Deny, then review requested MCP calls before execution.
-• You can now support OpenClient with optional monthly or annual subscriptions, alongside one-time coffee purchases. No features are locked.
-• Fix widgets layout issues.
-• Major improvements to iCloud conversation syncing, especially when switching between devices or returning to the app.
-• New section in Settings to manage iCloud data.
-• General stability, reliability, and performance improvements.
-• You can now generate images directly in chat with supported models.
-• We’ve added update notifications so you can easily keep the app up to date.
-• The app can now display important announcements and news directly on the Home screen.
-• We’ve improved how maintenance periods are handled, providing a clearer experience when the service is temporarily unavailable.
-• RAW images selected from Photos are now processed correctly before being sent.
-• Major improvements to iCloud conversation syncing, especially when switching between devices or returning to the app.
-• Fixed several issues with conversations changed or deleted on other devices.
-• General stability, reliability, and performance improvements.
 
 Thanks for your continued support and for helping us build the best possible LLM client together.
 
