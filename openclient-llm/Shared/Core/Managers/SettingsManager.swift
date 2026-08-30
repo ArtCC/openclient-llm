@@ -98,12 +98,19 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
 
         guard endpointChanged || credentialsChanged else {
             guard previousURL != serverBaseURL else { return true }
-            return keychainManager.setServerConfiguration(serverBaseURL: serverBaseURL, apiKey: apiKey)
+            let didSave = keychainManager.setServerConfiguration(serverBaseURL: serverBaseURL, apiKey: apiKey)
+            if didSave {
+                NotificationCenter.default.post(name: .serverConfigurationDidChange, object: nil)
+            }
+            return didSave
         }
         guard rotateMCPAuthorizationScope() else { return false }
         _ = updateMCPToolConfigurationKeys([:])
         let didSave = keychainManager.setServerConfiguration(serverBaseURL: serverBaseURL, apiKey: apiKey)
         NotificationCenter.default.post(name: .mcpToolSettingsDidChange, object: nil)
+        if didSave {
+            NotificationCenter.default.post(name: .serverConfigurationDidChange, object: nil)
+        }
         return didSave
     }
 
@@ -279,6 +286,7 @@ final class SettingsManager: SettingsManagerProtocol, @unchecked Sendable {
         defaults.removeObject(forKey: LegacyKeys.serverBaseURL)
         defaults.removeObject(forKey: LegacyKeys.apiKey)
         keychainManager.deleteAll()
+        NotificationCenter.default.post(name: .serverConfigurationDidChange, object: nil)
         if wasCloudSyncEnabled {
             NotificationCenter.default.post(name: .cloudSyncIntentDidChange, object: nil)
         }

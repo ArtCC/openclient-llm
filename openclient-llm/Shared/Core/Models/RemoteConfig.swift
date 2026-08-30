@@ -34,6 +34,7 @@ nonisolated struct RemoteConfig: Codable, Equatable, Sendable {
 
     struct SettingsSection: Codable, Equatable, Sendable {
         let tipOption: Bool
+        let showIconPacks: [String]?
     }
 
     struct Item: Codable, Equatable, Sendable {
@@ -65,6 +66,10 @@ nonisolated struct RemoteConfig: Codable, Equatable, Sendable {
 
     var isTipJarEnabled: Bool {
         settingsSection?.tipOption ?? true
+    }
+
+    var showIconPacks: [String]? {
+        settingsSection?.showIconPacks
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -99,5 +104,6 @@ private extension RemoteConfig.Banner {
 private extension RemoteConfig.SettingsSection {
     enum CodingKeys: String, CodingKey {
         case tipOption = "tip_option"
+        case showIconPacks = "show_icon_packs"
     }
 }

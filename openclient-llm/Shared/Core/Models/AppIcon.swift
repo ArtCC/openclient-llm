@@ -29,12 +29,24 @@ enum AppIcon: String, CaseIterable, Identifiable {
     case holo = "Holo"
     case retro = "Retro"
     case ultraviolet = "Ultraviolet"
+    case ghostNight = "GhostNight"
+    case pumpkinNight = "PumpkinNight"
+    case bloodMoon = "BloodMoon"
+    case witchingHour = "WitchingHour"
+    case hauntedSlime = "HauntedSlime"
+    case santaGlow = "SantaGlow"
+    case goldenNoel = "GoldenNoel"
+    case candyCane = "CandyCane"
+    case northPole = "NorthPole"
+    case silentNight = "SilentNight"
 
     enum Category: CaseIterable, Identifiable {
         case openClient
         case colors
         case bright
         case special
+        case halloween
+        case christmas
 
         var id: Self { self }
 
@@ -48,6 +60,36 @@ enum AppIcon: String, CaseIterable, Identifiable {
                 String(localized: "Bright")
             case .special:
                 String(localized: "Special")
+            case .halloween:
+                String(localized: "Halloween")
+            case .christmas:
+                String(localized: "Christmas")
+            }
+        }
+
+        var remoteIdentifier: String? {
+            switch self {
+            case .openClient:
+                nil
+            case .colors:
+                "colors"
+            case .bright:
+                "bright"
+            case .special:
+                "special"
+            case .halloween:
+                "halloween"
+            case .christmas:
+                "christmas"
+            }
+        }
+
+        static func visibleCategories(showIconPacks: [String]?) -> [Category] {
+            guard let showIconPacks else { return allCases }
+            let visibleIdentifiers = Set(showIconPacks)
+            return allCases.filter { category in
+                guard let remoteIdentifier = category.remoteIdentifier else { return true }
+                return visibleIdentifiers.contains(remoteIdentifier)
             }
         }
     }
@@ -68,6 +110,10 @@ enum AppIcon: String, CaseIterable, Identifiable {
             .bright
         case .blueprint, .copper, .holo, .retro, .ultraviolet:
             .special
+        case .ghostNight, .pumpkinNight, .bloodMoon, .witchingHour, .hauntedSlime:
+            .halloween
+        case .santaGlow, .goldenNoel, .candyCane, .northPole, .silentNight:
+            .christmas
         }
     }
 
@@ -113,6 +159,26 @@ enum AppIcon: String, CaseIterable, Identifiable {
             String(localized: "Retro")
         case .ultraviolet:
             String(localized: "Ultraviolet")
+        case .ghostNight:
+            String(localized: "Ghost Night")
+        case .pumpkinNight:
+            String(localized: "Pumpkin Night")
+        case .bloodMoon:
+            String(localized: "Blood Moon")
+        case .witchingHour:
+            String(localized: "Witching Hour")
+        case .hauntedSlime:
+            String(localized: "Haunted Slime")
+        case .santaGlow:
+            String(localized: "Santa Glow")
+        case .goldenNoel:
+            String(localized: "Golden Noel")
+        case .candyCane:
+            String(localized: "Candy Cane")
+        case .northPole:
+            String(localized: "North Pole")
+        case .silentNight:
+            String(localized: "Silent Night")
         }
     }
 

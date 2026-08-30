@@ -13,11 +13,12 @@ import SwiftUI
 struct MenuBarChatView: View {
     // MARK: - Properties
 
-    var onOpenInApp: () -> Void
+    var onOpenInApp: (Conversation?) -> Void
     var onAuthorizationStateChanged: (Bool) -> Void = { _ in }
 
     @State private var chatId = UUID()
     @State private var viewModel = ChatViewModel()
+    @State private var isOpeningInApp = false
 
     // MARK: - View
 
@@ -31,6 +32,7 @@ struct MenuBarChatView: View {
                 viewModel: viewModel
             )
                 .id(chatId)
+                .allowsHitTesting(!isOpeningInApp)
         }
         .frame(width: 380, height: 540)
         .mcpToolAuthorizationPresentation(viewModel: viewModel, compact: true)
@@ -51,14 +53,26 @@ private extension MenuBarChatView {
                 .font(.headline)
             Spacer()
             Button {
-                onOpenInApp()
+                openInApp()
             } label: {
-                Label(String(localized: "Open in App"), systemImage: "arrow.up.forward.app")
-                    .font(.caption)
-                    .labelStyle(.titleAndIcon)
+                HStack(spacing: 4) {
+                    if isOpeningInApp {
+                        ProgressView()
+                            .controlSize(.small)
+                    }
+                    Label(String(localized: "Open in App"), systemImage: "arrow.up.forward.app")
+                        .font(.caption)
+                        .labelStyle(.titleAndIcon)
+                }
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
+            .disabled(isOpeningInApp || !viewModel.canPrepareForAppHandoff)
+            .help(
+                !viewModel.canPrepareForAppHandoff
+                ? String(localized: "Finish or clear the current input before opening it in the app.")
+                : String(localized: "Open in App")
+            )
             Button {
                 viewModel.send(.stopStreamingTapped)
                 viewModel = ChatViewModel()
@@ -69,16 +83,39 @@ private extension MenuBarChatView {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
+            .disabled(isOpeningInApp)
             .help(String(localized: "New Chat"))
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+    }
+
+    func openInApp() {
+        guard !isOpeningInApp, viewModel.canPrepareForAppHandoff else { return }
+        isOpeningInApp = true
+        Task {
+            switch await viewModel.prepareForAppHandoff() {
+            case .newChat:
+                completeAppHandoff(conversation: nil)
+            case .conversation(let conversation):
+                completeAppHandoff(conversation: conversation)
+            case .draftPending, .persistenceFailed:
+                isOpeningInApp = false
+            }
+        }
+    }
+
+    func completeAppHandoff(conversation: Conversation?) {
+        onOpenInApp(conversation)
+        viewModel = ChatViewModel()
+        chatId = UUID()
+        isOpeningInApp = false
     }
 }
 
 // MARK: - Preview
 
 #Preview {
-    MenuBarChatView(onOpenInApp: {})
+    MenuBarChatView(onOpenInApp: { _ in })
         .frame(width: 380, height: 540)
 }

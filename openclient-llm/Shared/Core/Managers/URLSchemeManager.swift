@@ -21,6 +21,7 @@ final class URLSchemeManager {
     // MARK: - Properties
 
     var pendingAction: URLSchemeAction?
+    var pendingResolvedConversation: Conversation?
 
     // MARK: - Init
 

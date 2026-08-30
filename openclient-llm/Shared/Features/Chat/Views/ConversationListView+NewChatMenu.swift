@@ -36,7 +36,7 @@ extension ConversationListView {
         } label: {
             Label(String(localized: "New Chat"), systemImage: "square.and.pencil")
         }
-        .keyboardShortcut("c", modifiers: .command)
+        .keyboardShortcut("n", modifiers: .command)
 
         Button {
             AppTips.privateChat.invalidate(reason: .actionPerformed)
@@ -44,6 +44,6 @@ extension ConversationListView {
         } label: {
             Label(String(localized: "New Private Chat"), systemImage: "lock.fill")
         }
-        .keyboardShortcut("p", modifiers: .command)
+        .keyboardShortcut("n", modifiers: [.command, .shift])
     }
 }

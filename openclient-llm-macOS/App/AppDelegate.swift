@@ -43,4 +43,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             ShortcutManager.shared.pendingAction = .newChat
         }
     }
+
+    func setOpenMainWindowAction(_ action: @escaping @MainActor () -> Void) {
+        menuBarManager.setOpenMainWindowAction(action)
+    }
 }

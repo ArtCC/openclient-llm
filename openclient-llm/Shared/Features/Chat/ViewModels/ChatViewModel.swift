@@ -161,6 +161,7 @@ final class ChatViewModel {
     var mcpDiscoveryGeneration = 0
     var observedMCPAuthorizationScope: String
     private var pendingConversation: Conversation?
+    var isPreparingAppHandoff = false
     var attachmentPreparationCount = 0
 
     // MARK: - Init
@@ -259,6 +260,7 @@ final class ChatViewModel {
     // MARK: - Input functions
 
     func send(_ event: Event) {
+        guard !isPreparingAppHandoff else { return }
         if case .viewDisappeared = event {
             stopStreaming()
             loadTask?.cancel()

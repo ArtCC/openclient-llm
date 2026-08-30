@@ -21,13 +21,13 @@ struct AppCommands: Commands {
             Button(String(localized: "New Chat")) {
                 newChatAction?()
             }
-            .keyboardShortcut("c", modifiers: .command)
+            .keyboardShortcut("n", modifiers: .command)
             .disabled(newChatAction == nil)
 
             Button(String(localized: "New Private Chat")) {
                 newPrivateChatAction?()
             }
-            .keyboardShortcut("p", modifiers: [.command])
+            .keyboardShortcut("n", modifiers: [.command, .shift])
             .disabled(newPrivateChatAction == nil)
 
             Divider()

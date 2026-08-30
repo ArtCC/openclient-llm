@@ -138,6 +138,8 @@ private extension HomeViewModel {
     func resolveURLSchemeAction() {
         guard let action = urlSchemeManager.pendingAction else { return }
         urlSchemeManager.pendingAction = nil
+        let resolvedConversation = urlSchemeManager.pendingResolvedConversation
+        urlSchemeManager.pendingResolvedConversation = nil
         let modelId = getSelectedModelUseCase.execute()
         switch action {
         case .newChat:
@@ -149,7 +151,11 @@ private extension HomeViewModel {
             pendingURLSchemeText = parts.isEmpty ? nil : parts.joined(separator: "\n")
             pendingConversation = Conversation(modelId: modelId)
         case .conversation(let id):
-            resolveSpotlightConversation(id: id)
+            if let resolvedConversation, resolvedConversation.id == id {
+                pendingConversation = resolvedConversation
+            } else {
+                resolveSpotlightConversation(id: id)
+            }
         }
     }
 }

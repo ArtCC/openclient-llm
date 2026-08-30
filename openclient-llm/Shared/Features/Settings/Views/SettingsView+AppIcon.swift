@@ -60,6 +60,7 @@ private struct AppIconSettingsSection: View {
                     canChangeIcon: loadedState.canChangeAppIcon,
                     isChangingIcon: loadedState.isChangingAppIcon,
                     errorMessage: loadedState.appIconError,
+                    categories: loadedState.visibleAppIconCategories,
                     onSelect: onSelect
                 )
             }

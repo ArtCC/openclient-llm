@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.40-build-94] - 2026-08-30
+
+### Added
+
+- Ten new themed app icons for Halloween and Christmas on iOS and iPadOS
+
+### Changed
+
+- macOS menu bar chat now appears only with a valid saved server configuration and uses a native brain SF Symbol
+- New Chat and Private Chat shortcuts now consistently use Command-N and Shift-Command-N without conflicting with standard macOS actions
+
+### Fixed
+
+- Open in App from the macOS menu bar now persists and opens the current conversation, recreating or restoring the main window when needed
+- Menu bar chat handoff now prevents unsent drafts, pending attachments, recordings, and empty streaming placeholders from being lost
+
 ## [1.6.35-build-90] - 2026-08-28
 
 ### Added

@@ -138,6 +138,41 @@ final class RemoteConfigManagerTests: XCTestCase {
         // Then
         XCTAssertTrue(config.isTipJarEnabled)
     }
+
+    func test_loadConfig_showIconPacksConfigured_returnsIdentifiers() async throws {
+        // Given
+        let manager = RemoteConfigManager(
+            endpoint: endpoint,
+            dataLoader: try makeLoader(
+                version: "1.0.0",
+                showIconPacks: ["colors", "christmas"]
+            ),
+            defaults: defaults,
+            refreshInterval: .zero
+        )
+
+        // When
+        let config = try await manager.loadConfig()
+
+        // Then
+        XCTAssertEqual(config.showIconPacks, ["colors", "christmas"])
+    }
+
+    func test_loadConfig_showIconPacksMissing_returnsNil() async throws {
+        // Given
+        let manager = RemoteConfigManager(
+            endpoint: endpoint,
+            dataLoader: try makeLoader(version: "1.0.0", showIconPacks: nil),
+            defaults: defaults,
+            refreshInterval: .zero
+        )
+
+        // When
+        let config = try await manager.loadConfig()
+
+        // Then
+        XCTAssertNil(config.showIconPacks)
+    }
 }
 
 // MARK: - Private
@@ -159,26 +194,36 @@ private extension RemoteConfigManagerTests {
 
     func makeLoader(
         version: String,
-        tipJarEnabled: Bool? = true
+        tipJarEnabled: Bool? = true,
+        showIconPacks: [String]? = nil
     ) throws -> RemoteConfigDataLoader {
         let endpoint = try XCTUnwrap(endpoint)
         let response = try XCTUnwrap(
             HTTPURLResponse(url: endpoint, statusCode: 200, httpVersion: nil, headerFields: nil)
         )
-        let data = Data(configJSON(version: version, tipJarEnabled: tipJarEnabled).utf8)
+        let data = Data(
+            configJSON(
+                version: version,
+                tipJarEnabled: tipJarEnabled,
+                showIconPacks: showIconPacks
+            ).utf8
+        )
         return { _ in (data, response) }
     }
 
-    func configJSON(version: String, tipJarEnabled: Bool?) -> String {
-        let tipJar = tipJarEnabled.map {
-            """
-              "settings_section": { "tip_option": \($0) },
-            """
-        } ?? ""
+    func configJSON(
+        version: String,
+        tipJarEnabled: Bool?,
+        showIconPacks: [String]?
+    ) -> String {
+        let settingsSection = settingsSectionJSON(
+            tipJarEnabled: tipJarEnabled,
+            showIconPacks: showIconPacks
+        )
         return """
         {
           "schema_version": 1,
-        \(tipJar)
+        \(settingsSection)
           "maintenance_mode": { "enabled": false },
           "app_update": {
             "ios": {
@@ -210,6 +255,15 @@ private extension RemoteConfigManagerTests {
             }
           }
         }
+        """
+    }
+
+    func settingsSectionJSON(tipJarEnabled: Bool?, showIconPacks: [String]?) -> String {
+        guard tipJarEnabled != nil || showIconPacks != nil else { return "" }
+        let packValues = showIconPacks?.map { "\"\($0)\"" }.joined(separator: ", ")
+        let packs = packValues.map { ", \"show_icon_packs\": [\($0)]" } ?? ""
+        return """
+          "settings_section": { "tip_option": \(tipJarEnabled ?? true)\(packs) },
         """
     }
 }
