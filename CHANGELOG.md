@@ -12,6 +12,7 @@ Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guideli
 ### Fixed
 
 - Memory list items now place their enable switch below the content so longer text can use the full row width
+- Message text can now be partially selected and copied without the message actions menu intercepting the gesture
 
 ## [1.6.40-build-94] - 2026-08-30
 

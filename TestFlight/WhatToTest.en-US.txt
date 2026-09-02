@@ -3,6 +3,7 @@ Hi there! We've got some great new features for you in this update.
 ***1.6.45:
 
 • Memory entries in Settings now use the full row width, making longer text easier to read.
+• Select and copy part of a chat message while using the new actions button for whole-message options.
 • Minor bug fixes and improvements for a smoother experience.
 
 ***Recent Updates:

@@ -8870,6 +8870,71 @@
         }
       }
     },
+    "Copy Message" : {
+      "comment" : "A button that copies a message to the clipboard.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nachricht kopieren"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Αντιγραφή μηνύματος"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy Message"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar mensaje"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copier le message"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copia messaggio"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メッセージをコピー"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bericht kopiëren"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar mensagem"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopiera meddelande"
+          }
+        }
+      }
+    },
     "Copy URL" : {
       "localizations" : {
         "de" : {
@@ -22122,6 +22187,71 @@
         }
       }
     },
+    "Message actions" : {
+      "comment" : "A label for the message actions menu.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nachrichtenaktionen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ενέργειες μηνύματος"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Message actions"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acciones del mensaje"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actions du message"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Azioni del messaggio"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メッセージの操作"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berichtacties"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ações da mensagem"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meddelandeåtgärder"
+          }
+        }
+      }
+    },
     "Message..." : {
       "localizations" : {
         "de" : {
@@ -32478,70 +32608,6 @@
         }
       }
     },
-    "Right-click a message to edit, regenerate, branch, or save it as a favourite." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Klicken Sie mit der rechten Maustaste auf eine Nachricht, um sie zu bearbeiten, neu zu generieren, zu verzweigen oder als Favorit zu speichern."
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Κάντε δεξί κλικ σε ένα μήνυμα για να το επεξεργαστείτε, αναγεννήσετε, διακλαδώσετε ή αποθηκεύσετε ως αγαπημένο."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Right-click a message to edit, regenerate, branch, or save it as a favorite."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Haz clic derecho en un mensaje para editarlo, regenerarlo, ramificarlo o guardarlo como favorito."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cliquez droit sur un message pour le modifier, régénérer, créer une branche ou l’enregistrer en favori."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fai clic con il tasto destro su un messaggio per modificarlo, rigenerarlo, creare un ramo o salvarlo tra i preferiti."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "メッセージを右クリックして編集、再生成、分岐、またはお気に入りに保存します。"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Klik met de rechtermuisknop op een bericht om het te bewerken, opnieuw te genereren, vertakken of als favoriet op te slaan."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Clique com o botão direito numa mensagem para editar, regenerar, ramificar ou guardar como favorito."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Högerklicka på ett meddelande för att redigera, generera om, skapa en gren eller spara det som favorit."
-          }
-        }
-      }
-    },
     "Running %@..." : {
       "comment" : "A label indicating that a tool is currently running. The argument is the name of the tool.",
       "localizations" : {
@@ -33897,6 +33963,71 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Välj en modell för att börja chatta"
+          }
+        }
+      }
+    },
+    "Select Text" : {
+      "comment" : "A button that selects the text of a message.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Text auswählen"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Επιλογή κειμένου"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Select Text"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleccionar texto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sélectionner le texte"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seleziona testo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "テキストを選択"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tekst selecteren"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selecionar texto"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Markera text"
           }
         }
       }
@@ -39841,6 +39972,71 @@
         }
       }
     },
+    "Tap the message actions button to edit, regenerate, branch, or save it as a favourite." : {
+      "comment" : "A description of the message actions button.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf die Nachrichtaktionen-Schaltfläche, um die Nachricht zu bearbeiten, neu zu generieren, einen Zweig zu erstellen oder sie als Favorit zu speichern."
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Πατήστε το κουμπί ενεργειών μηνύματος για να το επεξεργαστείτε, να το αναδημιουργήσετε, να δημιουργήσετε κλάδο ή να το αποθηκεύσετε ως αγαπημένο."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the message actions button to edit, regenerate, branch, or save it as a favourite."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca el botón de acciones del mensaje para editarlo, regenerarlo, crear una bifurcación o guardarlo como favorito."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touchez le bouton d’actions du message pour le modifier, le régénérer, créer une branche ou l’enregistrer comme favori."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca il pulsante delle azioni del messaggio per modificarlo, rigenerarlo, creare un ramo o salvarlo tra i preferiti."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メッセージのアクションボタンをタップして、編集、再生成、分岐、またはお気に入りへの保存を行います。"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op de knop voor berichtacties om het bericht te bewerken, opnieuw te genereren, af te splitsen of als favoriet op te slaan."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque no botão de ações da mensagem para a editar, regenerar, criar uma ramificação ou guardá-la como favorita."
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tryck på knappen för meddelandeåtgärder för att redigera, generera om, förgrena eller spara det som favorit."
+          }
+        }
+      }
+    },
     "Tap the Share button in any app." : {
       "localizations" : {
         "de" : {
@@ -45656,71 +45852,6 @@
         }
       }
     },
-    "Touch and hold a message to edit, regenerate, branch, or save it as a favourite." : {
-      "comment" : "A description of the action to edit, regenerate, branch, or save a message.",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tippen und halten Sie eine Nachricht, um sie zu bearbeiten, neu zu generieren, zu verzweigen oder als Favorit zu speichern."
-          }
-        },
-        "el" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Πατήστε παρατεταμένα ένα μήνυμα για να το επεξεργαστείτε, αναγεννήσετε, διακλαδώσετε ή αποθηκεύσετε στα αγαπημένα."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Touch and hold a message to edit, regenerate, branch, or save it as a favorite."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mantén pulsado un mensaje para editarlo, regenerarlo, ramificarlo o guardarlo como favorito."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Touchez et maintenez un message pour le modifier, régénérer, créer une branche ou l’enregistrer en favori."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tocca e tieni premuto un messaggio per modificarlo, rigenerarlo, creare un ramo o salvarlo tra i preferiti."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "メッセージを長押しして編集、再生成、分岐、またはお気に入りに保存します。"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Raak een bericht aan en houd vast om het te bewerken, opnieuw te genereren, vertakken of als favoriet op te slaan."
-          }
-        },
-        "pt-PT" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toque e mantenha uma mensagem para editar, regenerar, ramificar ou guardar como favorita."
-          }
-        },
-        "sv" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tryck och håll på ett meddelande för att redigera, generera om, förgrena eller spara det som favorit."
-          }
-        }
-      }
-    },
     "Transcribing..." : {
       "comment" : "A placeholder text displayed when the user is recording audio.",
       "localizations" : {
@@ -47467,6 +47598,10 @@
         }
       }
     },
+    "Use the message actions button to edit, regenerate, branch, or save it as a favourite." : {
+      "comment" : "A tip that explains how to use the message actions button.",
+      "isCommentAutoGenerated" : true
+    },
     "Use these sources to answer the user's question. Cite sources using [Source Title](URL) format." : {
       "comment" : "Citation guide for web search results.",
       "localizations" : {
@@ -47534,7 +47669,68 @@
     },
     "Use this memory" : {
       "comment" : "A toggle label.",
-      "isCommentAutoGenerated" : true
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diesen Speicher verwenden"
+          }
+        },
+        "el" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Χρήση αυτής της μνήμης"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Use this memory"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar esta memoria"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Utiliser cette mémoire"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usa questa memoria"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "このメモリを使用する"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze herinnering gebruiken"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usar esta memória"
+          }
+        },
+        "sv" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Använd detta minne"
+          }
+        }
+      }
     },
     "Use this when an OpenAI-compatible server does not provide context metadata." : {
       "localizations" : {
