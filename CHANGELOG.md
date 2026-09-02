@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+## [1.6.45-build-95] - 2026-09-02
+
+### Fixed
+
+- Memory list items now place their enable switch below the content so longer text can use the full row width
+- Message text can now be partially selected and copied without the message actions menu intercepting the gesture
+
 ## [1.6.40-build-94] - 2026-08-30
 
 ### Added
