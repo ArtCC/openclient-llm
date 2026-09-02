@@ -767,6 +767,7 @@
 				CODE_SIGN_ENTITLEMENTS = "WidgetsExtension-macOS/Resources/WidgetsExtension-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = Q4X55987WE;
 				ENABLE_APP_SANDBOX = YES;
@@ -813,6 +814,7 @@
 				CODE_SIGN_ENTITLEMENTS = "WidgetsExtension-macOS/Resources/WidgetsExtension-macOS.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = Q4X55987WE;
 				ENABLE_APP_SANDBOX = YES;
